@@ -302,3 +302,34 @@ class MemberService:
         finally:
             session.close()
 
+    @staticmethod
+    def get_upcoming_expiration_members(days_ahead: int = 1):
+        """Returns members whose membership expires in `days_ahead` days (or today if 0 days left)."""
+        from yalda.utils.jalali_date import days_until_expire
+
+        session = get_session()
+        try:
+            from yalda.auth.authentication import CurrentUser
+
+            query = session.query(Member).filter(Member.status.in_(["active", "expired"]))
+            if not CurrentUser.is_admin():
+                curr_user_id = CurrentUser.get_id()
+                if curr_user_id:
+                    query = query.filter(or_(Member.user_id == curr_user_id, Member.user_id == None))
+            members = query.all()
+
+            upcoming = []
+            for m in members:
+                if not m.membership_expire_shamsi:
+                    continue
+                try:
+                    delta = days_until_expire(m.membership_expire_shamsi)
+                    # Check for 1 day left or today
+                    if delta == days_ahead or (days_ahead == 1 and delta == 0):
+                        upcoming.append((m, delta))
+                except Exception:
+                    continue
+            return upcoming
+        finally:
+            session.close()
+

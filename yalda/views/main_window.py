@@ -44,6 +44,7 @@ class MainWindow(QMainWindow):
         self.sidebar.page_changed.connect(self.switch_page)
         self.sidebar.logout_requested.connect(self.logout)
         self.sidebar.member_birthday_clicked.connect(self.open_member_detail)
+        self.sidebar.member_expiration_clicked.connect(self.open_member_detail)
         main_layout.addWidget(self.sidebar)
 
         # Stacked Container for Views

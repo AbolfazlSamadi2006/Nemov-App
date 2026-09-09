@@ -9,6 +9,7 @@ class Sidebar(QFrame):
     page_changed = pyqtSignal(str) # Emits view name, e.g. "dashboard", "members"
     logout_requested = pyqtSignal()
     member_birthday_clicked = pyqtSignal(int)
+    member_expiration_clicked = pyqtSignal(int)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -123,6 +124,37 @@ class Sidebar(QFrame):
         layout.addWidget(self.notification_frame)
         self.notification_frame.setVisible(False)
 
+        # Expiration / Tuition Deadline Notification Panel
+        self.expiration_frame = QFrame()
+        self.expiration_frame.setObjectName("expirationNotificationFrame")
+        self.expiration_frame.setStyleSheet("""
+            QFrame#expirationNotificationFrame {
+                background-color: #200C0C;
+                border: 1px solid #DC2626;
+                border-radius: 8px;
+            }
+        """)
+        self.expiration_layout = QVBoxLayout(self.expiration_frame)
+        self.expiration_layout.setContentsMargins(8, 8, 8, 8)
+        self.expiration_layout.setSpacing(6)
+
+        exp_header = QHBoxLayout()
+        icon_exp = QLabel("⏳")
+        icon_exp.setStyleSheet("font-size: 15px;")
+        title_exp = QLabel("سررسید شهریه (۱ روز مانده)")
+        title_exp.setStyleSheet("color: #FCA5A5; font-size: 11px; font-weight: bold;")
+        exp_header.addWidget(icon_exp)
+        exp_header.addWidget(title_exp)
+        exp_header.addStretch()
+        self.expiration_layout.addLayout(exp_header)
+
+        self.exp_list_layout = QVBoxLayout()
+        self.exp_list_layout.setSpacing(4)
+        self.expiration_layout.addLayout(self.exp_list_layout)
+
+        layout.addWidget(self.expiration_frame)
+        self.expiration_frame.setVisible(False)
+
         # About Developer Button (Placed above logout button)
         btn_dev = QPushButton("👨‍💻  درباره برنامه‌نویس")
         btn_dev.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -165,10 +197,16 @@ class Sidebar(QFrame):
             if item.widget():
                 item.widget().deleteLater()
 
+        while self.exp_list_layout.count() > 0:
+            item = self.exp_list_layout.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+
         try:
             from yalda.services.member_service import MemberService
-            upcoming_members = MemberService.get_upcoming_birthday_members(days_ahead=1)
             
+            # --- 1. Birthday Notifications ---
+            upcoming_members = MemberService.get_upcoming_birthday_members(days_ahead=1)
             if upcoming_members:
                 for member in upcoming_members:
                     btn = QPushButton(f"🎉 فردا تولد {member.full_name} است")
@@ -193,8 +231,42 @@ class Sidebar(QFrame):
                 self.notification_frame.setVisible(True)
             else:
                 self.notification_frame.setVisible(False)
+
+            # --- 2. Membership Expiration / Tuition Notifications ---
+            upcoming_exp = MemberService.get_upcoming_expiration_members(days_ahead=1)
+            if upcoming_exp:
+                for member, delta in upcoming_exp:
+                    if delta == 0:
+                        btn_text = f"🚨 امروز موعد شهریه {member.full_name} است"
+                    else:
+                        btn_text = f"⏳ فردا پایان شهریه {member.full_name} است"
+
+                    btn = QPushButton(btn_text)
+                    btn.setCursor(Qt.CursorShape.PointingHandCursor)
+                    btn.setStyleSheet("""
+                        QPushButton {
+                            background-color: #3B1111;
+                            color: #FEE2E2;
+                            border: 1px solid #991B1B;
+                            border-radius: 5px;
+                            padding: 6px 8px;
+                            font-size: 11px;
+                            text-align: right;
+                        }
+                        QPushButton:hover {
+                            background-color: #7F1D1D;
+                            color: #FFFFFF;
+                        }
+                    """)
+                    btn.clicked.connect(lambda _, m_id=member.id: self.member_expiration_clicked.emit(m_id))
+                    self.exp_list_layout.addWidget(btn)
+                self.expiration_frame.setVisible(True)
+            else:
+                self.expiration_frame.setVisible(False)
+
         except Exception:
             self.notification_frame.setVisible(False)
+            self.expiration_frame.setVisible(False)
 
     def refresh_developer_info(self):
         try:
