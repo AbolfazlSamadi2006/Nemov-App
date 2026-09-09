@@ -201,8 +201,7 @@ QSpinBox, QDoubleSpinBox {
     color: #FFFFFF;
     border: 1px solid #333333;
     border-radius: 6px;
-    padding: 6px 12px;
-    padding-left: 32px;
+    padding: 5px 8px;
     font-size: 13px;
     font-weight: bold;
 }

@@ -24,3 +24,4 @@ dist/
 .user_uploaded/
 scratch/
 *.log
+data/
