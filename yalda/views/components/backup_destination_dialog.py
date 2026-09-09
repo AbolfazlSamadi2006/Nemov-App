@@ -55,7 +55,7 @@ class BackupDestinationDialog(QDialog):
         # Option 1: Save to Custom System Path
         # ----------------------------------------------------
         btn_system = self._create_option_button(
-            title="💻 ذخیره در سیستم (مسیر دلخواه شما)",
+            title="💻 ذخیره در سیستم",
             description="انتخاب پوشه دلخواه در حافظه سیستم (دسکتاپ، فلش مموری، درایو دیگر و...)",
             bg_color="#059669",
             hover_color="#047857"
@@ -79,7 +79,7 @@ class BackupDestinationDialog(QDialog):
         # Option 3: Send directly to Coach Email
         # ----------------------------------------------------
         btn_email = self._create_option_button(
-            title="📧 ارسال به ایمیل مربی (فایل دیتابیس .db)",
+            title="📧 ارسال به ایمیل مربی",
             description="ارسال مستقیم و امن فایل پایگاه‌داده (.db) به آدرس ایمیل ثبت‌شده مربی باشگاه",
             bg_color="#0D9488",
             hover_color="#0F766E"
@@ -91,7 +91,7 @@ class BackupDestinationDialog(QDialog):
         # Option 4: Save to Default Installation Directory
         # ----------------------------------------------------
         btn_install_dir = self._create_option_button(
-            title="📁 ذخیره در مسیر نصب برنامه (پیش‌فرض)",
+            title="📁 ذخیره در مسیر نصب برنامه",
             description="ذخیره خودکار در پوشه پیش‌فرض آرشیو نرم‌افزار (پوشه data/backups)",
             bg_color="#4F46E5",
             hover_color="#4338CA"
