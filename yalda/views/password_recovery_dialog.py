@@ -29,7 +29,7 @@ class PasswordRecoveryDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle("بازیابی نام کاربری و کلمه عبور مربی")
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
-        self.setFixedSize(520, 560)
+        self.setFixedSize(520, 580)
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowType.WindowContextHelpButtonHint)
 
         self.matched_user = None
@@ -53,22 +53,22 @@ class PasswordRecoveryDialog(QDialog):
                 border: 1px solid #333333;
                 border-radius: 12px;
                 padding: 15px;
-            }}
-            QLabel {{
+            }
+            QLabel {
                 color: #E5E7EB;
                 background: transparent;
-            }}
-            QLineEdit {{
+            }
+            QLineEdit {
                 background-color: #242427;
                 color: #FFFFFF;
                 border: 1px solid #3F3F46;
                 border-radius: 6px;
                 padding: 6px 12px;
                 font-size: 13px;
-            }}
-            QLineEdit:focus {{
+            }
+            QLineEdit:focus {
                 border: 1px solid #DC2626;
-            }}
+            }
         """)
 
         layout = QVBoxLayout(self)
@@ -116,8 +116,9 @@ class PasswordRecoveryDialog(QDialog):
         # ========================================================
         page_email = QFrame()
         page_email_layout = QVBoxLayout(page_email)
+        page_email_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         page_email_layout.setContentsMargins(0, 4, 0, 0)
-        page_email_layout.setSpacing(8)
+        page_email_layout.setSpacing(6)
 
         desc_email = QLabel("با وارد کردن ایمیل، شماره تماس یا نام کاربری، کد تایید ۵ رقمی به ایمیل شما فرستاده می‌شود:")
         desc_email.setStyleSheet("color: #9CA3AF; font-size: 12px;")
@@ -146,9 +147,10 @@ class PasswordRecoveryDialog(QDialog):
 
         # OTP Verification Container (Hidden initially)
         self.otp_verify_box = QFrame()
-        self.otp_verify_box.setStyleSheet("background-color: #202023; border: 1px dashed #DC2626; border-radius: 8px; padding: 8px;")
+        self.otp_verify_box.setObjectName("otp_verify_box")
+        self.otp_verify_box.setStyleSheet("QFrame#otp_verify_box { background-color: #202023; border: 1px dashed #DC2626; border-radius: 8px; padding: 8px; }")
         otp_box_layout = QVBoxLayout(self.otp_verify_box)
-        otp_box_layout.setSpacing(8)
+        otp_box_layout.setSpacing(6)
 
         self.lbl_otp_sent_info = QLabel()
         self.lbl_otp_sent_info.setStyleSheet("color: #10B981; font-size: 12px; font-weight: bold;")
@@ -163,7 +165,7 @@ class PasswordRecoveryDialog(QDialog):
         self.txt_entered_otp.setPlaceholderText("— — — — —")
         self.txt_entered_otp.setStyleSheet("""
             QLineEdit {
-                font-size: 20px; font-weight: bold; letter-spacing: 8px; color: #F87171; background-color: #18181B; border: 1px solid #DC2626;
+                font-size: 20px; font-weight: bold; letter-spacing: 8px; color: #F87171; background-color: #18181B; border: 1px solid #DC2626; border-radius: 6px; padding: 4px;
             }
         """)
         otp_box_layout.addWidget(self.txt_entered_otp)
@@ -208,8 +210,9 @@ class PasswordRecoveryDialog(QDialog):
         # ========================================================
         page_secret = QFrame()
         page_secret_layout = QVBoxLayout(page_secret)
+        page_secret_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         page_secret_layout.setContentsMargins(0, 4, 0, 0)
-        page_secret_layout.setSpacing(8)
+        page_secret_layout.setSpacing(6)
 
         desc_secret = QLabel("شماره تلفن همراه و رمز ریکاوری مخفی ثبت‌شده خود را وارد کنید:")
         desc_secret.setStyleSheet("color: #9CA3AF; font-size: 12px;")
@@ -221,6 +224,19 @@ class PasswordRecoveryDialog(QDialog):
         self.txt_phone.setFixedHeight(38)
         self.txt_phone.setPlaceholderText("مثال: 09123456789")
         self.txt_phone.setMaxLength(11)
+        self.txt_phone.setStyleSheet("""
+            QLineEdit {
+                background-color: #242427;
+                color: #FFFFFF;
+                border: 1px solid #3F3F46;
+                border-radius: 6px;
+                padding: 6px 12px;
+                font-size: 13px;
+            }
+            QLineEdit:focus {
+                border: 1px solid #2563EB;
+            }
+        """)
         page_secret_layout.addWidget(self.txt_phone)
 
         page_secret_layout.addWidget(QLabel("رمز ریکاوری مخفی:"))
@@ -231,6 +247,19 @@ class PasswordRecoveryDialog(QDialog):
         self.txt_recovery_code.setFixedHeight(38)
         self.txt_recovery_code.setEchoMode(QLineEdit.EchoMode.Password)
         self.txt_recovery_code.setPlaceholderText("رمز ریکاوری مخفی خود را وارد کنید")
+        self.txt_recovery_code.setStyleSheet("""
+            QLineEdit {
+                background-color: #242427;
+                color: #FFFFFF;
+                border: 1px solid #3F3F46;
+                border-radius: 6px;
+                padding: 6px 12px;
+                font-size: 13px;
+            }
+            QLineEdit:focus {
+                border: 1px solid #2563EB;
+            }
+        """)
 
         EYE_STYLE = """
             QPushButton {
@@ -276,9 +305,16 @@ class PasswordRecoveryDialog(QDialog):
         # STEP 2: Set New Password (Revealed when verified)
         # ========================================================
         self.step2_frame = QFrame()
-        self.step2_frame.setStyleSheet("background: #202023; border: 1px solid #10B981; border-radius: 8px; padding: 12px;")
+        self.step2_frame.setObjectName("step2_frame")
+        self.step2_frame.setStyleSheet("""
+            QFrame#step2_frame {
+                background-color: #202023;
+                border: 1px solid #10B981;
+                border-radius: 8px;
+            }
+        """)
         step2_layout = QVBoxLayout(self.step2_frame)
-        step2_layout.setContentsMargins(8, 8, 8, 8)
+        step2_layout.setContentsMargins(12, 12, 12, 12)
         step2_layout.setSpacing(8)
 
         self.lbl_matched_username = QLabel("نام کاربری شما:")
@@ -293,6 +329,19 @@ class PasswordRecoveryDialog(QDialog):
         self.txt_new_password.setFixedHeight(38)
         self.txt_new_password.setEchoMode(QLineEdit.EchoMode.Password)
         self.txt_new_password.setPlaceholderText("کلمه عبور جدید را وارد کنید")
+        self.txt_new_password.setStyleSheet("""
+            QLineEdit {
+                background-color: #242427;
+                color: #FFFFFF;
+                border: 1px solid #3F3F46;
+                border-radius: 6px;
+                padding: 6px 12px;
+                font-size: 13px;
+            }
+            QLineEdit:focus {
+                border: 1px solid #10B981;
+            }
+        """)
 
         btn_eye_new = QPushButton("👁️")
         btn_eye_new.setFixedSize(42, 38)

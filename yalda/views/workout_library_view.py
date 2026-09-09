@@ -229,24 +229,61 @@ class WorkoutLibraryView(QWidget):
             btn_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
             btn_media = QPushButton("🎬 رسانه")
-            btn_media.setObjectName("secondary_button")
-            btn_media.setFixedHeight(28)
+            btn_media.setFixedHeight(30)
             btn_media.setCursor(Qt.CursorShape.PointingHandCursor)
-            btn_media.setStyleSheet("padding: 2px 6px; font-size: 11px;")
+            btn_media.setStyleSheet("""
+                QPushButton {
+                    background-color: #2D2D2D;
+                    color: #FFFFFF;
+                    font-weight: bold;
+                    border: 1px solid #444444;
+                    border-radius: 6px;
+                    padding: 2px 8px;
+                    font-size: 11px;
+                }
+                QPushButton:hover {
+                    background-color: #3D3D3D;
+                }
+            """)
             btn_media.clicked.connect(lambda _, item=ex: self.show_media(item))
 
             btn_edit = QPushButton("✏️ ویرایش")
-            btn_edit.setFixedHeight(28)
+            btn_edit.setFixedHeight(30)
             btn_edit.setCursor(Qt.CursorShape.PointingHandCursor)
-            btn_edit.setStyleSheet("padding: 2px 6px; font-size: 11px;")
+            btn_edit.setStyleSheet("""
+                QPushButton {
+                    background-color: #8B0000;
+                    color: #FFFFFF;
+                    font-weight: bold;
+                    border: none;
+                    border-radius: 6px;
+                    padding: 2px 8px;
+                    font-size: 11px;
+                }
+                QPushButton:hover {
+                    background-color: #A91D22;
+                }
+            """)
             btn_edit.clicked.connect(lambda _, item=ex: self.open_edit_dialog(item))
 
             btn_delete = QPushButton("🗑️")
-            btn_delete.setObjectName("danger_button")
             btn_delete.setToolTip("حذف حرکت")
-            btn_delete.setFixedSize(28, 28)
+            btn_delete.setFixedSize(30, 30)
             btn_delete.setCursor(Qt.CursorShape.PointingHandCursor)
-            btn_delete.setStyleSheet("font-size: 12px;")
+            btn_delete.setStyleSheet("""
+                QPushButton {
+                    background-color: #D32F2F;
+                    color: #FFFFFF;
+                    font-weight: bold;
+                    border: none;
+                    border-radius: 6px;
+                    padding: 2px;
+                    font-size: 13px;
+                }
+                QPushButton:hover {
+                    background-color: #B71C1C;
+                }
+            """)
             btn_delete.clicked.connect(lambda _, item=ex: self.delete_exercise(item))
 
             btn_layout.addWidget(btn_media)
