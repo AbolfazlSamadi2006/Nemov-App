@@ -304,16 +304,11 @@ class AssessmentView(QWidget):
         self.spin_fat.setFixedWidth(115)
 
         self.lbl_live_bmi = QLabel("BMI: -")
+        self.lbl_live_bmi.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.lbl_live_bmi.setFixedHeight(34)
+        self.lbl_live_bmi.setMinimumWidth(220)
+        self.lbl_live_bmi.setMaximumWidth(320)
         self.lbl_live_bmi.setStyleSheet("font-weight: bold; padding: 4px 10px; border-radius: 6px; background-color: #555555; color: white;")
-
-        btn_save = QPushButton("💾 ذخیره ارزیابی")
-        btn_save.setFixedSize(120, 34)
-        btn_save.clicked.connect(self.save_assessment)
-
-        btn_reset = QPushButton("🔄 بازنشانی فرم")
-        btn_reset.setFixedSize(120, 34)
-        btn_reset.setObjectName("secondary_button")
-        btn_reset.clicked.connect(self.reset_form)
 
         row1.addWidget(lbl_date)
         row1.addWidget(self.picker_date)
@@ -327,10 +322,8 @@ class AssessmentView(QWidget):
         row1.addWidget(lbl_f)
         row1.addWidget(self.spin_fat)
         row1.addSpacing(10)
-        row1.addWidget(self.lbl_live_bmi)
+        row1.addWidget(self.lbl_live_bmi, stretch=1)
         row1.addStretch()
-        row1.addWidget(btn_save)
-        row1.addWidget(btn_reset)
 
         self.spin_height.valueChanged.connect(self.update_live_bmi)
         self.spin_weight.valueChanged.connect(self.update_live_bmi)
@@ -419,6 +412,15 @@ class AssessmentView(QWidget):
         self.btn_after.setFixedHeight(34)
         self.btn_after.clicked.connect(self.select_after_photo)
 
+        btn_save = QPushButton("💾 ذخیره ارزیابی")
+        btn_save.setFixedSize(120, 34)
+        btn_save.clicked.connect(self.save_assessment)
+
+        btn_reset = QPushButton("🔄 بازنشانی فرم")
+        btn_reset.setFixedSize(120, 34)
+        btn_reset.setObjectName("secondary_button")
+        btn_reset.clicked.connect(self.reset_form)
+
         row3.addWidget(lbl_waist)
         row3.addWidget(self.spin_waist)
         row3.addSpacing(10)
@@ -432,6 +434,8 @@ class AssessmentView(QWidget):
         row3.addSpacing(6)
         row3.addWidget(self.btn_after)
         row3.addStretch()
+        row3.addWidget(btn_save)
+        row3.addWidget(btn_reset)
         layout_form.addLayout(row3)
 
         layout.addWidget(group_new)
