@@ -1,11 +1,25 @@
 from PyQt6.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QMessageBox, QFrame, QScrollArea, QStackedWidget
+    QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QMessageBox, QFrame, QScrollArea, QStackedWidget, QSizePolicy
 )
 from PyQt6.QtCore import Qt, pyqtSignal, QTimer, QThread
 from yalda.auth.authentication import (
     verify_recovery_credentials, update_trainer_profile, CurrentUser, find_user_by_email_or_phone
 )
 from yalda.services.email_service import EmailService
+
+
+class AutoResizingStackedWidget(QStackedWidget):
+    def sizeHint(self):
+        current = self.currentWidget()
+        if current:
+            return current.sizeHint()
+        return super().sizeHint()
+
+    def minimumSizeHint(self):
+        current = self.currentWidget()
+        if current:
+            return current.minimumSizeHint()
+        return super().minimumSizeHint()
 
 
 class SendOtpThread(QThread):
@@ -29,7 +43,7 @@ class PasswordRecoveryDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle("بازیابی نام کاربری و کلمه عبور مربی")
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
-        self.setFixedSize(520, 580)
+        self.setFixedSize(520, 560)
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowType.WindowContextHelpButtonHint)
 
         self.matched_user = None
@@ -82,6 +96,7 @@ class PasswordRecoveryDialog(QDialog):
         card.setObjectName("cardFrame")
         card_layout = QVBoxLayout(card)
         card_layout.setSpacing(10)
+        card_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
         # Header Title
         title_lbl = QLabel("🔑 بازیابی حساب کاربری مربی")
@@ -109,7 +124,8 @@ class PasswordRecoveryDialog(QDialog):
         card_layout.addLayout(tab_box)
 
         # Stacked Container for the 2 Modes
-        self.stack = QStackedWidget()
+        self.stack = AutoResizingStackedWidget()
+        self.stack.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum)
 
         # ========================================================
         # PAGE 0: Email OTP Mode (Online)
@@ -371,11 +387,55 @@ class PasswordRecoveryDialog(QDialog):
         scroll.setWidget(card)
         layout.addWidget(scroll)
 
+        # Ensure buttons do not steal Enter key, and line edits trigger verification
+        for btn in (
+            self.btn_tab_email, self.btn_tab_secret, self.btn_send_otp,
+            self.btn_confirm_otp, self.btn_otp_spam_help, btn_eye_rec,
+            self.btn_verify_secret, btn_eye_new, self.btn_reset_and_login
+        ):
+            btn.setAutoDefault(False)
+            btn.setDefault(False)
+
+        self.txt_phone.returnPressed.connect(self.do_verify_secret)
+        self.txt_recovery_code.returnPressed.connect(self.do_verify_secret)
+        self.txt_email_identity.returnPressed.connect(self.do_send_email_otp)
+        self.txt_entered_otp.returnPressed.connect(self.do_verify_email_otp)
+        self.txt_new_password.returnPressed.connect(self.do_reset_and_login)
+
         # Default to Email Mode
         self.switch_mode(0)
 
+    def keyPressEvent(self, event):
+        if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
+            if self.step2_frame.isVisible():
+                self.do_reset_and_login()
+                event.accept()
+                return
+            elif self.stack.currentIndex() == 1:
+                self.do_verify_secret()
+                event.accept()
+                return
+            elif self.stack.currentIndex() == 0:
+                if self.otp_verify_box.isVisible():
+                    self.do_verify_email_otp()
+                else:
+                    self.do_send_email_otp()
+                event.accept()
+                return
+        super().keyPressEvent(event)
+
     def switch_mode(self, index: int):
         self.stack.setCurrentIndex(index)
+        self.stack.updateGeometry()
+        if not self.step2_frame.isVisible():
+            if index == 1:
+                self.setFixedSize(520, 560)
+            else:
+                if self.otp_verify_box.isVisible():
+                    self.setFixedSize(520, 690)
+                else:
+                    self.setFixedSize(520, 560)
+
         if index == 0:
             self.btn_tab_email.setStyleSheet("background-color: #DC2626; color: white; font-weight: bold; border-radius: 6px; border: none;")
             self.btn_tab_secret.setStyleSheet("background-color: #27272A; color: #9CA3AF; border: 1px solid #3F3F46; border-radius: 6px;")
@@ -438,6 +498,7 @@ class PasswordRecoveryDialog(QDialog):
                 "💡 در صورت عدم مشاهده در Inbox، حتماً پوشه Spam (هرزنامه) را بررسی نمایید."
             )
             self.otp_verify_box.setVisible(True)
+            self.stack.updateGeometry()
             self.setFixedSize(520, 690)
 
             # Start 60 second countdown timer
@@ -508,7 +569,10 @@ class PasswordRecoveryDialog(QDialog):
         self.btn_verify_secret.setEnabled(False)
 
         self.step2_frame.setVisible(True)
-        self.setFixedSize(520, 720)
+        if self.stack.currentIndex() == 0:
+            self.setFixedSize(520, 690)
+        else:
+            self.setFixedSize(520, 560)
         self.txt_new_password.setFocus()
 
     def do_reset_and_login(self):
