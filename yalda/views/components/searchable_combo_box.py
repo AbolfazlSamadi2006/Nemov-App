@@ -1,5 +1,4 @@
-import sys
-from PyQt6.QtWidgets import QComboBox, QCompleter, QStyledItemDelegate, QLineEdit
+from PyQt6.QtWidgets import QComboBox, QCompleter, QStyledItemDelegate
 from PyQt6.QtCore import Qt, QModelIndex
 
 class CenteredItemDelegate(QStyledItemDelegate):

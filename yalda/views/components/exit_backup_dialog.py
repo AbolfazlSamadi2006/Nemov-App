@@ -1,13 +1,9 @@
-import os
 from datetime import datetime
 from PyQt6.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
-    QFileDialog, QMessageBox, QFrame, QGraphicsDropShadowEffect
+    QDialog, QVBoxLayout, QLabel, QPushButton,
+    QFileDialog, QMessageBox
 )
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QColor, QFont, QIcon
-
-import config
 from yalda.auth.authentication import CurrentUser
 from yalda.services.backup_service import (
     create_local_backup, export_offline_backup, upload_cloud_backup, is_internet_connected

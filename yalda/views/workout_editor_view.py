@@ -1,5 +1,5 @@
 from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QComboBox, QPushButton, QTabWidget, QTableWidget, QTableWidgetItem, QHeaderView, QMessageBox, QGroupBox, QDialog
+    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QComboBox, QPushButton, QTabWidget, QTableWidget, QHeaderView, QMessageBox, QGroupBox, QDialog
 )
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QKeySequence, QShortcut
@@ -257,49 +257,44 @@ class WorkoutEditorView(QWidget):
 
         if new_days < old_days:
             # Decreasing days
-            if self._has_non_empty_days(current_days):
-                summary = []
-                for idx, d in enumerate(current_days):
-                    valid_ex_count = len([e for e in d.get("exercises", []) if e.get("exercise_id")])
-                    summary.append((idx, d.get("day_title", f"روز {idx+1}"), f"{valid_ex_count} حرکت"))
+            summary = []
+            for idx, d in enumerate(current_days):
+                valid_ex_count = len([e for e in d.get("exercises", []) if e.get("exercise_id") or (e.get("exercise_text") and "انتخاب" not in e.get("exercise_text"))])
+                summary.append((idx, d.get("day_title", f"روز {idx+1}"), f"{valid_ex_count} حرکت"))
 
-                dlg = DaySelectionReductionDialog(summary, new_days, self, is_nutrition=False)
-                if dlg.exec() != QDialog.DialogCode.Accepted:
-                    # User cancelled
-                    self.combo_days.blockSignals(True)
-                    idx = self.combo_days.findData(old_days)
-                    if idx >= 0: self.combo_days.setCurrentIndex(idx)
-                    self.combo_days.blockSignals(False)
-                    return
+            dlg = DaySelectionReductionDialog(summary, new_days, self, is_nutrition=False)
+            if dlg.exec() != QDialog.DialogCode.Accepted:
+                # User cancelled
+                self.combo_days.blockSignals(True)
+                idx = self.combo_days.findData(old_days)
+                if idx >= 0: self.combo_days.setCurrentIndex(idx)
+                self.combo_days.blockSignals(False)
+                return
 
-                if dlg.start_fresh:
-                    selected_days = []
-                else:
-                    selected_days = [current_days[i] for i in dlg.selected_indices if i < len(current_days)]
+            if dlg.start_fresh:
+                selected_days = []
             else:
-                selected_days = current_days[:new_days]
+                selected_days = [current_days[i] for i in dlg.selected_indices if i < len(current_days)]
 
         else:
             # Increasing days
             cached_plan = self._days_cache.get(new_days)
-            if cached_plan and self._has_non_empty_days(cached_plan):
-                dlg = DayIncreaseChoiceDialog(new_days, old_days, self, is_nutrition=False)
-                if dlg.exec() != QDialog.DialogCode.Accepted:
-                    # User cancelled
-                    self.combo_days.blockSignals(True)
-                    idx = self.combo_days.findData(old_days)
-                    if idx >= 0: self.combo_days.setCurrentIndex(idx)
-                    self.combo_days.blockSignals(False)
-                    return
+            has_cached = bool(cached_plan and self._has_non_empty_days(cached_plan))
 
-                if dlg.choice == "restore":
-                    selected_days = cached_plan
-                elif dlg.choice == "fresh":
-                    selected_days = []
-                else:
-                    selected_days = current_days
+            dlg = DayIncreaseChoiceDialog(new_days, old_days, self, is_nutrition=False, has_cached_plan=has_cached)
+            if dlg.exec() != QDialog.DialogCode.Accepted:
+                # User cancelled
+                self.combo_days.blockSignals(True)
+                idx = self.combo_days.findData(old_days)
+                if idx >= 0: self.combo_days.setCurrentIndex(idx)
+                self.combo_days.blockSignals(False)
+                return
+
+            if dlg.choice == "restore" and cached_plan:
+                selected_days = cached_plan
+            elif dlg.choice == "fresh":
+                selected_days = []
             else:
-                # No cached plan or empty -> automatically append!
                 selected_days = current_days
 
         self._prev_num_days = new_days
@@ -498,6 +493,7 @@ class WorkoutEditorView(QWidget):
             if idx_g >= 0: self.combo_goal.setCurrentIndex(idx_g)
 
             days_count = state.get("days_per_week", 3)
+            self._prev_num_days = days_count
             idx_d = self.combo_days.findData(days_count)
             if idx_d >= 0 and self.combo_days.currentIndex() != idx_d:
                 self.combo_days.blockSignals(True)
@@ -684,6 +680,7 @@ class WorkoutEditorView(QWidget):
             if idx_d >= 0:
                 self.combo_days.setCurrentIndex(idx_d)
             self.combo_days.blockSignals(False)
+            self._prev_num_days = plan.days_per_week
 
             idx_l = self.combo_level.findData(plan.training_level)
             if idx_l >= 0: self.combo_level.setCurrentIndex(idx_l)

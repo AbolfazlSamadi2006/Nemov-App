@@ -1,7 +1,7 @@
-from sqlalchemy.orm import joinedload, selectinload
+from sqlalchemy.orm import selectinload
 from yalda.database.connection import get_session, mark_data_changed
 from yalda.models.database_models import (
-    Exercise, WorkoutPlan, WorkoutDay, WorkoutExercise, WorkoutAssignment, Member, HealthRecord
+    Exercise, WorkoutPlan, WorkoutDay, WorkoutExercise, WorkoutAssignment, HealthRecord
 )
 from yalda.utils.jalali_date import get_today_shamsi
 

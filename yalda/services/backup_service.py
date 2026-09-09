@@ -99,17 +99,17 @@ def upload_cloud_backup(trainer_phone: str, trainer_name: str = "", server_url: 
         
         # Field: phone
         body.extend(f"--{boundary}\r\n".encode("utf-8"))
-        body.extend(f'Content-Disposition: form-data; name="phone"\r\n\r\n'.encode("utf-8"))
+        body.extend(b'Content-Disposition: form-data; name="phone"\r\n\r\n')
         body.extend(f"{trainer_phone}\r\n".encode("utf-8"))
         
         # Field: trainer_name
         body.extend(f"--{boundary}\r\n".encode("utf-8"))
-        body.extend(f'Content-Disposition: form-data; name="trainer_name"\r\n\r\n'.encode("utf-8"))
+        body.extend(b'Content-Disposition: form-data; name="trainer_name"\r\n\r\n')
         body.extend(f"{trainer_name}\r\n".encode("utf-8"))
         
         # Field: file
         body.extend(f"--{boundary}\r\n".encode("utf-8"))
-        body.extend(f'Content-Disposition: form-data; name="file"; filename="yalda.db"\r\n'.encode("utf-8"))
+        body.extend(b'Content-Disposition: form-data; name="file"; filename="yalda.db"\r\n')
         body.extend(b"Content-Type: application/octet-stream\r\n\r\n")
         body.extend(db_bytes)
         body.extend(b"\r\n")

@@ -5,6 +5,7 @@ from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QPixmap
 import config
 from yalda.auth.authentication import authenticate_user, is_app_license_active, check_username_exists
+from yalda.utils.security import normalize_digits
 from yalda.views.password_recovery_dialog import PasswordRecoveryDialog
 from yalda.views.trainer_register_dialog import TrainerRegisterDialog
 from yalda.views.cloud_restore_dialog import CloudRestoreDialog
@@ -101,6 +102,7 @@ class LoginView(QWidget):
         self.txt_username.setPlaceholderText("نام کاربری را وارد کنید")
         self.txt_username.setStyleSheet(STYLE_INPUT_NORMAL)
         self.txt_username.textChanged.connect(self.clear_user_error)
+        self.txt_username.returnPressed.connect(lambda: self.txt_password.setFocus())
         
         self.lbl_user_error = QLabel()
         self.lbl_user_error.setStyleSheet("color: #EF4444; font-size: 12px; font-weight: bold; background: transparent; padding: 2px;")
@@ -308,7 +310,8 @@ class LoginView(QWidget):
         self.clear_user_error()
         self.clear_pass_error()
 
-        username = self.txt_username.text().strip()
+        raw_username = self.txt_username.text().strip()
+        username = normalize_digits(raw_username)
         password = self.txt_password.text().strip()
 
         if not username:
@@ -325,14 +328,15 @@ class LoginView(QWidget):
             self.txt_password.setFocus()
             return
 
-        if not check_username_exists(username):
+        target_user = username if check_username_exists(username) else (raw_username if check_username_exists(raw_username) else None)
+        if not target_user:
             self.txt_username.setStyleSheet(STYLE_INPUT_ERROR)
             self.lbl_user_error.setText("❌ چنین نام کاربری در سیستم وجود ندارد.")
             self.lbl_user_error.setVisible(True)
             self.txt_username.setFocus()
             return
 
-        user = authenticate_user(username, password)
+        user = authenticate_user(target_user, password)
         if user:
             self.login_success.emit()
         else:

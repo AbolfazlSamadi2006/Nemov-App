@@ -1,7 +1,6 @@
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QDoubleSpinBox, QPushButton, QTableWidget, QTableWidgetItem, QHeaderView, QGroupBox, QFileDialog, QMessageBox, QDialog, QGridLayout
 )
-from PyQt6.QtGui import QPixmap
 from PyQt6.QtCore import Qt
 import os
 import shutil
@@ -501,8 +500,6 @@ class AssessmentView(QWidget):
             self.btn_after.setText(f"📷 عکس بعد: {os.path.basename(fp)[:12]}")
 
     def save_assessment(self):
-        from yalda.services.assessment_service import AssessmentService
-        from yalda.services.member_service import MemberService
         date_str = self.picker_date.text()
         if not date_str:
             QMessageBox.warning(self, "خطا", "لطفاً تاریخ ارزیابی را وارد کنید.")

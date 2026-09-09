@@ -1,9 +1,9 @@
 from PyQt6.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QGridLayout, QLabel, QLineEdit, QComboBox, QPushButton, QTextEdit, QMessageBox, QDoubleSpinBox, QFileDialog
+    QDialog, QVBoxLayout, QHBoxLayout, QGridLayout, QLabel, QLineEdit, QComboBox, QPushButton, QTextEdit, QMessageBox, QDoubleSpinBox
 )
 from PyQt6.QtCore import Qt
 from yalda.views.components.jalali_calendar_widget import JalaliDatePicker
-from yalda.utils.jalali_date import get_today_shamsi, add_months_shamsi
+from yalda.utils.jalali_date import add_months_shamsi
 import os
 
 class MemberFormDialog(QDialog):

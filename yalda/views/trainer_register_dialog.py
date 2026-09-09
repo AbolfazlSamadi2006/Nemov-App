@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 from PyQt6.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QMessageBox, QFrame, QFileDialog, QScrollArea, QWidget
+    QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QMessageBox, QFrame, QScrollArea, QWidget
 )
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QPixmap
@@ -26,13 +26,13 @@ class TrainerRegisterDialog(QDialog):
         self.init_ui()
 
     def init_ui(self):
-        self.setStyleSheet(f"""
-            QDialog {{
+        self.setStyleSheet("""
+            QDialog {
                 background-color: #121212;
                 color: #FFFFFF;
                 font-family: 'Vazirmatn', 'Segoe UI', sans-serif;
-            }}
-            QFrame#cardFrame {{
+            }
+            QFrame#cardFrame {
                 background-color: #000000;
                 border: 1px solid #333333;
                 border-radius: 12px;

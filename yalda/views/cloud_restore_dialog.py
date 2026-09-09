@@ -2,7 +2,6 @@ from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QMessageBox, QFrame
 )
 from PyQt6.QtCore import Qt, pyqtSignal
-import config
 from yalda.services.backup_service import download_and_restore_cloud_backup
 from yalda.auth.authentication import CurrentUser, get_all_trainers
 

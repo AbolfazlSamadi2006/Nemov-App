@@ -1,12 +1,10 @@
 import os
-from pathlib import Path
 from PyQt6.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QFrame, QLineEdit, QMessageBox, QScrollArea, QGridLayout
+    QDialog, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QFrame, QLineEdit, QMessageBox, QGridLayout
 )
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QPixmap
 
-import config
 from yalda.utils.image_utils import get_circular_pixmap
 from yalda.auth.authentication import update_trainer_profile
 

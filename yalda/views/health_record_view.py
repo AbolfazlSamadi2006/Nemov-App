@@ -5,7 +5,7 @@ from PyQt6.QtWidgets import (
     QGraphicsView, QGraphicsScene, QGraphicsPixmapItem, QFrame
 )
 from PyQt6.QtGui import QPixmap, QKeySequence, QShortcut
-from PyQt6.QtCore import Qt, QSize, QTimer
+from PyQt6.QtCore import Qt, QTimer
 from yalda.services.member_service import MemberService
 
 

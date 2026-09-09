@@ -1,4 +1,3 @@
-import os
 import re
 from pathlib import Path
 import arabic_reshaper
@@ -6,11 +5,10 @@ from bidi.algorithm import get_display
 
 from reportlab.lib.pagesizes import A4
 from reportlab.platypus import (
-    SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable
+    SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 )
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
-from reportlab.pdfgen import canvas
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 
@@ -185,7 +183,7 @@ class PDFGenerator:
         )
 
         # Title
-        elements.append(Paragraph(reshape_text(f"برنامه تمرینی باشگاه بدنسازی یلدا"), title_style))
+        elements.append(Paragraph(reshape_text("برنامه تمرینی باشگاه بدنسازی یلدا"), title_style))
         elements.append(Spacer(1, 10))
 
         goal_map = {
@@ -318,7 +316,7 @@ class PDFGenerator:
         cell_style = ParagraphStyle('CellStyle', parent=styles['Normal'], fontName=FONT_NAME, fontSize=10, leading=14, alignment=2)
         cell_header_style = ParagraphStyle('HeaderStyle', parent=styles['Normal'], fontName=FONT_NAME, fontSize=10, leading=14, alignment=1, textColor=colors.white)
 
-        elements.append(Paragraph(reshape_text(f"برنامه غذایی و رژیمی باشگاه بدنسازی یلدا"), title_style))
+        elements.append(Paragraph(reshape_text("برنامه غذایی و رژیمی باشگاه بدنسازی یلدا"), title_style))
         elements.append(Spacer(1, 10))
 
         nutrition_goals = {

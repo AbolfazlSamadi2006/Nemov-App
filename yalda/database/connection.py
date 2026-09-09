@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, event
+from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
 import config
 from yalda.models.database_models import Base
@@ -17,7 +17,6 @@ def reset_data_changed():
     _session_has_changes = False
 
 def has_data_changed() -> bool:
-    global _session_has_changes
     return _session_has_changes
 
 def get_session():

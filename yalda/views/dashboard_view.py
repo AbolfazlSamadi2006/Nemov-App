@@ -5,8 +5,6 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import pyqtSignal, Qt
 from PyQt6.QtGui import QPixmap
 from yalda.services.member_service import MemberService
-from yalda.services.workout_service import WorkoutService
-from yalda.services.nutrition_service import NutritionService
 from yalda.utils.jalali_date import days_until_expire, get_today_shamsi
 from yalda.utils.image_utils import get_circular_pixmap
 from yalda.views.components.circular_image_preview_dialog import CircularImagePreviewDialog

@@ -1,5 +1,5 @@
 from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QComboBox, QPushButton, QTabWidget, QTableWidget, QTableWidgetItem, QHeaderView, QMessageBox, QGroupBox, QDoubleSpinBox, QDialog
+    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QComboBox, QPushButton, QTabWidget, QTableWidget, QHeaderView, QMessageBox, QGroupBox, QDialog
 )
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QKeySequence, QShortcut
@@ -222,19 +222,27 @@ class NutritionEditorView(QWidget):
             # Detect days pattern from meal names in plan
             has_7_days = any(any(d in m.meal_name for d in ["شنبه", "یکشنبه", "دوشنبه", "سه‌شنبه", "چهارشنبه", "پنج‌شنبه", "جمعه"]) for m in plan.meals)
             has_2_days = any("تمرین" in m.meal_name or "استراحت" in m.meal_name for m in plan.meals)
+            max_day_num = 0
+            for m in plan.meals:
+                for n in range(1, 8):
+                    if f"روز {n}" in m.meal_name and n > max_day_num:
+                        max_day_num = n
 
             self._days_cache.clear()
             self.combo_days.blockSignals(True)
             if has_2_days:
-                idx_d = self.combo_days.findData("2_days")
-                if idx_d >= 0: self.combo_days.setCurrentIndex(idx_d)
-                self._prev_days_mode = "2_days"
+                pattern_key = "2_days"
             elif has_7_days:
-                idx_d = self.combo_days.findData("7_days")
-                if idx_d >= 0: self.combo_days.setCurrentIndex(idx_d)
-                self._prev_days_mode = "7_days"
+                pattern_key = "7_days"
+            elif max_day_num in (3, 4, 5, 6):
+                pattern_key = f"{max_day_num}_days"
             else:
-                self._prev_days_mode = self.combo_days.currentData() or "all_days"
+                pattern_key = "all_days"
+
+            idx_d = self.combo_days.findData(pattern_key)
+            if idx_d >= 0:
+                self.combo_days.setCurrentIndex(idx_d)
+            self._prev_days_mode = pattern_key
             self.combo_days.blockSignals(False)
 
             # Rebuild meal tabs
@@ -423,47 +431,42 @@ class NutritionEditorView(QWidget):
 
         if new_count < old_count:
             # Decreasing
-            if self._has_non_empty_nutrition_days(current_days):
-                summary = []
-                for idx, d in enumerate(current_days):
-                    tot_food = sum(len(m.get("items", [])) for m in d.get("meals", []))
-                    summary.append((idx, d.get("day_title", f"روز {idx+1}"), f"{tot_food} ماده غذایی"))
+            summary = []
+            for idx, d in enumerate(current_days):
+                tot_food = sum(len([item for item in m.get("items", []) if item.get("food_id") or (item.get("food_text") and "انتخاب" not in item.get("food_text"))]) for m in d.get("meals", []))
+                summary.append((idx, d.get("day_title", f"روز {idx+1}"), f"{tot_food} ماده غذایی"))
 
-                dlg = DaySelectionReductionDialog(summary, new_count, self, is_nutrition=True)
-                if dlg.exec() != QDialog.DialogCode.Accepted:
-                    self.combo_days.blockSignals(True)
-                    idx = self.combo_days.findData(old_mode)
-                    if idx >= 0: self.combo_days.setCurrentIndex(idx)
-                    self.combo_days.blockSignals(False)
-                    return
+            dlg = DaySelectionReductionDialog(summary, new_count, self, is_nutrition=True)
+            if dlg.exec() != QDialog.DialogCode.Accepted:
+                self.combo_days.blockSignals(True)
+                idx = self.combo_days.findData(old_mode)
+                if idx >= 0: self.combo_days.setCurrentIndex(idx)
+                self.combo_days.blockSignals(False)
+                return
 
-                if dlg.start_fresh:
-                    selected_days = []
-                else:
-                    selected_days = [current_days[i] for i in dlg.selected_indices if i < len(current_days)]
+            if dlg.start_fresh:
+                selected_days = []
             else:
-                selected_days = current_days[:new_count]
+                selected_days = [current_days[i] for i in dlg.selected_indices if i < len(current_days)]
 
         else:
             # Increasing
             cached_plan = self._days_cache.get(new_mode)
-            if cached_plan and self._has_non_empty_nutrition_days(cached_plan):
-                dlg = DayIncreaseChoiceDialog(new_count, old_count, self, is_nutrition=True)
-                if dlg.exec() != QDialog.DialogCode.Accepted:
-                    self.combo_days.blockSignals(True)
-                    idx = self.combo_days.findData(old_mode)
-                    if idx >= 0: self.combo_days.setCurrentIndex(idx)
-                    self.combo_days.blockSignals(False)
-                    return
+            has_cached = bool(cached_plan and self._has_non_empty_nutrition_days(cached_plan))
 
-                if dlg.choice == "restore":
-                    selected_days = cached_plan
-                elif dlg.choice == "fresh":
-                    selected_days = []
-                else:
-                    selected_days = current_days
+            dlg = DayIncreaseChoiceDialog(new_count, old_count, self, is_nutrition=True, has_cached_plan=has_cached)
+            if dlg.exec() != QDialog.DialogCode.Accepted:
+                self.combo_days.blockSignals(True)
+                idx = self.combo_days.findData(old_mode)
+                if idx >= 0: self.combo_days.setCurrentIndex(idx)
+                self.combo_days.blockSignals(False)
+                return
+
+            if dlg.choice == "restore" and cached_plan:
+                selected_days = cached_plan
+            elif dlg.choice == "fresh":
+                selected_days = []
             else:
-                # No cached plan -> automatically append!
                 selected_days = current_days
 
         self._prev_days_mode = new_mode
@@ -554,6 +557,7 @@ class NutritionEditorView(QWidget):
             if idx_g >= 0: self.combo_goal.setCurrentIndex(idx_g)
 
             pattern = state.get("days_pattern", "7_days")
+            self._prev_days_mode = pattern
             idx_d = self.combo_days.findData(pattern)
             if idx_d >= 0 and self.combo_days.currentIndex() != idx_d:
                 self.combo_days.blockSignals(True)

@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QPushButton,
-    QGroupBox, QFrame, QRadioButton, QButtonGroup
+    QGroupBox, QRadioButton
 )
 from PyQt6.QtCore import Qt
 
@@ -98,14 +98,14 @@ class DaySelectionReductionDialog(QDialog):
 
 class DayIncreaseChoiceDialog(QDialog):
     """
-    Dialog shown when the user increases the number of days and a plan with that day count
-    was previously configured in this session.
+    Dialog shown when the user increases the number of days in a workout or nutrition plan.
     """
-    def __init__(self, target_days: int, prev_days_count: int, parent=None, is_nutrition=False):
+    def __init__(self, target_days: int, prev_days_count: int, parent=None, is_nutrition=False, has_cached_plan=False):
         super().__init__(parent)
         self.target_days = target_days
         self.prev_days_count = prev_days_count
         self.is_nutrition = is_nutrition
+        self.has_cached_plan = has_cached_plan
         self.choice = "append"  # 'append', 'restore', or 'fresh'
 
         plan_type = "تغذیه" if is_nutrition else "تمرینی"
@@ -119,10 +119,18 @@ class DayIncreaseChoiceDialog(QDialog):
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(14)
 
-        lbl_msg = QLabel(
-            f"تعداد روزها از <b>{self.prev_days_count} روز</b> به <b>{self.target_days} روز</b> افزایش یافت.<br>"
-            f"برای برنامه <b>{self.target_days} روزه</b> یک پیش‌نویس ذخیره‌شده از قبل در این نشست وجود دارد. مایلید چگونه ادامه دهید؟"
-        )
+        if self.has_cached_plan:
+            msg_text = (
+                f"تعداد روزها از <b>{self.prev_days_count} روز</b> به <b>{self.target_days} روز</b> افزایش یافت.<br>"
+                f"برای برنامه <b>{self.target_days} روزه</b> یک پیش‌نویس ذخیره‌شده از قبل در این نشست وجود دارد. مایلید چگونه ادامه دهید؟"
+            )
+        else:
+            msg_text = (
+                f"تعداد روزها از <b>{self.prev_days_count} روز</b> به <b>{self.target_days} روز</b> افزایش یافت.<br>"
+                f"لطفاً نحوه اعمال این تغییر را مشخص کنید:"
+            )
+
+        lbl_msg = QLabel(msg_text)
         lbl_msg.setWordWrap(True)
         lbl_msg.setStyleSheet("font-size: 13px; line-height: 1.5;")
         layout.addWidget(lbl_msg)
@@ -133,12 +141,15 @@ class DayIncreaseChoiceDialog(QDialog):
 
         self.radio_append = QRadioButton(f"➕ افزودن روز جدید در ادامه همین {self.prev_days_count} روز فعلی (پیشنهادی)")
         self.radio_append.setChecked(True)
-
-        self.radio_restore = QRadioButton(f"🔁 بازگردانی کامل برنامه {self.target_days} روزه قبلی")
-        self.radio_fresh = QRadioButton(f"✨ شروع برنامه {self.target_days} روزه جدید و خالی")
-
         layout_opt.addWidget(self.radio_append)
-        layout_opt.addWidget(self.radio_restore)
+
+        if self.has_cached_plan:
+            self.radio_restore = QRadioButton(f"🔁 بازگردانی کامل برنامه {self.target_days} روزه قبلی")
+            layout_opt.addWidget(self.radio_restore)
+        else:
+            self.radio_restore = None
+
+        self.radio_fresh = QRadioButton(f"✨ شروع برنامه {self.target_days} روزه جدید و خالی")
         layout_opt.addWidget(self.radio_fresh)
         layout.addWidget(box_options)
 
@@ -159,7 +170,7 @@ class DayIncreaseChoiceDialog(QDialog):
         layout.addLayout(btn_box)
 
     def on_confirm(self):
-        if self.radio_restore.isChecked():
+        if self.radio_restore and self.radio_restore.isChecked():
             self.choice = "restore"
         elif self.radio_fresh.isChecked():
             self.choice = "fresh"

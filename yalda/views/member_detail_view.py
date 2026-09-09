@@ -10,7 +10,6 @@ from yalda.views.health_record_view import HealthRecordView
 from yalda.views.assessment_view import AssessmentView
 from yalda.views.components.media_viewer_dialog import MediaViewerDialog
 from yalda.pdf.pdf_generator import PDFGenerator
-import config
 import os
 
 class ViewWorkoutPlanDialog(QDialog):
@@ -267,7 +266,7 @@ class MemberDetailView(QWidget):
 
         # Header Title and Actions
         header = QHBoxLayout()
-        self.lbl_title = QLabel(f"پرونده جامع ورزشکار")
+        self.lbl_title = QLabel("پرونده جامع ورزشکار")
         self.lbl_title.setObjectName("h1")
 
         btn_back = QPushButton("⬅️ بازگشت به صفحه قبل")

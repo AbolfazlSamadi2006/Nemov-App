@@ -1,9 +1,7 @@
-import re
 from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QMessageBox, QFrame, QScrollArea, QStackedWidget
 )
 from PyQt6.QtCore import Qt, pyqtSignal, QTimer, QThread
-import config
 from yalda.auth.authentication import (
     verify_recovery_credentials, update_trainer_profile, CurrentUser, find_user_by_email_or_phone
 )
@@ -44,13 +42,13 @@ class PasswordRecoveryDialog(QDialog):
         self.init_ui()
 
     def init_ui(self):
-        self.setStyleSheet(f"""
-            QDialog {{
+        self.setStyleSheet("""
+            QDialog {
                 background-color: #121212;
                 color: #FFFFFF;
                 font-family: 'Vazirmatn', 'Segoe UI', sans-serif;
-            }}
-            QFrame#cardFrame {{
+            }
+            QFrame#cardFrame {
                 background-color: #18181B;
                 border: 1px solid #333333;
                 border-radius: 12px;

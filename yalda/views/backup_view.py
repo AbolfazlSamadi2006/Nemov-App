@@ -2,7 +2,7 @@ import os
 import time
 from pathlib import Path
 from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QTableWidget, QTableWidgetItem, QHeaderView, QFileDialog, QMessageBox, QGroupBox, QGridLayout, QComboBox, QFrame, QDialog, QScrollArea, QProgressBar, QInputDialog
+    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QTableWidget, QTableWidgetItem, QHeaderView, QFileDialog, QMessageBox, QGroupBox, QGridLayout, QFrame, QDialog, QScrollArea, QProgressBar, QInputDialog
 )
 from PyQt6.QtCore import Qt, pyqtSignal, QTimer, QThread
 from PyQt6.QtGui import QPixmap
@@ -10,7 +10,7 @@ import config
 from yalda.services.backup_service import BackupService
 from yalda.services.email_service import EmailService
 from yalda.auth.authentication import (
-    CurrentUser, update_trainer_profile, is_app_license_active, set_app_license_active, register_trainer, delete_trainer_account, get_all_trainers
+    CurrentUser, update_trainer_profile, delete_trainer_account, get_all_trainers
 )
 from yalda.views.components.jalali_calendar_widget import JalaliDatePicker
 from yalda.utils.image_utils import get_circular_pixmap

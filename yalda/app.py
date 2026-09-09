@@ -1,8 +1,7 @@
 import sys
-from pathlib import Path
 from PyQt6.QtWidgets import QApplication
 from PyQt6.QtGui import QIcon
-from PyQt6.QtCore import Qt, QTimer
+from PyQt6.QtCore import QTimer
 import config
 from yalda.database.connection import init_db
 from yalda.views.login_view import LoginView
@@ -86,6 +85,7 @@ class YaldaApplication:
         """Warm up OpenCV C++ codecs and drivers in background."""
         try:
             import cv2
+            _ = cv2.__version__
         except Exception:
             pass
 

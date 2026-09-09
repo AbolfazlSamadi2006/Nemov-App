@@ -9,7 +9,6 @@ from email.mime.base import MIMEBase
 from email.header import Header
 from email.utils import formataddr, formatdate, make_msgid
 from email import encoders
-from pathlib import Path
 
 import config
 

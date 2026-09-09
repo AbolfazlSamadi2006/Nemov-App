@@ -1,8 +1,7 @@
-import os
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QComboBox, QPushButton,
-    QTabWidget, QTableWidget, QTableWidgetItem, QHeaderView, QMessageBox, QGroupBox,
-    QDialog, QTextEdit, QFrame, QFileDialog
+    QTabWidget, QTableWidget, QTableWidgetItem, QHeaderView, QMessageBox,
+    QDialog, QTextEdit, QFileDialog
 )
 from PyQt6.QtCore import Qt, pyqtSignal
 from yalda.services.workout_service import WorkoutService

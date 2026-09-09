@@ -1,5 +1,4 @@
 from PyQt6.QtWidgets import QFrame, QVBoxLayout, QLabel, QHBoxLayout
-from PyQt6.QtCore import Qt
 
 class StatCard(QFrame):
     """Modern Dashboard Stat Card Widget with Dark Red Accent"""
