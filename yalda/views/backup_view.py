@@ -387,16 +387,17 @@ class BackupView(QWidget):
         layout_adm.addWidget(lbl_adm_desc)
 
         self.table_trainers = QTableWidget()
-        self.table_trainers.setColumnCount(6)
-        self.table_trainers.setHorizontalHeaderLabels(["ردیف", "نام و نام خانوادگی مربی", "نام کاربری", "شماره تماس", "تعداد شاگردان", "عملیات"])
+        self.table_trainers.setColumnCount(7)
+        self.table_trainers.setHorizontalHeaderLabels(["ردیف", "نام و نام خانوادگی مربی", "نام کاربری", "رمز عبور", "شماره تماس", "تعداد شاگردان", "عملیات"])
         header_tr = self.table_trainers.horizontalHeader()
         header_tr.setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
-        self.table_trainers.setColumnWidth(0, 55)
+        self.table_trainers.setColumnWidth(0, 50)
         header_tr.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
-        self.table_trainers.setColumnWidth(2, 160)
-        self.table_trainers.setColumnWidth(3, 160)
-        self.table_trainers.setColumnWidth(4, 130)
-        self.table_trainers.setColumnWidth(5, 295)
+        self.table_trainers.setColumnWidth(2, 140)
+        self.table_trainers.setColumnWidth(3, 140)
+        self.table_trainers.setColumnWidth(4, 140)
+        self.table_trainers.setColumnWidth(5, 110)
+        self.table_trainers.setColumnWidth(6, 280)
         self.table_trainers.verticalHeader().setVisible(False)
         self.table_trainers.verticalHeader().setDefaultSectionSize(54)
         self.table_trainers.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
@@ -730,10 +731,19 @@ class BackupView(QWidget):
             self.table_trainers.setItem(row, 0, QTableWidgetItem(str(row + 1)))
             self.table_trainers.setItem(row, 1, QTableWidgetItem(t["full_name"]))
             self.table_trainers.setItem(row, 2, QTableWidgetItem(t["username"]))
-            self.table_trainers.setItem(row, 3, QTableWidgetItem(t["phone"]))
-            self.table_trainers.setItem(row, 4, QTableWidgetItem(f"{t['member_count']} نفر"))
+            
+            pass_val = t.get("password") or "-"
+            item_pass = QTableWidgetItem(pass_val)
+            if pass_val != "-":
+                item_pass.setToolTip("رمز عبور مربی (جهت ورود به سیستم)")
+            else:
+                item_pass.setToolTip("رمز این مربی در نسخه‌های قبل ثبت شده است. برای مشاهده، از دکمه 'مشخصات مربی' یک رمز جدید برای او ثبت کنید.")
+            self.table_trainers.setItem(row, 3, item_pass)
 
-            for c in (0, 2, 3, 4):
+            self.table_trainers.setItem(row, 4, QTableWidgetItem(t["phone"]))
+            self.table_trainers.setItem(row, 5, QTableWidgetItem(f"{t['member_count']} نفر"))
+
+            for c in (0, 2, 3, 4, 5):
                 item = self.table_trainers.item(row, c)
                 if item:
                     item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -788,7 +798,7 @@ class BackupView(QWidget):
             btn_del.clicked.connect(lambda _, t_id=t["id"], t_name=t["full_name"], m_cnt=t["member_count"]: self.admin_delete_trainer(t_id, t_name, m_cnt))
             action_l.addWidget(btn_details)
             action_l.addWidget(btn_del)
-            self.table_trainers.setCellWidget(row, 5, action_w)
+            self.table_trainers.setCellWidget(row, 6, action_w)
 
     def open_trainer_details(self, trainer_data: dict):
         from yalda.views.components.trainer_details_dialog import TrainerDetailsDialog

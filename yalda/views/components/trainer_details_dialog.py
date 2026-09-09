@@ -134,25 +134,62 @@ class TrainerDetailsDialog(QDialog):
         # Row 0: Username
         add_row(0, "نام کاربری (ورود):", self.trainer_data.get("username", "-"))
 
-        # Row 1: Phone
-        add_row(1, "شماره تماس همراه:", self.trainer_data.get("phone", "-"))
+        # Row 1: Password with Eye Button
+        pass_code = self.trainer_data.get("password") or "-"
+        pass_box = QHBoxLayout()
+        pass_box.setSpacing(6)
 
-        # Row 2: Email
+        self.txt_display_pass = QLineEdit(pass_code)
+        self.txt_display_pass.setReadOnly(True)
+        self.txt_display_pass.setFixedHeight(34)
+
+        if pass_code != "-":
+            self.txt_display_pass.setEchoMode(QLineEdit.EchoMode.Password)
+            self.txt_display_pass.setStyleSheet("""
+                QLineEdit {
+                    background-color: #202023; border: 1px solid #3F3F46; border-radius: 6px; padding: 4px 10px; font-weight: bold; color: #10B981;
+                }
+            """)
+            btn_eye_pass = QPushButton("👁️")
+            btn_eye_pass.setFixedSize(38, 34)
+            btn_eye_pass.setCursor(Qt.CursorShape.PointingHandCursor)
+            btn_eye_pass.setStyleSheet("""
+                QPushButton {
+                    background-color: #27272A; color: white; border: 1px solid #3F3F46; border-radius: 6px; font-size: 15px;
+                }
+                QPushButton:hover { background-color: #3F3F46; }
+            """)
+            btn_eye_pass.clicked.connect(lambda: self._toggle_eye(self.txt_display_pass, btn_eye_pass))
+            pass_box.addWidget(self.txt_display_pass)
+            pass_box.addWidget(btn_eye_pass)
+        else:
+            self.txt_display_pass.setStyleSheet("background-color: #202023; border: 1px solid #3F3F46; border-radius: 6px; padding: 4px 10px; color: #9CA3AF;")
+            pass_box.addWidget(self.txt_display_pass)
+
+        pass_widget = QFrame()
+        pass_widget.setLayout(pass_box)
+        pass_widget.setStyleSheet("background: transparent; border: none;")
+        add_row(1, "رمز عبور (ورود):", pass_widget)
+
+        # Row 2: Phone
+        add_row(2, "شماره تماس همراه:", self.trainer_data.get("phone", "-"))
+
+        # Row 3: Email
         email_val = self.trainer_data.get("email", "-")
         lbl_email = QLabel(email_val)
         lbl_email.setStyleSheet(VALUE_STYLE if email_val != "-" else "color: #6B7280; font-size: 13px;")
-        add_row(2, "آدرس ایمیل مربی:", lbl_email)
+        add_row(3, "آدرس ایمیل مربی:", lbl_email)
 
-        # Row 3: Birth Date
-        add_row(3, "تاریخ تولد (شمسی):", self.trainer_data.get("birth_date_shamsi", "-"))
+        # Row 4: Birth Date
+        add_row(4, "تاریخ تولد (شمسی):", self.trainer_data.get("birth_date_shamsi", "-"))
 
-        # Row 4: Member Count
+        # Row 5: Member Count
         member_cnt = self.trainer_data.get("member_count", 0)
         lbl_mem = QLabel(f"{member_cnt} نفر ورزشکار تحت پوشش")
         lbl_mem.setStyleSheet("color: #60A5FA; font-weight: bold; font-size: 13px;")
-        add_row(4, "تعداد شاگردان:", lbl_mem)
+        add_row(5, "تعداد شاگردان:", lbl_mem)
 
-        # Row 5: Secret Recovery Code with Eye Button
+        # Row 6: Secret Recovery Code with Eye Button
         rec_code = self.trainer_data.get("recovery_code", "-")
         rec_box = QHBoxLayout()
         rec_box.setSpacing(6)
@@ -183,7 +220,7 @@ class TrainerDetailsDialog(QDialog):
         rec_widget = QFrame()
         rec_widget.setLayout(rec_box)
         rec_widget.setStyleSheet("background: transparent; border: none;")
-        add_row(5, "رمز ریکاوری مخفی:", rec_widget)
+        add_row(6, "رمز ریکاوری مخفی:", rec_widget)
 
         card_layout.addLayout(grid)
 
@@ -329,6 +366,14 @@ class TrainerDetailsDialog(QDialog):
                 "موفقیت",
                 f"کلمه عبور جدید برای مربی «{self.trainer_data.get('full_name')}» با موفقیت تنظیم و ذخیره شد."
             )
+            self.trainer_data["password"] = new_pass
+            self.txt_display_pass.setText(new_pass)
+            self.txt_display_pass.setEchoMode(QLineEdit.EchoMode.Normal)
+            self.txt_display_pass.setStyleSheet("""
+                QLineEdit {
+                    background-color: #202023; border: 1px solid #3F3F46; border-radius: 6px; padding: 4px 10px; font-weight: bold; color: #10B981;
+                }
+            """)
             self.txt_admin_new_pass.clear()
             self.reset_pass_box.setVisible(False)
             self.adjustSize()

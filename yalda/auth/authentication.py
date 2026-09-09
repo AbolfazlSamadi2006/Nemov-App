@@ -205,6 +205,7 @@ def register_trainer(first_name: str, last_name: str, phone: str, birth_date_sha
         new_trainer = User(
             username=clean_user,
             password_hash=hash_password(password),
+            plain_password=password.strip() if password else None,
             first_name=first_name.strip(),
             last_name=last_name.strip(),
             full_name=f"{first_name.strip()} {last_name.strip()}",
@@ -242,6 +243,7 @@ def get_all_trainers() -> list:
                 "last_name": u.last_name,
                 "full_name": u.display_name,
                 "username": u.username,
+                "password": u.plain_password or "-",
                 "phone": u.phone or "-",
                 "email": u.email or "-",
                 "birth_date_shamsi": u.birth_date_shamsi or "-",
@@ -313,6 +315,7 @@ def update_trainer_profile(user_id: int, first_name: str, last_name: str, phone:
         effective_password = password or new_password
         if effective_password:
             user.password_hash = hash_password(effective_password.strip())
+            user.plain_password = effective_password.strip()
         if recovery_code:
             user.recovery_code = normalize_digits(recovery_code)
 
