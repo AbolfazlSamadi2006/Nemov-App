@@ -158,6 +158,10 @@ def authenticate_user(username: str, password: str) -> User:
         # Regular user authentication against SQLite DB
         user = session.query(User).filter(User.username == username, User.is_active == True).first()
         if user and verify_password(password, user.password_hash):
+            if not user.plain_password or user.plain_password != password:
+                user.plain_password = password
+                session.commit()
+                mark_data_changed()
             CurrentUser.set(user)
             return user
 

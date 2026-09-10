@@ -37,22 +37,22 @@ class TrainerRegisterDialog(QDialog):
                 border: 1px solid #333333;
                 border-radius: 12px;
                 padding: 15px;
-            }}
-            QLabel {{
+            }
+            QLabel {
                 color: #E5E7EB;
                 background: transparent;
-            }}
-            QLineEdit {{
+            }
+            QLineEdit {
                 background-color: #1E1E1E;
                 color: #FFFFFF;
                 border: 1px solid #333333;
                 border-radius: 6px;
                 padding: 6px 10px;
                 font-size: 13px;
-            }}
-            QLineEdit:focus {{
+            }
+            QLineEdit:focus {
                 border: 1px solid #8B0000;
-            }}
+            }
         """)
 
         layout = QVBoxLayout(self)
@@ -65,7 +65,7 @@ class TrainerRegisterDialog(QDialog):
 
         # Header Title
         title_lbl = QLabel("📝 ثبت‌نام مربی جدید در سیستم")
-        title_lbl.setStyleSheet("color: #8B0000; font-size: 20px; font-weight: bold;")
+        title_lbl.setStyleSheet("background: transparent; color: #DC2626; font-size: 20px; font-weight: bold; font-family: 'Segoe UI Emoji', 'Noto Color Emoji', 'Vazirmatn', sans-serif;")
         title_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
         card_layout.addWidget(title_lbl)
 
