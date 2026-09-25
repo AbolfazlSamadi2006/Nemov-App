@@ -1,181 +1,50 @@
 <div align="center">
 
-# 🏋️‍♂️ سامانه هوشمند مدیریت باشگاه بدنسازی و برنامه‌ریزی ورزشی «یلدا»
-### **Yalda Gym & Fitness Management Suite — v3.1.0**
+<a href="https://github.com/AbolfazlSamadi2006/Yalda-Gym-App/releases/download/v3.1.0/Yalda_Setup_v3.1.0.exe">
+  <img src="resources/github_assets/download_btn_v3_1_0.png" width="840" alt="دانلود مستقیم فایل نصاب نسخه ۳.۱.۰ (Yalda_Setup_v3.1.0.exe)" />
+</a>
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Version-3.1.0-DC2626?style=for-the-badge&logo=github" alt="Version 3.1.0" />
-  <img src="https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011-0078D6?style=for-the-badge&logo=windows" alt="Windows" />
-  <img src="https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python" />
-  <img src="https://img.shields.io/badge/GUI-PyQt6%20RTL-41CD52?style=for-the-badge&logo=qt&logoColor=white" alt="PyQt6" />
-  <img src="https://img.shields.io/badge/Cloud%20Sync-Enabled-F38020?style=for-the-badge&logo=cloudflare&logoColor=white" alt="Cloud Sync" />
-</p>
+<br/><br/>
 
-<p align="center">
-  <b>یک دستیار همه‌فن‌حریف، سریع و کاملاً فارسی برای مربیان حرفه‌ای و مدیران باشگاه‌های ورزشی</b><br/>
-  از تشکیل پرونده پزشکی و آنتروپومتریک تا طراحی برنامه‌های تمرینی/غذایی، حسابداری باشگاه و پشتیبان‌گیری ابری
-</p>
+<img src="resources/github_assets/readme_full_showcase.png" width="100%" alt="سامانه هوشمند مدیریت باشگاه بدنسازی و برنامه‌ریزی ورزشی یلدا - نسخه ۳.۱.۰" />
 
-<p align="center">
-  <a href="https://github.com/AbolfazlSamadi2006/Yalda-Gym-App/releases/latest">
-    <img src="https://img.shields.io/badge/📥_دانلود_مستقیم_فایل_نصاب_(Yalda_Setup_v3.1.0)-B91C1C?style=for-the-badge" alt="Download Installer" />
-  </a>
-</p>
+<br/><br/>
+
+<a href="https://github.com/AbolfazlSamadi2006/Yalda-Gym-App/releases/download/v3.1.0/Yalda_Setup_v3.1.0.exe">
+  <img src="resources/github_assets/download_btn_v3_1_0.png" width="840" alt="دانلود مستقیم فایل نصاب نسخه ۳.۱.۰ (Yalda_Setup_v3.1.0.exe)" />
+</a>
 
 </div>
 
 ---
 
 <div dir="rtl" align="right">
-
-## 🌟 چرا نرم‌افزار باشگاهی «یلدا»؟
-
-نرم‌افزار **یلدا (Yalda)** با درک دقیق نیازهای روزمره مربیان بدنسازی و فیتنس طراحی شده است؛ محیطی با تم تاریک اختصاصی (**Dark-Red Obsidian**)، چیدمان کاملاً راست‌به‌چپ (**RTL**) و سرعت اجرای لحظه‌ای که بدون نیاز به اینترنت نیز تمامی امور باشگاه را مدیریت می‌کند و در عین حال به **سرور ابری اختصاصی** برای حفظ همیشگی اطلاعات مجهز است.
-
----
-
-## 🔥 تازه‌های نسخه ۳.۱.۰ (Release Highlights)
-
-<table>
-  <thead>
-    <tr>
-      <th align="right">🎯 بخش</th>
-      <th align="right">✨ قابلیت‌ها و بهبودهای کلیدی در نسخه ۳.۱.۰</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td align="right"><b>🖥️ رابط کاربری واکنش‌گرا</b></td>
-      <td align="right">معماری <b>Hybrid Responsive UI</b> با تطبیق خودکار روی تمامی نمایشگرها (لپ‌تاپ‌های <code>1366×768</code>، مانیتورهای عریض <code>Full HD / 2K / 4K</code>، تلویزیون‌های باشگاهی و Mac) بدون کوچک‌ترین بریدگی یا به‌هم‌ریختگی جداول.</td>
-    </tr>
-    <tr>
-      <td align="right"><b>💰 امور مالی و حسابداری</b></td>
-      <td align="right">ثبت دریافت شهریه، تمدید دوره، تخفیف‌ها، درآمدهای جانبی و هزینه‌های جاری باشگاه به همراه فیلترهای زمانی (ماه جاری، سال جاری، کل دوره) و خروجی مستقیم <b>PDF فارسی</b> و <b>Excel (<code>.xlsx</code>)</b>.</td>
-    </tr>
-    <tr>
-      <td align="right"><b>🔔 مرکز هوشمند اعلانات</b></td>
-      <td align="right">هشدار خودکار سررسید شهریه فردا و امروز، یادآوری سالروز تولد ورزشکاران، و آرشیو کامل اعلانات با قابلیت <b>انتخاب چندتایی، حذف گروهی و حذف همگانی</b>.</td>
-    </tr>
-    <tr>
-      <td align="right"><b>☁️ پشتیبان‌گیری ابری و ایمیل</b></td>
-      <td align="right">پشتیبان‌گیری فشرده (<code>ZIP</code>) در ۳ مقصد (حافظه سیستم، سرور ابری اختصاصی یلدا و ایمیل مربی)، بازگردانی مستقیم از ابر و مدیریت گروهی آرشیو پشتیبان‌ها.</td>
-    </tr>
-    <tr>
-      <td align="right"><b>📄 خروجی‌های چندگانه برنامه</b></td>
-      <td align="right">صدور برنامه‌های تمرینی و غذایی در ۳ قالب: <b>PDF چاپی استاندارد</b>، <b>فایل وب تعاملی (HTML)</b> با پخش ویدیو و تصویر حرکات، و <b>بسته فشرده جامع (ZIP)</b>.</td>
-    </tr>
-    <tr>
-      <td align="right"><b>🎬 ویرایشگر داخلی رسانه</b></td>
-      <td align="right">ابزار داخلی برش و ویرایش عکس و برش بازه زمانی ویدیوهای آموزشی حرکات بدون نیاز به نرم‌افزارهای جانبی.</td>
-    </tr>
-  </tbody>
-</table>
-
----
-
-## 💎 امکانات جامع نرم‌افزار در یک نگاه
-
-### ۱. 👥 پرونده کامل ورزشکاران و سنجش فیزیکی
-- **پرونده دیجیتال اعضا:** ثبت مشخصات فردی، شماره تماس، تاریخ تولد شمسی، سوابق ورزشی و عکس پروفایل (ثبت مستقیم با وب‌کم یا انتخاب از سیستم).
-- **ارزیابی آنتروپومتریک (Anthropometry):** ثبت دوره‌ای قد، وزن، درصد چربی بدن، دور گردن، سینه، کمر، شکم، باسن، بازو، ساعد، ران و ساق پا به همراه جدول مقایسه روند تغییرات.
-- **مقایسه تصویری قبل و بعد (Before & After):** نمایشگر اختصاصی کنار هم برای بررسی تغییرات ظاهری و پیشرفت بدنی شاگرد در طول دوره‌ها.
-- **مدیریت مدارک پزشکی چندصفحه‌ای:** پیوست و مشاهده فایل‌های PDF آزمایش‌ها و تصاویر پزشکی با قابلیت بزرگ‌نمایی، چرخش و ورق زدن صفحات.
-- **بازیابی حذف تصادفی (Undo Delete):** بنر هوشمند بازگردانی فوری در صورت حذف ناخواسته رکوردها.
-
-### ۲. 🥗 مهندسی تغذیه، رژیم ایرانی و محاسبه‌گر علمی BMR / TDEE
-- **محاسبه خودکار متابولیسم:** محاسبه دقیق متابولیسم پایه (**BMR**) و کالری تثبیت روزانه (**TDEE**) بر اساس فرمول علمی *Mifflin-St Jeor* و ضریب فعالیت ورزشکار.
-- **تنظیم هوشمند درشت‌مغذی‌ها (Macros):** محاسبه لحظه‌ای گرم و درصد پروتئین، کربوهیدرات و چربی بر اساس هدف شاگرد (کاهش وزن، افزایش حجم عضلانی، تثبیت و کات).
-- **بانک جامع غذاهای ایرانی و مکمل‌ها:** دسترسی سریع به ارزش غذایی دقیق خوراکی‌ها با امکان افزودن غذاهای سفارشی به بانک.
-
-### ۳. 🏋️‍♂️ طراحی برنامه تمرینی و بانک حرکات چندرسانه‌ای
-- **برنامه‌ریزی ۱ تا ۶ روز در هفته:** چیدمان سریع حرکات، ست‌ها، تکرارها، سیستم‌های تمرینی (سوپرست، دراپ‌ست، تری‌ست و...) و توضیحات اختصاصی هر حرکت.
-- **بانک الگوهای آماده (Templates Manager):** ذخیره برنامه‌های تمرینی و غذایی پرتکرار به عنوان الگو و بارگذاری تک‌کلیکی آن‌ها برای شاگردان جدید.
-- **بانک حرکات مجهز به ویدیو و تصویر:** نمایش پیش‌نمایش حرکت، دسته‌بندی بر اساس عضله هدف و تجهیزات مورد نیاز.
-
-### ۴. 🔐 مدیریت چندمربی، امنیت و عیب‌یابی هوشمند
-- **چندکاربره با تفکیک کامل داده‌ها:** هر مربی دارای نام کاربری، رمز عبور و محیط کاری کاملاً مستقل برای شاگردان خود است.
-- **بازیابی ایمن رمز عبور:** امکان بازیابی رمز از طریق **ارسال کد تایید به ایمیل** یا استفاده از **کد ریکاوری مخفی مربی**.
-- **پنل مدیریت ارشد (Admin):** مشاهده و مدیریت حساب مربیان ثبت‌شده در سیستم.
-- **ثبت خودکار وقایع و لاگ‌ها (`System Diagnostics`):** ثبت لحظه‌ای رخدادها و خطاهای احتمالی با امکان مشاهده و کپی گزارش فنی از داخل برنامه.
-
----
-
-## 🚀 راهنمای دانلود و نصب سریع (ویژه مربیان — بدون نیاز به پیش‌نیاز)
-
-> **نکته مهم:** فایل نصاب تمامی کتابخانه‌ها، فونت‌های فارسی و پیش‌نیازهای گرافیکی را در دل خود دارد و روی هر ویندوز ۱۰ یا ۱۱ به صورت کاملاً مستقل اجرا می‌شود.
-
-۱. وارد صفحه **[آخرین نسخه منتشرشده (Releases)](https://github.com/AbolfazlSamadi2006/Yalda-Gym-App/releases/latest)** شوید.  
-۲. از بخش **Assets** در پایین صفحه، فایل **`Yalda_Setup_v3.1.0.exe`** را دانلود کنید.  
-۳. فایل نصاب را اجرا کرده و با چند کلیک ساده، نرم‌افزار را نصب نمایید (میانبر برنامه به صورت خودکار روی دسکتاپ شما ایجاد می‌شود).
-
----
-
-## 🛠️ معماری و تکنولوژی‌های به‌کاررفته
-
-- **هسته نرم‌افزار:** `Python 3.10+`
-- **رابط گرافیکی (GUI):** `PyQt6` (معماری RTL بومی، QSS اختصاصی Dark-Red و پشتیبانی High-DPI)
-- **لایه پایگاه داده:** `SQLite 3` + `SQLAlchemy ORM`
-- **موتورهای تولید اسناد:** `ReportLab` (خروجی PDF فارسی با فونت‌های استاندارد)، `OpenPyXL` (گزارش‌های Excel)، `HTML5/CSS3 Interactive Exporter`
-- **پردازش مالتی‌مدیا و اسناد:** `OpenCV`، `Pillow`، `PyMuPDF (fitz)`، `ImageIO-FFmpeg`
-- **سرویس ابری:** `Cloudflare Workers` & `REST Cloud Sync API`
-- **بسته‌بندی و نصاب ویندوز:** `PyInstaller` + `NSIS Unicode Installer`
-
----
-
-## 👨‍💻 راهنمای اجرا و توسعه (ویژه برنامه‌نویسان)
 
 <details>
-<summary><b>📂 مشاهده دستورات کلون، نصب وابستگی‌ها و ساخت فایل نصاب (کلیک کنید)</b></summary>
+<summary><b>👨‍💻 دستورات ترمینال ویژه توسعه‌دهندگان (Clone, Run & Build Installer)</b></summary>
 <br/>
 
-۱. دریافت سورس‌کد پروژه:
-</div>
-
-```bash
-git clone https://github.com/AbolfazlSamadi2006/Yalda-Gym-App.git
-cd Yalda-Gym-App
-```
-
-<div dir="rtl" align="right">
-
-۲. ساخت محیط مجازی و نصب کتابخانه‌ها:
-</div>
+<div dir="ltr" align="left">
 
 ```powershell
+# 1. Clone repository
+git clone https://github.com/AbolfazlSamadi2006/Yalda-Gym-App.git
+cd Yalda-Gym-App
+
+# 2. Create virtual environment & install dependencies
 python -m venv venv
 .\venv\Scripts\activate
 pip install -r requirements.txt
-```
 
-<div dir="rtl" align="right">
-
-۳. اجرای مستقیم برنامه از روی سورس:
-</div>
-
-```powershell
+# 3. Run application from source
 python main.py
-```
 
-<div dir="rtl" align="right">
-
-۴. کامپایل نسخه اجرایی (`.exe`) و ساخت نصاب ویندوز (`Yalda_Setup_v3.1.0.exe`):
-</div>
-
-```powershell
+# 4. Build standalone executable & Windows installer (Yalda_Setup_v3.1.0.exe)
 .\venv\Scripts\pyinstaller.exe --noconfirm --clean Yalda.spec
 "C:\Program Files (x86)\NSIS\makensis.exe" installer.nsi
 ```
 
-<div dir="rtl" align="right">
-</details>
-
----
-
-<div align="center">
-
-**طراحی و توسعه داده شده با ❤️ جهت ارتقای سطح حرفه‌ای مربیان و باشگاه‌های ورزشی ایران**  
-© 2026 **Abolfazl Samadi** — تمامی حقوق محفوظ است.
-
 </div>
+</details>
 
 </div>
