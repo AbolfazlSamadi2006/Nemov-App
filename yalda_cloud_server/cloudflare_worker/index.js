@@ -61,8 +61,31 @@ function isAuthenticated(request) {
     return token === AUTH_SECRET_TOKEN;
 }
 
+
+function getStorage(env) {
+    if (!env) return { r2: null, kv: null };
+
+    // 1. Resolve KV storage (Cloudflare Workers KV - Primary Storage)
+    let kv = env.BACKUPS_KV || env.KV || env.BACKUP_KV || env.YALDA_KV || env.yalda_backups_kv || null;
+    if (!kv) {
+        for (const key of Object.keys(env)) {
+            const val = env[key];
+            if (val && typeof val.get === "function" && typeof val.put === "function" && typeof val.list === "function") {
+                kv = val;
+                break;
+            }
+        }
+    }
+
+    // 2. Resolve R2 storage if available
+    let r2 = env.BACKUPS_R2 || env.R2 || env.BUCKET || null;
+
+    return { r2, kv };
+}
+
 export default {
     async fetch(request, env, ctx) {
+        const { r2, kv } = getStorage(env);
         const url = new URL(request.url);
         const path = url.pathname;
         const method = request.method;
@@ -118,18 +141,23 @@ export default {
                     filename: "yalda.db"
                 };
 
-                // Store in R2 or KV
-                if (env.BACKUPS_R2) {
-                    await env.BACKUPS_R2.put(`backups/${phone}/yalda.db`, fileBytes, {
+                // Store in KV (primary) or R2
+                if (kv) {
+                    await kv.put(`db_${phone}`, fileBytes);
+                    await kv.put(`meta_${phone}`, JSON.stringify(metadata));
+                } else if (r2) {
+                    await r2.put(`backups/${phone}/yalda.db`, fileBytes, {
                         httpMetadata: { contentType: "application/octet-stream" },
                         customMetadata: { phone, trainerName, shamsiDate, fileSizeMb }
                     });
-                    await env.BACKUPS_R2.put(`backups/${phone}/metadata.json`, JSON.stringify(metadata), {
+                    await r2.put(`backups/${phone}/metadata.json`, JSON.stringify(metadata), {
                         httpMetadata: { contentType: "application/json" }
                     });
-                } else if (env.BACKUPS_KV) {
-                    await env.BACKUPS_KV.put(`db_${phone}`, fileBytes);
-                    await env.BACKUPS_KV.put(`meta_${phone}`, JSON.stringify(metadata));
+                } else {
+                    return new Response(JSON.stringify({ success: false, detail: "هیچ مخزن ابری (KV) در تنظیمات ورکر یافت نشد." }), {
+                        status: 500,
+                        headers: { ...corsHeaders, "Content-Type": "application/json" }
+                    });
                 }
 
                 return new Response(JSON.stringify({
@@ -160,8 +188,17 @@ export default {
                 return new Response("دسترسی غیرمجاز", { status: 401 });
             }
 
-            if (env.BACKUPS_R2) {
-                const object = await env.BACKUPS_R2.get(`backups/${phone}/yalda.db`);
+            if (kv) {
+                const data = await kv.get(`db_${phone}`, { type: "arrayBuffer" });
+                if (!data) return new Response("فایل پشتیبان برای این مربی در مخزن ابری یافت نشد.", { status: 404 });
+                return new Response(data, {
+                    headers: {
+                        "Content-Disposition": `attachment; filename="yalda_${phone}.db"`,
+                        "Content-Type": "application/octet-stream"
+                    }
+                });
+            } else if (r2) {
+                const object = await r2.get(`backups/${phone}/yalda.db`);
                 if (!object) {
                     return new Response("نسخه پشتیبان برای این مربی یافت نشد.", { status: 404 });
                 }
@@ -170,21 +207,243 @@ export default {
                 headers.set("Content-Disposition", `attachment; filename="yalda_${phone}.db"`);
                 headers.set("Content-Type", "application/octet-stream");
                 return new Response(object.body, { headers });
-            } else if (env.BACKUPS_KV) {
-                const data = await env.BACKUPS_KV.get(`db_${phone}`, { type: "arrayBuffer" });
-                if (!data) return new Response("فایل یافت نشد", { status: 404 });
-                return new Response(data, {
-                    headers: {
-                        "Content-Disposition": `attachment; filename="yalda_${phone}.db"`,
-                        "Content-Type": "application/octet-stream"
-                    }
-                });
             }
             return new Response("مخزن ذخیره‌سازی پیکربندی نشده است.", { status: 500 });
         }
 
         // ====================================================================
-        // 3. Web: Login / Logout
+        // 2.1 API: Upload Exercise Video or Image (POST /api/video/upload, /api/image/upload)
+        // ====================================================================
+        if ((path === "/api/video/upload" || path === "/api/image/upload" || path === "/api/media/upload") && method === "POST") {
+            const apiKey = request.headers.get("X-API-Key") || request.headers.get("x-api-key");
+            if (apiKey !== SECRET_API_KEY && !isAuthenticated(request)) {
+                return new Response(JSON.stringify({ success: false, detail: "کلید امنیتی سرور نامعتبر است." }), {
+                    status: 401,
+                    headers: { ...corsHeaders, "Content-Type": "application/json" }
+                });
+            }
+
+            try {
+                const formData = await request.formData();
+                const file = formData.get("file");
+                let filename = formData.get("filename") || (file ? file.name : "");
+                if (!file || !filename) {
+                    return new Response(JSON.stringify({ success: false, detail: "فایل یا نام رسانه ارسال نشده است." }), {
+                        status: 400,
+                        headers: { ...corsHeaders, "Content-Type": "application/json" }
+                    });
+                }
+
+                // Clean filename
+                filename = filename.replace(/[^\w\d_\-\.\u0600-\u06FF]/g, "_");
+                const fileBytes = await file.arrayBuffer();
+                const fileSizeMb = (fileBytes.byteLength / (1024 * 1024)).toFixed(2);
+
+                const ext = filename.split('.').pop().toLowerCase();
+                const isImage = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp'].includes(ext) || path === "/api/image/upload";
+                const mimeMap = {
+                    'jpg': 'image/jpeg',
+                    'jpeg': 'image/jpeg',
+                    'png': 'image/png',
+                    'webp': 'image/webp',
+                    'gif': 'image/gif',
+                    'bmp': 'image/bmp'
+                };
+                const contentType = isImage ? (mimeMap[ext] || 'image/jpeg') : 'video/mp4';
+                const r2Folder = isImage ? 'images/' : 'videos/';
+                const kvPrefix = isImage ? 'image_' : 'video_';
+                const metaPrefix = isImage ? 'imeta_' : 'vmeta_';
+
+                if (kv) {
+                    await kv.put(`${kvPrefix}${filename}`, fileBytes);
+                    await kv.put(`${metaPrefix}${filename}`, JSON.stringify({ filename, fileSizeMb, uploadDate: new Date().toISOString() }));
+                } else if (r2) {
+                    await r2.put(`${r2Folder}${filename}`, fileBytes, {
+                        httpMetadata: { contentType: contentType },
+                        customMetadata: { filename, fileSizeMb, uploadDate: new Date().toISOString() }
+                    });
+                } else {
+                    return new Response(JSON.stringify({ success: false, detail: "هیچ مخزن ابری (KV) برای ذخیره رسانه در دسترس نیست." }), {
+                        status: 500,
+                        headers: { ...corsHeaders, "Content-Type": "application/json" }
+                    });
+                }
+
+                const mediaUrl = isImage ? `${url.origin}/image/${encodeURIComponent(filename)}` : `${url.origin}/video/${encodeURIComponent(filename)}`;
+                return new Response(JSON.stringify({
+                    success: true,
+                    message: isImage ? "تصویر با موفقیت در سرور ابری کلودفلر ذخیره شد." : "ویدیو با موفقیت در سرور ابری کلودفلر ذخیره شد.",
+                    url: mediaUrl,
+                    filename: filename,
+                    size_mb: fileSizeMb
+                }), {
+                    status: 200,
+                    headers: { ...corsHeaders, "Content-Type": "application/json" }
+                });
+            } catch (err) {
+                return new Response(JSON.stringify({ success: false, detail: "خطا در پردازش رسانه: " + err.message }), {
+                    status: 500,
+                    headers: { ...corsHeaders, "Content-Type": "application/json" }
+                });
+            }
+        }
+
+        // ====================================================================
+        // 2.2 Public Isolated Video Streaming & Player (GET /video/:filename)
+        // ====================================================================
+        if (path.startsWith("/video/")) {
+            const rawFilename = path.replace("/video/", "");
+            const filename = decodeURIComponent(rawFilename);
+            const ext = filename.split('.').pop().toLowerCase();
+            if (['jpg', 'jpeg', 'png', 'webp', 'bmp', 'gif'].includes(ext)) {
+                return Response.redirect(`${url.origin}/image/${encodeURIComponent(filename)}${url.search}`, 302);
+            }
+
+            let videoBody = null;
+
+            if (kv) {
+                const data = await kv.get(`video_${filename}`, { type: "arrayBuffer" });
+                if (data) videoBody = data;
+            }
+            if (!videoBody && r2) {
+                const object = await r2.get(`videos/${filename}`);
+                if (object) videoBody = await object.arrayBuffer();
+            }
+
+            if (!videoBody) {
+                return new Response(renderIsolatedNotFoundPage(), {
+                    status: 404,
+                    headers: { "Content-Type": "text/html; charset=utf-8" }
+                });
+            }
+
+            const acceptHeader = request.headers.get("Accept") || "";
+            const isRawRequested = url.searchParams.get("raw") === "1" || (!acceptHeader.includes("text/html") && acceptHeader.length > 0 && !url.searchParams.has("play"));
+
+            if (isRawRequested) {
+                const totalLength = videoBody.byteLength;
+                const rangeHeader = request.headers.get("Range");
+
+                if (rangeHeader) {
+                    const match = rangeHeader.match(/bytes=(\d*)-(\d*)/);
+                    if (match) {
+                        let start = match[1] ? parseInt(match[1], 10) : 0;
+                        let end = match[2] ? parseInt(match[2], 10) : totalLength - 1;
+
+                        if (isNaN(start)) start = 0;
+                        if (isNaN(end) || end >= totalLength) end = totalLength - 1;
+
+                        if (start > end || start >= totalLength) {
+                            return new Response(null, {
+                                status: 416,
+                                headers: {
+                                    "Content-Range": `bytes */${totalLength}`,
+                                    "Access-Control-Allow-Origin": "*"
+                                }
+                            });
+                        }
+
+                        const chunk = videoBody.slice(start, end + 1);
+                        return new Response(chunk, {
+                            status: 206,
+                            headers: {
+                                "Content-Type": "video/mp4",
+                                "Content-Range": `bytes ${start}-${end}/${totalLength}`,
+                                "Accept-Ranges": "bytes",
+                                "Content-Length": chunk.byteLength.toString(),
+                                "Cache-Control": "public, max-age=86400",
+                                "Access-Control-Allow-Origin": "*",
+                                "Access-Control-Expose-Headers": "Content-Range, Accept-Ranges, Content-Length"
+                            }
+                        });
+                    }
+                }
+
+                return new Response(videoBody, {
+                    status: 200,
+                    headers: {
+                        "Content-Type": "video/mp4",
+                        "Accept-Ranges": "bytes",
+                        "Content-Length": totalLength.toString(),
+                        "Cache-Control": "public, max-age=86400",
+                        "Access-Control-Allow-Origin": "*",
+                        "Access-Control-Expose-Headers": "Content-Range, Accept-Ranges, Content-Length"
+                    }
+                });
+            } else {
+                const videoStreamUrl = `${url.origin}/video/${encodeURIComponent(filename)}?raw=1&v=${Date.now()}`;
+                const titleParam = url.searchParams.get("title") || filename.replace(/\.[^/.]+$/, "").replace(/_/g, " ");
+                return new Response(renderSandboxedVideoPlayer(titleParam, videoStreamUrl), {
+                    headers: {
+                        "Content-Type": "text/html; charset=utf-8",
+                        "Cache-Control": "no-cache, no-store, must-revalidate",
+                        "Pragma": "no-cache",
+                        "Expires": "0"
+                    }
+                });
+            }
+        }
+
+        // ====================================================================
+        // 2.3 Public Isolated Exercise Image Viewer & Delivery (GET /image/:filename)
+        // ====================================================================
+        if (path.startsWith("/image/")) {
+            const rawFilename = path.replace("/image/", "");
+            const filename = decodeURIComponent(rawFilename);
+
+            let imageBody = null;
+            if (kv) {
+                let data = await kv.get(`image_${filename}`, { type: "arrayBuffer" });
+                if (!data) data = await kv.get(`video_${filename}`, { type: "arrayBuffer" });
+                if (data) imageBody = data;
+            }
+            if (!imageBody && r2) {
+                let object = await r2.get(`images/${filename}`);
+                if (!object) object = await r2.get(`videos/${filename}`);
+                if (object) imageBody = await object.arrayBuffer();
+            }
+
+            if (!imageBody) {
+                return new Response(renderIsolatedNotFoundPage("تصویر یافت نشد", "فایل تصویر درخواستی در مخزن سرور موجود نیست یا حذف شده است."), {
+                    status: 404,
+                    headers: { "Content-Type": "text/html; charset=utf-8" }
+                });
+            }
+
+            const ext = filename.split('.').pop().toLowerCase();
+            const mimeMap = {
+                'jpg': 'image/jpeg',
+                'jpeg': 'image/jpeg',
+                'png': 'image/png',
+                'webp': 'image/webp',
+                'gif': 'image/gif',
+                'bmp': 'image/bmp'
+            };
+            const contentType = mimeMap[ext] || "image/jpeg";
+
+            const acceptHeader = request.headers.get("Accept") || "";
+            const isRawRequested = url.searchParams.get("raw") === "1" || (!acceptHeader.includes("text/html") && acceptHeader.length > 0 && !url.searchParams.has("view"));
+
+            if (isRawRequested) {
+                return new Response(imageBody, {
+                    status: 200,
+                    headers: {
+                        "Content-Type": contentType,
+                        "Cache-Control": "public, max-age=31536000",
+                        "Access-Control-Allow-Origin": "*"
+                    }
+                });
+            } else {
+                const imageRawUrl = `${url.origin}/image/${encodeURIComponent(filename)}?raw=1`;
+                const titleParam = url.searchParams.get("title") || filename.replace(/\.[^/.]+$/, "").replace(/_/g, " ");
+                return new Response(renderSandboxedImageViewer(titleParam, imageRawUrl), {
+                    headers: {
+                        "Content-Type": "text/html; charset=utf-8",
+                        "Cache-Control": "no-cache, no-store, must-revalidate"
+                    }
+                });
+            }
+        }
         // ====================================================================
         if (path === "/login" && method === "POST") {
             const formData = await request.formData();
@@ -224,12 +483,12 @@ export default {
                 return new Response("دسترسی غیرمجاز", { status: 401 });
             }
             const phone = path.replace("/api/backup/delete/", "").replace(/\D/g, "");
-            if (env.BACKUPS_R2) {
-                await env.BACKUPS_R2.delete(`backups/${phone}/yalda.db`);
-                await env.BACKUPS_R2.delete(`backups/${phone}/metadata.json`);
-            } else if (env.BACKUPS_KV) {
-                await env.BACKUPS_KV.delete(`db_${phone}`);
-                await env.BACKUPS_KV.delete(`meta_${phone}`);
+            if (kv) {
+                await kv.delete(`db_${phone}`);
+                await kv.delete(`meta_${phone}`);
+            } else if (r2) {
+                await r2.delete(`backups/${phone}/yalda.db`);
+                await r2.delete(`backups/${phone}/metadata.json`);
             }
             return new Response(null, { status: 303, headers: { "Location": "/" } });
         }
@@ -248,26 +507,26 @@ export default {
             let trainers = [];
             let totalSize = 0;
 
-            if (env.BACKUPS_R2) {
-                const list = await env.BACKUPS_R2.list({ prefix: "backups/" });
+            if (kv) {
+                const list = await kv.list({ prefix: "meta_" });
+                for (const key of list.keys) {
+                    const meta = await kv.get(key.name, { type: "json" });
+                    if (meta) {
+                        trainers.push(meta);
+                        totalSize += (meta.file_size_mb || 0);
+                    }
+                }
+            } else if (r2) {
+                const list = await r2.list({ prefix: "backups/" });
                 const metaKeys = list.objects.filter(o => o.key.endsWith("metadata.json"));
                 for (const item of metaKeys) {
-                    const metaObj = await env.BACKUPS_R2.get(item.key);
+                    const metaObj = await r2.get(item.key);
                     if (metaObj) {
                         try {
                             const meta = await metaObj.json();
                             trainers.push(meta);
                             totalSize += (meta.file_size_mb || 0);
                         } catch (e) {}
-                    }
-                }
-            } else if (env.BACKUPS_KV) {
-                const list = await env.BACKUPS_KV.list({ prefix: "meta_" });
-                for (const key of list.keys) {
-                    const meta = await env.BACKUPS_KV.get(key.name, { type: "json" });
-                    if (meta) {
-                        trainers.push(meta);
-                        totalSize += (meta.file_size_mb || 0);
                     }
                 }
             }
@@ -489,3 +748,380 @@ function renderDashboardPage(trainers, totalSizeMb, lastActivity) {
 </body>
 </html>`;
 }
+
+function renderSandboxedVideoPlayer(title, videoStreamUrl) {
+    return `<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>${title} | راهنمای اجرای حرکت</title>
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Vazirmatn', sans-serif; }
+        body {
+            background-color: #0d0d0d;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 16px;
+        }
+        .player-container {
+            width: 100%;
+            max-width: 540px;
+            background: #181818;
+            border-radius: 18px;
+            border: 1px solid #2a2a2a;
+            box-shadow: 0 16px 40px rgba(0,0,0,0.8);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .player-header {
+            padding: 16px 20px;
+            background: linear-gradient(135deg, #1f1f1f, #141414);
+            border-bottom: 1px solid #262626;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .header-title-box h1 {
+            font-size: 17px;
+            font-weight: 800;
+            color: #ffffff;
+            margin-bottom: 2px;
+        }
+        .header-title-box p {
+            font-size: 11.5px;
+            color: #9e9e9e;
+        }
+        .gym-badge {
+            background-color: #8B0000;
+            color: #ffffff;
+            font-size: 11px;
+            font-weight: bold;
+            padding: 4px 10px;
+            border-radius: 20px;
+            letter-spacing: 0.3px;
+        }
+        .video-box {
+            position: relative;
+            width: 100%;
+            background-color: #000000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            overflow: hidden;
+        }
+        video {
+            width: 100%;
+            max-height: 70vh;
+            display: block;
+            outline: none;
+            background-color: #000;
+        }
+        .play-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 68px;
+            height: 68px;
+            background: rgba(139, 0, 0, 0.88);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+            opacity: 0;
+            z-index: 5;
+        }
+        .play-overlay.show {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+        .play-overlay svg {
+            width: 32px;
+            height: 32px;
+            fill: #ffffff;
+            margin-left: 3px;
+        }
+        .error-message {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(15, 15, 15, 0.95);
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            text-align: center;
+            z-index: 10;
+        }
+        .error-message p {
+            color: #ef4444;
+            font-size: 13.5px;
+            margin-bottom: 12px;
+        }
+        .retry-btn {
+            background: #8B0000;
+            color: #ffffff;
+            border: none;
+            padding: 8px 18px;
+            border-radius: 8px;
+            font-size: 12.5px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .retry-btn:hover {
+            background: #a91d22;
+        }
+        .player-footer {
+            padding: 12px 18px;
+            background: #141414;
+            border-top: 1px solid #242424;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #777777;
+        }
+        .player-footer span {
+            color: #A91D22;
+            font-weight: bold;
+        }
+        .controls-hint {
+            font-size: 11px;
+            color: #666666;
+        }
+    </style>
+</head>
+<body>
+    <div class="player-container">
+        <div class="player-header">
+            <div class="header-title-box">
+                <h1>🎬 ${title}</h1>
+                <p>فرم اجرای صحیح حرکت ورزشی</p>
+            </div>
+            <div class="gym-badge">باشگاه بدنسازی یلدا</div>
+        </div>
+        <div class="video-box" id="videoBox">
+            <video id="player" controls autoplay muted loop playsinline preload="auto">
+                <source src="${videoStreamUrl}" type="video/mp4">
+                مرورگر شما از پخش مستقیم ویدیو پشتیبانی نمی‌کند.
+            </video>
+            <div class="play-overlay" id="playOverlay">
+                <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+            </div>
+            <div class="error-message" id="errorMessage">
+                <p>⚠️ خطا در بارگذاری ویدیو حرکت</p>
+                <button class="retry-btn" onclick="retryVideo()">تلاش مجدد</button>
+            </div>
+        </div>
+        <div class="player-footer">
+            <div>برنامه تمرینی اختصاصی • <span>سامانه هوشمند یلدا</span></div>
+            <div class="controls-hint">کلیک برای پخش / توقف</div>
+        </div>
+    </div>
+    <script>
+        const video = document.getElementById('player');
+        const overlay = document.getElementById('playOverlay');
+        const errBox = document.getElementById('errorMessage');
+        const box = document.getElementById('videoBox');
+
+        function updateOverlay() {
+            if (video.paused || video.ended) {
+                overlay.classList.add('show');
+            } else {
+                overlay.classList.remove('show');
+            }
+        }
+
+        box.addEventListener('click', (e) => {
+            if (e.target.tagName.toLowerCase() === 'button') return;
+            if (video.paused) {
+                video.play().catch(e => console.log('Autoplay blocked:', e));
+            } else {
+                video.pause();
+            }
+        });
+
+        video.addEventListener('play', updateOverlay);
+        video.addEventListener('pause', updateOverlay);
+        video.addEventListener('ended', updateOverlay);
+
+        video.addEventListener('error', () => {
+            errBox.style.display = 'flex';
+        });
+
+        function retryVideo() {
+            errBox.style.display = 'none';
+            const src = "${videoStreamUrl}&r=" + Date.now();
+            video.src = src;
+            video.load();
+            video.play().catch(e => console.log('Retry play error:', e));
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            updateOverlay();
+            video.play().catch(() => updateOverlay());
+        });
+    </script>
+</body>
+</html>`;
+}
+
+function renderSandboxedImageViewer(title, imageUrl) {
+    return `<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${title} | باشگاه بدنسازی یلدا</title>
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background-color: #0d0d0d;
+            color: #ffffff;
+            font-family: 'Vazirmatn', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 16px;
+        }
+        .viewer-container {
+            width: 100%;
+            max-width: 680px;
+            background: #181818;
+            border: 1px solid #282828;
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+            display: flex;
+            flex-direction: column;
+        }
+        .viewer-header {
+            padding: 16px 20px;
+            background: #141414;
+            border-bottom: 1px solid #242424;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .header-title-box h1 {
+            font-size: 17px;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 3px;
+        }
+        .header-title-box p {
+            font-size: 12px;
+            color: #888888;
+        }
+        .gym-badge {
+            background: #8B0000;
+            color: #ffffff;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 11.5px;
+            font-weight: bold;
+        }
+        .image-box {
+            position: relative;
+            background: #0F0F0F;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 300px;
+            max-height: 75vh;
+            overflow: hidden;
+            padding: 10px;
+        }
+        .image-box img {
+            max-width: 100%;
+            max-height: 72vh;
+            object-fit: contain;
+            display: block;
+            border-radius: 8px;
+        }
+        .viewer-footer {
+            padding: 12px 18px;
+            background: #141414;
+            border-top: 1px solid #242424;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #777777;
+        }
+        .viewer-footer span {
+            color: #A91D22;
+            font-weight: bold;
+        }
+        .download-link {
+            font-size: 11.5px;
+            color: #60a5fa;
+            text-decoration: none;
+        }
+        .download-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="viewer-container">
+        <div class="viewer-header">
+            <div class="header-title-box">
+                <h1>🖼️ ${title}</h1>
+                <p>تصویر و الگوی حرکتی ورزشکار</p>
+            </div>
+            <div class="gym-badge">باشگاه بدنسازی یلدا</div>
+        </div>
+        <div class="image-box">
+            <img src="${imageUrl}" alt="${title}" loading="lazy" />
+        </div>
+        <div class="viewer-footer">
+            <div>برنامه تمرینی اختصاصی • <span>سامانه هوشمند یلدا</span></div>
+            <a class="download-link" href="${imageUrl}" target="_blank" download>دریافت تصویر باکیفیت اصلی 📥</a>
+        </div>
+    </div>
+</body>
+</html>`;
+}
+
+function renderIsolatedNotFoundPage(title = "رسانه یافت نشد", msg = "فایل درخواستی در مخزن سرور موجود نیست یا حذف شده است.") {
+    return `<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${title}</title>
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+    <style>
+        body { background: #0F0F0F; color: #fff; font-family: 'Vazirmatn', sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; text-align: center; }
+        .box { background: #1A1A1A; border: 1px solid #333; padding: 30px; border-radius: 12px; max-width: 360px; }
+        h2 { font-size: 18px; margin-bottom: 10px; color: #DC2626; }
+        p { font-size: 13px; color: #aaa; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h2>⚠️ ${title}</h2>
+        <p>${msg}</p>
+    </div>
+</body>
+</html>`;
+}
+

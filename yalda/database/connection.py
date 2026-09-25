@@ -38,6 +38,8 @@ def check_and_migrate_db():
                 conn.execute(text("ALTER TABLE members ADD COLUMN tuition_fee FLOAT;"))
             if "job" not in columns:
                 conn.execute(text("ALTER TABLE members ADD COLUMN job VARCHAR(100);"))
+            if "activity_level" not in columns:
+                conn.execute(text("ALTER TABLE members ADD COLUMN activity_level VARCHAR(30) DEFAULT 'moderately_active';"))
             conn.commit()
 
     if "physical_assessments" in inspector.get_table_names():
@@ -51,6 +53,10 @@ def check_and_migrate_db():
                 conn.execute(text("ALTER TABLE physical_assessments ADD COLUMN abdomen_circ FLOAT;"))
             if "hip_circ" not in pa_columns:
                 conn.execute(text("ALTER TABLE physical_assessments ADD COLUMN hip_circ FLOAT;"))
+            if "bmr" not in pa_columns:
+                conn.execute(text("ALTER TABLE physical_assessments ADD COLUMN bmr FLOAT;"))
+            if "tdee" not in pa_columns:
+                conn.execute(text("ALTER TABLE physical_assessments ADD COLUMN tdee FLOAT;"))
             conn.commit()
 
     if "users" in inspector.get_table_names():
@@ -79,7 +85,44 @@ def check_and_migrate_db():
         with engine.connect() as conn:
             if "video_url" not in ex_columns:
                 conn.execute(text("ALTER TABLE exercises ADD COLUMN video_url VARCHAR(500);"))
+            if "is_corrective" not in ex_columns:
+                conn.execute(text("ALTER TABLE exercises ADD COLUMN is_corrective BOOLEAN DEFAULT 0;"))
+            if "thumbnail_path" not in ex_columns:
+                conn.execute(text("ALTER TABLE exercises ADD COLUMN thumbnail_path VARCHAR(500);"))
+            if "video_cloud_url" not in ex_columns:
+                conn.execute(text("ALTER TABLE exercises ADD COLUMN video_cloud_url VARCHAR(500);"))
             conn.commit()
+
+    if "members" in inspector.get_table_names():
+        m_columns = [c["name"] for c in inspector.get_columns("members")]
+        with engine.connect() as conn:
+            if "export_folder_path" not in m_columns:
+                conn.execute(text("ALTER TABLE members ADD COLUMN export_folder_path VARCHAR(500);"))
+            conn.commit()
+
+    # Automatically seed initial tuition records from existing members if empty
+    if "tuition_payments" in inspector.get_table_names():
+        from yalda.models.database_models import TuitionPayment, Member
+        session = SessionLocal()
+        try:
+            if session.query(TuitionPayment).count() == 0:
+                members_with_fee = session.query(Member).filter(Member.tuition_fee > 0).all()
+                for m in members_with_fee:
+                    pay_date = m.membership_start_shamsi or m.registration_date_shamsi or "1405/01/01"
+                    tp = TuitionPayment(
+                        member_id=m.id,
+                        user_id=m.user_id,
+                        amount=float(m.tuition_fee),
+                        payment_date_shamsi=pay_date,
+                        payment_type="شهریه دوره ماهانه",
+                        notes="ثبت خودکار از سوابق عضو"
+                    )
+                    session.add(tp)
+                session.commit()
+        except Exception:
+            session.rollback()
+        finally:
+            session.close()
 
 
 

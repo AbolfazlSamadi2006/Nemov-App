@@ -15,7 +15,9 @@ class EmailSpamGuideDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle("راهنمای انتقال ایمیل‌ها به صندوق اصلی (خروج از اسپم)")
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
-        self.setFixedSize(640, 680)
+        screen = QApplication.primaryScreen()
+        avail_h = screen.availableGeometry().height() if screen else 800
+        self.setFixedSize(640, min(680, max(520, avail_h - 36)))
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowType.WindowContextHelpButtonHint)
         self.init_ui()
 

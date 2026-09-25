@@ -12,7 +12,10 @@ class WorkoutService:
         try:
             query = session.query(Exercise)
             if muscle_group and muscle_group != "all":
-                query = query.filter(Exercise.primary_muscle == muscle_group)
+                if muscle_group == "corrective":
+                    query = query.filter(Exercise.is_corrective == True)
+                else:
+                    query = query.filter(Exercise.primary_muscle == muscle_group)
             if equipment and equipment != "all":
                 query = query.filter(Exercise.equipment == equipment)
             if search_query:
@@ -35,6 +38,9 @@ class WorkoutService:
                 media_path=data.get("media_path"),
                 media_type=data.get("media_type", "image"),
                 video_url=data.get("video_url"),
+                is_corrective=data.get("is_corrective", False),
+                thumbnail_path=data.get("thumbnail_path"),
+                video_cloud_url=data.get("video_cloud_url"),
                 contraindications=data.get("contraindications"),
                 description=data.get("description")
             )
@@ -245,7 +251,17 @@ class WorkoutService:
         try:
             ex = session.query(Exercise).filter(Exercise.id == exercise_id).first()
             if ex:
+                deleted_name = ex.name_fa
                 session.delete(ex)
+                session.flush()
+
+                if deleted_name:
+                    from yalda.utils.duplicate_helper import get_resequenced_names
+                    remaining = session.query(Exercise).all()
+                    updates = get_resequenced_names(deleted_name, [(e, e.name_fa) for e in remaining])
+                    for item, new_name in updates:
+                        item.name_fa = new_name
+
                 session.commit()
                 mark_data_changed()
                 return True
@@ -263,6 +279,8 @@ class WorkoutService:
             asgn = session.query(WorkoutAssignment).filter(WorkoutAssignment.id == assignment_id).first()
             if asgn:
                 plan_id = asgn.plan_id
+                member_id = asgn.member_id
+                deleted_title = asgn.plan.title if asgn.plan else ""
                 session.delete(asgn)
                 session.flush()
 
@@ -272,6 +290,14 @@ class WorkoutService:
                     orphan_plan = session.query(WorkoutPlan).filter(WorkoutPlan.id == plan_id).first()
                     if orphan_plan:
                         session.delete(orphan_plan)
+                        session.flush()
+
+                if deleted_title and member_id:
+                    from yalda.utils.duplicate_helper import get_resequenced_names
+                    remaining_asgns = session.query(WorkoutAssignment).filter(WorkoutAssignment.member_id == member_id).all()
+                    updates = get_resequenced_names(deleted_title, [(a.plan, a.plan.title) for a in remaining_asgns if a.plan and a.plan.title])
+                    for p_obj, new_title in updates:
+                        p_obj.title = new_title
 
                 session.commit()
                 mark_data_changed()
@@ -343,10 +369,20 @@ class WorkoutService:
         try:
             plan = session.query(WorkoutPlan).filter(WorkoutPlan.id == plan_id).first()
             if plan:
+                deleted_title = plan.title
                 # Delete any assignments first
                 session.query(WorkoutAssignment).filter(WorkoutAssignment.plan_id == plan.id).delete()
                 # Delete plan (SQLAlchemy cascade deletes days and exercises)
                 session.delete(plan)
+                session.flush()
+
+                if deleted_title:
+                    from yalda.utils.duplicate_helper import get_resequenced_names
+                    remaining = session.query(WorkoutPlan).all()
+                    updates = get_resequenced_names(deleted_title, [(p, p.title) for p in remaining])
+                    for p_obj, new_title in updates:
+                        p_obj.title = new_title
+
                 session.commit()
                 mark_data_changed()
                 return True

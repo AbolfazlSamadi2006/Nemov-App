@@ -198,7 +198,17 @@ class NutritionService:
         try:
             food = session.query(FoodItem).filter(FoodItem.id == food_id).first()
             if food:
+                deleted_name = food.name_fa
                 session.delete(food)
+                session.flush()
+
+                if deleted_name:
+                    from yalda.utils.duplicate_helper import get_resequenced_names
+                    remaining = session.query(FoodItem).all()
+                    updates = get_resequenced_names(deleted_name, [(f, f.name_fa) for f in remaining])
+                    for f_obj, new_name in updates:
+                        f_obj.name_fa = new_name
+
                 session.commit()
                 mark_data_changed()
                 return True
@@ -216,6 +226,8 @@ class NutritionService:
             asgn = session.query(NutritionAssignment).filter(NutritionAssignment.id == assignment_id).first()
             if asgn:
                 plan_id = asgn.plan_id
+                member_id = asgn.member_id
+                deleted_title = asgn.plan.title if asgn.plan else ""
                 session.delete(asgn)
                 session.flush()
 
@@ -225,6 +237,14 @@ class NutritionService:
                     orphan_plan = session.query(NutritionPlan).filter(NutritionPlan.id == plan_id).first()
                     if orphan_plan:
                         session.delete(orphan_plan)
+                        session.flush()
+
+                if deleted_title and member_id:
+                    from yalda.utils.duplicate_helper import get_resequenced_names
+                    remaining_asgns = session.query(NutritionAssignment).filter(NutritionAssignment.member_id == member_id).all()
+                    updates = get_resequenced_names(deleted_title, [(a.plan, a.plan.title) for a in remaining_asgns if a.plan and a.plan.title])
+                    for p_obj, new_title in updates:
+                        p_obj.title = new_title
 
                 session.commit()
                 mark_data_changed()
@@ -292,10 +312,20 @@ class NutritionService:
         try:
             plan = session.query(NutritionPlan).filter(NutritionPlan.id == plan_id).first()
             if plan:
+                deleted_title = plan.title
                 # Delete any assignments first
                 session.query(NutritionAssignment).filter(NutritionAssignment.plan_id == plan.id).delete()
                 # Delete plan (SQLAlchemy cascade deletes meals and meal items)
                 session.delete(plan)
+                session.flush()
+
+                if deleted_title:
+                    from yalda.utils.duplicate_helper import get_resequenced_names
+                    remaining = session.query(NutritionPlan).all()
+                    updates = get_resequenced_names(deleted_title, [(p, p.title) for p in remaining])
+                    for p_obj, new_title in updates:
+                        p_obj.title = new_title
+
                 session.commit()
                 mark_data_changed()
                 return True

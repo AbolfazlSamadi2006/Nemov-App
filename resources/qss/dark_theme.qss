@@ -250,13 +250,12 @@ QTableWidget {
 
 QTableWidget::item {
     padding: 6px 8px;
-    color: #FFFFFF;
     font-size: 13px;
 }
 
-QTableWidget::item:selected {
+QTableWidget::item:selected,
+QTableWidget::item:alternate:selected {
     background-color: #4A1113;
-    color: #FFFFFF;
 }
 
 QHeaderView::section {

@@ -99,6 +99,13 @@ class CameraCaptureDialog(QDialog):
         self.btn_retake.clicked.connect(self.resume_camera_stream)
         self.btn_retake.hide()
 
+        self.btn_edit = QPushButton("✂️ ویرایش و کراپ")
+        self.btn_edit.setStyleSheet(
+            "font-size: 14px; font-weight: bold; padding: 8px 18px; background-color: #0088cc; color: white; border-radius: 6px;"
+        )
+        self.btn_edit.clicked.connect(self.edit_snapshot)
+        self.btn_edit.hide()
+
         self.btn_confirm = QPushButton("✅ تایید و استفاده")
         self.btn_confirm.setStyleSheet(
             "font-size: 14px; font-weight: bold; padding: 8px 22px; background-color: #2e7d32; color: white; border-radius: 6px;"
@@ -115,6 +122,7 @@ class CameraCaptureDialog(QDialog):
 
         btn_layout.addWidget(self.btn_capture)
         btn_layout.addWidget(self.btn_retake)
+        btn_layout.addWidget(self.btn_edit)
         btn_layout.addWidget(self.btn_confirm)
         btn_layout.addStretch()
         btn_layout.addWidget(self.btn_cancel)
@@ -282,14 +290,42 @@ class CameraCaptureDialog(QDialog):
             self.timer.stop()
             self.btn_capture.hide()
             self.btn_retake.show()
+            self.btn_edit.show()
             self.btn_confirm.show()
 
     def resume_camera_stream(self):
         self.btn_retake.hide()
+        self.btn_edit.hide()
         self.btn_confirm.hide()
         self.btn_capture.show()
         if self.cap and self.cap.isOpened():
             self.timer.start()
+
+    def edit_snapshot(self):
+        if self.captured_bgr_frame is None:
+            return
+        try:
+            temp_dir = tempfile.gettempdir()
+            filename = f"cam_snapshot_{int(time.time())}_{uuid.uuid4().hex[:6]}.jpg"
+            save_path = os.path.join(temp_dir, filename)
+
+            success, enc_buffer = cv2.imencode(".jpg", self.captured_bgr_frame, [int(cv2.IMWRITE_JPEG_QUALITY), 95])
+            if success:
+                with open(save_path, "wb") as f:
+                    f.write(enc_buffer.tobytes())
+            else:
+                cv2.imwrite(save_path, self.captured_bgr_frame)
+
+            from yalda.views.components.image_editor_dialog import ImageEditorDialog
+            editor = ImageEditorDialog(self, image_path=save_path, title=self.windowTitle(), allow_retake=True)
+            if editor.exec() == QDialog.DialogCode.Accepted and editor.result_image_path:
+                self.captured_file_path = editor.result_image_path
+                self.stop_camera()
+                self.accept()
+            elif editor.retake_triggered:
+                self.resume_camera_stream()
+        except Exception as e:
+            QMessageBox.critical(self, "خطا", f"خطا در بازگشایی ویرایشگر تصویر: {str(e)}")
 
     def confirm_snapshot(self):
         if self.captured_bgr_frame is not None:

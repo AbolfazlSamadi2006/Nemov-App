@@ -2,10 +2,10 @@ import os
 import time
 from pathlib import Path
 from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QTableWidget, QTableWidgetItem, QHeaderView, QFileDialog, QMessageBox, QGroupBox, QGridLayout, QFrame, QDialog, QScrollArea, QProgressBar, QInputDialog
+    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QTableWidget, QTableWidgetItem, QHeaderView, QFileDialog, QMessageBox, QGroupBox, QGridLayout, QFrame, QDialog, QScrollArea, QProgressBar, QInputDialog, QCheckBox, QAbstractItemView
 )
 from PyQt6.QtCore import Qt, pyqtSignal, QTimer, QThread
-from PyQt6.QtGui import QPixmap
+from PyQt6.QtGui import QPixmap, QColor, QBrush
 import config
 from yalda.services.backup_service import BackupService
 from yalda.services.email_service import EmailService
@@ -13,7 +13,7 @@ from yalda.auth.authentication import (
     CurrentUser, update_trainer_profile, delete_trainer_account, get_all_trainers
 )
 from yalda.views.components.jalali_calendar_widget import JalaliDatePicker
-from yalda.utils.image_utils import get_circular_pixmap
+from yalda.utils.image_utils import get_circular_pixmap, resolve_image_path
 
 
 class CloudBackupThread(QThread):
@@ -47,10 +47,11 @@ class EmailBackupThread(QThread):
     progress_signal = pyqtSignal(int, str)
     finished_signal = pyqtSignal(bool, str, str, float)  # ok, msg, filename, size_mb
 
-    def __init__(self, email: str, trainer_name: str):
+    def __init__(self, email: str, trainer_name: str, trainer_id: int = None):
         super().__init__()
         self.email = email
         self.trainer_name = trainer_name
+        self.trainer_id = trainer_id
 
     def run(self):
         try:
@@ -83,9 +84,37 @@ class EmailBackupThread(QThread):
             }
             try:
                 from yalda.database.connection import SessionLocal
-                from yalda.models.database_models import Member
+                from yalda.models.database_models import Member, User
                 with SessionLocal() as db:
-                    metadata["members_count"] = str(db.query(Member).count())
+                    resolved_id = self.trainer_id
+
+                    # 1. If trainer_id wasn't passed, resolve by email
+                    if not resolved_id and self.email:
+                        tr = db.query(User).filter(
+                            User.email.ilike(self.email.strip()),
+                            User.role != "admin"
+                        ).first()
+                        if tr:
+                            resolved_id = tr.id
+                            if not self.trainer_name or self.trainer_name == "مدیر باشگاه":
+                                self.trainer_name = tr.display_name or tr.full_name
+
+                    # 2. Resolve by trainer_name if still not resolved
+                    if not resolved_id and self.trainer_name and self.trainer_name != "مدیر باشگاه":
+                        tr = db.query(User).filter(
+                            (User.full_name == self.trainer_name.strip()) |
+                            ((User.first_name + " " + User.last_name) == self.trainer_name.strip()),
+                            User.role != "admin"
+                        ).first()
+                        if tr:
+                            resolved_id = tr.id
+
+                    if resolved_id:
+                        # Exactly count the students belonging to this specific trainer
+                        count = db.query(Member).filter(Member.user_id == resolved_id).count()
+                        metadata["members_count"] = str(count)
+                    else:
+                        metadata["members_count"] = str(db.query(Member).count())
             except Exception:
                 pass
 
@@ -108,6 +137,7 @@ class EmailBackupThread(QThread):
 class BackupView(QWidget):
     account_deleted_signal = pyqtSignal()
     back_requested = pyqtSignal()
+    notifications_changed_signal = pyqtSignal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -170,9 +200,30 @@ class BackupView(QWidget):
         btn_change_photo.setCursor(Qt.CursorShape.PointingHandCursor)
         btn_change_photo.clicked.connect(self.choose_trainer_photo)
 
+        self.btn_remove_photo = QPushButton("🗑️ حذف عکس")
+        self.btn_remove_photo.setFixedHeight(28)
+        self.btn_remove_photo.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_remove_photo.setStyleSheet("""
+            QPushButton {
+                background-color: transparent;
+                color: #EF4444;
+                border: 1px solid #7F1D1D;
+                border-radius: 4px;
+                font-size: 11px;
+                padding: 2px 6px;
+            }
+            QPushButton:hover {
+                background-color: #DC2626;
+                color: #FFFFFF;
+            }
+        """)
+        self.btn_remove_photo.clicked.connect(self.remove_trainer_photo)
+        self.btn_remove_photo.setVisible(False)
+
         photo_layout = QVBoxLayout()
         photo_layout.addWidget(self.lbl_trainer_photo, alignment=Qt.AlignmentFlag.AlignCenter)
         photo_layout.addWidget(btn_change_photo)
+        photo_layout.addWidget(self.btn_remove_photo)
 
         grid_prof.addLayout(photo_layout, 0, 0, 2, 1)
 
@@ -390,16 +441,18 @@ class BackupView(QWidget):
         self.table_trainers.setColumnCount(7)
         self.table_trainers.setHorizontalHeaderLabels(["ردیف", "نام و نام خانوادگی مربی", "نام کاربری", "رمز عبور", "شماره تماس", "تعداد شاگردان", "عملیات"])
         header_tr = self.table_trainers.horizontalHeader()
+        header_tr.setMinimumSectionSize(44)
         header_tr.setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
-        self.table_trainers.setColumnWidth(0, 50)
+        self.table_trainers.setColumnWidth(0, 44)
         header_tr.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
-        self.table_trainers.setColumnWidth(2, 140)
-        self.table_trainers.setColumnWidth(3, 140)
-        self.table_trainers.setColumnWidth(4, 140)
-        self.table_trainers.setColumnWidth(5, 110)
-        self.table_trainers.setColumnWidth(6, 280)
+        self.table_trainers.setColumnWidth(2, 110)
+        self.table_trainers.setColumnWidth(3, 105)
+        self.table_trainers.setColumnWidth(4, 110)
+        self.table_trainers.setColumnWidth(5, 90)
+        self.table_trainers.setColumnWidth(6, 245)
         self.table_trainers.verticalHeader().setVisible(False)
-        self.table_trainers.verticalHeader().setDefaultSectionSize(54)
+        self.table_trainers.verticalHeader().setDefaultSectionSize(62)
+        self.table_trainers.setStyleSheet("QTableWidget::item { padding: 0px 8px; }")
         self.table_trainers.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.table_trainers.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.table_trainers.setMinimumHeight(200)
@@ -531,15 +584,88 @@ class BackupView(QWidget):
         row_table_header = QHBoxLayout()
         lbl_table = QLabel("📋 لیست آرشیوهای پشتیبان موجود")
         lbl_table.setObjectName("h2")
+        row_table_header.addWidget(lbl_table)
+        row_table_header.addStretch()
+        layout.addLayout(row_table_header)
+
+        row_backup_actions = QHBoxLayout()
+        row_backup_actions.setSpacing(10)
+
+        self.btn_select_all_backups = QPushButton("☑️ انتخاب همه / لغو انتخاب")
+        self.btn_select_all_backups.setFixedHeight(36)
+        self.btn_select_all_backups.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_select_all_backups.setStyleSheet("""
+            QPushButton {
+                background-color: #27272A;
+                color: #E4E4E7;
+                border: 1px solid #3F3F46;
+                border-radius: 6px;
+                font-weight: bold;
+                font-size: 12px;
+                padding: 0 14px;
+            }
+            QPushButton:hover {
+                background-color: #3F3F46;
+                color: #FFFFFF;
+            }
+        """)
+        self.btn_select_all_backups.clicked.connect(self.toggle_select_all_backups)
+        row_backup_actions.addWidget(self.btn_select_all_backups)
+
+        self.btn_delete_selected_backups = QPushButton("🗑️ حذف موارد انتخاب‌شده")
+        self.btn_delete_selected_backups.setFixedHeight(36)
+        self.btn_delete_selected_backups.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_delete_selected_backups.setStyleSheet("""
+            QPushButton {
+                background-color: #7F1D1D;
+                color: #FECACA;
+                border: 1px solid #DC2626;
+                border-radius: 6px;
+                font-weight: bold;
+                font-size: 12px;
+                padding: 0 14px;
+            }
+            QPushButton:hover {
+                background-color: #DC2626;
+                color: #FFFFFF;
+            }
+        """)
+        self.btn_delete_selected_backups.clicked.connect(self.delete_selected_backups)
+        row_backup_actions.addWidget(self.btn_delete_selected_backups)
+
+        self.btn_delete_all_backups = QPushButton("🧹 حذف همگانی آرشیو")
+        self.btn_delete_all_backups.setFixedHeight(36)
+        self.btn_delete_all_backups.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_delete_all_backups.setStyleSheet("""
+            QPushButton {
+                background-color: transparent;
+                color: #EF4444;
+                border: 1px solid #DC2626;
+                border-radius: 6px;
+                font-weight: bold;
+                font-size: 12px;
+                padding: 0 14px;
+            }
+            QPushButton:hover {
+                background-color: #DC2626;
+                color: #FFFFFF;
+            }
+        """)
+        self.btn_delete_all_backups.clicked.connect(self.delete_all_backups_history)
+        row_backup_actions.addWidget(self.btn_delete_all_backups)
+
+        row_backup_actions.addStretch()
 
         btn_restore_cloud = QPushButton("☁️ بازگردانی از سرور ابری...")
+        btn_restore_cloud.setFixedHeight(36)
+        btn_restore_cloud.setCursor(Qt.CursorShape.PointingHandCursor)
         btn_restore_cloud.setStyleSheet("""
             QPushButton {
                 background-color: #1E3A8A;
                 color: #93C5FD;
                 border: 1px solid #2563EB;
                 border-radius: 6px;
-                padding: 6px 12px;
+                padding: 0 14px;
                 font-weight: bold;
                 font-size: 12px;
             }
@@ -551,6 +677,7 @@ class BackupView(QWidget):
         btn_restore_cloud.clicked.connect(self.open_cloud_restore_dialog)
 
         btn_restore_file = QPushButton("📁 بازگردانی از فایل خارجی...")
+        btn_restore_file.setFixedHeight(36)
         btn_restore_file.setCursor(Qt.CursorShape.PointingHandCursor)
         btn_restore_file.setStyleSheet("""
             QPushButton {
@@ -558,7 +685,7 @@ class BackupView(QWidget):
                 color: #FFFFFF;
                 border: 1px solid #3F3F46;
                 border-radius: 6px;
-                padding: 6px 12px;
+                padding: 0 14px;
                 font-weight: bold;
                 font-size: 12px;
             }
@@ -569,35 +696,243 @@ class BackupView(QWidget):
         """)
         btn_restore_file.clicked.connect(self.restore_from_file)
 
-        row_table_header.addWidget(lbl_table)
-        row_table_header.addStretch()
-        row_table_header.addWidget(btn_restore_cloud)
-        row_table_header.addWidget(btn_restore_file)
-        layout.addLayout(row_table_header)
+        row_backup_actions.addWidget(btn_restore_cloud)
+        row_backup_actions.addWidget(btn_restore_file)
+        layout.addLayout(row_backup_actions)
 
         self.table = QTableWidget()
-        self.table.setColumnCount(6)
-        self.table.setHorizontalHeaderLabels(["ردیف", "نام فایل پشتیبان", "مسیر ذخیره‌سازی فایل", "تاریخ و زمان ثبت (شمسی)", "حجم فایل", "عملیات"])
+        self.table.setColumnCount(7)
+        self.table.setHorizontalHeaderLabels([
+            "انتخاب", "ردیف", "نام فایل پشتیبان", "مسیر ذخیره‌سازی فایل", "تاریخ و زمان ثبت (شمسی)", "حجم فایل", "عملیات"
+        ])
         header = self.table.horizontalHeader()
         header.setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
-        self.table.setColumnWidth(0, 45)
-        self.table.setColumnWidth(1, 210)
-        header.setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
-        self.table.setColumnWidth(3, 160)
-        self.table.setColumnWidth(4, 85)
-        self.table.setColumnWidth(5, 230)
+        self.table.setColumnWidth(0, 60)
+        self.table.setColumnWidth(1, 48)
+        self.table.setColumnWidth(2, 250)
+        header.setSectionResizeMode(3, QHeaderView.ResizeMode.Stretch)
+        self.table.setColumnWidth(4, 150)
+        self.table.setColumnWidth(5, 82)
+        self.table.setColumnWidth(6, 230)
         self.table.verticalHeader().setVisible(False)
-        self.table.verticalHeader().setDefaultSectionSize(44)
+        self.table.verticalHeader().setDefaultSectionSize(46)
+        self.table.setStyleSheet("QTableWidget::item { padding: 0px 8px; }")
         self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
+        self.table.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.table.setMinimumHeight(270)
 
         layout.addWidget(self.table)
 
+        # ----------------------------------------------------
+        # BOX 3.5: Notification History (تاریخچه اعلانات و یادآوری‌ها)
+        # ----------------------------------------------------
+        notif_history_box = QGroupBox("🔔 تاریخچه اعلانات و یادآوری‌ها")
+        layout_notif_hist = QVBoxLayout(notif_history_box)
+        layout_notif_hist.setSpacing(10)
+
+        lbl_notif_hist_desc = QLabel(
+            "در این بخش تمامی اعلانات و یادآوری‌های سیستم از ابتدا تا این لحظه نگهداری می‌شوند تا در صورت ثبت به عنوان "
+            "«خوانده‌شده» بتوانید مجدداً آن‌ها را مشاهده کنید. امکان انتخاب چندتایی و حذف گروهی یا همگانی نیز فراهم است."
+        )
+        lbl_notif_hist_desc.setStyleSheet("color: #AAAAAA; font-size: 13px;")
+        lbl_notif_hist_desc.setWordWrap(True)
+        layout_notif_hist.addWidget(lbl_notif_hist_desc)
+
+        row_notif_actions = QHBoxLayout()
+        row_notif_actions.setSpacing(10)
+
+        self.btn_select_all_notifs = QPushButton("☑️ انتخاب همه / لغو انتخاب")
+        self.btn_select_all_notifs.setFixedHeight(36)
+        self.btn_select_all_notifs.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_select_all_notifs.setStyleSheet("""
+            QPushButton {
+                background-color: #27272A;
+                color: #E4E4E7;
+                border: 1px solid #3F3F46;
+                border-radius: 6px;
+                font-weight: bold;
+                font-size: 12px;
+                padding: 0 14px;
+            }
+            QPushButton:hover {
+                background-color: #3F3F46;
+                color: #FFFFFF;
+            }
+        """)
+        self.btn_select_all_notifs.clicked.connect(self.toggle_select_all_notifications)
+        row_notif_actions.addWidget(self.btn_select_all_notifs)
+
+        self.btn_delete_selected_notifs = QPushButton("🗑️ حذف موارد انتخاب‌شده")
+        self.btn_delete_selected_notifs.setFixedHeight(36)
+        self.btn_delete_selected_notifs.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_delete_selected_notifs.setStyleSheet("""
+            QPushButton {
+                background-color: #7F1D1D;
+                color: #FECACA;
+                border: 1px solid #DC2626;
+                border-radius: 6px;
+                font-weight: bold;
+                font-size: 12px;
+                padding: 0 14px;
+            }
+            QPushButton:hover {
+                background-color: #DC2626;
+                color: #FFFFFF;
+            }
+        """)
+        self.btn_delete_selected_notifs.clicked.connect(self.delete_selected_notifications)
+        row_notif_actions.addWidget(self.btn_delete_selected_notifs)
+
+        self.btn_delete_all_notifs = QPushButton("🧹 حذف همگانی تاریخچه")
+        self.btn_delete_all_notifs.setFixedHeight(36)
+        self.btn_delete_all_notifs.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_delete_all_notifs.setStyleSheet("""
+            QPushButton {
+                background-color: transparent;
+                color: #EF4444;
+                border: 1px solid #DC2626;
+                border-radius: 6px;
+                font-weight: bold;
+                font-size: 12px;
+                padding: 0 14px;
+            }
+            QPushButton:hover {
+                background-color: #DC2626;
+                color: #FFFFFF;
+            }
+        """)
+        self.btn_delete_all_notifs.clicked.connect(self.delete_all_notifications_history)
+        row_notif_actions.addWidget(self.btn_delete_all_notifs)
+
+        row_notif_actions.addStretch()
+        layout_notif_hist.addLayout(row_notif_actions)
+
+        self.table_notif_history = QTableWidget()
+        self.table_notif_history.setColumnCount(7)
+        self.table_notif_history.setHorizontalHeaderLabels([
+            "انتخاب", "ردیف", "عنوان اعلان", "شرح کامل اعلان", "تاریخ ثبت", "وضعیت", "عملیات"
+        ])
+        nh_header = self.table_notif_history.horizontalHeader()
+        nh_header.setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
+        self.table_notif_history.setColumnWidth(0, 65)
+        self.table_notif_history.setColumnWidth(1, 55)
+        self.table_notif_history.setColumnWidth(2, 210)
+        nh_header.setSectionResizeMode(3, QHeaderView.ResizeMode.Stretch)
+        self.table_notif_history.setColumnWidth(4, 145)
+        self.table_notif_history.setColumnWidth(5, 130)
+        self.table_notif_history.setColumnWidth(6, 105)
+        self.table_notif_history.verticalHeader().setVisible(False)
+        self.table_notif_history.verticalHeader().setDefaultSectionSize(46)
+        self.table_notif_history.setStyleSheet("QTableWidget::item { padding: 0px 8px; }")
+        self.table_notif_history.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
+        self.table_notif_history.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+        self.table_notif_history.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+        self.table_notif_history.setMinimumHeight(230)
+        layout_notif_hist.addWidget(self.table_notif_history)
+
+        layout.addWidget(notif_history_box)
+
+        # ----------------------------------------------------
+        # BOX 4: System Error Logs & Diagnostics (گزارش خطاها و لاگ‌های سیستم)
+        # ----------------------------------------------------
+        logs_box = QGroupBox("🛠️ گزارش خطاها و لاگ‌های سیستم")
+        layout_logs = QVBoxLayout(logs_box)
+        layout_logs.setSpacing(10)
+
+        lbl_logs_desc = QLabel(
+            "کلیه وقایع و خطاهای احتمالی سیستم به صورت خودکار ثبت می‌شوند. در صورت بروز هرگونه مشکل فنی، "
+            "می‌توانید گزارش لاگ‌ها را مشاهده، کپی، یا پوشه آن را در ویندوز باز کرده و برای پشتیبان ارسال فرمایید."
+        )
+        lbl_logs_desc.setStyleSheet("color: #AAAAAA; font-size: 13px;")
+        lbl_logs_desc.setWordWrap(True)
+        layout_logs.addWidget(lbl_logs_desc)
+
+        row_logs_btns = QHBoxLayout()
+        row_logs_btns.setSpacing(10)
+
+        btn_view_logs = QPushButton("👁️ مشاهده لاگ‌های سیستم...")
+        btn_view_logs.setFixedHeight(40)
+        btn_view_logs.setCursor(Qt.CursorShape.PointingHandCursor)
+        btn_view_logs.setStyleSheet("""
+            QPushButton {
+                background-color: #2563EB;
+                color: #FFFFFF;
+                border-radius: 6px;
+                font-weight: bold;
+                padding: 0 16px;
+            }
+            QPushButton:hover {
+                background-color: #1D4ED8;
+            }
+        """)
+        btn_view_logs.clicked.connect(self.open_log_viewer_dialog)
+        row_logs_btns.addWidget(btn_view_logs)
+
+        btn_open_logs_folder = QPushButton("📁 باز کردن پوشه لاگ‌ها در ویندوز")
+        btn_open_logs_folder.setFixedHeight(40)
+        btn_open_logs_folder.setCursor(Qt.CursorShape.PointingHandCursor)
+        btn_open_logs_folder.setStyleSheet("""
+            QPushButton {
+                background-color: #374151;
+                color: #F3F4F6;
+                border: 1px solid #4B5563;
+                border-radius: 6px;
+                font-weight: bold;
+                padding: 0 16px;
+            }
+            QPushButton:hover {
+                background-color: #4B5563;
+            }
+        """)
+        btn_open_logs_folder.clicked.connect(self.open_logs_folder_action)
+        row_logs_btns.addWidget(btn_open_logs_folder)
+
+        self.btn_copy_last_err = QPushButton("📋 کپی آخرین گزارش خطا")
+        self.btn_copy_last_err.setFixedHeight(40)
+        self.btn_copy_last_err.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_copy_last_err.setStyleSheet("""
+            QPushButton {
+                background-color: #1F2937;
+                color: #D1D5DB;
+                border: 1px solid #4B5563;
+                border-radius: 6px;
+                padding: 0 16px;
+            }
+            QPushButton:hover {
+                background-color: #374151;
+                color: #FFFFFF;
+            }
+        """)
+        self.btn_copy_last_err.clicked.connect(self.copy_last_error_action)
+        row_logs_btns.addWidget(self.btn_copy_last_err)
+
+        row_logs_btns.addStretch()
+        layout_logs.addLayout(row_logs_btns)
+
+        layout.addWidget(logs_box)
+
         scroll_area.setWidget(container)
         main_layout.addWidget(scroll_area)
 
         self.load_all_data()
+
+    def open_log_viewer_dialog(self):
+        from yalda.views.components.error_dialog import LogViewerDialog
+        dlg = LogViewerDialog(parent=self.window())
+        dlg.exec()
+
+    def open_logs_folder_action(self):
+        from yalda.utils.logger import open_logs_folder
+        open_logs_folder()
+
+    def copy_last_error_action(self):
+        from yalda.utils.logger import get_last_error_snippet
+        from PyQt6.QtWidgets import QApplication
+        err_snippet = get_last_error_snippet()
+        QApplication.clipboard().setText(err_snippet)
+        self.btn_copy_last_err.setText("کپی شد! ✓")
+        QTimer.singleShot(2500, lambda: self.btn_copy_last_err.setText("📋 کپی آخرین گزارش خطا"))
 
     def toggle_eye(self, field: QLineEdit, button: QPushButton):
         if field.echoMode() == QLineEdit.EchoMode.Password:
@@ -623,21 +958,92 @@ class BackupView(QWidget):
             dest_path = dest_dir / filename
             import shutil
             shutil.copy2(temp_path, dest_path)
-            self.selected_photo_path = str(dest_path)
-            self.display_photo(str(dest_path))
+
+            # Mirror to APPDATA_DATA_DIR as well for persistent multi-install safety
+            try:
+                appdata_dest = config.APPDATA_DATA_DIR / "uploads" / "profile-photos" / filename
+                appdata_dest.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(temp_path, appdata_dest)
+            except Exception:
+                pass
+
+            # Store the relative filename for universal portability
+            self.selected_photo_path = filename
+            self.display_photo(filename)
+
+            # Auto-save immediately to database so user never loses it
+            u = CurrentUser.get()
+            if u:
+                try:
+                    update_trainer_profile(
+                        user_id=u.id,
+                        first_name=u.first_name,
+                        last_name=u.last_name,
+                        phone=u.phone,
+                        email=u.email,
+                        birth_date_shamsi=u.birth_date_shamsi,
+                        photo_path=filename,
+                        username=u.username
+                    )
+                    u.photo_path = filename
+                    if hasattr(self, "_baseline_profile"):
+                        self._baseline_profile["photo_path"] = filename
+                    QMessageBox.information(self, "موفقیت", "تصویر مربی با موفقیت انتخاب و در سیستم ذخیره شد.")
+                except Exception as ex:
+                    print(f"Auto-save trainer photo error: {ex}")
+
             self.check_profile_dirty()
 
+    def remove_trainer_photo(self):
+        reply = QMessageBox.question(
+            self,
+            "حذف عکس مربی",
+            "آیا از حذف عکس پروفایل مربی اطمینان دارید؟",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No
+        )
+        if reply != QMessageBox.StandardButton.Yes:
+            return
+
+        u = CurrentUser.get()
+        if u:
+            try:
+                update_trainer_profile(
+                    user_id=u.id,
+                    first_name=u.first_name,
+                    last_name=u.last_name,
+                    phone=u.phone,
+                    email=u.email,
+                    birth_date_shamsi=u.birth_date_shamsi,
+                    photo_path="",
+                    username=u.username
+                )
+                u.photo_path = ""
+                self.selected_photo_path = ""
+                if hasattr(self, "_baseline_profile"):
+                    self._baseline_profile["photo_path"] = ""
+                self.display_photo("")
+                self.check_profile_dirty()
+                QMessageBox.information(self, "موفقیت", "عکس پروفایل مربی حذف گردید.")
+            except Exception as ex:
+                QMessageBox.critical(self, "خطا", f"خطا در حذف عکس: {str(ex)}")
 
     def display_photo(self, photo_path: str):
-        if photo_path and os.path.exists(photo_path):
-            pixmap = QPixmap(photo_path)
+        resolved = resolve_image_path(photo_path)
+        if resolved:
+            pixmap = QPixmap(resolved)
             circ = get_circular_pixmap(pixmap, 65)
             self.lbl_trainer_photo.setPixmap(circ)
             self.lbl_trainer_photo.setText("")
             self.lbl_trainer_photo.setStyleSheet("border: none; background: transparent;")
+            if hasattr(self, "btn_remove_photo"):
+                self.btn_remove_photo.setVisible(True)
         else:
+            self.lbl_trainer_photo.setPixmap(QPixmap())
             self.lbl_trainer_photo.setText("📷 بدون عکس")
             self.lbl_trainer_photo.setStyleSheet("border: 1px dashed #666; border-radius: 32px; color: #888;")
+            if hasattr(self, "btn_remove_photo"):
+                self.btn_remove_photo.setVisible(False)
 
     def check_profile_dirty(self):
         if getattr(self, "_loading_profile", False):
@@ -723,6 +1129,179 @@ class BackupView(QWidget):
         # 3. Backups
         self.load_backups()
 
+        # 4. Notification History
+        self.load_notification_history()
+
+    def load_notification_history(self):
+        if not hasattr(self, "table_notif_history"):
+            return
+        from yalda.services.notification_service import NotificationService
+        records = NotificationService.get_history()
+        self.table_notif_history.setRowCount(0)
+        self._notif_checkboxes = []
+
+        if not records:
+            self.table_notif_history.setRowCount(1)
+            empty_item = QTableWidgetItem("هیچ اعلانی در تاریخچه ثبت نشده است.")
+            empty_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+            empty_item.setForeground(QBrush(QColor("#888888")))
+            self.table_notif_history.setSpan(0, 0, 1, 7)
+            self.table_notif_history.setItem(0, 0, empty_item)
+            return
+
+        self.table_notif_history.clearSpans()
+        self.table_notif_history.setRowCount(len(records))
+
+        for row, rec in enumerate(records):
+            # 0: Checkbox for multi-select
+            chk_container = QWidget()
+            chk_container.setStyleSheet("background: transparent;")
+            chk_layout = QHBoxLayout(chk_container)
+            chk_layout.setContentsMargins(0, 0, 0, 0)
+            chk_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            chk = QCheckBox()
+            chk.setCursor(Qt.CursorShape.PointingHandCursor)
+            chk.setProperty("notif_id", rec.id)
+            chk_layout.addWidget(chk)
+            self.table_notif_history.setCellWidget(row, 0, chk_container)
+            self._notif_checkboxes.append(chk)
+
+            # 1: Row Index (Persian digits)
+            fa_idx = str(row + 1).translate(str.maketrans("0123456789", "۰۱۲۳۴۵۶۷۸۹"))
+            it_idx = QTableWidgetItem(fa_idx)
+            it_idx.setData(Qt.ItemDataRole.UserRole, rec.id)
+            it_idx.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.table_notif_history.setItem(row, 1, it_idx)
+
+            # 2: Title
+            it_title = QTableWidgetItem(rec.title or "-")
+            it_title.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+            if "موعد" in (rec.title or "") or "سررسید" in (rec.title or ""):
+                it_title.setForeground(QBrush(QColor("#FCA5A5")))
+            else:
+                it_title.setForeground(QBrush(QColor("#FDE68A")))
+            self.table_notif_history.setItem(row, 2, it_title)
+
+            # 3: Description
+            fa_desc = str(rec.description or rec.title or "-").translate(str.maketrans("0123456789", "۰۱۲۳۴۵۶۷۸۹"))
+            it_desc = QTableWidgetItem(fa_desc)
+            it_desc.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.table_notif_history.setItem(row, 3, it_desc)
+
+            # 4: Date
+            fa_date = str(rec.date_shamsi or "-").translate(str.maketrans("0123456789", "۰۱۲۳۴۵۶۷۸۹"))
+            it_date = QTableWidgetItem(fa_date)
+            it_date.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.table_notif_history.setItem(row, 4, it_date)
+
+            # 5: Read Status
+            is_read = bool(rec.is_read)
+            status_str = "🟢 خوانده شده" if is_read else "🔴 خوانده نشده"
+            it_status = QTableWidgetItem(status_str)
+            it_status.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+            it_status.setForeground(QBrush(QColor("#10B981" if is_read else "#F87171")))
+            self.table_notif_history.setItem(row, 5, it_status)
+
+            # 6: Single Delete Action Button (centered vertically & horizontally)
+            act_widget = QWidget()
+            act_widget.setStyleSheet("background: transparent;")
+            act_layout = QHBoxLayout(act_widget)
+            act_layout.setContentsMargins(4, 0, 4, 0)
+            act_layout.setSpacing(6)
+            act_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+            btn_del_one = QPushButton("🗑️ حذف")
+            btn_del_one.setFixedSize(76, 30)
+            btn_del_one.setCursor(Qt.CursorShape.PointingHandCursor)
+            btn_del_one.setStyleSheet("""
+                QPushButton {
+                    background-color: #DC2626;
+                    color: #FFFFFF;
+                    border: none;
+                    border-radius: 6px;
+                    font-weight: bold;
+                    font-size: 11.5px;
+                    padding: 0px;
+                }
+                QPushButton:hover {
+                    background-color: #B91C1C;
+                }
+            """)
+            btn_del_one.clicked.connect(lambda _, nid=rec.id: self.delete_single_notification(nid))
+            act_layout.addWidget(btn_del_one)
+            self.table_notif_history.setCellWidget(row, 6, act_widget)
+
+    def _get_selected_notification_ids(self) -> list:
+        selected_ids = set()
+        for chk in getattr(self, "_notif_checkboxes", []):
+            if chk.isChecked():
+                nid = chk.property("notif_id")
+                if nid is not None:
+                    selected_ids.add(int(nid))
+        for idx in self.table_notif_history.selectionModel().selectedRows():
+            row = idx.row()
+            it = self.table_notif_history.item(row, 1)
+            if it:
+                nid = it.data(Qt.ItemDataRole.UserRole)
+                if nid is not None:
+                    selected_ids.add(int(nid))
+        return list(selected_ids)
+
+    def toggle_select_all_notifications(self):
+        checkboxes = getattr(self, "_notif_checkboxes", [])
+        if not checkboxes:
+            return
+        any_unchecked = any(not c.isChecked() for c in checkboxes)
+        for c in checkboxes:
+            c.setChecked(any_unchecked)
+        if any_unchecked:
+            self.table_notif_history.selectAll()
+        else:
+            self.table_notif_history.clearSelection()
+
+    def delete_single_notification(self, notif_id: int):
+        from yalda.services.notification_service import NotificationService
+        NotificationService.delete_by_ids([notif_id])
+        self.load_notification_history()
+        self.notifications_changed_signal.emit()
+
+    def delete_selected_notifications(self):
+        ids = self._get_selected_notification_ids()
+        if not ids:
+            QMessageBox.information(self, "انتخاب موارد", "لطفاً ابتدا یک یا چند اعلان را از لیست انتخاب (تیک) نمایید.")
+            return
+        fa_cnt = str(len(ids)).translate(str.maketrans("0123456789", "۰۱۲۳۴۵۶۷۸۹"))
+        reply = QMessageBox.question(
+            self,
+            "حذف اعلانات انتخاب‌شده",
+            f"آیا از حذف {fa_cnt} اعلان انتخاب‌شده از تاریخچه اطمینان دارید؟",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No
+        )
+        if reply == QMessageBox.StandardButton.Yes:
+            from yalda.services.notification_service import NotificationService
+            NotificationService.delete_by_ids(ids)
+            self.load_notification_history()
+            self.notifications_changed_signal.emit()
+
+    def delete_all_notifications_history(self):
+        checkboxes = getattr(self, "_notif_checkboxes", [])
+        if not checkboxes:
+            QMessageBox.information(self, "تاریخچه خالی", "هیچ اعلانی در تاریخچه برای حذف وجود ندارد.")
+            return
+        reply = QMessageBox.warning(
+            self,
+            "حذف همگانی تاریخچه اعلانات",
+            "آیا از پاک کردن تمامی اعلانات موجود در تاریخچه اطمینان دارید؟\nاین عمل قابل بازگشت نیست.",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No
+        )
+        if reply == QMessageBox.StandardButton.Yes:
+            from yalda.services.notification_service import NotificationService
+            NotificationService.delete_all_history()
+            self.load_notification_history()
+            self.notifications_changed_signal.emit()
+
     def load_trainers_for_admin(self):
         trainers = get_all_trainers()
         self.table_trainers.setRowCount(len(trainers))
@@ -751,7 +1330,7 @@ class BackupView(QWidget):
             action_w = QWidget()
             action_w.setStyleSheet("background: transparent;")
             action_l = QHBoxLayout(action_w)
-            action_l.setContentsMargins(4, 4, 4, 4)
+            action_l.setContentsMargins(4, 0, 4, 0)
             action_l.setSpacing(6)
             action_l.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
@@ -766,7 +1345,7 @@ class BackupView(QWidget):
                     border: 1px solid #2563EB;
                     border-radius: 6px;
                     font-weight: bold;
-                    padding: 4px 8px;
+                    padding: 2px 10px;
                     font-size: 11px;
                 }
                 QPushButton:hover {
@@ -787,7 +1366,7 @@ class BackupView(QWidget):
                     border: 1px solid #DC2626;
                     border-radius: 6px;
                     font-weight: bold;
-                    padding: 4px 10px;
+                    padding: 2px 10px;
                     font-size: 11px;
                 }
                 QPushButton:hover {
@@ -798,6 +1377,7 @@ class BackupView(QWidget):
             btn_del.clicked.connect(lambda _, t_id=t["id"], t_name=t["full_name"], m_cnt=t["member_count"]: self.admin_delete_trainer(t_id, t_name, m_cnt))
             action_l.addWidget(btn_details)
             action_l.addWidget(btn_del)
+            self.table_trainers.setRowHeight(row, 62)
             self.table_trainers.setCellWidget(row, 6, action_w)
 
     def open_trainer_details(self, trainer_data: dict):
@@ -871,6 +1451,7 @@ class BackupView(QWidget):
                 self.txt_phone.setFocus()
                 return
 
+        photo_to_save = self.selected_photo_path if self.selected_photo_path is not None else u.photo_path
         try:
             update_trainer_profile(
                 user_id=u.id,
@@ -879,7 +1460,7 @@ class BackupView(QWidget):
                 phone=phone,
                 email=email,
                 birth_date_shamsi=birth_date,
-                photo_path=self.selected_photo_path,
+                photo_path=photo_to_save,
                 username=username,
                 password=password if password else None,
                 recovery_code=recovery_code if recovery_code else None
@@ -892,29 +1473,59 @@ class BackupView(QWidget):
 
     def load_backups(self):
         backups = BackupService.get_all_backups()
+        self.table.setRowCount(0)
+        self._backup_checkboxes = []
+
+        if not backups:
+            self.table.setRowCount(1)
+            empty_item = QTableWidgetItem("هیچ نسخه پشتیبانی در آرشیو ثبت نشده است.")
+            empty_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+            empty_item.setForeground(QBrush(QColor("#888888")))
+            self.table.setSpan(0, 0, 1, 7)
+            self.table.setItem(0, 0, empty_item)
+            return
+
+        self.table.clearSpans()
         self.table.setRowCount(len(backups))
 
         for row, b in enumerate(backups):
-            # 0: Row number
-            self.table.setItem(row, 0, QTableWidgetItem(str(row + 1)))
+            # 0: Checkbox for multi-select
+            chk_container = QWidget()
+            chk_container.setStyleSheet("background: transparent;")
+            chk_layout = QHBoxLayout(chk_container)
+            chk_layout.setContentsMargins(0, 0, 0, 0)
+            chk_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            chk = QCheckBox()
+            chk.setCursor(Qt.CursorShape.PointingHandCursor)
+            chk.setProperty("backup_id", b.id)
+            chk_layout.addWidget(chk)
+            self.table.setCellWidget(row, 0, chk_container)
+            self._backup_checkboxes.append(chk)
 
-            # 1: File name
+            # 1: Row number
+            fa_idx = str(row + 1).translate(str.maketrans("0123456789", "۰۱۲۳۴۵۶۷۸۹"))
+            it_idx = QTableWidgetItem(fa_idx)
+            it_idx.setData(Qt.ItemDataRole.UserRole, b.id)
+            it_idx.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.table.setItem(row, 1, it_idx)
+
+            # 2: File name
             item_name = QTableWidgetItem(b.file_name)
             item_name.setToolTip(b.file_name)
-            self.table.setItem(row, 1, item_name)
+            self.table.setItem(row, 2, item_name)
 
-            # 2: File Path / Location
+            # 3: File Path / Location
             item_path = QTableWidgetItem(b.file_path or "-")
             item_path.setToolTip(b.file_path or "-")
-            self.table.setItem(row, 2, item_path)
+            self.table.setItem(row, 3, item_path)
 
-            # 3: Shamsi Date & Time
-            self.table.setItem(row, 3, QTableWidgetItem(b.backup_date_shamsi))
+            # 4: Shamsi Date & Time
+            self.table.setItem(row, 4, QTableWidgetItem(b.backup_date_shamsi))
 
-            # 4: File Size
-            self.table.setItem(row, 4, QTableWidgetItem(f"{b.backup_size_mb} MB"))
+            # 5: File Size
+            self.table.setItem(row, 5, QTableWidgetItem(f"{b.backup_size_mb} MB"))
 
-            for c in (0, 3, 4):
+            for c in (1, 4, 5):
                 item = self.table.item(row, c)
                 if item:
                     item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -922,20 +1533,20 @@ class BackupView(QWidget):
             action_w = QWidget()
             action_w.setStyleSheet("background: transparent;")
             action_l = QHBoxLayout(action_w)
-            action_l.setContentsMargins(4, 4, 4, 4)
+            action_l.setContentsMargins(4, 0, 4, 0)
             action_l.setSpacing(6)
             action_l.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
             btn_restore = QPushButton("🔄 بازگردانی")
             btn_restore.setCursor(Qt.CursorShape.PointingHandCursor)
-            btn_restore.setFixedHeight(30)
-            btn_restore.setStyleSheet("background-color: #D97706; color: #FFFFFF; font-weight: bold; border-radius: 4px; padding: 2px 8px; font-size: 11px;")
+            btn_restore.setFixedHeight(29)
+            btn_restore.setStyleSheet("background-color: #D97706; color: #FFFFFF; font-weight: bold; border-radius: 4px; min-height: 29px; max-height: 29px; padding: 0px 8px; font-size: 11px;")
             btn_restore.clicked.connect(lambda _, fp=b.file_path: self.restore_backup(fp))
 
             btn_delete = QPushButton("🗑️ حذف")
             btn_delete.setCursor(Qt.CursorShape.PointingHandCursor)
-            btn_delete.setFixedHeight(30)
-            btn_delete.setStyleSheet("background-color: #DC2626; color: #FFFFFF; font-weight: bold; border-radius: 4px; padding: 2px 8px; font-size: 11px;")
+            btn_delete.setFixedHeight(29)
+            btn_delete.setStyleSheet("background-color: #DC2626; color: #FFFFFF; font-weight: bold; border-radius: 4px; min-height: 29px; max-height: 29px; padding: 0px 8px; font-size: 11px;")
             btn_delete.clicked.connect(lambda _, b_id=b.id, fn=b.file_name: self.delete_backup_item(b_id, fn))
 
             action_l.addWidget(btn_restore)
@@ -944,13 +1555,92 @@ class BackupView(QWidget):
             if b.file_path and not b.file_path.startswith("☁️") and not b.file_path.startswith("📧"):
                 btn_open_folder = QPushButton("📂 پوشه")
                 btn_open_folder.setCursor(Qt.CursorShape.PointingHandCursor)
-                btn_open_folder.setFixedHeight(30)
-                btn_open_folder.setStyleSheet("background-color: #2563EB; color: #FFFFFF; font-weight: bold; border-radius: 4px; padding: 2px 8px; font-size: 11px;")
+                btn_open_folder.setFixedHeight(29)
+                btn_open_folder.setStyleSheet("background-color: #2563EB; color: #FFFFFF; font-weight: bold; border-radius: 4px; min-height: 29px; max-height: 29px; padding: 0px 8px; font-size: 11px;")
                 btn_open_folder.clicked.connect(lambda _, fp=b.file_path: self.open_backup_folder(fp))
                 action_l.addWidget(btn_open_folder)
 
             action_l.addWidget(btn_delete)
-            self.table.setCellWidget(row, 5, action_w)
+            self.table.setRowHeight(row, 46)
+            self.table.setCellWidget(row, 6, action_w)
+
+    def _get_selected_backup_ids(self) -> list:
+        selected_ids = set()
+        for chk in getattr(self, "_backup_checkboxes", []):
+            if chk.isChecked():
+                bid = chk.property("backup_id")
+                if bid is not None:
+                    selected_ids.add(int(bid))
+        for idx in self.table.selectionModel().selectedRows():
+            row = idx.row()
+            it = self.table.item(row, 1)
+            if it:
+                bid = it.data(Qt.ItemDataRole.UserRole)
+                if bid is not None:
+                    selected_ids.add(int(bid))
+        return list(selected_ids)
+
+    def toggle_select_all_backups(self):
+        checkboxes = getattr(self, "_backup_checkboxes", [])
+        if not checkboxes:
+            return
+        any_unchecked = any(not c.isChecked() for c in checkboxes)
+        for c in checkboxes:
+            c.setChecked(any_unchecked)
+        if any_unchecked:
+            self.table.selectAll()
+        else:
+            self.table.clearSelection()
+
+    def delete_selected_backups(self):
+        ids = self._get_selected_backup_ids()
+        if not ids:
+            QMessageBox.information(self, "انتخاب موارد", "لطفاً ابتدا یک یا چند فایل پشتیبان را از لیست انتخاب (تیک) نمایید.")
+            return
+        fa_cnt = str(len(ids)).translate(str.maketrans("0123456789", "۰۱۲۳۴۵۶۷۸۹"))
+        reply = QMessageBox.warning(
+            self,
+            "⚠️ حذف نسخه‌های پشتیبان انتخاب‌شده",
+            f"آیا از حذف {fa_cnt} نسخه پشتیبان انتخاب‌شده اطمینان دارید؟\nفایل‌های انتخاب‌شده به طور کامل از روی حافظه سیستم پاک خواهند شد.",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No
+        )
+        if reply == QMessageBox.StandardButton.Yes:
+            try:
+                deleted_cnt = 0
+                for bid in ids:
+                    if BackupService.delete_backup(bid):
+                        deleted_cnt += 1
+                self.load_backups()
+                fa_del = str(deleted_cnt).translate(str.maketrans("0123456789", "۰۱۲۳۴۵۶۷۸۹"))
+                QMessageBox.information(self, "موفقیت", f"{fa_del} نسخه پشتیبان با موفقیت حذف گردید.")
+            except Exception as e:
+                QMessageBox.critical(self, "خطا", f"خطا در حذف نسخه‌های پشتیبان: {str(e)}")
+
+    def delete_all_backups_history(self):
+        checkboxes = getattr(self, "_backup_checkboxes", [])
+        if not checkboxes:
+            QMessageBox.information(self, "آرشیو خالی", "هیچ نسخه پشتیبانی در آرشیو برای حذف وجود ندارد.")
+            return
+        reply = QMessageBox.warning(
+            self,
+            "⚠️ حذف همگانی آرشیو پشتیبان",
+            "آیا از پاک کردن تمامی نسخه‌های پشتیبان موجود در آرشیو اطمینان دارید؟\nاین عمل فایل‌ها را از روی حافظه سیستم پاک کرده و قابل بازگشت نیست.",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No
+        )
+        if reply == QMessageBox.StandardButton.Yes:
+            try:
+                backups = BackupService.get_all_backups()
+                deleted_cnt = 0
+                for b in backups:
+                    if BackupService.delete_backup(b.id):
+                        deleted_cnt += 1
+                self.load_backups()
+                fa_del = str(deleted_cnt).translate(str.maketrans("0123456789", "۰۱۲۳۴۵۶۷۸۹"))
+                QMessageBox.information(self, "موفقیت", f"تمامی {fa_del} نسخه پشتیبان آرشیو با موفقیت حذف گردید.")
+            except Exception as e:
+                QMessageBox.critical(self, "خطا", f"خطا در حذف همگانی نسخه‌های پشتیبان: {str(e)}")
 
     def open_backup_folder(self, filepath: str):
         if not filepath or filepath.startswith("☁️") or filepath.startswith("📧"):
@@ -1004,10 +1694,11 @@ class BackupView(QWidget):
             time_str = now.strftime("%H-%M-%S")
             default_filename = f"yalda_backup_{shamsi_date}_{time_str}.zip"
 
-            chosen_file, _ = QFileDialog.getSaveFileName(
+            from yalda.utils.export_utils import resolve_gym_export_path
+            chosen_file, gym_folder_name = resolve_gym_export_path(
+                default_filename,
                 self,
                 "انتخاب محل ذخیره نسخه پشتیبان در سیستم",
-                default_filename,
                 "فایل فشرده پشتیبان (*.zip)"
             )
             if not chosen_file:
@@ -1016,13 +1707,25 @@ class BackupView(QWidget):
             try:
                 filepath = BackupService.create_backup(target_filepath=chosen_file)
                 self.load_backups()
+                from yalda.utils.logger import log_info
+                log_info(f"Local backup created: {filepath}")
                 QMessageBox.information(
                     self,
                     "موفقیت",
-                    f"✅ نسخه پشتیبان با موفقیت در مسیر زیر در سیستم ذخیره گردید:\n\n{filepath}"
+                    f"✅ نسخه پشتیبان با موفقیت در پوشه اختصاصی «{gym_folder_name}» ذخیره گردید:\n\n{filepath}"
                 )
             except Exception as e:
-                QMessageBox.critical(self, "خطا", f"خطا در ایجاد نسخه پشتیبان: {str(e)}")
+                import traceback
+                tb = traceback.format_exc()
+                from yalda.utils.logger import log_error
+                from yalda.views.components.error_dialog import show_error_dialog
+                log_error(f"Error creating local backup: {e}\n{tb}")
+                show_error_dialog(
+                    parent=self.window(),
+                    message="متاسفانه در ایجاد نسخه پشتیبان خطایی رخ داد.",
+                    technical_details=tb,
+                    title="خطا در پشتیبان‌گیری"
+                )
 
         elif choice == BackupDestinationDialog.CHOICE_SERVER:
             u = CurrentUser.get()
@@ -1085,20 +1788,52 @@ class BackupView(QWidget):
                 except Exception as ex:
                     print(f"Auto-sync email error: {ex}")
 
-            trainer_name = u.full_name if u else "مدیر باشگاه"
-            self._start_email_backup_async(target_email, trainer_name)
+            # Determine trainer identity and ID
+            trainer_id = None
+            if u and getattr(u, "role", "") != "admin":
+                trainer_id = u.id
+                trainer_name = u.display_name or u.full_name
+            else:
+                trainer_name = u.display_name if u else "مدیر باشگاه"
+                try:
+                    from yalda.database.connection import SessionLocal
+                    from yalda.models.database_models import User
+                    with SessionLocal() as db:
+                        tr = db.query(User).filter(
+                            User.email.ilike(target_email.strip()),
+                            User.role != "admin"
+                        ).first()
+                        if tr:
+                            trainer_id = tr.id
+                            trainer_name = tr.display_name or tr.full_name
+                except Exception:
+                    pass
+
+            self._start_email_backup_async(target_email, trainer_name, trainer_id=trainer_id)
 
         elif choice == BackupDestinationDialog.CHOICE_INSTALL_DIR:
             try:
                 filepath = BackupService.create_backup()
                 self.load_backups()
+                from yalda.utils.logger import log_info
+                log_info(f"Local install dir backup created: {filepath}")
                 QMessageBox.information(
                     self,
                     "موفقیت",
                     f"✅ نسخه پشتیبان با موفقیت در پوشه پیش‌فرض نصب نرم‌افزار ایجاد گردید:\n\n{filepath}"
                 )
             except Exception as e:
-                QMessageBox.critical(self, "خطا", f"خطا در ایجاد نسخه پشتیبان: {str(e)}")
+                import traceback
+                tb = traceback.format_exc()
+                from yalda.utils.logger import log_error
+                from yalda.views.components.error_dialog import show_error_dialog
+                log_error(f"Error creating install dir backup: {e}\n{tb}")
+                show_error_dialog(
+                    parent=self.window(),
+                    message="متاسفانه در ایجاد نسخه پشتیبان در پوشه پیش‌فرض نصب خطایی رخ داد.",
+                    technical_details=tb,
+                    title="خطا در پشتیبان‌گیری"
+                )
 
     def _start_cloud_backup_async(self, phone: str, trainer_name: str):
         self.progress_card.setVisible(True)
@@ -1124,7 +1859,7 @@ class BackupView(QWidget):
         self.cloud_worker.finished_signal.connect(lambda ok, msg: self._on_cloud_backup_finished(ok, msg, phone))
         self.cloud_worker.start()
 
-    def _start_email_backup_async(self, email: str, trainer_name: str):
+    def _start_email_backup_async(self, email: str, trainer_name: str, trainer_id: int = None):
         self.progress_card.setVisible(True)
         self.btn_prog_close.setVisible(False)
         if hasattr(self, "btn_prog_spam_guide"):
@@ -1143,7 +1878,7 @@ class BackupView(QWidget):
             }
         """)
 
-        self.email_worker = EmailBackupThread(email, trainer_name)
+        self.email_worker = EmailBackupThread(email, trainer_name, trainer_id=trainer_id)
         self.email_worker.progress_signal.connect(self._on_backup_progress)
         self.email_worker.finished_signal.connect(lambda ok, msg, fn, sz: self._on_email_backup_finished(ok, msg, email, fn, sz))
         self.email_worker.start()

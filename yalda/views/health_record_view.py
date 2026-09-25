@@ -346,6 +346,7 @@ class HealthRecordView(QWidget):
     def __init__(self, member_id: int, parent=None):
         super().__init__(parent)
         self.member_id = member_id
+        self.saved_data = {}
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
         self.init_ui()
         self.load_data()
@@ -436,19 +437,33 @@ class HealthRecordView(QWidget):
         row_save = QHBoxLayout()
         row_save.setSpacing(12)
 
-        btn_save = QPushButton("💾 ثبت و بروزرسانی سوابق پزشکی")
-        btn_save.setFixedHeight(40)
-        btn_save.clicked.connect(self.save_data)
-        row_save.addWidget(btn_save)
+        self.btn_save = QPushButton("💾 ثبت و بروزرسانی سوابق پزشکی")
+        self.btn_save.setFixedHeight(40)
+        self.btn_save.setEnabled(False)
+        self.btn_save.clicked.connect(self.save_data)
+        row_save.addWidget(self.btn_save)
 
-        btn_reset = QPushButton("🔄 بازنشانی / لغو تغییرات")
-        btn_reset.setFixedHeight(40)
-        btn_reset.setObjectName("secondary_button")
-        btn_reset.clicked.connect(self.load_data)
-        row_save.addWidget(btn_reset)
+        self.btn_reset = QPushButton("🔄 بازنشانی / لغو تغییرات")
+        self.btn_reset.setFixedHeight(40)
+        self.btn_reset.setObjectName("secondary_button")
+        self.btn_reset.setEnabled(False)
+        self.btn_reset.clicked.connect(self.load_data)
+        row_save.addWidget(self.btn_reset)
         row_save.addStretch()
 
         layout.addLayout(row_save)
+
+        # Connect signals for tracking changes (dirty state)
+        self.cb_hypertension.stateChanged.connect(self._check_dirty_state)
+        self.cb_diabetes.stateChanged.connect(self._check_dirty_state)
+        self.cb_heart.stateChanged.connect(self._check_dirty_state)
+
+        self.txt_other_med.textChanged.connect(self._check_dirty_state)
+        self.txt_knee.textChanged.connect(self._check_dirty_state)
+        self.txt_back.textChanged.connect(self._check_dirty_state)
+        self.txt_shoulder.textChanged.connect(self._check_dirty_state)
+        self.txt_wrist.textChanged.connect(self._check_dirty_state)
+        self.txt_limitations.textChanged.connect(self._check_dirty_state)
 
         # Medical Documents & Tests Group
         group_docs = QGroupBox("📁 اسناد، آزمایش‌ها و مدارک پزشکی ثبت‌شده")
@@ -513,18 +528,50 @@ class HealthRecordView(QWidget):
         scroll_area.setWidget(container)
         main_layout.addWidget(scroll_area)
 
+    def _block_form_signals(self, block: bool):
+        for cb in (self.cb_hypertension, self.cb_diabetes, self.cb_heart):
+            cb.blockSignals(block)
+        for txt in (self.txt_other_med, self.txt_knee, self.txt_back, self.txt_shoulder, self.txt_wrist, self.txt_limitations):
+            txt.blockSignals(block)
+
+    def _get_current_form_data(self) -> dict:
+        return {
+            "has_hypertension": bool(self.cb_hypertension.isChecked()),
+            "has_diabetes": bool(self.cb_diabetes.isChecked()),
+            "has_heart_issue": bool(self.cb_heart.isChecked()),
+            "other_medical": self.txt_other_med.toPlainText().strip(),
+            "knee_injury": self.txt_knee.toPlainText().strip(),
+            "back_injury": self.txt_back.toPlainText().strip(),
+            "shoulder_injury": self.txt_shoulder.toPlainText().strip(),
+            "wrist_injury": self.txt_wrist.toPlainText().strip(),
+            "exercise_limitations": self.txt_limitations.toPlainText().strip()
+        }
+
+    def _check_dirty_state(self):
+        if not hasattr(self, "saved_data") or not hasattr(self, "btn_save") or not hasattr(self, "btn_reset"):
+            return
+        is_dirty = (self._get_current_form_data() != self.saved_data)
+        self.btn_save.setEnabled(is_dirty)
+        self.btn_reset.setEnabled(is_dirty)
+
     def load_data(self):
         rec = MemberService.get_health_record(self.member_id)
-        if rec:
-            self.cb_hypertension.setChecked(rec.has_hypertension or False)
-            self.cb_diabetes.setChecked(rec.has_diabetes or False)
-            self.cb_heart.setChecked(rec.has_heart_issue or False)
-            self.txt_other_med.setText(rec.other_medical or "")
-            self.txt_knee.setText(rec.knee_injury or "")
-            self.txt_back.setText(rec.back_injury or "")
-            self.txt_shoulder.setText(rec.shoulder_injury or "")
-            self.txt_wrist.setText(rec.wrist_injury or "")
-            self.txt_limitations.setText(rec.exercise_limitations or "")
+        self._block_form_signals(True)
+        try:
+            self.cb_hypertension.setChecked(bool(rec.has_hypertension) if rec else False)
+            self.cb_diabetes.setChecked(bool(rec.has_diabetes) if rec else False)
+            self.cb_heart.setChecked(bool(rec.has_heart_issue) if rec else False)
+            self.txt_other_med.setText((rec.other_medical or "") if rec else "")
+            self.txt_knee.setText((rec.knee_injury or "") if rec else "")
+            self.txt_back.setText((rec.back_injury or "") if rec else "")
+            self.txt_shoulder.setText((rec.shoulder_injury or "") if rec else "")
+            self.txt_wrist.setText((rec.wrist_injury or "") if rec else "")
+            self.txt_limitations.setText((rec.exercise_limitations or "") if rec else "")
+        finally:
+            self._block_form_signals(False)
+
+        self.saved_data = self._get_current_form_data()
+        self._check_dirty_state()
 
     def load_documents(self):
         docs = MemberService.get_medical_documents(self.member_id)
@@ -596,18 +643,10 @@ class HealthRecordView(QWidget):
             QMessageBox.information(self, "موفقیت", "مدرک پزشکی با موفقیت حذف شد.")
 
     def save_data(self):
-        data = {
-            "has_hypertension": self.cb_hypertension.isChecked(),
-            "has_diabetes": self.cb_diabetes.isChecked(),
-            "has_heart_issue": self.cb_heart.isChecked(),
-            "other_medical": self.txt_other_med.toPlainText().strip(),
-            "knee_injury": self.txt_knee.toPlainText().strip(),
-            "back_injury": self.txt_back.toPlainText().strip(),
-            "shoulder_injury": self.txt_shoulder.toPlainText().strip(),
-            "wrist_injury": self.txt_wrist.toPlainText().strip(),
-            "exercise_limitations": self.txt_limitations.toPlainText().strip()
-        }
+        data = self._get_current_form_data()
         MemberService.update_health_record(self.member_id, data)
+        self.saved_data = data
+        self._check_dirty_state()
         QMessageBox.information(self, "موفقیت", "پرونده سلامت با موفقیت ذخیره شد.")
 
     def export_medical_package(self):
@@ -625,10 +664,12 @@ class HealthRecordView(QWidget):
 
         default_filename = f"پرونده_{member.full_name}.zip"
 
-        save_path, _ = QFileDialog.getSaveFileName(
+        from yalda.utils.export_utils import resolve_athlete_export_path
+        save_path, _ = resolve_athlete_export_path(
+            member,
+            default_filename,
             self,
             "ذخیره پکیج مدارک و نظرات پزشکی",
-            default_filename,
             "ZIP Files (*.zip)"
         )
         if not save_path:

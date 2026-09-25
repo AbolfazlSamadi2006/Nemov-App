@@ -13,16 +13,19 @@ class MemberFormDialog(QDialog):
         self.photo_path = None
         self.setWindowTitle("ثبت / ویرایش ورزشکار جدید")
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
-        self.setFixedSize(650, 560)
+        from PyQt6.QtWidgets import QApplication
+        screen = QApplication.primaryScreen()
+        avail_h = screen.availableGeometry().height() if screen else 800
+        self._compact_mode = avail_h < 650
+        dlg_h = min(585, max(525, avail_h - 36))
+        self.setFixedSize(650, dlg_h)
 
         self.init_ui()
 
-
-
     def init_ui(self):
         layout = QVBoxLayout(self)
-        layout.setSpacing(8)
-        layout.setContentsMargins(20, 16, 20, 16)
+        layout.setSpacing(5 if getattr(self, "_compact_mode", False) else 8)
+        layout.setContentsMargins(20, 12 if getattr(self, "_compact_mode", False) else 16, 20, 12 if getattr(self, "_compact_mode", False) else 16)
 
 
         # Name Row
@@ -78,64 +81,95 @@ class MemberFormDialog(QDialog):
         row_birth_photo.addStretch()
         layout.addLayout(row_birth_photo)
 
-        # Physical Stats Box (Height & Weight stacked vertically, BMI opposite)
+        # Physical Stats Box (Height & Weight on top row, Activity Level on bottom row, BMR/TDEE opposite)
         row_stats_container = QHBoxLayout()
         
         vbox_hw = QVBoxLayout()
         vbox_hw.setSpacing(8)
 
-        row_h = QHBoxLayout()
+        row_hw_top = QHBoxLayout()
+        row_hw_top.setSpacing(8)
+
         self.spin_height = QDoubleSpinBox()
         self.spin_height.setRange(0.0, 300.0)
         self.spin_height.setSpecialValueText("")
         self.spin_height.setValue(0.0)
         self.spin_height.setDecimals(0)
         self.spin_height.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.spin_height.setFixedWidth(90)
+        self.spin_height.setFixedWidth(85)
+        self.spin_height.setFixedHeight(34)
         self.spin_height.setStyleSheet("padding: 2px 4px;")
 
         lbl_h = QLabel("قد (cm):")
-        lbl_h.setFixedWidth(65)
+        lbl_h.setFixedWidth(55)
 
-        row_h.addWidget(lbl_h)
-        row_h.addWidget(self.spin_height)
-        row_h.addStretch()
-        vbox_hw.addLayout(row_h)
-
-        row_w = QHBoxLayout()
         self.spin_weight = QDoubleSpinBox()
         self.spin_weight.setRange(0.0, 300.0)
         self.spin_weight.setSpecialValueText("")
         self.spin_weight.setValue(0.0)
         self.spin_weight.setDecimals(1)
         self.spin_weight.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.spin_weight.setFixedWidth(90)
+        self.spin_weight.setFixedWidth(85)
+        self.spin_weight.setFixedHeight(34)
         self.spin_weight.setStyleSheet("padding: 2px 4px;")
 
         lbl_w = QLabel("وزن (kg):")
-        lbl_w.setFixedWidth(65)
+        lbl_w.setFixedWidth(55)
 
-        row_w.addWidget(lbl_w)
-        row_w.addWidget(self.spin_weight)
-        row_w.addStretch()
-        vbox_hw.addLayout(row_w)
+        row_hw_top.addWidget(lbl_h)
+        row_hw_top.addWidget(self.spin_height)
+        row_hw_top.addSpacing(8)
+        row_hw_top.addWidget(lbl_w)
+        row_hw_top.addWidget(self.spin_weight)
+        row_hw_top.addStretch()
+        vbox_hw.addLayout(row_hw_top)
 
-        self.lbl_bmi_badge = QLabel("BMI: -")
-        self.lbl_bmi_badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.lbl_bmi_badge.setFixedHeight(65)
-        self.lbl_bmi_badge.setMinimumWidth(180)
-        self.lbl_bmi_badge.setStyleSheet("font-size: 13px; font-weight: bold; padding: 10px; border-radius: 8px; background-color: #555555; color: white;")
+        row_activity = QHBoxLayout()
+        row_activity.setSpacing(6)
+        lbl_act = QLabel("سطح فعالیت:")
+        lbl_act.setFixedWidth(78)
 
-        self.spin_height.valueChanged.connect(self.update_bmi_display)
-        self.spin_weight.valueChanged.connect(self.update_bmi_display)
+        from yalda.utils.bmr_calculator import PAL_LEVELS
+        self.combo_activity = QComboBox()
+        for idx_i, (act_key, act_info) in enumerate(PAL_LEVELS.items()):
+            self.combo_activity.addItem(act_info["combo_text"], act_key)
+            self.combo_activity.setItemData(
+                idx_i,
+                f"{act_info['title']} — {act_info['desc']}",
+                Qt.ItemDataRole.ToolTipRole,
+            )
+        idx_default_act = self.combo_activity.findData("moderately_active")
+        if idx_default_act >= 0:
+            self.combo_activity.setCurrentIndex(idx_default_act)
+        self.combo_activity.setFixedWidth(222)
+        self.combo_activity.setFixedHeight(34)
+        self.combo_activity.setStyleSheet("font-size: 11px; padding: 2px 6px;")
+        self.combo_activity.view().setMinimumWidth(222)
+
+        row_activity.addWidget(lbl_act)
+        row_activity.addWidget(self.combo_activity)
+        row_activity.addStretch()
+        vbox_hw.addLayout(row_activity)
+
+        self.lbl_bmr_badge = QLabel("BMR: -\nTDEE: -")
+        self.lbl_bmr_badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.lbl_bmr_badge.setFixedHeight(76)
+        self.lbl_bmr_badge.setFixedWidth(295)
+        self.lbl_bmr_badge.setStyleSheet("font-size: 12px; font-weight: bold; padding: 6px 8px; border-radius: 8px; background-color: #555555; color: white;")
+
+        self.spin_height.valueChanged.connect(self.update_bmr_display)
+        self.spin_weight.valueChanged.connect(self.update_bmr_display)
+        self.combo_gender.currentIndexChanged.connect(self.update_bmr_display)
+        self.picker_birth.date_changed.connect(self.update_bmr_display)
+        self.combo_activity.currentIndexChanged.connect(self.update_bmr_display)
 
         row_stats_container.addLayout(vbox_hw)
-        row_stats_container.addSpacing(20)
-        row_stats_container.addWidget(self.lbl_bmi_badge)
+        row_stats_container.addSpacing(12)
+        row_stats_container.addWidget(self.lbl_bmr_badge)
         row_stats_container.addStretch()
 
         layout.addLayout(row_stats_container)
-        self.update_bmi_display()
+        self.update_bmr_display()
 
         # Membership Dates, Fee, Type & Status Grid (4 Rows, 4 Columns)
         grid_mem = QGridLayout()
@@ -260,27 +294,39 @@ class MemberFormDialog(QDialog):
         filepath = get_image_file_path(
             self,
             dialog_title="انتخاب یا ثبت تصویر پروفایل ورزشکار",
-            file_filter="فایل‌های تصویری (*.png *.jpg *.jpeg *.bmp *.webp)"
+            file_filter="فایل‌های تصویری (*.png *.jpg *.jpeg *.bmp *.webp)",
+            is_square_default=True
         )
         if filepath:
             self.photo_path = filepath
             self.btn_photo.setText(f"📷 عکس: {os.path.basename(filepath)[:15]}")
 
-    def update_bmi_display(self):
-        from yalda.utils.bmi_calculator import calculate_bmi_info
+    def update_bmr_display(self):
+        from yalda.utils.bmr_calculator import calculate_bmr_tdee, calculate_age_from_shamsi, PAL_LEVELS
         h = self.spin_height.value()
         w = self.spin_weight.value()
+        act_level = self.combo_activity.currentData() or "moderately_active"
+        if act_level in PAL_LEVELS:
+            p_info = PAL_LEVELS[act_level]
+            self.combo_activity.setToolTip(f"{p_info['title']} — {p_info['desc']}")
         if h > 0 and w > 0:
-            bmi, cat, color = calculate_bmi_info(h, w)
-            if bmi > 0:
-                self.lbl_bmi_badge.setText(f"BMI: {bmi}\n({cat})")
-                self.lbl_bmi_badge.setStyleSheet(f"font-size: 13px; font-weight: bold; padding: 10px; border-radius: 8px; background-color: {color}; color: white;")
+            age = calculate_age_from_shamsi(self.picker_birth.text().strip())
+            gender = self.combo_gender.currentData() or "male"
+            bmr, tdee, pal, act_title, color = calculate_bmr_tdee(h, w, age, gender, act_level)
+            if bmr > 0:
+                self.lbl_bmr_badge.setText(
+                    f"\u200fمتابولیسم پایه (BMR): {bmr:,} کالری\n"
+                    f"\u200fکالری روزانه (TDEE): {tdee:,} کالری ({act_title})"
+                )
+                self.lbl_bmr_badge.setStyleSheet(
+                    f"font-size: 12px; font-weight: bold; padding: 6px 8px; border-radius: 8px; background-color: {color}; color: white;"
+                )
             else:
-                self.lbl_bmi_badge.setText("BMI: -")
-                self.lbl_bmi_badge.setStyleSheet("font-size: 13px; font-weight: bold; padding: 10px; border-radius: 8px; background-color: #555555; color: white;")
+                self.lbl_bmr_badge.setText("\u200fمتابولیسم پایه (BMR): -\n\u200fکالری روزانه (TDEE): -")
+                self.lbl_bmr_badge.setStyleSheet("font-size: 12px; font-weight: bold; padding: 6px 8px; border-radius: 8px; background-color: #555555; color: white;")
         else:
-            self.lbl_bmi_badge.setText("BMI: -")
-            self.lbl_bmi_badge.setStyleSheet("font-size: 13px; font-weight: bold; padding: 10px; border-radius: 8px; background-color: #555555; color: white;")
+            self.lbl_bmr_badge.setText("\u200fمتابولیسم پایه (BMR): -\n\u200fکالری روزانه (TDEE): -")
+            self.lbl_bmr_badge.setStyleSheet("font-size: 12px; font-weight: bold; padding: 6px 8px; border-radius: 8px; background-color: #555555; color: white;")
 
     def format_tuition_input(self, text: str):
         persian_to_eng = str.maketrans('۰۱۲۳۴۵۶۷۸۹', '0123456789')
@@ -372,8 +418,55 @@ class MemberFormDialog(QDialog):
                 self.txt_phone.setFocus()
                 return
 
+        # Duplicate checks for member
+        from yalda.services.member_service import MemberService
+        all_members = MemberService.get_all_members()
+        curr_id = self.member_data.id if self.member_data else None
+
+        # 1. Check duplicate phone (if not "-")
+        if phone != "-":
+            persian_to_eng = str.maketrans('۰۱۲۳۴۵۶۷۸۹', '0123456789')
+            phone_eng = phone.translate(persian_to_eng)
+            for m in all_members:
+                if curr_id and m.id == curr_id:
+                    continue
+                m_phone = (m.phone or "").translate(persian_to_eng)
+                if m_phone and m_phone != "-" and m_phone == phone_eng:
+                    reply = QMessageBox.question(
+                        self,
+                        "هشدار شماره تماس تکراری",
+                        f"ورزشکاری با شماره تماس «{phone}» از قبل در سیستم ثبت شده است ({m.full_name}).\n\nآیا با وجود تکراری بودن شماره، مایل به ذخیره هستید؟",
+                        QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                        QMessageBox.StandardButton.No
+                    )
+                    if reply != QMessageBox.StandardButton.Yes:
+                        self.txt_phone.setFocus()
+                        return
+                    break
+
+        # 2. Check duplicate full name (first_name + last_name)
+        full_name_candidate = f"{first_name} {last_name}".strip().lower()
+        same_name_members = [
+            m for m in all_members 
+            if not (curr_id and m.id == curr_id) and m.full_name and m.full_name.strip().lower() == full_name_candidate
+        ]
+        if same_name_members:
+            from yalda.utils.duplicate_helper import get_next_numbered_name
+            other_lasts = [m.last_name for m in all_members if not (curr_id and m.id == curr_id) and m.first_name and m.first_name.strip().lower() == first_name.lower() and m.last_name]
+            suggested_last = get_next_numbered_name(last_name, other_lasts)
+            reply = QMessageBox.question(
+                self,
+                "هشدار نام تکراری",
+                f"ورزشکار دیگری با نام و نام خانوادگی «{first_name} {last_name}» از قبل در سیستم ثبت شده است.\n\nدر صورت تایید، این ورزشکار با مشخصات «{first_name} {suggested_last}» ذخیره خواهد شد.\nآیا مطمئن هستید؟",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No
+            )
+            if reply != QMessageBox.StandardButton.Yes:
+                self.txt_last_name.setFocus()
+                return
+            self.txt_last_name.setText(suggested_last)
+
         try:
-            from yalda.services.member_service import MemberService
             data = self.get_data()
             if self.member_data:
                 MemberService.update_member(self.member_data.id, data)
@@ -405,6 +498,7 @@ class MemberFormDialog(QDialog):
             "birth_date_shamsi": self.picker_birth.text(),
             "height_cm": self.spin_height.value() if self.spin_height.value() > 0 else None,
             "initial_weight_kg": self.spin_weight.value() if self.spin_weight.value() > 0 else None,
+            "activity_level": self.combo_activity.currentData() or "moderately_active",
             "registration_date_shamsi": self.picker_reg.text(),
             "insurance_date_shamsi": self.picker_insurance.text(),
             "tuition_fee": tuition_val,
@@ -434,6 +528,11 @@ class MemberFormDialog(QDialog):
         if idx_g >= 0:
             self.combo_gender.setCurrentIndex(idx_g)
 
+        act_val = getattr(m, "activity_level", None) or "moderately_active"
+        idx_act = self.combo_activity.findData(act_val)
+        if idx_act >= 0:
+            self.combo_activity.setCurrentIndex(idx_act)
+
         idx_m = self.combo_membership.findData(m.membership_type)
         if idx_m >= 0:
             self.combo_membership.setCurrentIndex(idx_m)
@@ -459,5 +558,5 @@ class MemberFormDialog(QDialog):
             self.picker_expire.setText(m.membership_expire_shamsi)
         if m.notes:
             self.txt_notes.setText(m.notes)
-        self.update_bmi_display()
+        self.update_bmr_display()
 

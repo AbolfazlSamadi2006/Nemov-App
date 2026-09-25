@@ -56,6 +56,7 @@ class Member(Base):
     birth_date_shamsi = Column(String(10), nullable=True)
     height_cm = Column(Float, nullable=True)
     initial_weight_kg = Column(Float, nullable=True)
+    activity_level = Column(String(30), default="moderately_active")
     photo_path = Column(String(255), nullable=True)
     
     registration_date_shamsi = Column(String(10), nullable=True)
@@ -69,6 +70,7 @@ class Member(Base):
     membership_expire_shamsi = Column(String(10), nullable=False)
     status = Column(String(20), default="active", index=True)  # 'active', 'expired', 'archived'
     notes = Column(Text, nullable=True)
+    export_folder_path = Column(String(500), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     # Relationships
@@ -78,10 +80,27 @@ class Member(Base):
     workout_assignments = relationship("WorkoutAssignment", back_populates="member", cascade="all, delete-orphan")
     nutrition_assignments = relationship("NutritionAssignment", back_populates="member", cascade="all, delete-orphan")
     medical_documents = relationship("MedicalDocument", back_populates="member", cascade="all, delete-orphan", order_by="MedicalDocument.created_at.desc()")
+    tuition_payments = relationship("TuitionPayment", back_populates="member", cascade="all, delete-orphan", order_by="TuitionPayment.payment_date_shamsi.desc()")
 
     @property
     def full_name(self):
-        return f"{self.first_name} {self.last_name}"
+        if self.first_name and self.last_name:
+            return f"{self.first_name} {self.last_name}".strip()
+        return (self.first_name or self.last_name or "").strip()
+
+    @full_name.setter
+    def full_name(self, value):
+        if not value:
+            self.first_name = ""
+            self.last_name = ""
+            return
+        parts = str(value).strip().split(maxsplit=1)
+        if len(parts) == 1:
+            self.first_name = parts[0]
+            self.last_name = ""
+        else:
+            self.first_name = parts[0]
+            self.last_name = parts[1]
 
     @property
     def trainer_name(self):
@@ -159,7 +178,8 @@ class PhysicalAssessment(Base):
     height_cm = Column(Float, nullable=True)
     weight_kg = Column(Float, nullable=False)
     body_fat_percentage = Column(Float, nullable=True)
-    bmi = Column(Float, nullable=True)
+    bmr = Column(Float, nullable=True)
+    tdee = Column(Float, nullable=True)
     
     arm_circ = Column(Float, nullable=True)
     chest_circ = Column(Float, nullable=True)
@@ -188,6 +208,9 @@ class Exercise(Base):
     media_path = Column(String(255), nullable=True)
     media_type = Column(String(20), default="image")  # 'image', 'video', 'url'
     video_url = Column(String(500), nullable=True)  # URL to online video tutorial
+    is_corrective = Column(Boolean, default=False, index=True)
+    thumbnail_path = Column(String(500), nullable=True)
+    video_cloud_url = Column(String(500), nullable=True)
     contraindications = Column(Text, nullable=True)  # e.g. 'back_injury', 'knee_injury'
     description = Column(Text, nullable=True)
 
@@ -332,3 +355,50 @@ class BackupRecord(Base):
     backup_date_shamsi = Column(String(10), nullable=False)
     backup_size_mb = Column(Float, default=0.0)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+class ClubExpense(Base):
+    __tablename__ = "club_expenses"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # مربی یا کاربری که هزینه را ثبت کرده
+    title = Column(String(150), nullable=False)
+    category = Column(String(50), default="متفرقه")
+    amount = Column(Float, nullable=False)
+    expense_date_shamsi = Column(String(10), nullable=False)
+    description = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User")
+
+class TuitionPayment(Base):
+    __tablename__ = "tuition_payments"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    member_id = Column(Integer, ForeignKey("members.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # مربی مربوط به این شاگرد
+    amount = Column(Float, nullable=False)
+    payment_date_shamsi = Column(String(10), nullable=False)
+    payment_type = Column(String(50), default="شهریه دوره ماهانه")
+    notes = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    member = relationship("Member", back_populates="tuition_payments")
+    trainer = relationship("User")
+
+
+class NotificationHistory(Base):
+    __tablename__ = "notification_history"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    member_id = Column(Integer, ForeignKey("members.id"), nullable=True)
+    member_name = Column(String(120), nullable=True)
+    notif_type = Column(String(50), nullable=False)
+    title = Column(String(255), nullable=False)
+    description = Column(Text, nullable=True)
+    date_shamsi = Column(String(30), nullable=False)
+    notif_key = Column(String(150), unique=True, nullable=False, index=True)
+    is_read = Column(Boolean, default=False)
+    is_deleted = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+

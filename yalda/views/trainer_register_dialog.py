@@ -19,7 +19,10 @@ class TrainerRegisterDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle("ثبت‌نام مربی جدید - نرم‌افزار یلدا")
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
-        self.setFixedSize(540, 680)
+        from PyQt6.QtWidgets import QApplication
+        screen = QApplication.primaryScreen()
+        avail_h = screen.availableGeometry().height() if screen else 800
+        self.setFixedSize(540, min(680, max(540, avail_h - 36)))
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowType.WindowContextHelpButtonHint)
 
         self.selected_photo_path = None
@@ -325,7 +328,8 @@ class TrainerRegisterDialog(QDialog):
         temp_path = get_image_file_path(
             self,
             dialog_title="انتخاب یا ثبت تصویر مربی",
-            file_filter="فایل‌های تصویری (*.png *.jpg *.jpeg *.bmp *.webp)"
+            file_filter="فایل‌های تصویری (*.png *.jpg *.jpeg *.bmp *.webp)",
+            is_square_default=True
         )
         if temp_path and os.path.exists(temp_path):
             # Copy to profile-photos directory

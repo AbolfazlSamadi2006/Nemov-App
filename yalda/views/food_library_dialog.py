@@ -79,9 +79,29 @@ class FoodFormDialog(QDialog):
             self.load_data()
 
     def save(self):
-        if not self.txt_name.text().strip():
+        name_fa = self.txt_name.text().strip()
+        if not name_fa:
             QMessageBox.warning(self, "خطا", "لطفاً نام ماده غذایی را وارد کنید.")
             return
+
+        # Check duplicate food name in food bank
+        foods = NutritionService.get_all_foods()
+        other_names = [f.name_fa for f in foods if not (self.food_data and f.id == self.food_data.id) and f.name_fa]
+        if any(n.strip().lower() == name_fa.lower() for n in other_names):
+            from yalda.utils.duplicate_helper import get_next_numbered_name
+            suggested_name = get_next_numbered_name(name_fa, other_names)
+            reply = QMessageBox.question(
+                self,
+                "هشدار ماده غذایی تکراری",
+                f"ماده غذایی با عنوان «{name_fa}» از قبل در بانک مواد غذایی ثبت شده است.\n\nدر صورت تایید، این مورد با عنوان «{suggested_name}» ذخیره خواهد شد.\nآیا مایل به ذخیره هستید؟",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No
+            )
+            if reply != QMessageBox.StandardButton.Yes:
+                self.txt_name.setFocus()
+                return
+            self.txt_name.setText(suggested_name)
+
         self.accept()
 
     def get_data(self):
@@ -135,8 +155,15 @@ class FoodLibraryDialog(QDialog):
         self.table.setColumnCount(8)
         self.table.setHorizontalHeaderLabels(["نام", "دسته‌بندی", "واحد", "کالری", "پروتئین", "کربوهیدرات", "چربی", "عملیات"])
         self.table.verticalHeader().setDefaultSectionSize(40)
-        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
-        self.table.horizontalHeader().setSectionResizeMode(7, QHeaderView.ResizeMode.Fixed)
+        header = self.table.horizontalHeader()
+        header.setSectionResizeMode(QHeaderView.ResizeMode.Fixed)
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
+        self.table.setColumnWidth(1, 110)
+        self.table.setColumnWidth(2, 120)
+        self.table.setColumnWidth(3, 85)
+        self.table.setColumnWidth(4, 80)
+        self.table.setColumnWidth(5, 95)
+        self.table.setColumnWidth(6, 80)
         self.table.setColumnWidth(7, 90)
 
         layout.addWidget(self.table)
@@ -160,6 +187,22 @@ class FoodLibraryDialog(QDialog):
             self.table.setItem(row, 6, QTableWidgetItem(f"{int(f.fat_g or 0)}g"))
 
             btn_edit = QPushButton("✏️ ویرایش")
+            btn_edit.setFixedSize(72, 30)
+            btn_edit.setCursor(Qt.CursorShape.PointingHandCursor)
+            btn_edit.setStyleSheet("""
+                QPushButton {
+                    background-color: #D97706;
+                    color: #FFFFFF;
+                    font-weight: bold;
+                    border: none;
+                    border-radius: 6px;
+                    padding: 2px 6px;
+                    font-size: 11px;
+                }
+                QPushButton:hover {
+                    background-color: #B45309;
+                }
+            """)
             btn_edit.clicked.connect(lambda _, item=f: self.open_edit_dialog(item))
             self.table.setCellWidget(row, 7, btn_edit)
 

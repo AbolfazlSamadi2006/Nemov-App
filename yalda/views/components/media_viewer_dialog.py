@@ -70,7 +70,7 @@ class MediaViewerDialog(QDialog):
         # 2. Online Video URL Section
         if self.video_url and self.video_url.strip():
             url_box = QVBoxLayout()
-            lbl_url_title = QLabel("🌐 لینک آموزش ویدیویی اینترنتی (گوگل / آپارات / یوتیوب):")
+            lbl_url_title = QLabel("🌐 لینک آموزش آنلاین (ویدیو / تصویر):")
             lbl_url_title.setStyleSheet("font-weight: bold; color: #60A5FA; font-size: 13px;")
             
             lbl_url_text = QLabel(f"🔗 {self.video_url.strip()}")
@@ -78,7 +78,7 @@ class MediaViewerDialog(QDialog):
             lbl_url_text.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
             lbl_url_text.setWordWrap(True)
 
-            btn_open_url = QPushButton("🌐 باز کردن لینک ویدیو در مرورگر")
+            btn_open_url = QPushButton("🌐 مشاهده رسانه آموزشی در مرورگر")
             btn_open_url.setFixedHeight(40)
             btn_open_url.setStyleSheet("""
                 QPushButton {
@@ -123,6 +123,10 @@ class MediaViewerDialog(QDialog):
             url_str = self.video_url.strip()
             if not (url_str.startswith("http://") or url_str.startswith("https://")):
                 url_str = "https://" + url_str
+            if "workers.dev" in url_str and "title=" not in url_str and self.title_str:
+                from urllib.parse import quote
+                sep = "&" if "?" in url_str else "?"
+                url_str = f"{url_str}{sep}title={quote(self.title_str)}"
             QDesktopServices.openUrl(QUrl(url_str))
         else:
             QMessageBox.warning(self, "خطا", "لینک ویدیو موجود نیست.")

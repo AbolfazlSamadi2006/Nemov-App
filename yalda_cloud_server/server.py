@@ -20,7 +20,7 @@ ADMIN_USERNAME = os.environ.get("ADMIN_USER", "admin")
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASS", "2006")
 SESSION_SECRET = os.environ.get("SESSION_SECRET", "super_secret_session_key_yalda_2006")
 
-app = FastAPI(title="Yalda Gym Cloud Backup Server", version="2.3.0")
+app = FastAPI(title="Yalda Gym Cloud Backup Server", version="v3.0.0")
 app.add_middleware(SessionMiddleware, secret_key=SESSION_SECRET)
 
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))

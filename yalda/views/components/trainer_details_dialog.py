@@ -5,7 +5,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QPixmap
 
-from yalda.utils.image_utils import get_circular_pixmap
+from yalda.utils.image_utils import get_circular_pixmap, resolve_image_path
 from yalda.auth.authentication import update_trainer_profile
 
 
@@ -71,8 +71,9 @@ class TrainerDetailsDialog(QDialog):
         lbl_avatar.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         photo_path = self.trainer_data.get("photo_path", "")
-        if photo_path and os.path.exists(photo_path):
-            pix = QPixmap(photo_path)
+        resolved = resolve_image_path(photo_path)
+        if resolved:
+            pix = QPixmap(resolved)
             circ = get_circular_pixmap(pix, 70)
             lbl_avatar.setPixmap(circ)
             lbl_avatar.setStyleSheet("border: none; background: transparent;")

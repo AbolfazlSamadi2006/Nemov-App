@@ -14,6 +14,7 @@ from yalda.views.templates_manager_view import TemplatesManagerView
 from yalda.views.workout_library_view import WorkoutLibraryView
 from yalda.views.food_library_view import FoodLibraryView
 from yalda.views.backup_view import BackupView
+from yalda.views.accounting_view import AccountingView
 from yalda.views.developer_view import DeveloperView
 from yalda.views.components.exit_backup_dialog import ExitBackupDialog
 from yalda.auth.authentication import CurrentUser
@@ -26,8 +27,19 @@ class MainWindow(QMainWindow):
         self.setWindowTitle(f"{config.APP_NAME} - نرم‌افزار مدیریت باشگاه بدنسازی (نسخه {config.APP_VERSION})")
 
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
-        self.resize(1280, 800)
-        self.setMinimumSize(1024, 700)
+        from PyQt6.QtWidgets import QApplication
+        screen = QApplication.primaryScreen()
+        if screen:
+            avail = screen.availableGeometry()
+            min_w = min(960, max(800, avail.width() - 40))
+            min_h = min(560, max(480, avail.height() - 50))
+            self.setMinimumSize(min_w, min_h)
+            init_w = min(1280, max(min_w, avail.width() - 20))
+            init_h = min(800, max(min_h, avail.height() - 40))
+            self.resize(init_w, init_h)
+        else:
+            self.resize(1280, 800)
+            self.setMinimumSize(960, 560)
 
         self.init_ui()
 
@@ -77,6 +89,8 @@ class MainWindow(QMainWindow):
 
         self.view_exercises = WorkoutLibraryView()
         self.view_exercises.back_requested.connect(self.go_back)
+        self.view_exercises.cloud_sync_progress.connect(self.sidebar.show_cloud_sync_progress)
+        self.view_exercises.cloud_sync_finished.connect(self.sidebar.finish_cloud_sync_progress)
 
         self.view_foods = FoodLibraryView()
         self.view_foods.back_requested.connect(self.go_back)
@@ -87,20 +101,26 @@ class MainWindow(QMainWindow):
         self.view_backup = BackupView()
         self.view_backup.account_deleted_signal.connect(self.on_account_deleted)
         self.view_backup.back_requested.connect(self.go_back)
+        self.view_backup.notifications_changed_signal.connect(self.sidebar.refresh_notifications)
+        self.sidebar.notifications_marked_read.connect(self.view_backup.load_notification_history)
+
+        self.view_accounting = AccountingView()
+        self.view_accounting.member_clicked.connect(self.open_member_detail)
 
         self._nav_history = []
         self._is_navigating_back = False
         self._current_page_state = ("page", "dashboard")
 
-        self.stack.addWidget(self.view_dashboard) # Index 0
-        self.stack.addWidget(self.view_members)   # Index 1
-        self.stack.addWidget(self.view_workouts)  # Index 2
-        self.stack.addWidget(self.view_nutrition) # Index 3
-        self.stack.addWidget(self.view_templates) # Index 4
-        self.stack.addWidget(self.view_exercises) # Index 5
-        self.stack.addWidget(self.view_foods)     # Index 6
-        self.stack.addWidget(self.view_developer) # Index 7
-        self.stack.addWidget(self.view_backup)    # Index 8
+        self.stack.addWidget(self.view_dashboard)  # Index 0
+        self.stack.addWidget(self.view_members)    # Index 1
+        self.stack.addWidget(self.view_workouts)   # Index 2
+        self.stack.addWidget(self.view_nutrition)  # Index 3
+        self.stack.addWidget(self.view_templates)  # Index 4
+        self.stack.addWidget(self.view_exercises)  # Index 5
+        self.stack.addWidget(self.view_foods)      # Index 6
+        self.stack.addWidget(self.view_developer)  # Index 7
+        self.stack.addWidget(self.view_backup)     # Index 8
+        self.stack.addWidget(self.view_accounting) # Index 9
 
     def go_back(self):
         if self._nav_history:
@@ -129,7 +149,8 @@ class MainWindow(QMainWindow):
             "exercises": 5,
             "foods": 6,
             "developer": 7,
-            "backup": 8
+            "backup": 8,
+            "accounting": 9
         }
         if page_id in page_map:
             if not self._is_navigating_back and hasattr(self, '_current_page_state'):
@@ -155,6 +176,8 @@ class MainWindow(QMainWindow):
                 self.view_developer.load_data()
             elif page_id == "backup":
                 self.view_backup.load_backups()
+            elif page_id == "accounting":
+                self.view_accounting.load_data()
             self.stack.setCurrentIndex(page_map[page_id])
 
     def open_workout_editor_with_plan(self, plan_id: int, member_id: int = None):

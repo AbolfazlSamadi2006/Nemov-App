@@ -164,10 +164,11 @@ class ExitBackupDialog(QDialog):
         time_str = now.strftime("%H-%M-%S")
         suggested_name = f"Yalda_Backup_{shamsi_date}_{time_str}.db"
 
-        target_file, _ = QFileDialog.getSaveFileName(
+        from yalda.utils.export_utils import resolve_gym_export_path
+        target_file, gym_folder_name = resolve_gym_export_path(
+            suggested_name,
             self,
             "انتخاب مسیر ذخیره نسخه پشتیبان",
-            suggested_name,
             "SQLite Database (*.db);;All Files (*.*)"
         )
 
@@ -175,7 +176,7 @@ class ExitBackupDialog(QDialog):
             return
 
         if export_offline_backup(target_file):
-            QMessageBox.information(self, "موفقیت", f"نسخه پشتیبان با موفقیت در مسیر زیر ذخیره شد:\n{target_file}")
+            QMessageBox.information(self, "موفقیت", f"نسخه پشتیبان با موفقیت در پوشه اختصاصی «{gym_folder_name}» ذخیره شد:\n{target_file}")
             self.accept()
         else:
             QMessageBox.critical(self, "خطا", "خطا در استخراج فایل پشتیبان.")

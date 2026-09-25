@@ -190,8 +190,8 @@ class CompareDialog(QDialog):
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(title)
 
-        # Stats Diff Table (11 Metrics)
-        table = QTableWidget(11, 4)
+        # Stats Diff Table (12 Metrics)
+        table = QTableWidget(12, 4)
         table.setHorizontalHeaderLabels(["شاخص", f"تاریخ {a1.assessment_date_shamsi}", f"تاریخ {a2.assessment_date_shamsi}", "تغییرات"])
         table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
 
@@ -199,7 +199,8 @@ class CompareDialog(QDialog):
             ("قد (cm)", getattr(a1, 'height_cm', None) or "-", getattr(a2, 'height_cm', None) or "-", diff.get('height_diff', 0)),
             ("وزن (kg)", a1.weight_kg, a2.weight_kg, diff['weight_diff']),
             ("درصد چربی (%)", a1.body_fat_percentage or "-", a2.body_fat_percentage or "-", diff['fat_diff']),
-            ("شاخص BMI", a1.bmi or "-", a2.bmi or "-", diff['bmi_diff']),
+            ("متابولیسم پایه - BMR (kcal)", diff.get('bmr1') or "-", diff.get('bmr2') or "-", diff.get('bmr_diff', 0)),
+            ("کالری روزانه - TDEE (kcal)", diff.get('tdee1') or "-", diff.get('tdee2') or "-", diff.get('tdee_diff', 0)),
             ("دور گردن (cm)", getattr(a1, 'neck_circ', None) or "-", getattr(a2, 'neck_circ', None) or "-", diff.get('neck_diff', 0)),
             ("دور سینه (cm)", a1.chest_circ or "-", a2.chest_circ or "-", diff['chest_diff']),
             ("دور بازو (cm)", a1.arm_circ or "-", a2.arm_circ or "-", diff['arm_diff']),
@@ -277,7 +278,7 @@ class AssessmentView(QWidget):
 
         lbl_date = QLabel("تاریخ ارزیابی:")
         self.picker_date = JalaliDatePicker(default_today=True)
-        self.picker_date.setFixedWidth(140)
+        self.picker_date.setFixedWidth(175)
         self.picker_date.setFixedHeight(38)
 
 
@@ -303,12 +304,12 @@ class AssessmentView(QWidget):
         self.spin_fat.setValue(0.0)
         self.spin_fat.setFixedWidth(115)
 
-        self.lbl_live_bmi = QLabel("BMI: -")
-        self.lbl_live_bmi.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.lbl_live_bmi.setFixedHeight(34)
-        self.lbl_live_bmi.setMinimumWidth(220)
-        self.lbl_live_bmi.setMaximumWidth(320)
-        self.lbl_live_bmi.setStyleSheet("font-weight: bold; padding: 4px 10px; border-radius: 6px; background-color: #555555; color: white;")
+        self.lbl_live_bmr = QLabel("BMR: - | TDEE: -")
+        self.lbl_live_bmr.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.lbl_live_bmr.setFixedHeight(34)
+        self.lbl_live_bmr.setMinimumWidth(240)
+        self.lbl_live_bmr.setMaximumWidth(360)
+        self.lbl_live_bmr.setStyleSheet("font-weight: bold; padding: 4px 10px; border-radius: 6px; background-color: #555555; color: white;")
 
         row1.addWidget(lbl_date)
         row1.addWidget(self.picker_date)
@@ -322,14 +323,14 @@ class AssessmentView(QWidget):
         row1.addWidget(lbl_f)
         row1.addWidget(self.spin_fat)
         row1.addSpacing(10)
-        row1.addWidget(self.lbl_live_bmi, stretch=1)
+        row1.addWidget(self.lbl_live_bmr, stretch=1)
         row1.addStretch()
 
-        self.spin_height.valueChanged.connect(self.update_live_bmi)
-        self.spin_weight.valueChanged.connect(self.update_live_bmi)
+        self.spin_height.valueChanged.connect(self.update_live_bmr)
+        self.spin_weight.valueChanged.connect(self.update_live_bmr)
         layout_form.addLayout(row1)
 
-        self.update_live_bmi()
+        self.update_live_bmr()
 
         row2 = QHBoxLayout()
         row2.setSpacing(6)
@@ -471,24 +472,25 @@ class AssessmentView(QWidget):
         self.table = QTableWidget()
         self.table.setColumnCount(14)
         self.table.setHorizontalHeaderLabels([
-            "تاریخ (شمسی)", "قد (cm)", "وزن (kg)", "درصد چربی", "BMI", "دور گردن", "دور سینه", "دور بازو", "دور شکم", "دور کمر", "دور لگن", "دور ران", "تصاویر پیشرفت", "عملیات"
+            "تاریخ (شمسی)", "قد (cm)", "وزن (kg)", "درصد چربی", "BMR / TDEE (kcal)", "دور گردن", "دور سینه", "دور بازو", "دور شکم", "دور کمر", "دور لگن", "دور ران", "تصاویر پیشرفت", "عملیات"
         ])
         
         header = self.table.horizontalHeader()
+        header.setMinimumSectionSize(40)
         header.setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
-        self.table.setColumnWidth(0, 95)   # تاریخ
-        self.table.setColumnWidth(1, 55)   # قد
-        self.table.setColumnWidth(2, 55)   # وزن
-        self.table.setColumnWidth(3, 70)   # چربی
-        header.setSectionResizeMode(4, QHeaderView.ResizeMode.Stretch)  # BMI
-        self.table.setColumnWidth(5, 55)   # گردن
-        self.table.setColumnWidth(6, 55)   # سینه
-        self.table.setColumnWidth(7, 55)   # بازو
-        self.table.setColumnWidth(8, 55)   # شکم
-        self.table.setColumnWidth(9, 55)   # کمر
-        self.table.setColumnWidth(10, 55)  # لگن
-        self.table.setColumnWidth(11, 55)  # ران
-        self.table.setColumnWidth(12, 95)  # عکس‌ها
+        self.table.setColumnWidth(0, 92)   # تاریخ
+        self.table.setColumnWidth(1, 58)   # قد
+        self.table.setColumnWidth(2, 64)   # وزن
+        self.table.setColumnWidth(3, 78)   # چربی
+        header.setSectionResizeMode(4, QHeaderView.ResizeMode.Stretch)  # BMR / TDEE
+        self.table.setColumnWidth(5, 64)   # گردن
+        self.table.setColumnWidth(6, 64)   # سینه
+        self.table.setColumnWidth(7, 58)   # بازو
+        self.table.setColumnWidth(8, 64)   # شکم
+        self.table.setColumnWidth(9, 58)   # کمر
+        self.table.setColumnWidth(10, 58)  # لگن
+        self.table.setColumnWidth(11, 56)  # ران
+        self.table.setColumnWidth(12, 96)  # عکس‌ها
         header.setSectionResizeMode(13, QHeaderView.ResizeMode.Fixed)
         self.table.setColumnWidth(13, 140) # عملیات
 
@@ -497,7 +499,7 @@ class AssessmentView(QWidget):
         self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
 
-        layout.addWidget(self.table)
+        layout.addWidget(self.table, 1)
 
     def select_before_photo(self):
         from yalda.utils.image_source_chooser import get_image_file_path
@@ -571,11 +573,11 @@ class AssessmentView(QWidget):
         self.after_photo_path = None
         self.btn_before.setText("📷 عکس قبل")
         self.btn_after.setText("📷 عکس بعد")
-        self.update_live_bmi()
+        self.update_live_bmr()
 
-    def update_live_bmi(self):
+    def update_live_bmr(self):
         from yalda.services.member_service import MemberService
-        from yalda.utils.bmi_calculator import calculate_bmi_info
+        from yalda.utils.bmr_calculator import calculate_bmr_tdee, calculate_age_from_shamsi
         member = MemberService.get_member_by_id(self.member_id)
         
         input_h = self.spin_height.value()
@@ -583,23 +585,29 @@ class AssessmentView(QWidget):
         weight_kg = self.spin_weight.value()
 
         if height_cm > 0 and weight_kg > 0:
-            bmi, cat, color = calculate_bmi_info(height_cm, weight_kg)
-            if bmi > 0:
-                self.lbl_live_bmi.setText(f"BMI: {bmi} ({cat})")
-                self.lbl_live_bmi.setStyleSheet(f"font-weight: bold; padding: 4px 10px; border-radius: 6px; background-color: {color}; color: white;")
+            age = calculate_age_from_shamsi(member.birth_date_shamsi if member else None)
+            gender = member.gender if member else "male"
+            act_level = getattr(member, "activity_level", None) or "moderately_active"
+            bmr, tdee, pal, act_title, color = calculate_bmr_tdee(height_cm, weight_kg, age, gender, act_level)
+            if bmr > 0:
+                self.lbl_live_bmr.setText(f"\u200fBMR: {bmr:,} | کالری روزانه: {tdee:,} کالری")
+                self.lbl_live_bmr.setStyleSheet(f"font-weight: bold; padding: 4px 10px; border-radius: 6px; background-color: {color}; color: white;")
             else:
-                self.lbl_live_bmi.setText("BMI: -")
-                self.lbl_live_bmi.setStyleSheet("font-weight: bold; padding: 4px 10px; border-radius: 6px; background-color: #555555; color: white;")
+                self.lbl_live_bmr.setText("BMR: - | TDEE: -")
+                self.lbl_live_bmr.setStyleSheet("font-weight: bold; padding: 4px 10px; border-radius: 6px; background-color: #555555; color: white;")
         else:
-            self.lbl_live_bmi.setText("BMI: -")
-            self.lbl_live_bmi.setStyleSheet("font-weight: bold; padding: 4px 10px; border-radius: 6px; background-color: #555555; color: white;")
+            self.lbl_live_bmr.setText("BMR: - | TDEE: -")
+            self.lbl_live_bmr.setStyleSheet("font-weight: bold; padding: 4px 10px; border-radius: 6px; background-color: #555555; color: white;")
 
     def load_history(self):
         from yalda.services.member_service import MemberService
         from yalda.services.assessment_service import AssessmentService
-        from yalda.utils.bmi_calculator import calculate_bmi_info
+        from yalda.utils.bmr_calculator import calculate_bmr_tdee, calculate_age_from_shamsi
         member = MemberService.get_member_by_id(self.member_id)
         fallback_height = member.height_cm if member else 175.0
+        age = calculate_age_from_shamsi(member.birth_date_shamsi if member else None)
+        gender = member.gender if member else "male"
+        act_level = getattr(member, "activity_level", None) or "moderately_active"
 
         records = AssessmentService.get_member_assessments(self.member_id)
         self.table.setRowCount(len(records))
@@ -607,8 +615,10 @@ class AssessmentView(QWidget):
 
         for row, rec in enumerate(records):
             rec_height = getattr(rec, 'height_cm', None) or fallback_height
-            bmi, cat, _ = calculate_bmi_info(rec_height or 175.0, rec.weight_kg)
-            bmi_text = f"{rec.bmi or bmi} ({cat})" if (rec.bmi or bmi) > 0 else "-"
+            bmr_calc, tdee_calc, _, _, _ = calculate_bmr_tdee(rec_height or 175.0, rec.weight_kg, age, gender, act_level)
+            rec_bmr = int(round(getattr(rec, 'bmr', None) or bmr_calc))
+            rec_tdee = int(round(getattr(rec, 'tdee', None) or tdee_calc))
+            bmr_tdee_text = f"BMR: {rec_bmr:,} | TDEE: {rec_tdee:,}" if rec_bmr > 0 else "-"
 
             height_display = str(rec.height_cm) if (hasattr(rec, 'height_cm') and rec.height_cm) else "-"
 
@@ -617,7 +627,7 @@ class AssessmentView(QWidget):
                 QTableWidgetItem(height_display),
                 QTableWidgetItem(str(rec.weight_kg)),
                 QTableWidgetItem(str(rec.body_fat_percentage or "-")),
-                QTableWidgetItem(bmi_text),
+                QTableWidgetItem(bmr_tdee_text),
                 QTableWidgetItem(str(getattr(rec, 'neck_circ', None) or "-")),
                 QTableWidgetItem(str(rec.chest_circ or "-")),
                 QTableWidgetItem(str(rec.arm_circ or "-")),
@@ -654,14 +664,27 @@ class AssessmentView(QWidget):
             action_layout.setSpacing(5)
 
             btn_edit = QPushButton("✏️ ویرایش")
-            btn_edit.setFixedHeight(28)
+            btn_edit.setFixedSize(78, 30)
             btn_edit.setCursor(Qt.CursorShape.PointingHandCursor)
-            btn_edit.setStyleSheet("background-color: #D97706; color: #FFFFFF; font-weight: bold; border-radius: 4px; padding: 2px 8px; font-size: 11px;")
+            btn_edit.setStyleSheet("""
+                QPushButton {
+                    background-color: #D97706;
+                    color: #FFFFFF;
+                    font-weight: bold;
+                    border: none;
+                    border-radius: 6px;
+                    padding: 2px 6px;
+                    font-size: 11px;
+                }
+                QPushButton:hover {
+                    background-color: #B45309;
+                }
+            """)
             btn_edit.clicked.connect(lambda _, r=rec: self.edit_assessment(r))
 
             btn_del = QPushButton("🗑️")
             btn_del.setToolTip("حذف ارزیابی")
-            btn_del.setFixedSize(28, 28)
+            btn_del.setFixedSize(32, 30)
             btn_del.setCursor(Qt.CursorShape.PointingHandCursor)
             btn_del.setStyleSheet("background-color: #DC2626; color: #FFFFFF; font-weight: bold; border-radius: 6px; font-size: 12px;")
             btn_del.clicked.connect(lambda _, r=rec: self.delete_assessment_confirm(r))

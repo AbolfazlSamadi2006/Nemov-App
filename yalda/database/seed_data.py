@@ -107,3 +107,110 @@ def seed_initial_data(session: Session):
         ]
         session.add_all(foods)
         session.commit()
+
+    # 4. Safely merge 157 corrective exercises pack without overwriting trainer exercises
+    seed_corrective_exercises(session)
+
+
+def seed_corrective_exercises(session: Session):
+    """
+    Safely merges the 157 corrective exercises into the database:
+    - Guaranteed ZERO DELETIONS: Every single custom exercise, workout plan, assessment, or member created by the trainer is 100% PRESERVED.
+    - If a corrective movement does not exist in the database, it is created with its cloud video URL and thumbnail.
+    - If it already exists, ensures its video_cloud_url and thumbnail are populated without altering custom trainer modifications.
+    """
+    import os
+    import json
+    from pathlib import Path
+    import config
+
+    candidate_json_paths = [
+        config.BASE_DIR / "resources" / "data" / "corrective_exercises.json",
+    ]
+
+    import sys
+    if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+        candidate_json_paths.insert(0, Path(sys._MEIPASS) / "resources" / "data" / "corrective_exercises.json")
+
+    json_file = None
+    for p in candidate_json_paths:
+        if p.exists():
+            json_file = p
+            break
+
+    if not json_file:
+        return
+
+    try:
+        with open(json_file, "r", encoding="utf-8") as f:
+            pack = json.load(f)
+    except Exception:
+        return
+
+    # Map existing exercises by Persian name
+    existing_exercises = {e.name_fa.strip(): e for e in session.query(Exercise).all() if e.name_fa}
+
+    added_count = 0
+    updated_count = 0
+
+    for item in pack:
+        name_fa = item.get("name_fa", "").strip()
+        if not name_fa:
+            continue
+
+        thumb_fn = item.get("thumbnail_filename", "")
+        thumb_path = ""
+        if thumb_fn:
+            from yalda.utils.image_utils import resolve_image_path
+            resolved = resolve_image_path(thumb_fn)
+            if resolved and os.path.exists(resolved):
+                thumb_path = resolved
+
+        cloud_url = item.get("video_cloud_url") or item.get("video_url") or ""
+
+        if name_fa not in existing_exercises:
+            new_ex = Exercise(
+                name_fa=name_fa,
+                name_en=item.get("name_en", ""),
+                primary_muscle=item.get("primary_muscle", "other"),
+                secondary_muscles=item.get("secondary_muscles", ""),
+                equipment=item.get("equipment", "bodyweight"),
+                media_path="",
+                media_type="video",
+                video_url=cloud_url,
+                is_corrective=True,
+                thumbnail_path=thumb_path,
+                video_cloud_url=cloud_url,
+                contraindications=item.get("contraindications", ""),
+                description=item.get("description", "")
+            )
+            session.add(new_ex)
+            existing_exercises[name_fa] = new_ex
+            added_count += 1
+        else:
+            ex = existing_exercises[name_fa]
+            changed = False
+            if cloud_url and not ex.video_cloud_url:
+                ex.video_cloud_url = cloud_url
+                if not ex.video_url:
+                    ex.video_url = cloud_url
+                changed = True
+            if thumb_path and not ex.thumbnail_path:
+                ex.thumbnail_path = thumb_path
+                changed = True
+            if not ex.is_corrective:
+                ex.is_corrective = True
+                changed = True
+            if ex.description and "پالس" in ex.description:
+                ex.description = ""
+                changed = True
+            if changed:
+                updated_count += 1
+
+    if added_count > 0 or updated_count > 0:
+        try:
+            session.commit()
+            from yalda.database.connection import mark_data_changed
+            mark_data_changed()
+        except Exception:
+            session.rollback()

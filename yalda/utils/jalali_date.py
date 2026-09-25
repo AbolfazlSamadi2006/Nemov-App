@@ -16,6 +16,15 @@ def get_today_shamsi() -> str:
     except Exception:
         return ""
 
+def get_now_shamsi_for_filename() -> str:
+    """Returns current Shamsi date and time formatted safely for Windows filenames: YYYY-MM-DD_HH-MM"""
+    try:
+        now = jdatetime.datetime.now()
+        return now.strftime("%Y-%m-%d_%H-%M")
+    except Exception:
+        now = datetime.now()
+        return now.strftime("%Y-%m-%d_%H-%M")
+
 def format_shamsi(date_str: str) -> str:
     """Ensures YYYY/MM/DD format with leading zeros and normalized digits"""
     if not date_str:

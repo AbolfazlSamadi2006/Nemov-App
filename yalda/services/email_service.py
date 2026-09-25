@@ -112,7 +112,7 @@ class EmailService:
         msg["Reply-To"] = formataddr((str(Header(sender_name, "utf-8")), sender_email))
         msg["Date"] = formatdate(localtime=True)
         msg["Message-ID"] = make_msgid(domain="gmail.com")
-        msg["X-Mailer"] = f"YaldaGymApp/{getattr(config, 'APP_VERSION', '2.3.0')}"
+        msg["X-Mailer"] = f"YaldaGymApp/{getattr(config, 'APP_VERSION', 'v3.0.0')}"
         msg["Auto-Submitted"] = "auto-generated"
 
         html_content = f"""<!DOCTYPE html>
@@ -282,6 +282,26 @@ class EmailService:
         shamsi_date = metadata.get("date", "-")
         backup_size = metadata.get("size", "-")
         members_count = metadata.get("members_count", "-")
+        if members_count in ("-", None, ""):
+            try:
+                from yalda.database.connection import SessionLocal
+                from yalda.models.database_models import User, Member
+                with SessionLocal() as db:
+                    tr = None
+                    if to_email:
+                        tr = db.query(User).filter(User.email.ilike(to_email.strip()), User.role != "admin").first()
+                    if not tr and trainer_name and trainer_name != "مدیر باشگاه":
+                        tr = db.query(User).filter(
+                            (User.full_name == trainer_name.strip()) |
+                            ((User.first_name + " " + User.last_name) == trainer_name.strip()),
+                            User.role != "admin"
+                        ).first()
+                    if tr:
+                        members_count = str(db.query(Member).filter(Member.user_id == tr.id).count())
+                    else:
+                        members_count = str(db.query(Member).count())
+            except Exception:
+                members_count = "-"
         filename = os.path.basename(backup_filepath)
 
         msg = MIMEMultipart("mixed")
@@ -291,7 +311,7 @@ class EmailService:
         msg["Reply-To"] = formataddr((str(Header(sender_name, "utf-8")), sender_email))
         msg["Date"] = formatdate(localtime=True)
         msg["Message-ID"] = make_msgid(domain="gmail.com")
-        msg["X-Mailer"] = f"YaldaGymApp/{getattr(config, 'APP_VERSION', '2.3.0')}"
+        msg["X-Mailer"] = f"YaldaGymApp/{getattr(config, 'APP_VERSION', 'v3.0.0')}"
         msg["Auto-Submitted"] = "auto-generated"
 
         html_body = f"""<!DOCTYPE html>

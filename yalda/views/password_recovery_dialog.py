@@ -43,7 +43,7 @@ class PasswordRecoveryDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle("بازیابی نام کاربری و کلمه عبور مربی")
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
-        self.setFixedSize(520, 560)
+        self.setFixedSize(540, 580)
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowType.WindowContextHelpButtonHint)
 
         self.matched_user = None
@@ -429,12 +429,17 @@ class PasswordRecoveryDialog(QDialog):
         self.stack.updateGeometry()
         if not self.step2_frame.isVisible():
             if index == 1:
-                self.setFixedSize(520, 560)
+                self.setFixedSize(540, 580)
             else:
                 if self.otp_verify_box.isVisible():
-                    self.setFixedSize(520, 690)
+                    self.setFixedSize(540, 680)
                 else:
-                    self.setFixedSize(520, 560)
+                    self.setFixedSize(540, 580)
+        else:
+            if index == 1:
+                self.setFixedSize(540, 640)
+            else:
+                self.setFixedSize(540, 730)
 
         if index == 0:
             self.btn_tab_email.setStyleSheet("background-color: #DC2626; color: white; font-weight: bold; border-radius: 6px; border: none;")
@@ -499,7 +504,7 @@ class PasswordRecoveryDialog(QDialog):
             )
             self.otp_verify_box.setVisible(True)
             self.stack.updateGeometry()
-            self.setFixedSize(520, 690)
+            self.setFixedSize(540, 680)
 
             # Start 60 second countdown timer
             self.countdown_seconds = 60
@@ -570,9 +575,9 @@ class PasswordRecoveryDialog(QDialog):
 
         self.step2_frame.setVisible(True)
         if self.stack.currentIndex() == 0:
-            self.setFixedSize(520, 690)
+            self.setFixedSize(540, 730)
         else:
-            self.setFixedSize(520, 560)
+            self.setFixedSize(540, 640)
         self.txt_new_password.setFocus()
 
     def do_reset_and_login(self):

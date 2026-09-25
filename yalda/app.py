@@ -1,7 +1,7 @@
 import sys
 from PyQt6.QtWidgets import QApplication
 from PyQt6.QtGui import QIcon
-from PyQt6.QtCore import QTimer
+from PyQt6.QtCore import QTimer, Qt
 import config
 from yalda.database.connection import init_db
 from yalda.views.login_view import LoginView
@@ -12,6 +12,13 @@ class YaldaApplication:
         try:
             import ctypes
             ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("yalda.gym.management.desktop.v2")
+        except Exception:
+            pass
+
+        try:
+            QApplication.setHighDpiScaleFactorRoundingPolicy(
+                Qt.HighDpiScaleFactorRoundingPolicy.PassThrough
+            )
         except Exception:
             pass
 
@@ -90,6 +97,12 @@ class YaldaApplication:
             pass
 
     def on_login_success(self):
+        from yalda.auth.authentication import CurrentUser
+        from yalda.utils.logger import log_info
+        user = CurrentUser.get()
+        username = user.username if user else "مربی"
+        user_id = user.id if user else "-"
+        log_info(f"Trainer logged in: {username} (ID: {user_id})")
         self.login_view.hide()
         if not self.main_window:
             from yalda.views.main_window import MainWindow
@@ -100,9 +113,12 @@ class YaldaApplication:
         self.main_window.refresh_on_login()
         self.main_window.showMaximized()
 
-
     def on_logout(self):
         from yalda.auth.authentication import CurrentUser
+        from yalda.utils.logger import log_info
+        user = CurrentUser.get()
+        username = user.username if user else "مربی"
+        log_info(f"Trainer logged out: {username}")
         CurrentUser.logout()
         if self.main_window:
             self.main_window.hide()

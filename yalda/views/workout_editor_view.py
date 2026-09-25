@@ -1,5 +1,5 @@
 from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QComboBox, QPushButton, QTabWidget, QTableWidget, QHeaderView, QMessageBox, QGroupBox, QDialog
+    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QTextEdit, QComboBox, QPushButton, QTabWidget, QTableWidget, QHeaderView, QMessageBox, QGroupBox, QDialog
 )
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QKeySequence, QShortcut
@@ -7,6 +7,70 @@ from yalda.services.workout_service import WorkoutService
 from yalda.services.member_service import MemberService
 from yalda.views.components.searchable_combo_box import SearchableComboBox
 from yalda.views.components.day_management_dialogs import DaySelectionReductionDialog, DayIncreaseChoiceDialog
+
+class ExerciseNotesDialog(QDialog):
+    def __init__(self, exercise_name: str, current_notes: str, default_bank_notes: str = "", parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("توضیحات و نکات حرکت ورزشی")
+        self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
+        self.resize(520, 370)
+        self.result_notes = current_notes or ""
+        self.default_bank_notes = default_bank_notes or ""
+
+        layout = QVBoxLayout(self)
+        layout.setSpacing(12)
+        layout.setContentsMargins(20, 20, 20, 20)
+
+        lbl_title = QLabel(f"📝 توضیحات حرکت: <b>{exercise_name}</b>")
+        lbl_title.setStyleSheet("font-size: 14px; color: #FFFFFF;")
+        layout.addWidget(lbl_title)
+
+        lbl_hint = QLabel(
+            "📌 این توضیحات ویژه این برنامه تمرینی است. ویرایش آن تغییری در توضیحات پایه در «بانک حرکات ورزشی» ایجاد نمی‌کند."
+        )
+        lbl_hint.setWordWrap(True)
+        lbl_hint.setStyleSheet("font-size: 11px; color: #9CA3AF; line-height: 16px;")
+        layout.addWidget(lbl_hint)
+
+        self.txt_notes = QTextEdit()
+        self.txt_notes.setPlaceholderText("نکات اختصاصی مربی برای این حرکت، شیوه اجرا، دامنه حرکت، احتیاط‌ها و...")
+        self.txt_notes.setText(self.result_notes)
+        self.txt_notes.setStyleSheet("font-size: 12px; padding: 8px; border-radius: 6px;")
+        layout.addWidget(self.txt_notes)
+
+        btn_row_mid = QHBoxLayout()
+        if self.default_bank_notes:
+            btn_reset_bank = QPushButton("🔄 بازنشانی به توضیحات پیش‌فرض بانک")
+            btn_reset_bank.setObjectName("secondary_button")
+            btn_reset_bank.setFixedHeight(34)
+            btn_reset_bank.setStyleSheet("font-size: 11px; padding: 4px 12px;")
+            btn_reset_bank.setToolTip("بازنشانی متن به توضیحات اصلی تعریف‌شده در بانک حرکات")
+            btn_reset_bank.clicked.connect(self._reset_to_bank)
+            btn_row_mid.addWidget(btn_reset_bank)
+        btn_row_mid.addStretch()
+        layout.addLayout(btn_row_mid)
+
+        btn_box = QHBoxLayout()
+        btn_save = QPushButton("💾 ثبت توضیحات")
+        btn_save.setFixedHeight(36)
+        btn_save.clicked.connect(self._on_save)
+
+        btn_cancel = QPushButton("انصراف")
+        btn_cancel.setObjectName("secondary_button")
+        btn_cancel.setFixedHeight(36)
+        btn_cancel.clicked.connect(self.reject)
+
+        btn_box.addWidget(btn_save)
+        btn_box.addStretch()
+        btn_box.addWidget(btn_cancel)
+        layout.addLayout(btn_box)
+
+    def _reset_to_bank(self):
+        self.txt_notes.setText(self.default_bank_notes)
+
+    def _on_save(self):
+        self.result_notes = self.txt_notes.toPlainText().strip()
+        self.accept()
 
 class WorkoutEditorView(QWidget):
     manage_templates_requested = pyqtSignal()
@@ -26,6 +90,8 @@ class WorkoutEditorView(QWidget):
         self._days_cache = {}
         self._prev_num_days = 3
         self.init_ui()
+        self._last_state = self._capture_state()
+        self._update_undo_redo_ui()
 
         # Keyboard shortcuts
         QShortcut(QKeySequence("Ctrl+Z"), self, self.undo)
@@ -51,9 +117,10 @@ class WorkoutEditorView(QWidget):
         btn_back.setObjectName("back_button")
         btn_back.clicked.connect(self.back_requested.emit)
 
-        btn_reset = QPushButton("🔄 بازنشانی تغییرات")
-        btn_reset.setObjectName("secondary_button")
-        btn_reset.clicked.connect(self.revert_changes)
+        self.btn_reset = QPushButton("🔄 بازنشانی تغییرات")
+        self.btn_reset.setObjectName("secondary_button")
+        self.btn_reset.setEnabled(False)
+        self.btn_reset.clicked.connect(self.revert_changes)
 
         btn_new_plan = QPushButton("➕ برنامه جدید")
         btn_new_plan.setObjectName("secondary_button")
@@ -70,7 +137,7 @@ class WorkoutEditorView(QWidget):
         header.addWidget(btn_back)
         header.addWidget(self.lbl_header_title)
         header.addStretch()
-        header.addWidget(btn_reset)
+        header.addWidget(self.btn_reset)
         header.addWidget(btn_new_plan)
         header.addWidget(btn_manage_tpl)
         header.addWidget(btn_exercise_bank)
@@ -215,6 +282,10 @@ class WorkoutEditorView(QWidget):
                 txt_weight = table.cellWidget(r, 3)
                 txt_rest = table.cellWidget(r, 4)
                 txt_tempo = table.cellWidget(r, 5)
+                btn_notes = table.cellWidget(r, 6)
+                trainer_notes = btn_notes.property("trainer_notes") if btn_notes else ""
+                is_custom = bool(btn_notes.property("is_custom")) if btn_notes else False
+                default_bank_notes = btn_notes.property("default_bank_notes") if btn_notes else ""
 
                 ex_list.append({
                     "exercise_id": ex_id,
@@ -223,7 +294,10 @@ class WorkoutEditorView(QWidget):
                     "reps": txt_reps.text() if txt_reps else "10-12",
                     "weight": txt_weight.text() if txt_weight else "-",
                     "rest": txt_rest.text() if txt_rest else "60",
-                    "tempo": txt_tempo.text() if txt_tempo else "2-0-2-0"
+                    "tempo": txt_tempo.text() if txt_tempo else "2-0-2-0",
+                    "trainer_notes": trainer_notes,
+                    "is_custom": is_custom,
+                    "default_bank_notes": default_bank_notes
                 })
             days_data.append({
                 "day_title": txt_day_title.text(),
@@ -365,8 +439,8 @@ class WorkoutEditorView(QWidget):
             layout_day.addLayout(row_top)
 
             # Table for exercises in this day
-            table = QTableWidget(0, 7)
-            table.setHorizontalHeaderLabels(["نام حرکت ورزشی", "ست", "تکرار", "وزنه (kg)", "استراحت (ثانیه)", "ریتم (Tempo)", "حذف"])
+            table = QTableWidget(0, 8)
+            table.setHorizontalHeaderLabels(["نام حرکت ورزشی", "ست", "تکرار", "وزنه (kg)", "استراحت (ثانیه)", "ریتم (Tempo)", "توضیحات", "حذف"])
             
             table.verticalHeader().setDefaultSectionSize(50)
             table.verticalHeader().setMinimumSectionSize(45)
@@ -374,17 +448,19 @@ class WorkoutEditorView(QWidget):
             header = table.horizontalHeader()
             header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)     # Exercise name
             header.setSectionResizeMode(1, QHeaderView.ResizeMode.Interactive) # Sets
-            table.setColumnWidth(1, 70)
+            table.setColumnWidth(1, 65)
             header.setSectionResizeMode(2, QHeaderView.ResizeMode.Interactive) # Reps
-            table.setColumnWidth(2, 95)
+            table.setColumnWidth(2, 85)
             header.setSectionResizeMode(3, QHeaderView.ResizeMode.Interactive) # Weight
-            table.setColumnWidth(3, 95)
+            table.setColumnWidth(3, 85)
             header.setSectionResizeMode(4, QHeaderView.ResizeMode.Interactive) # Rest
-            table.setColumnWidth(4, 115)
+            table.setColumnWidth(4, 105)
             header.setSectionResizeMode(5, QHeaderView.ResizeMode.Interactive) # Tempo
-            table.setColumnWidth(5, 115)
-            header.setSectionResizeMode(6, QHeaderView.ResizeMode.Fixed)       # Delete
-            table.setColumnWidth(6, 60)
+            table.setColumnWidth(5, 105)
+            header.setSectionResizeMode(6, QHeaderView.ResizeMode.Interactive) # Notes
+            table.setColumnWidth(6, 100)
+            header.setSectionResizeMode(7, QHeaderView.ResizeMode.Fixed)       # Delete
+            table.setColumnWidth(7, 55)
 
             btn_add_row.clicked.connect(lambda _, t=table: self.add_exercise_row(t, exercises_list))
 
@@ -421,6 +497,10 @@ class WorkoutEditorView(QWidget):
                 txt_weight = table.cellWidget(r, 3)
                 txt_rest = table.cellWidget(r, 4)
                 txt_tempo = table.cellWidget(r, 5)
+                btn_notes = table.cellWidget(r, 6)
+                trainer_notes = btn_notes.property("trainer_notes") if btn_notes else ""
+                is_custom = bool(btn_notes.property("is_custom")) if btn_notes else False
+                default_bank_notes = btn_notes.property("default_bank_notes") if btn_notes else ""
 
                 day_items.append({
                     "exercise_id": ex_id,
@@ -429,7 +509,10 @@ class WorkoutEditorView(QWidget):
                     "reps": txt_reps.text() if txt_reps else "10-12",
                     "weight": txt_weight.text() if txt_weight else "-",
                     "rest": txt_rest.text() if txt_rest else "60",
-                    "tempo": txt_tempo.text() if txt_tempo else "2-0-2-0"
+                    "tempo": txt_tempo.text() if txt_tempo else "2-0-2-0",
+                    "trainer_notes": trainer_notes,
+                    "is_custom": is_custom,
+                    "default_bank_notes": default_bank_notes
                 })
             state["days"].append({
                 "day_title": txt_day_title.text(),
@@ -483,6 +566,8 @@ class WorkoutEditorView(QWidget):
             btn.setEnabled(can_undo)
         for btn in getattr(self, '_redo_buttons', []):
             btn.setEnabled(can_redo)
+        if hasattr(self, 'btn_reset') and self.btn_reset:
+            self.btn_reset.setEnabled(can_undo)
 
     def _restore_state(self, state: dict):
         self._is_undoing_redoing = True
@@ -566,14 +651,45 @@ class WorkoutEditorView(QWidget):
         txt_tempo = QLineEdit(str(data.get("tempo", "2-0-2-0")))
         txt_tempo.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
+        btn_notes = QPushButton("📝 توضیحات")
+        btn_notes.setObjectName("secondary_button")
+        btn_notes.setCursor(Qt.CursorShape.PointingHandCursor)
+        btn_notes.setFixedHeight(32)
+
+        # Lookup bank description
+        curr_ex_id = combo_ex.currentData()
+        bank_notes = data.get("default_bank_notes", "")
+        if not bank_notes and curr_ex_id:
+            for ex in exercises_list:
+                if ex.id == curr_ex_id:
+                    bank_notes = ex.description or ""
+                    break
+
+        trainer_notes = data.get("trainer_notes")
+        is_custom = data.get("is_custom")
+        if is_custom is None:
+            is_custom = bool(trainer_notes and trainer_notes.strip() and trainer_notes != bank_notes)
+
+        # Default trainer_notes to bank_notes if not provided
+        if trainer_notes is None:
+            trainer_notes = bank_notes
+
+        btn_notes.setProperty("trainer_notes", trainer_notes or "")
+        btn_notes.setProperty("default_bank_notes", bank_notes or "")
+        btn_notes.setProperty("is_custom", is_custom)
+        self._update_btn_notes_display(btn_notes)
+
+        btn_notes.clicked.connect(lambda _, t=table, b=btn_notes, c=combo_ex, el=exercises_list: self.open_exercise_notes_dialog(t, b, c, el))
+
         btn_del = QPushButton("🗑️")
         btn_del.setObjectName("danger_button")
         btn_del.setToolTip("حذف حرکت ورزشی")
         btn_del.setCursor(Qt.CursorShape.PointingHandCursor)
+        btn_del.setFixedHeight(32)
         btn_del.clicked.connect(lambda _, t=table, b=btn_del: self.remove_exercise_row(t, b))
 
         # Connect listeners to snapshot undo
-        combo_ex.currentIndexChanged.connect(lambda: self._snapshot_change())
+        combo_ex.currentIndexChanged.connect(lambda: self._on_exercise_combo_changed(combo_ex, btn_notes, exercises_list))
         txt_sets.textEdited.connect(lambda: self._snapshot_change())
         txt_reps.textEdited.connect(lambda: self._snapshot_change())
         txt_weight.textEdited.connect(lambda: self._snapshot_change())
@@ -586,7 +702,68 @@ class WorkoutEditorView(QWidget):
         table.setCellWidget(row, 3, txt_weight)
         table.setCellWidget(row, 4, txt_rest)
         table.setCellWidget(row, 5, txt_tempo)
-        table.setCellWidget(row, 6, btn_del)
+        table.setCellWidget(row, 6, btn_notes)
+        table.setCellWidget(row, 7, btn_del)
+
+    def _update_btn_notes_display(self, btn_notes: QPushButton):
+        notes = (btn_notes.property("trainer_notes") or "").strip()
+        is_custom = bool(btn_notes.property("is_custom"))
+        if notes:
+            prefix = "توضیحات اختصاصی مربی برای این برنامه:\n" if is_custom else "توضیحات پیش‌فرض حرکت (بانک حرکات):\n"
+            btn_notes.setToolTip(f"{prefix}{notes}")
+            if is_custom:
+                btn_notes.setText("📝 توضیحات ✓")
+                btn_notes.setStyleSheet("color: #10B981; font-weight: bold; border: 1px solid #10B981; border-radius: 4px; font-size: 11px;")
+            else:
+                btn_notes.setText("📝 توضیحات")
+                btn_notes.setStyleSheet("font-size: 11px;")
+        else:
+            btn_notes.setText("📝 توضیحات")
+            btn_notes.setToolTip("بدون توضیحات (کلیک جهت افزودن یا ویرایش)")
+            btn_notes.setStyleSheet("font-size: 11px;")
+
+    def _on_exercise_combo_changed(self, combo_ex: SearchableComboBox, btn_notes: QPushButton, exercises_list: list):
+        curr_ex_id = combo_ex.currentData()
+        bank_notes = ""
+        if curr_ex_id:
+            for ex in exercises_list:
+                if ex.id == curr_ex_id:
+                    bank_notes = ex.description or ""
+                    break
+        btn_notes.setProperty("default_bank_notes", bank_notes)
+        # If user hasn't explicitly customized notes for this row, inherit new exercise's bank description
+        if not btn_notes.property("is_custom"):
+            btn_notes.setProperty("trainer_notes", bank_notes)
+            self._update_btn_notes_display(btn_notes)
+        self._snapshot_change()
+
+    def open_exercise_notes_dialog(self, table: QTableWidget, btn_notes: QPushButton, combo_ex: SearchableComboBox, exercises_list: list):
+        ex_name = combo_ex.currentText() or "حرکت ورزشی"
+        current_notes = btn_notes.property("trainer_notes") or ""
+        default_bank_notes = btn_notes.property("default_bank_notes") or ""
+        if not default_bank_notes:
+            curr_ex_id = combo_ex.currentData()
+            if curr_ex_id:
+                for ex in exercises_list:
+                    if ex.id == curr_ex_id:
+                        default_bank_notes = ex.description or ""
+                        btn_notes.setProperty("default_bank_notes", default_bank_notes)
+                        break
+
+        notes_to_edit = current_notes if current_notes else default_bank_notes
+
+        dlg = ExerciseNotesDialog(
+            exercise_name=ex_name,
+            current_notes=notes_to_edit,
+            default_bank_notes=default_bank_notes,
+            parent=self
+        )
+        if dlg.exec() == QDialog.DialogCode.Accepted:
+            new_notes = dlg.result_notes
+            btn_notes.setProperty("trainer_notes", new_notes)
+            btn_notes.setProperty("is_custom", True)
+            self._update_btn_notes_display(btn_notes)
+            self._snapshot_change()
 
     def add_exercise_row(self, table: QTableWidget, exercises_list: list = None):
         row = table.rowCount()
@@ -598,7 +775,7 @@ class WorkoutEditorView(QWidget):
 
     def remove_exercise_row(self, table: QTableWidget, btn: QPushButton):
         for r in range(table.rowCount()):
-            if table.cellWidget(r, 6) == btn:
+            if table.cellWidget(r, 7) == btn:
                 table.removeRow(r)
                 break
         self._snapshot_change()
@@ -621,6 +798,8 @@ class WorkoutEditorView(QWidget):
                 weight = table.cellWidget(row, 3).text().strip()
                 rest = table.cellWidget(row, 4).text().strip()
                 tempo = table.cellWidget(row, 5).text().strip()
+                btn_notes = table.cellWidget(row, 6)
+                trainer_notes = btn_notes.property("trainer_notes") if btn_notes else ""
 
                 ex_list.append({
                     "exercise_id": ex_id,
@@ -628,7 +807,8 @@ class WorkoutEditorView(QWidget):
                     "reps": reps,
                     "weight_suggestion": weight,
                     "rest_seconds": int(rest) if rest.isdigit() else 60,
-                    "tempo": tempo
+                    "tempo": tempo,
+                    "trainer_notes": (trainer_notes or "").strip()
                 })
 
             days_data.append({
@@ -705,7 +885,9 @@ class WorkoutEditorView(QWidget):
                             "reps": we.reps or "10-12",
                             "weight": we.weight_suggestion or "-",
                             "rest": we.rest_seconds or 60,
-                            "tempo": we.tempo or "2-0-2-0"
+                            "tempo": we.tempo or "2-0-2-0",
+                            "trainer_notes": we.trainer_notes,
+                            "is_custom": bool(we.trainer_notes and we.trainer_notes.strip())
                         })
             self._undo_stack.clear()
             self._redo_stack.clear()
@@ -779,31 +961,94 @@ class WorkoutEditorView(QWidget):
             QMessageBox.warning(self, "خطا", "لطفاً ابتدا حداقل یک حرکت ورزشی به برنامه اضافه کنید.")
             return None
 
+        # Check duplicate template title in workout plans bank
+        title = plan_info["title"].strip()
+        all_plans = WorkoutService.get_all_plans()
+        other_titles = [p.title for p in all_plans if not (self.editing_plan_id and p.id == self.editing_plan_id) and p.title]
+        if any(t.strip().lower() == title.lower() for t in other_titles):
+            from yalda.utils.duplicate_helper import get_next_numbered_name
+            suggested_title = get_next_numbered_name(title, other_titles)
+            reply = QMessageBox.question(
+                self,
+                "هشدار عنوان تکراری",
+                f"الگوی تمرینی دیگری با عنوان «{title}» از قبل در بانک الگوها ثبت شده است.\n\nدر صورت تایید، این الگو با عنوان «{suggested_title}» ذخیره خواهد شد.\nآیا مایل به ذخیره هستید؟",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No
+            )
+            if reply != QMessageBox.StandardButton.Yes:
+                self.txt_title.setFocus()
+                return None
+            title = suggested_title
+            plan_info["title"] = suggested_title
+            self.txt_title.setText(suggested_title)
+
         try:
             if self.editing_plan_id:
                 plan = WorkoutService.update_workout_plan(self.editing_plan_id, plan_info, days_data)
                 self.load_template_dropdown()
+                from yalda.utils.logger import log_info
+                log_info(f"Updated workout template: '{plan.title}' (ID: {plan.id})")
                 QMessageBox.information(self, "موفقیت", f"الگوی تمرینی «{plan.title}» با موفقیت به‌روزرسانی شد.")
             else:
                 plan = WorkoutService.create_workout_plan(plan_info, days_data)
                 self.load_template_dropdown()
+                from yalda.utils.logger import log_info
+                log_info(f"Created workout template: '{plan.title}' (ID: {plan.id})")
                 QMessageBox.information(self, "موفقیت", "الگوی برنامه تمرینی در بانک ذخیره گردید.")
             return plan
         except Exception as e:
-            QMessageBox.critical(self, "خطا", f"خطا در ذخیره الگوی تمرینی:\n{str(e)}")
+            import traceback
+            tb = traceback.format_exc()
+            from yalda.utils.logger import log_error
+            from yalda.views.components.error_dialog import show_error_dialog
+            log_error(f"Error saving workout template: {e}\n{tb}")
+            show_error_dialog(
+                parent=self,
+                message="متاسفانه در ذخیره‌سازی الگوی تمرینی خطایی رخ داد.",
+                technical_details=tb,
+                title="خطا در ذخیره برنامه"
+            )
             return None
 
     def assign_plan(self):
         member_id = self.combo_member.currentData()
         if not member_id:
-            QMessageBox.warning(self, "خطا", "لطفاً یک ورزشکار را جهت تخصیص انتخاب کنید.")
+            QMessageBox.warning(self, "خطا", "لطفاً ابتدا یک ورزشکار را انتخاب کنید.")
             return
 
         plan_info, days_data = self.get_plan_data()
+        if not plan_info["title"]:
+            QMessageBox.warning(self, "خطا", "لطفاً عنوان برنامه را وارد کنید.")
+            return
+
         total_exercises = sum(len(d.get("exercises", [])) for d in days_data)
         if total_exercises == 0:
             QMessageBox.warning(self, "خطا", "لطفاً ابتدا حداقل یک حرکت ورزشی به برنامه اضافه کنید.")
             return
+
+        # Check duplicate workout plan for this member
+        title = plan_info["title"].strip()
+        existing_asgns = WorkoutService.get_member_assignments(member_id)
+        if existing_asgns:
+            member = MemberService.get_member_by_id(member_id)
+            member_name = member.full_name if member else "این ورزشکار"
+            other_titles = [asgn.plan.title for asgn in existing_asgns if asgn.plan and asgn.plan.title]
+            if any(t.strip().lower() == title.lower() for t in other_titles):
+                from yalda.utils.duplicate_helper import get_next_numbered_name
+                suggested_title = get_next_numbered_name(title, other_titles)
+                reply = QMessageBox.question(
+                    self,
+                    "هشدار برنامه تکراری برای ورزشکار",
+                    f"برای ورزشکار «{member_name}» قبلاً برنامه تمرینی با عنوان «{title}» صادر شده است.\n\nدر صورت تایید، این برنامه با عنوان «{suggested_title}» برای ایشان صادر خواهد شد.\nآیا مطمئن هستید؟",
+                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                    QMessageBox.StandardButton.No
+                )
+                if reply != QMessageBox.StandardButton.Yes:
+                    self.txt_title.setFocus()
+                    return
+                title = suggested_title
+                plan_info["title"] = suggested_title
+                self.txt_title.setText(suggested_title)
 
         # Check Smart Limitations
         health_rec = MemberService.get_health_record(member_id)
@@ -825,7 +1070,19 @@ class WorkoutEditorView(QWidget):
         try:
             plan = WorkoutService.create_workout_plan(plan_info, days_data)
             WorkoutService.assign_plan_to_member(member_id, plan.id)
+            from yalda.utils.logger import log_info
+            log_info(f"Assigned workout plan '{plan.title}' to member ID {member_id}")
             QMessageBox.information(self, "موفقیت", "برنامه تمرینی با موفقیت به ورزشکار تخصیص یافت.")
             self.reset_to_new_plan()
         except Exception as e:
-            QMessageBox.critical(self, "خطا", f"خطا در تخصیص برنامه تمرینی:\n{str(e)}")
+            import traceback
+            tb = traceback.format_exc()
+            from yalda.utils.logger import log_error
+            from yalda.views.components.error_dialog import show_error_dialog
+            log_error(f"Error assigning workout plan: {e}\n{tb}")
+            show_error_dialog(
+                parent=self,
+                message="متاسفانه در تخصیص برنامه تمرینی به ورزشکار خطایی رخ داد.",
+                technical_details=tb,
+                title="خطا در تخصیص برنامه"
+            )

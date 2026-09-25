@@ -6,7 +6,7 @@ from PyQt6.QtCore import pyqtSignal, Qt
 from PyQt6.QtGui import QPixmap
 from yalda.services.member_service import MemberService
 from yalda.utils.jalali_date import days_until_expire, get_today_shamsi
-from yalda.utils.image_utils import get_circular_pixmap
+from yalda.utils.image_utils import get_circular_pixmap, resolve_image_path
 from yalda.views.components.circular_image_preview_dialog import CircularImagePreviewDialog
 
 class DashboardView(QWidget):
@@ -36,8 +36,10 @@ class DashboardView(QWidget):
         layout.addLayout(header_layout)
 
         # Quick Actions Bar
+        from PyQt6.QtWidgets import QSizePolicy
         actions_frame = QFrame()
         actions_frame.setObjectName("card")
+        actions_frame.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
         actions_layout = QHBoxLayout(actions_frame)
         actions_layout.setContentsMargins(12, 12, 12, 12)
 
@@ -82,15 +84,16 @@ class DashboardView(QWidget):
         self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
 
-        layout.addWidget(self.table)
+        layout.addWidget(self.table, 1)
         
         # Initial Data Refresh
         self.refresh_dashboard()
 
     def open_avatar_preview(self, photo_path: str, member_name: str):
         """Opens a circular animated popup zoom of athlete's photo."""
-        if photo_path and os.path.exists(photo_path):
-            dlg = CircularImagePreviewDialog(photo_path, title=member_name, parent=self)
+        resolved = resolve_image_path(photo_path)
+        if resolved:
+            dlg = CircularImagePreviewDialog(resolved, title=member_name, parent=self)
             dlg.exec()
 
     def refresh_dashboard(self):
@@ -104,7 +107,7 @@ class DashboardView(QWidget):
             "8_sessions": "۸ جلسه در ماه",
             "16_sessions": "۱۶ جلسه در ماه",
             "20_sessions": "۲۰ جلسه در ماه",
-            "daily_access": "دسترسی روزانه"
+            "daily_access": "همه روزه"
         }
 
         for row, m in enumerate(members):
@@ -121,14 +124,15 @@ class DashboardView(QWidget):
             lbl_avatar.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
             has_valid_photo = False
-            if m.photo_path and os.path.exists(m.photo_path):
-                pix = QPixmap(m.photo_path)
+            resolved_photo = resolve_image_path(m.photo_path)
+            if resolved_photo:
+                pix = QPixmap(resolved_photo)
                 if not pix.isNull():
                     circ_pix = get_circular_pixmap(pix, 36, border_color="#8B0000", border_width=2)
                     lbl_avatar.setPixmap(circ_pix)
                     lbl_avatar.setCursor(Qt.CursorShape.PointingHandCursor)
                     lbl_avatar.setToolTip(f"برای مشاهده تصویر بزرگ‌تر «{m.full_name}» کلیک کنید")
-                    lbl_avatar.mousePressEvent = lambda e, p=m.photo_path, n=m.full_name: self.open_avatar_preview(p, n)
+                    lbl_avatar.mousePressEvent = lambda e, p=resolved_photo, n=m.full_name: self.open_avatar_preview(p, n)
                     has_valid_photo = True
 
             if not has_valid_photo:

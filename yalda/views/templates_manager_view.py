@@ -1,7 +1,7 @@
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QComboBox, QPushButton,
     QTabWidget, QTableWidget, QTableWidgetItem, QHeaderView, QMessageBox,
-    QDialog, QTextEdit, QFileDialog
+    QDialog, QTextEdit, QFileDialog, QCheckBox
 )
 from PyQt6.QtCore import Qt, pyqtSignal
 from yalda.services.workout_service import WorkoutService
@@ -10,6 +10,9 @@ from yalda.services.member_service import MemberService
 from yalda.pdf.pdf_generator import PDFGenerator
 from yalda.models.database_models import Member
 from yalda.views.components.searchable_combo_box import SearchableComboBox
+from yalda.views.components.undo_delete_banner import UndoDeleteBanner
+import re
+from yalda.utils.jalali_date import get_now_shamsi_for_filename
 
 
 class AssignTemplateDialog(QDialog):
@@ -180,38 +183,69 @@ class TemplatesManagerView(QWidget):
         self.combo_filter_workout_goal.addItem("استقامت عضلانی", "endurance")
         self.combo_filter_workout_goal.currentIndexChanged.connect(self.filter_workout_table)
 
+        self.chk_select_all_w = QCheckBox("انتخاب همه")
+        self.chk_select_all_w.toggled.connect(self.toggle_select_all_w)
+
+        self.btn_bulk_delete_w = QPushButton("🗑️ حذف انتخاب‌شده‌ها")
+        self.btn_bulk_delete_w.setEnabled(False)
+        self.btn_bulk_delete_w.setStyleSheet("""
+            QPushButton {
+                background-color: #DC2626;
+                color: #FFFFFF;
+                font-weight: bold;
+                border-radius: 6px;
+                padding: 6px 14px;
+            }
+            QPushButton:hover {
+                background-color: #B91C1C;
+            }
+            QPushButton:disabled {
+                background-color: #4B5563;
+                color: #9CA3AF;
+            }
+        """)
+        self.btn_bulk_delete_w.clicked.connect(self.bulk_delete_workout_templates)
+
         btn_new_w = QPushButton("➕ ساخت الگوی تمرینی جدید")
         btn_new_w.clicked.connect(self.new_workout_requested.emit)
 
         row_filter.addWidget(self.txt_search_workout)
         row_filter.addWidget(self.combo_filter_workout_goal)
+        row_filter.addWidget(self.chk_select_all_w)
+        row_filter.addWidget(self.btn_bulk_delete_w)
         row_filter.addWidget(btn_new_w)
         layout.addLayout(row_filter)
 
         # Workout Templates Table
         self.table_workouts = QTableWidget()
-        self.table_workouts.setColumnCount(8)
+        self.table_workouts.setColumnCount(9)
         self.table_workouts.setHorizontalHeaderLabels([
-            "ردیف", "عنوان و نام الگو", "هدف برنامه", "روزهای تمرین", "سطح تمرین", "تعداد حرکات", "شاگردان فعال", "عملیات"
+            "انتخاب", "ردیف", "عنوان و نام الگو", "هدف برنامه", "روزهای تمرین", "سطح تمرین", "تعداد حرکات", "شاگردان فعال", "عملیات"
         ])
         header = self.table_workouts.horizontalHeader()
+        header.setMinimumSectionSize(40)
         header.setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
-        self.table_workouts.setColumnWidth(0, 45)   # ردیف
-        header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch) # عنوان
-        self.table_workouts.setColumnWidth(2, 160)  # هدف
-        self.table_workouts.setColumnWidth(3, 90)   # روزها
-        self.table_workouts.setColumnWidth(4, 85)   # سطح
-        self.table_workouts.setColumnWidth(5, 85)   # تعداد حرکات
-        self.table_workouts.setColumnWidth(6, 90)   # شاگردان
-        header.setSectionResizeMode(7, QHeaderView.ResizeMode.Fixed)
-        self.table_workouts.setColumnWidth(7, 290)  # عملیات
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
+        self.table_workouts.setColumnWidth(0, 52)   # انتخاب
+        self.table_workouts.setColumnWidth(1, 46)   # ردیف
+        header.setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch) # عنوان
+        self.table_workouts.setColumnWidth(3, 162)  # هدف
+        self.table_workouts.setColumnWidth(4, 86)   # روزها
+        self.table_workouts.setColumnWidth(5, 80)   # سطح
+        self.table_workouts.setColumnWidth(6, 84)   # تعداد حرکات
+        self.table_workouts.setColumnWidth(7, 87)   # شاگردان
+        header.setSectionResizeMode(8, QHeaderView.ResizeMode.Fixed)
+        self.table_workouts.setColumnWidth(8, 268)  # عملیات
 
         self.table_workouts.verticalHeader().setVisible(False)
         self.table_workouts.verticalHeader().setDefaultSectionSize(52)
         self.table_workouts.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.table_workouts.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
 
-        layout.addWidget(self.table_workouts)
+        layout.addWidget(self.table_workouts, 1)
+
+        self.undo_banner_w = UndoDeleteBanner(self)
+        layout.addWidget(self.undo_banner_w)
 
     def init_nutrition_tab(self):
         layout = QVBoxLayout(self.tab_nutrition)
@@ -234,38 +268,69 @@ class TemplatesManagerView(QWidget):
         self.combo_filter_nutrition_goal.addItem("تثبیت وزن (Maintenance)", "maintenance")
         self.combo_filter_nutrition_goal.currentIndexChanged.connect(self.filter_nutrition_table)
 
+        self.chk_select_all_n = QCheckBox("انتخاب همه")
+        self.chk_select_all_n.toggled.connect(self.toggle_select_all_n)
+
+        self.btn_bulk_delete_n = QPushButton("🗑️ حذف انتخاب‌شده‌ها")
+        self.btn_bulk_delete_n.setEnabled(False)
+        self.btn_bulk_delete_n.setStyleSheet("""
+            QPushButton {
+                background-color: #DC2626;
+                color: #FFFFFF;
+                font-weight: bold;
+                border-radius: 6px;
+                padding: 6px 14px;
+            }
+            QPushButton:hover {
+                background-color: #B91C1C;
+            }
+            QPushButton:disabled {
+                background-color: #4B5563;
+                color: #9CA3AF;
+            }
+        """)
+        self.btn_bulk_delete_n.clicked.connect(self.bulk_delete_nutrition_templates)
+
         btn_new_n = QPushButton("➕ ساخت الگوی غذایی جدید")
         btn_new_n.clicked.connect(self.new_nutrition_requested.emit)
 
         row_filter.addWidget(self.txt_search_nutrition)
         row_filter.addWidget(self.combo_filter_nutrition_goal)
+        row_filter.addWidget(self.chk_select_all_n)
+        row_filter.addWidget(self.btn_bulk_delete_n)
         row_filter.addWidget(btn_new_n)
         layout.addLayout(row_filter)
 
         # Nutrition Templates Table
         self.table_nutrition = QTableWidget()
-        self.table_nutrition.setColumnCount(8)
+        self.table_nutrition.setColumnCount(9)
         self.table_nutrition.setHorizontalHeaderLabels([
-            "ردیف", "عنوان و نام رژیم", "هدف رژیم", "کالری روزانه", "پروتئین / کربوهیدرات / چربی", "تعداد وعده‌ها", "شاگردان فعال", "عملیات"
+            "انتخاب", "ردیف", "عنوان و نام رژیم", "هدف رژیم", "کالری روزانه", "پروتئین / کربوهیدرات / چربی", "تعداد وعده‌ها", "شاگردان فعال", "عملیات"
         ])
         header = self.table_nutrition.horizontalHeader()
+        header.setMinimumSectionSize(40)
         header.setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
-        self.table_nutrition.setColumnWidth(0, 45)   # ردیف
-        header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch) # عنوان
-        self.table_nutrition.setColumnWidth(2, 160)  # هدف
-        self.table_nutrition.setColumnWidth(3, 95)   # کالری
-        self.table_nutrition.setColumnWidth(4, 160)  # P/C/F
-        self.table_nutrition.setColumnWidth(5, 85)   # وعده‌ها
-        self.table_nutrition.setColumnWidth(6, 90)   # شاگردان
-        header.setSectionResizeMode(7, QHeaderView.ResizeMode.Fixed)
-        self.table_nutrition.setColumnWidth(7, 290)  # عملیات
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
+        self.table_nutrition.setColumnWidth(0, 52)   # انتخاب
+        self.table_nutrition.setColumnWidth(1, 46)   # ردیف
+        header.setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch) # عنوان
+        self.table_nutrition.setColumnWidth(3, 162)  # هدف
+        self.table_nutrition.setColumnWidth(4, 86)   # کالری
+        self.table_nutrition.setColumnWidth(5, 160)  # P/C/F
+        self.table_nutrition.setColumnWidth(6, 85)   # وعده‌ها
+        self.table_nutrition.setColumnWidth(7, 87)   # شاگردان
+        header.setSectionResizeMode(8, QHeaderView.ResizeMode.Fixed)
+        self.table_nutrition.setColumnWidth(8, 268)  # عملیات
 
         self.table_nutrition.verticalHeader().setVisible(False)
         self.table_nutrition.verticalHeader().setDefaultSectionSize(52)
         self.table_nutrition.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.table_nutrition.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
 
-        layout.addWidget(self.table_nutrition)
+        layout.addWidget(self.table_nutrition, 1)
+
+        self.undo_banner_n = UndoDeleteBanner(self)
+        layout.addWidget(self.undo_banner_n)
 
     def load_all_templates(self):
         self.load_workout_templates()
@@ -302,6 +367,13 @@ class TemplatesManagerView(QWidget):
             "advanced": "پیشرفته"
         }
 
+        self.chk_select_all_w.blockSignals(True)
+        self.chk_select_all_w.setChecked(False)
+        self.chk_select_all_w.blockSignals(False)
+        self.btn_bulk_delete_w.setText("🗑️ حذف انتخاب‌شده‌ها")
+        self.btn_bulk_delete_w.setEnabled(False)
+
+        self.table_workouts.setRowCount(0)
         self.table_workouts.setRowCount(len(filtered))
 
         for row, p in enumerate(filtered):
@@ -317,17 +389,30 @@ class TemplatesManagerView(QWidget):
             except Exception:
                 assignments_count = 0
 
-            self.table_workouts.setItem(row, 0, QTableWidgetItem(str(row + 1)))
-            self.table_workouts.setItem(row, 1, QTableWidgetItem(p.title or "بدون عنوان"))
-            self.table_workouts.setItem(row, 2, QTableWidgetItem(goal_map.get(p.goal, p.goal or "-")))
-            self.table_workouts.setItem(row, 3, QTableWidgetItem(f"{p.days_per_week} روزه"))
-            self.table_workouts.setItem(row, 4, QTableWidgetItem(level_map.get(p.training_level, p.training_level or "-")))
-            self.table_workouts.setItem(row, 5, QTableWidgetItem(f"{ex_count} حرکت"))
-            self.table_workouts.setItem(row, 6, QTableWidgetItem(f"{assignments_count} نفر"))
+            # Checkbox in column 0
+            chk_w = QWidget()
+            chk_w.setStyleSheet("background: transparent;")
+            chk_l = QHBoxLayout(chk_w)
+            chk_l.setContentsMargins(0, 0, 0, 0)
+            chk_l.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            chk = QCheckBox()
+            chk.setProperty("item_id", p.id)
+            chk.setProperty("item_name", p.title)
+            chk.toggled.connect(self.on_workout_row_checkbox_toggled)
+            chk_l.addWidget(chk)
+            self.table_workouts.setCellWidget(row, 0, chk_w)
 
-            for c in range(7):
+            self.table_workouts.setItem(row, 1, QTableWidgetItem(str(row + 1)))
+            self.table_workouts.setItem(row, 2, QTableWidgetItem(p.title or "بدون عنوان"))
+            self.table_workouts.setItem(row, 3, QTableWidgetItem(goal_map.get(p.goal, p.goal or "-")))
+            self.table_workouts.setItem(row, 4, QTableWidgetItem(f"{p.days_per_week} روزه"))
+            self.table_workouts.setItem(row, 5, QTableWidgetItem(level_map.get(p.training_level, p.training_level or "-")))
+            self.table_workouts.setItem(row, 6, QTableWidgetItem(f"{ex_count} حرکت"))
+            self.table_workouts.setItem(row, 7, QTableWidgetItem(f"{assignments_count} نفر"))
+
+            for c in range(1, 8):
                 item = self.table_workouts.item(row, c)
-                if item and c != 1:
+                if item and c != 2:
                     item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
 
             # Actions Widget
@@ -340,37 +425,50 @@ class TemplatesManagerView(QWidget):
 
             btn_assign = QPushButton("🎯 تخصیص")
             btn_assign.setToolTip("تخصیص این الگو به یکی از شاگردان باشگاه")
-            btn_assign.setFixedHeight(28)
+            btn_assign.setFixedSize(76, 30)
             btn_assign.setCursor(Qt.CursorShape.PointingHandCursor)
-            btn_assign.setStyleSheet("background-color: #10B981; color: #FFFFFF; font-weight: bold; border-radius: 4px; padding: 2px 8px; font-size: 11px;")
+            btn_assign.setStyleSheet("background-color: #10B981; color: #FFFFFF; font-weight: bold; border-radius: 6px; padding: 2px 6px; font-size: 11px;")
             btn_assign.clicked.connect(lambda _, pid=p.id, ptitle=p.title: self.open_assign_dialog("workout", pid, ptitle))
 
             btn_edit = QPushButton("✏️ ویرایش")
             btn_edit.setToolTip("بارگذاری در طراح تمرین جهت تغییر و ذخیره")
-            btn_edit.setFixedHeight(28)
+            btn_edit.setFixedSize(72, 30)
             btn_edit.setCursor(Qt.CursorShape.PointingHandCursor)
-            btn_edit.setStyleSheet("background-color: #D97706; color: #FFFFFF; font-weight: bold; border-radius: 4px; padding: 2px 8px; font-size: 11px;")
+            btn_edit.setStyleSheet("""
+                QPushButton {
+                    background-color: #D97706;
+                    color: #FFFFFF;
+                    font-weight: bold;
+                    border: none;
+                    border-radius: 6px;
+                    padding: 2px 6px;
+                    font-size: 11px;
+                }
+                QPushButton:hover {
+                    background-color: #B45309;
+                }
+            """)
             btn_edit.clicked.connect(lambda _, pid=p.id: self.edit_workout_requested.emit(pid))
 
             btn_pdf = QPushButton("📄 PDF")
             btn_pdf.setToolTip("خروجی و چاپ فایل PDF این الگو")
-            btn_pdf.setFixedHeight(28)
+            btn_pdf.setFixedSize(56, 30)
             btn_pdf.setCursor(Qt.CursorShape.PointingHandCursor)
-            btn_pdf.setStyleSheet("background-color: #3B82F6; color: #FFFFFF; font-weight: bold; border-radius: 4px; padding: 2px 8px; font-size: 11px;")
+            btn_pdf.setStyleSheet("background-color: #3B82F6; color: #FFFFFF; font-weight: bold; border-radius: 6px; padding: 2px 4px; font-size: 11px;")
             btn_pdf.clicked.connect(lambda _, plan=p: self.export_workout_pdf(plan))
 
             btn_del = QPushButton("🗑️")
             btn_del.setToolTip("حذف الگو از بانک")
-            btn_del.setFixedSize(28, 28)
+            btn_del.setFixedSize(32, 30)
             btn_del.setCursor(Qt.CursorShape.PointingHandCursor)
-            btn_del.setStyleSheet("background-color: #DC2626; color: #FFFFFF; font-weight: bold; border-radius: 4px; font-size: 12px;")
+            btn_del.setStyleSheet("background-color: #DC2626; color: #FFFFFF; font-weight: bold; border-radius: 6px; font-size: 12px;")
             btn_del.clicked.connect(lambda _, pid=p.id, ptitle=p.title: self.delete_workout_template(pid, ptitle))
 
             action_l.addWidget(btn_assign)
             action_l.addWidget(btn_edit)
             action_l.addWidget(btn_pdf)
             action_l.addWidget(btn_del)
-            self.table_workouts.setCellWidget(row, 7, action_w)
+            self.table_workouts.setCellWidget(row, 8, action_w)
 
     def load_nutrition_templates(self):
         self.nutrition_plans = NutritionService.get_all_plans()
@@ -395,6 +493,13 @@ class TemplatesManagerView(QWidget):
             "maintenance": "تثبیت وزن (Maintenance)"
         }
 
+        self.chk_select_all_n.blockSignals(True)
+        self.chk_select_all_n.setChecked(False)
+        self.chk_select_all_n.blockSignals(False)
+        self.btn_bulk_delete_n.setText("🗑️ حذف انتخاب‌شده‌ها")
+        self.btn_bulk_delete_n.setEnabled(False)
+
+        self.table_nutrition.setRowCount(0)
         self.table_nutrition.setRowCount(len(filtered))
 
         for row, p in enumerate(filtered):
@@ -408,17 +513,29 @@ class TemplatesManagerView(QWidget):
                 assignments_count = 0
             macros_str = f"P: {int(p.target_protein or 0)}g | C: {int(p.target_carbs or 0)}g | F: {int(p.target_fat or 0)}g"
 
-            self.table_nutrition.setItem(row, 0, QTableWidgetItem(str(row + 1)))
-            self.table_nutrition.setItem(row, 1, QTableWidgetItem(p.title or "بدون عنوان"))
-            self.table_nutrition.setItem(row, 2, QTableWidgetItem(goal_map.get(p.goal, p.goal or "-")))
-            self.table_nutrition.setItem(row, 3, QTableWidgetItem(f"{int(p.target_calories or 0)} kcal"))
-            self.table_nutrition.setItem(row, 4, QTableWidgetItem(macros_str))
-            self.table_nutrition.setItem(row, 5, QTableWidgetItem(f"{meals_count} وعده"))
-            self.table_nutrition.setItem(row, 6, QTableWidgetItem(f"{assignments_count} نفر"))
+            chk_w = QWidget()
+            chk_w.setStyleSheet("background: transparent;")
+            chk_l = QHBoxLayout(chk_w)
+            chk_l.setContentsMargins(0, 0, 0, 0)
+            chk_l.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            chk = QCheckBox()
+            chk.setProperty("item_id", p.id)
+            chk.setProperty("item_name", p.title)
+            chk.toggled.connect(self.on_nutrition_row_checkbox_toggled)
+            chk_l.addWidget(chk)
+            self.table_nutrition.setCellWidget(row, 0, chk_w)
 
-            for c in range(7):
+            self.table_nutrition.setItem(row, 1, QTableWidgetItem(str(row + 1)))
+            self.table_nutrition.setItem(row, 2, QTableWidgetItem(p.title or "بدون عنوان"))
+            self.table_nutrition.setItem(row, 3, QTableWidgetItem(goal_map.get(p.goal, p.goal or "-")))
+            self.table_nutrition.setItem(row, 4, QTableWidgetItem(f"{int(p.target_calories or 0)} kcal"))
+            self.table_nutrition.setItem(row, 5, QTableWidgetItem(macros_str))
+            self.table_nutrition.setItem(row, 6, QTableWidgetItem(f"{meals_count} وعده"))
+            self.table_nutrition.setItem(row, 7, QTableWidgetItem(f"{assignments_count} نفر"))
+
+            for c in range(1, 8):
                 item = self.table_nutrition.item(row, c)
-                if item and c != 1:
+                if item and c != 2:
                     item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
 
             # Actions Widget
@@ -431,53 +548,274 @@ class TemplatesManagerView(QWidget):
 
             btn_assign = QPushButton("🎯 تخصیص")
             btn_assign.setToolTip("تخصیص این الگو به یکی از شاگردان باشگاه")
-            btn_assign.setFixedHeight(28)
+            btn_assign.setFixedSize(76, 30)
             btn_assign.setCursor(Qt.CursorShape.PointingHandCursor)
-            btn_assign.setStyleSheet("background-color: #10B981; color: #FFFFFF; font-weight: bold; border-radius: 4px; padding: 2px 8px; font-size: 11px;")
+            btn_assign.setStyleSheet("background-color: #10B981; color: #FFFFFF; font-weight: bold; border-radius: 6px; padding: 2px 6px; font-size: 11px;")
             btn_assign.clicked.connect(lambda _, pid=p.id, ptitle=p.title: self.open_assign_dialog("nutrition", pid, ptitle))
 
             btn_edit = QPushButton("✏️ ویرایش")
             btn_edit.setToolTip("بارگذاری در طراح رژیم جهت تغییر و ذخیره")
-            btn_edit.setFixedHeight(28)
+            btn_edit.setFixedSize(72, 30)
             btn_edit.setCursor(Qt.CursorShape.PointingHandCursor)
-            btn_edit.setStyleSheet("background-color: #D97706; color: #FFFFFF; font-weight: bold; border-radius: 4px; padding: 2px 8px; font-size: 11px;")
+            btn_edit.setStyleSheet("""
+                QPushButton {
+                    background-color: #D97706;
+                    color: #FFFFFF;
+                    font-weight: bold;
+                    border: none;
+                    border-radius: 6px;
+                    padding: 2px 6px;
+                    font-size: 11px;
+                }
+                QPushButton:hover {
+                    background-color: #B45309;
+                }
+            """)
             btn_edit.clicked.connect(lambda _, pid=p.id: self.edit_nutrition_requested.emit(pid))
 
             btn_pdf = QPushButton("📄 PDF")
             btn_pdf.setToolTip("خروجی و چاپ فایل PDF این الگو")
-            btn_pdf.setFixedHeight(28)
+            btn_pdf.setFixedSize(56, 30)
             btn_pdf.setCursor(Qt.CursorShape.PointingHandCursor)
-            btn_pdf.setStyleSheet("background-color: #3B82F6; color: #FFFFFF; font-weight: bold; border-radius: 4px; padding: 2px 8px; font-size: 11px;")
+            btn_pdf.setStyleSheet("background-color: #3B82F6; color: #FFFFFF; font-weight: bold; border-radius: 6px; padding: 2px 4px; font-size: 11px;")
             btn_pdf.clicked.connect(lambda _, plan=p: self.export_nutrition_pdf(plan))
 
             btn_del = QPushButton("🗑️")
             btn_del.setToolTip("حذف الگو از بانک")
-            btn_del.setFixedSize(28, 28)
+            btn_del.setFixedSize(32, 30)
             btn_del.setCursor(Qt.CursorShape.PointingHandCursor)
-            btn_del.setStyleSheet("background-color: #DC2626; color: #FFFFFF; font-weight: bold; border-radius: 4px; font-size: 12px;")
+            btn_del.setStyleSheet("background-color: #DC2626; color: #FFFFFF; font-weight: bold; border-radius: 6px; font-size: 12px;")
             btn_del.clicked.connect(lambda _, pid=p.id, ptitle=p.title: self.delete_nutrition_template(pid, ptitle))
 
             action_l.addWidget(btn_assign)
             action_l.addWidget(btn_edit)
             action_l.addWidget(btn_pdf)
             action_l.addWidget(btn_del)
-            self.table_nutrition.setCellWidget(row, 7, action_w)
+            self.table_nutrition.setCellWidget(row, 8, action_w)
+
+    def toggle_select_all_w(self, checked):
+        for r in range(self.table_workouts.rowCount()):
+            cell_w = self.table_workouts.cellWidget(r, 0)
+            if cell_w:
+                chk = cell_w.findChild(QCheckBox)
+                if chk:
+                    chk.blockSignals(True)
+                    chk.setChecked(checked)
+                    chk.blockSignals(False)
+        self.on_workout_row_checkbox_toggled()
+
+    def on_workout_row_checkbox_toggled(self):
+        count = len(self.get_selected_workout_template_ids())
+        total = self.table_workouts.rowCount()
+        self.chk_select_all_w.blockSignals(True)
+        self.chk_select_all_w.setChecked(count == total if total > 0 else False)
+        self.chk_select_all_w.blockSignals(False)
+
+        if count > 0:
+            fa_num = str(count).translate(str.maketrans('0123456789', '۰۱۲۳۴۵۶۷۸۹'))
+            self.btn_bulk_delete_w.setText(f"🗑️ حذف انتخاب‌شده‌ها ({fa_num})")
+            self.btn_bulk_delete_w.setEnabled(True)
+        else:
+            self.btn_bulk_delete_w.setText("🗑️ حذف انتخاب‌شده‌ها")
+            self.btn_bulk_delete_w.setEnabled(False)
+
+    def get_selected_workout_template_ids(self):
+        selected_ids = []
+        for r in range(self.table_workouts.rowCount()):
+            cell_w = self.table_workouts.cellWidget(r, 0)
+            if cell_w:
+                chk = cell_w.findChild(QCheckBox)
+                if chk and chk.isChecked():
+                    selected_ids.append(chk.property("item_id"))
+        return selected_ids
+
+    def _hide_workout_rows_by_ids(self, ids):
+        id_set = set(ids)
+        for r in range(self.table_workouts.rowCount() - 1, -1, -1):
+            cell_w = self.table_workouts.cellWidget(r, 0)
+            if cell_w:
+                chk = cell_w.findChild(QCheckBox)
+                if chk and chk.property("item_id") in id_set:
+                    self.table_workouts.hideRow(r)
+
+    def bulk_delete_workout_templates(self):
+        selected_ids = self.get_selected_workout_template_ids()
+        if not selected_ids:
+            return
+
+        count = len(selected_ids)
+        fa_count = str(count).translate(str.maketrans('0123456789', '۰۱۲۳۴۵۶۷۸۹'))
+        reply = QMessageBox.question(
+            self, "تایید حذف گروهی الگوهای تمرینی",
+            f"آیا از حذف {fa_count} الگوی تمرینی انتخاب‌شده اطمینان دارید؟\n\nنکته: پس از حذف، ۱۰ ثانیه فرصت بازگردانی (Undo) خواهید داشت.",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No
+        )
+        if reply != QMessageBox.StandardButton.Yes:
+            return
+
+        self._hide_workout_rows_by_ids(selected_ids)
+
+        def commit_delete(ids):
+            for pid in ids:
+                try:
+                    WorkoutService.delete_plan(pid)
+                except Exception:
+                    pass
+            self.load_workout_templates()
+
+        def undo_delete(ids):
+            self.load_workout_templates()
+
+        self.undo_banner_w.start_countdown(
+            item_count=count,
+            pending_items=selected_ids,
+            on_commit=commit_delete,
+            on_undo=undo_delete,
+            item_label="الگوی تمرینی"
+        )
+
+    def toggle_select_all_n(self, checked):
+        for r in range(self.table_nutrition.rowCount()):
+            cell_w = self.table_nutrition.cellWidget(r, 0)
+            if cell_w:
+                chk = cell_w.findChild(QCheckBox)
+                if chk:
+                    chk.blockSignals(True)
+                    chk.setChecked(checked)
+                    chk.blockSignals(False)
+        self.on_nutrition_row_checkbox_toggled()
+
+    def on_nutrition_row_checkbox_toggled(self):
+        count = len(self.get_selected_nutrition_template_ids())
+        total = self.table_nutrition.rowCount()
+        self.chk_select_all_n.blockSignals(True)
+        self.chk_select_all_n.setChecked(count == total if total > 0 else False)
+        self.chk_select_all_n.blockSignals(False)
+
+        if count > 0:
+            fa_num = str(count).translate(str.maketrans('0123456789', '۰۱۲۳۴۵۶۷۸۹'))
+            self.btn_bulk_delete_n.setText(f"🗑️ حذف انتخاب‌شده‌ها ({fa_num})")
+            self.btn_bulk_delete_n.setEnabled(True)
+        else:
+            self.btn_bulk_delete_n.setText("🗑️ حذف انتخاب‌شده‌ها")
+            self.btn_bulk_delete_n.setEnabled(False)
+
+    def get_selected_nutrition_template_ids(self):
+        selected_ids = []
+        for r in range(self.table_nutrition.rowCount()):
+            cell_w = self.table_nutrition.cellWidget(r, 0)
+            if cell_w:
+                chk = cell_w.findChild(QCheckBox)
+                if chk and chk.isChecked():
+                    selected_ids.append(chk.property("item_id"))
+        return selected_ids
+
+    def _hide_nutrition_rows_by_ids(self, ids):
+        id_set = set(ids)
+        for r in range(self.table_nutrition.rowCount() - 1, -1, -1):
+            cell_w = self.table_nutrition.cellWidget(r, 0)
+            if cell_w:
+                chk = cell_w.findChild(QCheckBox)
+                if chk and chk.property("item_id") in id_set:
+                    self.table_nutrition.hideRow(r)
+
+    def bulk_delete_nutrition_templates(self):
+        selected_ids = self.get_selected_nutrition_template_ids()
+        if not selected_ids:
+            return
+
+        count = len(selected_ids)
+        fa_count = str(count).translate(str.maketrans('0123456789', '۰۱۲۳۴۵۶۷۸۹'))
+        reply = QMessageBox.question(
+            self, "تایید حذف گروهی الگوهای غذایی",
+            f"آیا از حذف {fa_count} الگوی غذایی انتخاب‌شده اطمینان دارید؟\n\nنکته: پس از حذف، ۱۰ ثانیه فرصت بازگردانی (Undo) خواهید داشت.",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No
+        )
+        if reply != QMessageBox.StandardButton.Yes:
+            return
+
+        self._hide_nutrition_rows_by_ids(selected_ids)
+
+        def commit_delete(ids):
+            for pid in ids:
+                try:
+                    NutritionService.delete_nutrition_plan(pid)
+                except Exception:
+                    pass
+            self.load_nutrition_templates()
+
+        def undo_delete(ids):
+            self.load_nutrition_templates()
+
+        self.undo_banner_n.start_countdown(
+            item_count=count,
+            pending_items=selected_ids,
+            on_commit=commit_delete,
+            on_undo=undo_delete,
+            item_label="الگوی غذایی"
+        )
 
     def export_workout_pdf(self, plan):
-        dummy_member = Member(full_name="نسخه عمومی الگو", membership_expire_shamsi="-")
-        default_name = f"workout_template_{plan.id}.pdf"
-        filepath, _ = QFileDialog.getSaveFileName(self, "ذخیره فایل PDF الگوی تمرینی", default_name, "PDF Files (*.pdf)")
-        if filepath:
-            PDFGenerator.generate_workout_pdf(dummy_member, plan, filepath)
-            QMessageBox.information(self, "موفقیت", "فایل PDF الگوی تمرینی با موفقیت ایجاد شد.")
+        try:
+            dummy_member = Member(first_name="نسخه عمومی", last_name="الگو", membership_expire_shamsi="-")
+            plan_title = re.sub(r'[\\/*?:"<>|]', '', plan.title or str(plan.id)).strip()
+            now_str = get_now_shamsi_for_filename()
+            default_name = f"الگوی تمرینی {plan_title}_{now_str}.pdf"
+            from yalda.utils.export_utils import resolve_gym_export_path
+            filepath, gym_folder_name = resolve_gym_export_path(
+                default_name, self.window(), "ذخیره فایل PDF الگوی تمرینی", "PDF Files (*.pdf)"
+            )
+            if filepath:
+                PDFGenerator.generate_workout_pdf(dummy_member, plan, filepath)
+                QMessageBox.information(
+                    self,
+                    "موفقیت",
+                    f"فایل PDF الگوی تمرینی با موفقیت در پوشه اختصاصی «{gym_folder_name}» ذخیره شد:\n\n{filepath}"
+                )
+        except Exception as e:
+            import traceback
+            tb = traceback.format_exc()
+            from yalda.utils.logger import log_error
+            from yalda.views.components.error_dialog import show_error_dialog
+            log_error(f"Error exporting workout template PDF: {e}\n{tb}")
+            show_error_dialog(
+                parent=self.window(),
+                message="متاسفانه در حین ایجاد فایل PDF الگوی تمرینی خطایی رخ داد.",
+                technical_details=tb,
+                title="خطا در صدور PDF"
+            )
 
     def export_nutrition_pdf(self, plan):
-        dummy_member = Member(full_name="نسخه عمومی الگو", membership_expire_shamsi="-")
-        default_name = f"nutrition_template_{plan.id}.pdf"
-        filepath, _ = QFileDialog.getSaveFileName(self, "ذخیره فایل PDF الگوی غذایی", default_name, "PDF Files (*.pdf)")
-        if filepath:
-            PDFGenerator.generate_nutrition_pdf(dummy_member, plan, filepath)
-            QMessageBox.information(self, "موفقیت", "فایل PDF الگوی غذایی با موفقیت ایجاد شد.")
+        try:
+            dummy_member = Member(first_name="نسخه عمومی", last_name="الگو", membership_expire_shamsi="-")
+            plan_title = re.sub(r'[\\/*?:"<>|]', '', plan.title or str(plan.id)).strip()
+            now_str = get_now_shamsi_for_filename()
+            default_name = f"الگوی غذایی {plan_title}_{now_str}.pdf"
+            from yalda.utils.export_utils import resolve_gym_export_path
+            filepath, gym_folder_name = resolve_gym_export_path(
+                default_name, self.window(), "ذخیره فایل PDF الگوی غذایی", "PDF Files (*.pdf)"
+            )
+            if filepath:
+                PDFGenerator.generate_nutrition_pdf(dummy_member, plan, filepath)
+                QMessageBox.information(
+                    self,
+                    "موفقیت",
+                    f"فایل PDF الگوی غذایی با موفقیت در پوشه اختصاصی «{gym_folder_name}» ذخیره شد:\n\n{filepath}"
+                )
+        except Exception as e:
+            import traceback
+            tb = traceback.format_exc()
+            from yalda.utils.logger import log_error
+            from yalda.views.components.error_dialog import show_error_dialog
+            log_error(f"Error exporting nutrition template PDF: {e}\n{tb}")
+            show_error_dialog(
+                parent=self.window(),
+                message="متاسفانه در حین ایجاد فایل PDF الگوی غذایی خطایی رخ داد.",
+                technical_details=tb,
+                title="خطا در صدور PDF"
+            )
 
     def open_assign_dialog(self, template_type: str, template_id: int, template_title: str):
         dlg = AssignTemplateDialog(template_type, template_id, template_title, parent=self)
@@ -488,30 +826,62 @@ class TemplatesManagerView(QWidget):
         reply = QMessageBox.warning(
             self,
             "⚠️ تایید حذف الگوی تمرینی",
-            f"آیا مطمئن هستید که می‌خواهید الگوی تمرینی «{plan_title}» را از بانک حذف کنید؟",
+            f"آیا مطمئن هستید که می‌خواهید الگوی تمرینی «{plan_title}» را از بانک حذف کنید؟\n\nنکته: پس از تایید، ۱۰ ثانیه فرصت بازگردانی (Undo) خواهید داشت.",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No
         )
-        if reply == QMessageBox.StandardButton.Yes:
-            try:
-                WorkoutService.delete_plan(plan_id)
-                QMessageBox.information(self, "موفقیت", f"الگوی تمرینی «{plan_title}» حذف گردید.")
-                self.load_workout_templates()
-            except Exception as e:
-                QMessageBox.critical(self, "خطا", f"خطا در حذف الگو: {str(e)}")
+        if reply != QMessageBox.StandardButton.Yes:
+            return
+
+        self._hide_workout_rows_by_ids([plan_id])
+
+        def commit_delete(ids):
+            for pid in ids:
+                try:
+                    WorkoutService.delete_plan(pid)
+                except Exception as e:
+                    QMessageBox.critical(self, "خطا", f"خطا در حذف الگو: {str(e)}")
+            self.load_workout_templates()
+
+        def undo_delete(ids):
+            self.load_workout_templates()
+
+        self.undo_banner_w.start_countdown(
+            item_count=1,
+            pending_items=[plan_id],
+            on_commit=commit_delete,
+            on_undo=undo_delete,
+            item_label=f"«{plan_title}»"
+        )
 
     def delete_nutrition_template(self, plan_id: int, plan_title: str):
         reply = QMessageBox.warning(
             self,
             "⚠️ تایید حذف الگوی غذایی",
-            f"آیا مطمئن هستید که می‌خواهید الگوی غذایی «{plan_title}» را از بانک حذف کنید؟",
+            f"آیا مطمئن هستید که می‌خواهید الگوی غذایی «{plan_title}» را از بانک حذف کنید؟\n\nنکته: پس از تایید، ۱۰ ثانیه فرصت بازگردانی (Undo) خواهید داشت.",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No
         )
-        if reply == QMessageBox.StandardButton.Yes:
-            try:
-                NutritionService.delete_nutrition_plan(plan_id)
-                QMessageBox.information(self, "موفقیت", f"الگوی غذایی «{plan_title}» حذف گردید.")
-                self.load_nutrition_templates()
-            except Exception as e:
-                QMessageBox.critical(self, "خطا", f"خطا در حذف الگو: {str(e)}")
+        if reply != QMessageBox.StandardButton.Yes:
+            return
+
+        self._hide_nutrition_rows_by_ids([plan_id])
+
+        def commit_delete(ids):
+            for pid in ids:
+                try:
+                    NutritionService.delete_nutrition_plan(pid)
+                except Exception as e:
+                    QMessageBox.critical(self, "خطا", f"خطا در حذف الگو: {str(e)}")
+            self.load_nutrition_templates()
+
+        def undo_delete(ids):
+            self.load_nutrition_templates()
+
+        self.undo_banner_n.start_countdown(
+            item_count=1,
+            pending_items=[plan_id],
+            on_commit=commit_delete,
+            on_undo=undo_delete,
+            item_label=f"«{plan_title}»"
+        )

@@ -4,7 +4,20 @@ from yalda.database.connection import get_session, mark_data_changed
 from yalda.models.database_models import User, SystemSetting
 from yalda.utils.security import verify_password, hash_password
 
-class CurrentUser:
+class _CurrentUserMeta(type):
+    @property
+    def username(cls) -> str:
+        return cls._user.username if cls._user else ""
+
+    @property
+    def user_id(cls):
+        return cls._user.id if cls._user else None
+
+    @property
+    def full_name(cls) -> str:
+        return cls._user.full_name if cls._user else ""
+
+class CurrentUser(metaclass=_CurrentUserMeta):
     _user = None
 
     @classmethod
@@ -226,6 +239,11 @@ def register_trainer(first_name: str, last_name: str, phone: str, birth_date_sha
         session.commit()
         session.refresh(new_trainer)
         mark_data_changed()
+        try:
+            from yalda.utils.logger import log_info
+            log_info(f"ثبت مربی جدید در سیستم: '{new_trainer.full_name}' (نام کاربری: {new_trainer.username})")
+        except Exception:
+            pass
         return new_trainer
     except Exception as e:
         session.rollback()
@@ -329,6 +347,12 @@ def update_trainer_profile(user_id: int, first_name: str, last_name: str, phone:
         # update current user session object
         if CurrentUser.get_id() == user_id:
             CurrentUser.set(user)
+        try:
+            from yalda.utils.logger import log_info
+            pwd_msg = " و کلمه عبور" if effective_password else ""
+            log_info(f"ویرایش مشخصات{pwd_msg} مربی '{user.full_name}' (نام کاربری: {user.username}) با موفقیت ذخیره شد.")
+        except Exception:
+            pass
         return True
     except Exception as e:
         session.rollback()

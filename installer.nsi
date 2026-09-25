@@ -5,13 +5,13 @@ Unicode True
 
 !define PRODUCT_NAME "Yalda Gym Management"
 !define PRODUCT_NAME_EN "Yalda Gym"
-!define PRODUCT_VERSION "2.3.0"
+!define PRODUCT_VERSION "3.1.0"
 !define PRODUCT_PUBLISHER "Abolfazl Samadi"
 !define PRODUCT_WEB_SITE "https://github.com/AbolfazlSamadi2006/Yalda-Gym-App"
 !define PRODUCT_EXE "Yalda.exe"
 !define PRODUCT_UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\YaldaGym"
 
-Name "${PRODUCT_NAME} ${PRODUCT_VERSION}"
+Name "${PRODUCT_NAME} v${PRODUCT_VERSION}"
 OutFile "dist\Yalda_Setup_v${PRODUCT_VERSION}.exe"
 InstallDir "$LOCALAPPDATA\Programs\YaldaGym"
 InstallDirRegKey HKCU "${PRODUCT_UNINST_KEY}" "InstallLocation"
@@ -41,13 +41,13 @@ SetCompressorDictSize 64
 ; English UI (Default)
 !insertmacro MUI_LANGUAGE "English"
 
-VIProductVersion "2.3.0.0"
+VIProductVersion "3.1.0.0"
 VIAddVersionKey "ProductName" "${PRODUCT_NAME}"
 VIAddVersionKey "CompanyName" "${PRODUCT_PUBLISHER}"
 VIAddVersionKey "LegalCopyright" "Copyright (c) 2026 Abolfazl Samadi. All rights reserved."
 VIAddVersionKey "FileDescription" "${PRODUCT_NAME}"
-VIAddVersionKey "FileVersion" "${PRODUCT_VERSION}"
-VIAddVersionKey "ProductVersion" "${PRODUCT_VERSION}"
+VIAddVersionKey "FileVersion" "v${PRODUCT_VERSION}"
+VIAddVersionKey "ProductVersion" "v${PRODUCT_VERSION}"
 
 Function .onInit
     ; Close any running Yalda.exe instance before installation starts
@@ -86,8 +86,8 @@ Section "MainSection" SEC01
     Delete "$SMPROGRAMS\باشگاه یلدا\حذف نرم‌افزار.lnk"
     RMDir "$SMPROGRAMS\باشگاه یلدا"
 
-    WriteRegStr HKCU "${PRODUCT_UNINST_KEY}" "DisplayName" "${PRODUCT_NAME}"
-    WriteRegStr HKCU "${PRODUCT_UNINST_KEY}" "DisplayVersion" "${PRODUCT_VERSION}"
+    WriteRegStr HKCU "${PRODUCT_UNINST_KEY}" "DisplayName" "${PRODUCT_NAME} v${PRODUCT_VERSION}"
+    WriteRegStr HKCU "${PRODUCT_UNINST_KEY}" "DisplayVersion" "v${PRODUCT_VERSION}"
     WriteRegStr HKCU "${PRODUCT_UNINST_KEY}" "Publisher" "${PRODUCT_PUBLISHER}"
     WriteRegStr HKCU "${PRODUCT_UNINST_KEY}" "URLInfoAbout" "${PRODUCT_WEB_SITE}"
     WriteRegStr HKCU "${PRODUCT_UNINST_KEY}" "DisplayIcon" "$INSTDIR\_internal\resources\images\app_icon.ico,0"

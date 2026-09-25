@@ -19,9 +19,6 @@ class MemberService:
                     query = query.filter(or_(Member.user_id == curr_user_id, Member.user_id == None))
 
 
-            if status_filter and status_filter != "all":
-                query = query.filter(Member.status == status_filter)
-
             if search_query:
                 pattern = f"%{search_query.strip()}%"
                 query = query.filter(
@@ -35,7 +32,10 @@ class MemberService:
             members = query.order_by(Member.id.desc()).all()
             
             # Check for active vs expired vs archived memberships dynamically
+            from yalda.utils.jalali_date import days_until_expire
+            db_dirty = False
             for m in members:
+                old_status = m.status
                 if m.status == "archived" or not m.membership_start_shamsi or not m.membership_start_shamsi.strip():
                     m.status = "archived"
                 elif m.membership_expire_shamsi:
@@ -43,6 +43,21 @@ class MemberService:
                         m.status = "active"
                     else:
                         m.status = "expired"
+                if m.status != old_status:
+                    db_dirty = True
+
+            if db_dirty:
+                session.commit()
+
+            if status_filter and status_filter != "all":
+                if status_filter == "expiring_soon":
+                    members = [
+                        m for m in members
+                        if m.status == "active" and 0 <= days_until_expire(m.membership_expire_shamsi) <= 5
+                    ]
+                else:
+                    members = [m for m in members if m.status == status_filter]
+
             return members
         finally:
             session.close()
@@ -95,6 +110,7 @@ class MemberService:
                 birth_date_shamsi=data.get("birth_date_shamsi"),
                 height_cm=h_val,
                 initial_weight_kg=w_val,
+                activity_level=data.get("activity_level", "moderately_active"),
                 registration_date_shamsi=data.get("registration_date_shamsi") or get_today_shamsi(),
                 insurance_date_shamsi=data.get("insurance_date_shamsi"),
                 tuition_fee=float(data.get("tuition_fee", 0.0) or 0.0) if data.get("tuition_fee") is not None else None,
@@ -269,8 +285,10 @@ class MemberService:
             session.close()
 
     @staticmethod
-    def get_upcoming_birthday_members(days_ahead: int = 1):
-        """Returns active members whose birthday is in `days_ahead` days."""
+    def get_upcoming_birthday_members(days_ahead: int = 1, include_today: bool = True):
+        """Returns active members whose birthday is today (delta=0) or in `days_ahead` days (delta=1).
+        Returns a list of tuples: [(member, delta), ...]
+        """
         import jdatetime
         from yalda.utils.jalali_date import parse_shamsi
 
@@ -285,17 +303,19 @@ class MemberService:
                     query = query.filter(or_(Member.user_id == curr_user_id, Member.user_id == None))
             members = query.all()
 
-            target_date = jdatetime.date.today() + jdatetime.timedelta(days=days_ahead)
+            today = jdatetime.date.today()
+            target_date = today + jdatetime.timedelta(days=days_ahead)
 
-            
             upcoming = []
             for m in members:
                 if not m.birth_date_shamsi:
                     continue
                 try:
                     b_date = parse_shamsi(m.birth_date_shamsi)
-                    if b_date.month == target_date.month and b_date.day == target_date.day:
-                        upcoming.append(m)
+                    if include_today and b_date.month == today.month and b_date.day == today.day:
+                        upcoming.append((m, 0))
+                    elif b_date.month == target_date.month and b_date.day == target_date.day:
+                        upcoming.append((m, days_ahead))
                 except Exception:
                     continue
             return upcoming

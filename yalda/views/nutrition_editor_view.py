@@ -26,6 +26,8 @@ class NutritionEditorView(QWidget):
         self._days_cache = {}
         self._prev_days_mode = "7_days"
         self.init_ui()
+        self._last_state = self._capture_state()
+        self._update_undo_redo_ui()
 
         # Keyboard shortcuts
         QShortcut(QKeySequence("Ctrl+Z"), self, self.undo)
@@ -51,9 +53,10 @@ class NutritionEditorView(QWidget):
         btn_back.setObjectName("back_button")
         btn_back.clicked.connect(self.back_requested.emit)
 
-        btn_reset = QPushButton("🔄 بازنشانی تغییرات")
-        btn_reset.setObjectName("secondary_button")
-        btn_reset.clicked.connect(self.revert_changes)
+        self.btn_reset = QPushButton("🔄 بازنشانی تغییرات")
+        self.btn_reset.setObjectName("secondary_button")
+        self.btn_reset.setEnabled(False)
+        self.btn_reset.clicked.connect(self.revert_changes)
 
         btn_new_plan = QPushButton("➕ رژیم جدید")
         btn_new_plan.setObjectName("secondary_button")
@@ -70,7 +73,7 @@ class NutritionEditorView(QWidget):
         header.addWidget(btn_back)
         header.addWidget(self.lbl_header_title)
         header.addStretch()
-        header.addWidget(btn_reset)
+        header.addWidget(self.btn_reset)
         header.addWidget(btn_new_plan)
         header.addWidget(btn_manage_tpl)
         header.addWidget(btn_food_bank)
@@ -114,7 +117,8 @@ class NutritionEditorView(QWidget):
         lbl_days = QLabel("روزهای هفته:")
         self.combo_days = QComboBox()
         self.combo_days.addItem("📅 شنبه تا جمعه (۷ روز هفته)", "7_days")
-        self.combo_days.addItem("📅 روزهای تمرین و استراحت (۲ روزه)", "2_days")
+        self.combo_days.addItem("📅 روزهای تمرینی و استراحت", "training_rest")
+        self.combo_days.addItem("📅 ۲ روز در هفته", "2_days")
         self.combo_days.addItem("📅 ۳ روز در هفته", "3_days")
         self.combo_days.addItem("📅 ۴ روز در هفته", "4_days")
         self.combo_days.addItem("📅 ۵ روز در هفته", "5_days")
@@ -130,12 +134,63 @@ class NutritionEditorView(QWidget):
         row1.addWidget(self.combo_days, 1)
         layout_form.addLayout(row1)
 
+        # Row 3: Athlete Selection, Default TDEE Field, Dynamic Total Calories Field & Live Comparison
+        row_cal = QHBoxLayout()
+        row_cal.setSpacing(10)
+
+        self._current_member_tdee = 0
+        self._foods_cache_by_id = {}
+
+        lbl_top_member = QLabel("ورزشکار:")
+        self.combo_member_top = SearchableComboBox(placeholder="انتخاب ورزشکار...")
+        self.combo_member_top.setFixedHeight(34)
+        self.combo_member_top.setMinimumWidth(185)
+
+        lbl_tdee = QLabel("کالری دریافتی روزانه (TDEE):")
+        self.txt_member_tdee = QLineEdit()
+        self.txt_member_tdee.setPlaceholderText("خودکار با انتخاب شاگرد")
+        self.txt_member_tdee.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.txt_member_tdee.setFixedWidth(130)
+        self.txt_member_tdee.setFixedHeight(34)
+        self.txt_member_tdee.setStyleSheet(
+            "font-weight: bold; color: #FBBF24; background-color: #1F2937; border: 1px solid #374151; border-radius: 6px; padding: 2px 6px;"
+        )
+        self.txt_member_tdee.textEdited.connect(self._on_manual_tdee_edited)
+
+        self.lbl_total_calories_title = QLabel("مجموع کالری دریافتی:")
+        self.txt_total_calories = QLineEdit("\u200f0 کالری")
+        self.txt_total_calories.setReadOnly(True)
+        self.txt_total_calories.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.txt_total_calories.setFixedWidth(130)
+        self.txt_total_calories.setFixedHeight(34)
+        self.txt_total_calories.setStyleSheet(
+            "font-weight: bold; color: #34D399; background-color: #1F2937; border: 1px solid #374151; border-radius: 6px; padding: 2px 6px;"
+        )
+
+        self.lbl_calorie_comparison = QLabel("\u200f⚖️ وضعیت کالری: ورزشکار انتخاب نشده")
+        self.lbl_calorie_comparison.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.lbl_calorie_comparison.setFixedHeight(34)
+        self.lbl_calorie_comparison.setMinimumWidth(220)
+        self.lbl_calorie_comparison.setStyleSheet(
+            "font-size: 11px; font-weight: bold; padding: 4px 10px; border-radius: 6px; background-color: #374151; color: #E5E7EB;"
+        )
+
+        row_cal.addWidget(lbl_top_member)
+        row_cal.addWidget(self.combo_member_top, 1)
+        row_cal.addWidget(lbl_tdee)
+        row_cal.addWidget(self.txt_member_tdee)
+        row_cal.addWidget(self.lbl_total_calories_title)
+        row_cal.addWidget(self.txt_total_calories)
+        row_cal.addWidget(self.lbl_calorie_comparison, 1)
+        layout_form.addLayout(row_cal)
+
         layout.addWidget(form_box)
 
         # Tabs for Meals
         self.tabs = QTabWidget()
         self.tabs.setMovable(True)
         self.tabs.tabBar().tabMoved.connect(self._on_tab_moved)
+        self.tabs.currentChanged.connect(lambda _: self.update_dynamic_calories())
         layout.addWidget(self.tabs)
         self.setup_meal_tabs()
 
@@ -146,6 +201,11 @@ class NutritionEditorView(QWidget):
         self.combo_member = SearchableComboBox(placeholder="جستجو یا تایپ نام ورزشکار...")
         self.combo_member.setFixedHeight(36)
         self.combo_member.setMinimumWidth(260)
+
+        self.combo_member.currentIndexChanged.connect(self._on_bottom_member_changed)
+        self.combo_member.currentTextChanged.connect(lambda t: self._on_member_text_matched(self.combo_member, t))
+        self.combo_member_top.currentIndexChanged.connect(self._on_top_member_changed)
+        self.combo_member_top.currentTextChanged.connect(lambda t: self._on_member_text_matched(self.combo_member_top, t))
         self.load_members_dropdown()
 
         btn_save = QPushButton("💾 ذخیره الگوی رژیم در بانک")
@@ -163,28 +223,128 @@ class NutritionEditorView(QWidget):
 
         layout.addWidget(assign_box)
 
+    def _on_member_text_matched(self, combo: QComboBox, text: str):
+        clean = (text or "").strip()
+        if not clean:
+            if combo.currentIndex() != -1:
+                self._sync_member_combos(None)
+            return
+        idx = combo.findText(clean, Qt.MatchFlag.MatchExactly)
+        if idx >= 0:
+            m_id = combo.itemData(idx)
+            if m_id != getattr(self, "_last_synced_member_id", None):
+                self._sync_member_combos(m_id)
+
+    def _sync_member_combos(self, member_id):
+        self._last_synced_member_id = member_id
+        for cmb in (self.combo_member, self.combo_member_top):
+            cmb.blockSignals(True)
+            if member_id is not None:
+                idx = cmb.findData(member_id)
+                if idx >= 0:
+                    cmb.setCurrentIndex(idx)
+                else:
+                    cmb.set_empty()
+            else:
+                cmb.set_empty()
+            cmb.blockSignals(False)
+        self.update_member_tdee_display(member_id)
+
+    def _on_bottom_member_changed(self, _index: int):
+        member_id = self.combo_member.currentData()
+        self._sync_member_combos(member_id)
+
+    def _on_top_member_changed(self, _index: int):
+        member_id = self.combo_member_top.currentData()
+        self._sync_member_combos(member_id)
+
+    def _on_manual_tdee_edited(self, text: str):
+        persian_to_eng = str.maketrans("۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩", "01234567890123456789")
+        digits = "".join(ch for ch in text.translate(persian_to_eng) if ch.isdigit())
+        self._current_member_tdee = int(digits) if digits else 0
+        self.update_dynamic_calories()
+
+    def update_member_tdee_display(self, member_id=None):
+        if member_id is None:
+            member_id = self.combo_member.currentData()
+        if not member_id:
+            self._current_member_tdee = 0
+            self.txt_member_tdee.setText("")
+            self.txt_member_tdee.setToolTip("با انتخاب ورزشکار، مقدار TDEE ایشان به صورت خودکار محاسبه و درج می‌شود.")
+            self.update_dynamic_calories()
+            return
+
+        from yalda.utils.bmr_calculator import calculate_bmr_tdee, calculate_age_from_shamsi
+        member = MemberService.get_member_by_id(member_id)
+        if not member:
+            self._current_member_tdee = 0
+            self.txt_member_tdee.setText("")
+            self.update_dynamic_calories()
+            return
+
+        h_cm = member.height_cm or 0.0
+        w_kg = member.initial_weight_kg or 0.0
+        if h_cm <= 0 or w_kg <= 0:
+            try:
+                from yalda.services.assessment_service import AssessmentService
+                recs = AssessmentService.get_member_assessments(member_id)
+                if recs:
+                    if w_kg <= 0 and recs[0].weight_kg:
+                        w_kg = recs[0].weight_kg
+                    if h_cm <= 0 and getattr(recs[0], "height_cm", None):
+                        h_cm = recs[0].height_cm
+            except Exception:
+                pass
+
+        age = calculate_age_from_shamsi(member.birth_date_shamsi)
+        act_level = getattr(member, "activity_level", None) or "moderately_active"
+        bmr, tdee, pal, act_title, _ = calculate_bmr_tdee(h_cm, w_kg, age, member.gender, act_level)
+        self._current_member_tdee = tdee
+        if tdee > 0:
+            self.txt_member_tdee.setText(f"\u200f{tdee:,} کالری")
+            self.txt_member_tdee.setToolTip(
+                f"ورزشکار: {member.full_name} | BMR: {bmr:,} کالری | سطح فعالیت: {act_title} (ضریب {pal}) | TDEE: {tdee:,} کالری"
+            )
+        else:
+            self.txt_member_tdee.setText("\u200fنامشخص (قد/وزن؟)")
+            self.txt_member_tdee.setToolTip("قد یا وزن ورزشکار در پرونده ثبت نشده است.")
+        self.update_dynamic_calories()
+
     def load_members_dropdown(self):
         cur = self.combo_member.currentData()
-        self.combo_member.blockSignals(True)
-        self.combo_member.clear()
-        members = MemberService.get_all_members(status_filter="active")
-        for m in members:
-            self.combo_member.addItem(m.full_name, m.id)
-        if cur is not None:
-            idx = self.combo_member.findData(cur)
-            if idx >= 0:
-                self.combo_member.setCurrentIndex(idx)
+        if cur is None and hasattr(self, "combo_member_top"):
+            cur = self.combo_member_top.currentData()
+        members = MemberService.get_all_members()
+        active_or_selected = [
+            m for m in members
+            if m.status != "archived" or (cur is not None and m.id == cur)
+        ]
+        for cmb in (self.combo_member, self.combo_member_top):
+            cmb.blockSignals(True)
+            cmb.clear()
+            for m in active_or_selected:
+                cmb.addItem(m.full_name, m.id)
+            if cur is not None:
+                idx = cmb.findData(cur)
+                if idx >= 0:
+                    cmb.setCurrentIndex(idx)
+                else:
+                    cmb.set_empty()
             else:
-                self.combo_member.set_empty()
-        else:
-            self.combo_member.set_empty()
-        self.combo_member.blockSignals(False)
+                cmb.set_empty()
+            cmb.blockSignals(False)
+        self.update_member_tdee_display(cur)
 
     def set_selected_member(self, member_id: int):
         self.load_members_dropdown()
-        idx = self.combo_member.findData(member_id)
-        if idx >= 0:
-            self.combo_member.setCurrentIndex(idx)
+        for cmb in (self.combo_member, self.combo_member_top):
+            if cmb.findData(member_id) < 0:
+                m = MemberService.get_member_by_id(member_id)
+                if m:
+                    cmb.blockSignals(True)
+                    cmb.addItem(m.full_name, m.id)
+                    cmb.blockSignals(False)
+        self._sync_member_combos(member_id)
 
     def load_template_dropdown(self):
         cur = self.combo_templates.currentData()
@@ -221,20 +381,32 @@ class NutritionEditorView(QWidget):
 
             # Detect days pattern from meal names in plan
             has_7_days = any(any(d in m.meal_name for d in ["شنبه", "یکشنبه", "دوشنبه", "سه‌شنبه", "چهارشنبه", "پنج‌شنبه", "جمعه"]) for m in plan.meals)
-            has_2_days = any("تمرین" in m.meal_name or "استراحت" in m.meal_name for m in plan.meals)
+            has_train_rest = any("تمرین" in m.meal_name or "استراحت" in m.meal_name for m in plan.meals)
+            word_num_map = {
+                "روز اول": 1,
+                "روز دوم": 2,
+                "روز سوم": 3,
+                "روز چهارم": 4,
+                "روز پنجم": 5,
+                "روز ششم": 6,
+                "روز هفتم": 7
+            }
             max_day_num = 0
             for m in plan.meals:
+                for word, n in word_num_map.items():
+                    if word in m.meal_name and n > max_day_num:
+                        max_day_num = n
                 for n in range(1, 8):
                     if f"روز {n}" in m.meal_name and n > max_day_num:
                         max_day_num = n
 
             self._days_cache.clear()
             self.combo_days.blockSignals(True)
-            if has_2_days:
-                pattern_key = "2_days"
+            if has_train_rest:
+                pattern_key = "training_rest"
             elif has_7_days:
                 pattern_key = "7_days"
-            elif max_day_num in (3, 4, 5, 6):
+            elif max_day_num in (2, 3, 4, 5, 6):
                 pattern_key = f"{max_day_num}_days"
             else:
                 pattern_key = "all_days"
@@ -317,7 +489,8 @@ class NutritionEditorView(QWidget):
     def _get_day_names_for_mode(self, days_mode: str) -> list:
         day_names_map = {
             "7_days": ["شنبه", "یکشنبه", "دوشنبه", "سه‌شنبه", "چهارشنبه", "پنج‌شنبه", "جمعه"],
-            "2_days": ["روزهای تمرینی", "روزهای استراحت"],
+            "training_rest": ["روزهای تمرینی", "روزهای استراحت"],
+            "2_days": ["روز اول", "روز دوم"],
             "3_days": ["روز اول", "روز دوم", "روز سوم"],
             "4_days": ["روز اول", "روز دوم", "روز سوم", "روز چهارم"],
             "5_days": ["روز اول", "روز دوم", "روز سوم", "روز چهارم", "روز پنجم"],
@@ -364,7 +537,7 @@ class NutritionEditorView(QWidget):
             f_id = combo.currentData() if combo else None
             f_text = combo.currentText() if combo else ""
             txt_amount = table.cellWidget(r, 1)
-            txt_notes = table.cellWidget(r, 2)
+            txt_notes = table.cellWidget(r, 3)
             items.append({
                 "food_id": f_id,
                 "food_text": f_text,
@@ -414,6 +587,7 @@ class NutritionEditorView(QWidget):
 
         mode_to_count = {
             "all_days": 1,
+            "training_rest": 2,
             "2_days": 2,
             "3_days": 3,
             "4_days": 4,
@@ -449,7 +623,7 @@ class NutritionEditorView(QWidget):
             else:
                 selected_days = [current_days[i] for i in dlg.selected_indices if i < len(current_days)]
 
-        else:
+        elif new_count > old_count:
             # Increasing
             cached_plan = self._days_cache.get(new_mode)
             has_cached = bool(cached_plan and self._has_non_empty_nutrition_days(cached_plan))
@@ -466,6 +640,14 @@ class NutritionEditorView(QWidget):
                 selected_days = cached_plan
             elif dlg.choice == "fresh":
                 selected_days = []
+            else:
+                selected_days = current_days
+
+        else:
+            # Same count (e.g. switching between training_rest and 2_days)
+            cached_plan = self._days_cache.get(new_mode)
+            if cached_plan and self._has_non_empty_nutrition_days(cached_plan):
+                selected_days = cached_plan
             else:
                 selected_days = current_days
 
@@ -488,7 +670,7 @@ class NutritionEditorView(QWidget):
                 f_id = combo.currentData() if combo else None
                 f_text = combo.currentText() if combo else ""
                 txt_amount = table.cellWidget(r, 1)
-                txt_notes = table.cellWidget(r, 2)
+                txt_notes = table.cellWidget(r, 3)
                 meal_items.append({
                     "food_id": f_id,
                     "food_text": f_text,
@@ -547,6 +729,8 @@ class NutritionEditorView(QWidget):
             btn.setEnabled(can_undo)
         for btn in getattr(self, '_redo_buttons', []):
             btn.setEnabled(can_redo)
+        if hasattr(self, 'btn_reset') and self.btn_reset:
+            self.btn_reset.setEnabled(can_undo)
 
     def _restore_state(self, state: dict):
         self._is_undoing_redoing = True
@@ -585,12 +769,123 @@ class NutritionEditorView(QWidget):
             tab_idx = state.get("tab_index", 0)
             if 0 <= tab_idx < self.tabs.count():
                 self.tabs.setCurrentIndex(tab_idx)
+            self.update_dynamic_calories()
         finally:
             self._is_undoing_redoing = False
+
+    @staticmethod
+    def _parse_amount(text: str) -> float:
+        if not text:
+            return 0.0
+        persian_to_eng = str.maketrans("۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩/", "01234567890123456789.")
+        clean = str(text).translate(persian_to_eng).replace(",", ".").strip()
+        try:
+            return max(0.0, float(clean))
+        except ValueError:
+            return 0.0
+
+    def update_dynamic_calories(self):
+        if not hasattr(self, "txt_total_calories"):
+            return
+        if not self._foods_cache_by_id:
+            try:
+                for f in NutritionService.get_all_foods():
+                    self._foods_cache_by_id[f.id] = f
+            except Exception:
+                pass
+
+        for _meal_key, table in self.meal_tables:
+            for r in range(table.rowCount()):
+                combo = table.cellWidget(r, 0)
+                txt_amount = table.cellWidget(r, 1)
+                lbl_row_cal = table.cellWidget(r, 2)
+                f_id = combo.currentData() if combo else None
+                amt = self._parse_amount(txt_amount.text() if txt_amount else "0")
+                food = self._foods_cache_by_id.get(f_id) if f_id else None
+                if lbl_row_cal:
+                    if food and amt > 0:
+                        r_cal = int(round((food.calories or 0.0) * amt))
+                        lbl_row_cal.setText(f"\u200f{r_cal:,} کالری")
+                        lbl_row_cal.setStyleSheet("color: #34D399; font-weight: bold; font-size: 12px;")
+                    else:
+                        lbl_row_cal.setText("\u200f0 کالری")
+                        lbl_row_cal.setStyleSheet("color: #9CA3AF; font-size: 12px;")
+
+        days_mode = self.combo_days.currentData() if hasattr(self, "combo_days") else "all_days"
+        if days_mode == "all_days" or len(self.meal_tables) <= 6:
+            active_tables = [tbl for _, tbl in self.meal_tables]
+            day_suffix = ""
+        else:
+            d_idx = max(0, self.tabs.currentIndex()) if hasattr(self, "tabs") else 0
+            day_slice = self.meal_tables[d_idx * 6 : (d_idx + 1) * 6]
+            active_tables = [tbl for _, tbl in day_slice]
+            day_title = self.tabs.tabText(d_idx).replace("📅", "").strip() if hasattr(self, "tabs") else ""
+            day_suffix = f" ({day_title})" if day_title else ""
+
+        total_cal = 0.0
+        total_p = 0.0
+        total_c = 0.0
+        total_f = 0.0
+        for tbl in active_tables:
+            for r in range(tbl.rowCount()):
+                combo = tbl.cellWidget(r, 0)
+                txt_amount = tbl.cellWidget(r, 1)
+                f_id = combo.currentData() if combo else None
+                amt = self._parse_amount(txt_amount.text() if txt_amount else "0")
+                food = self._foods_cache_by_id.get(f_id) if f_id else None
+                if food and amt > 0:
+                    total_cal += (food.calories or 0.0) * amt
+                    total_p += (food.protein_g or 0.0) * amt
+                    total_c += (food.carbs_g or 0.0) * amt
+                    total_f += (food.fat_g or 0.0) * amt
+
+        total_cal_int = int(round(total_cal))
+        self.lbl_total_calories_title.setText(f"مجموع کالری دریافتی{day_suffix}:")
+        self.txt_total_calories.setText(f"\u200f{total_cal_int:,} کالری")
+        self.txt_total_calories.setToolTip(
+            f"درشت‌مغذی‌های محاسبه‌شده{day_suffix}: پروتئین {int(round(total_p))}g | کربوهیدرات {int(round(total_c))}g | چربی {int(round(total_f))}g"
+        )
+
+        tdee = getattr(self, "_current_member_tdee", 0) or 0
+        if tdee > 0:
+            diff = total_cal_int - tdee
+            if total_cal_int == 0:
+                self.lbl_calorie_comparison.setText(f"\u200f⚖️ هدف روزانه (TDEE): {tdee:,} کالری")
+                self.lbl_calorie_comparison.setStyleSheet(
+                    "font-size: 11px; font-weight: bold; padding: 4px 10px; border-radius: 6px; background-color: #374151; color: #E5E7EB;"
+                )
+            elif abs(diff) <= 50:
+                self.lbl_calorie_comparison.setText(f"\u200f✅ منطبق با TDEE ({diff:+,} کالری)")
+                self.lbl_calorie_comparison.setStyleSheet(
+                    "font-size: 11px; font-weight: bold; padding: 4px 10px; border-radius: 6px; background-color: #065F46; color: #FFFFFF;"
+                )
+            elif diff < -50:
+                self.lbl_calorie_comparison.setText(f"\u200f📉 {abs(diff):,} کالری کمتر از TDEE")
+                self.lbl_calorie_comparison.setStyleSheet(
+                    "font-size: 11px; font-weight: bold; padding: 4px 10px; border-radius: 6px; background-color: #1E40AF; color: #FFFFFF;"
+                )
+            else:
+                self.lbl_calorie_comparison.setText(f"\u200f📈 {diff:,} کالری بیشتر از TDEE")
+                self.lbl_calorie_comparison.setStyleSheet(
+                    "font-size: 11px; font-weight: bold; padding: 4px 10px; border-radius: 6px; background-color: #B45309; color: #FFFFFF;"
+                )
+        else:
+            if total_cal_int > 0:
+                self.lbl_calorie_comparison.setText(
+                    f"\u200fP: {int(round(total_p))}g | C: {int(round(total_c))}g | F: {int(round(total_f))}g"
+                )
+            else:
+                self.lbl_calorie_comparison.setText("\u200f⚖️ وضعیت کالری: ورزشکار انتخاب نشده")
+            self.lbl_calorie_comparison.setStyleSheet(
+                "font-size: 11px; font-weight: bold; padding: 4px 10px; border-radius: 6px; background-color: #374151; color: #E5E7EB;"
+            )
 
     def _create_food_row_widgets(self, table: QTableWidget, row: int, foods_list: list, data: dict = None):
         if not data:
             data = {}
+        for f in foods_list:
+            self._foods_cache_by_id[f.id] = f
+
         combo_food = SearchableComboBox(placeholder="جستجو یا تایپ نام ماده غذایی...")
         for f in foods_list:
             combo_food.addItem(f"{f.name_fa} ({f.unit} - {int(f.calories)}kcal)", f.id)
@@ -610,6 +905,10 @@ class NutritionEditorView(QWidget):
         txt_amount = QLineEdit(str(data.get("amount", "1.0")))
         txt_amount.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
+        lbl_row_cal = QLabel("\u200f0 کالری")
+        lbl_row_cal.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        lbl_row_cal.setStyleSheet("color: #9CA3AF; font-size: 12px;")
+
         txt_notes = QLineEdit(str(data.get("notes", "")))
         txt_notes.setAlignment(Qt.AlignmentFlag.AlignCenter)
         txt_notes.setPlaceholderText("توضیحات اختصاصی...")
@@ -620,15 +919,19 @@ class NutritionEditorView(QWidget):
         btn_del.setCursor(Qt.CursorShape.PointingHandCursor)
         btn_del.clicked.connect(lambda _, t=table, b=btn_del: self.remove_food_row(t, b))
 
-        # Connect listeners to snapshot undo
-        combo_food.currentIndexChanged.connect(lambda: self._snapshot_change())
-        txt_amount.textEdited.connect(lambda: self._snapshot_change())
-        txt_notes.textEdited.connect(lambda: self._snapshot_change())
+        # Connect listeners to snapshot undo & dynamic calorie calculation
+        combo_food.currentIndexChanged.connect(lambda _: (self.update_dynamic_calories(), self._snapshot_change()))
+        combo_food.currentTextChanged.connect(lambda _: self.update_dynamic_calories())
+        txt_amount.textChanged.connect(lambda _: self.update_dynamic_calories())
+        txt_amount.textEdited.connect(lambda _: self._snapshot_change())
+        txt_notes.textEdited.connect(lambda _: self._snapshot_change())
 
         table.setCellWidget(row, 0, combo_food)
         table.setCellWidget(row, 1, txt_amount)
-        table.setCellWidget(row, 2, txt_notes)
-        table.setCellWidget(row, 3, btn_del)
+        table.setCellWidget(row, 2, lbl_row_cal)
+        table.setCellWidget(row, 3, txt_notes)
+        table.setCellWidget(row, 4, btn_del)
+        self.update_dynamic_calories()
 
     def add_food_row(self, table: QTableWidget, foods_list: list = None):
         row = table.rowCount()
@@ -636,13 +939,15 @@ class NutritionEditorView(QWidget):
         if not foods_list:
             foods_list = NutritionService.get_all_foods()
         self._create_food_row_widgets(table, row, foods_list)
+        self.update_dynamic_calories()
         self._snapshot_change()
 
     def remove_food_row(self, table: QTableWidget, btn: QPushButton):
         for r in range(table.rowCount()):
-            if table.cellWidget(r, 3) == btn:
+            if table.cellWidget(r, 4) == btn:
                 table.removeRow(r)
                 break
+        self.update_dynamic_calories()
         self._snapshot_change()
 
     def _create_meal_widget(self, meal_key: str, meal_title: str, foods_list: list) -> QWidget:
@@ -674,18 +979,20 @@ class NutritionEditorView(QWidget):
         row_top.addWidget(btn_add_item)
         layout_meal.addLayout(row_top)
 
-        table = QTableWidget(0, 4)
-        table.setHorizontalHeaderLabels(["نام ماده غذایی", "مقدار (ضریب واحد)", "توضیحات مربی", "حذف"])
+        table = QTableWidget(0, 5)
+        table.setHorizontalHeaderLabels(["نام ماده غذایی", "مقدار (ضریب واحد)", "کالری دریافتی", "توضیحات مربی", "حذف"])
         table.verticalHeader().setDefaultSectionSize(48)
         table.verticalHeader().setMinimumSectionSize(40)
 
         header = table.horizontalHeader()
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
         header.setSectionResizeMode(1, QHeaderView.ResizeMode.Interactive)
-        table.setColumnWidth(1, 140)
-        header.setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
-        header.setSectionResizeMode(3, QHeaderView.ResizeMode.Fixed)
-        table.setColumnWidth(3, 60)
+        table.setColumnWidth(1, 125)
+        header.setSectionResizeMode(2, QHeaderView.ResizeMode.Fixed)
+        table.setColumnWidth(2, 115)
+        header.setSectionResizeMode(3, QHeaderView.ResizeMode.Stretch)
+        header.setSectionResizeMode(4, QHeaderView.ResizeMode.Fixed)
+        table.setColumnWidth(4, 60)
 
         btn_add_item.clicked.connect(lambda _, t=table: self.add_food_row(t, foods_list))
 
@@ -704,6 +1011,8 @@ class NutritionEditorView(QWidget):
         self._undo_buttons.clear()
         self._redo_buttons.clear()
         foods_list = NutritionService.get_all_foods()
+        for f in foods_list:
+            self._foods_cache_by_id[f.id] = f
 
         if days_mode == "7_days":
             days = [
@@ -715,11 +1024,13 @@ class NutritionEditorView(QWidget):
                 ("thu", "پنج‌شنبه"),
                 ("fri", "جمعه")
             ]
-        elif days_mode == "2_days":
+        elif days_mode == "training_rest":
             days = [
                 ("training", "روزهای تمرینی"),
                 ("rest", "روزهای استراحت")
             ]
+        elif days_mode == "2_days":
+            days = [("day1", "روز اول"), ("day2", "روز دوم")]
         elif days_mode == "3_days":
             days = [("day1", "روز اول"), ("day2", "روز دوم"), ("day3", "روز سوم")]
         elif days_mode == "4_days":
@@ -784,6 +1095,7 @@ class NutritionEditorView(QWidget):
 
         self.tabs.blockSignals(False)
         self._update_undo_redo_ui()
+        self.update_dynamic_calories()
 
     def refresh_editor(self):
         self.load_members_dropdown()
@@ -795,10 +1107,16 @@ class NutritionEditorView(QWidget):
             if idx >= 0:
                 self.combo_templates.setCurrentIndex(idx)
         self.combo_templates.blockSignals(False)
+        self.update_dynamic_calories()
 
     def get_plan_data(self):
         title = self.txt_title.text().strip() or "برنامه غذایی ایرانی"
         meals_data = []
+        total_cal = 0.0
+        total_p = 0.0
+        total_c = 0.0
+        total_f = 0.0
+        days_count = max(1, len(self.meal_tables) // 6) if len(self.meal_tables) >= 6 else 1
 
         for idx, (meal_key, table) in enumerate(self.meal_tables, start=1):
             items = []
@@ -810,12 +1128,19 @@ class NutritionEditorView(QWidget):
                 if not food_id:
                     continue
                 amount_str = table.cellWidget(row, 1).text().strip()
-                notes = table.cellWidget(row, 2).text().strip()
+                notes_widget = table.cellWidget(row, 3)
+                notes = notes_widget.text().strip() if notes_widget else ""
 
-                try:
-                    amount = float(amount_str)
-                except ValueError:
+                amount = self._parse_amount(amount_str)
+                if amount <= 0:
                     amount = 1.0
+
+                food = self._foods_cache_by_id.get(food_id)
+                if food:
+                    total_cal += (food.calories or 0.0) * amount
+                    total_p += (food.protein_g or 0.0) * amount
+                    total_c += (food.carbs_g or 0.0) * amount
+                    total_f += (food.fat_g or 0.0) * amount
 
                 items.append({
                     "food_id": food_id,
@@ -832,10 +1157,10 @@ class NutritionEditorView(QWidget):
         plan_info = {
             "title": title,
             "goal": self.combo_goal.currentData(),
-            "target_calories": 0.0,
-            "target_protein": 0.0,
-            "target_carbs": 0.0,
-            "target_fat": 0.0
+            "target_calories": round(total_cal / days_count, 1) if total_cal > 0 else float(getattr(self, "_current_member_tdee", 0) or 0.0),
+            "target_protein": round(total_p / days_count, 1),
+            "target_carbs": round(total_c / days_count, 1),
+            "target_fat": round(total_f / days_count, 1)
         }
         return plan_info, meals_data
 
@@ -846,6 +1171,27 @@ class NutritionEditorView(QWidget):
             QMessageBox.warning(self, "خطا", "لطفاً ابتدا حداقل یک ماده غذایی به برنامه اضافه کنید.")
             return None
 
+        # Check duplicate template title in nutrition plans bank
+        title = plan_info["title"].strip()
+        all_plans = NutritionService.get_all_plans()
+        other_titles = [p.title for p in all_plans if not (self.editing_plan_id and p.id == self.editing_plan_id) and p.title]
+        if any(t.strip().lower() == title.lower() for t in other_titles):
+            from yalda.utils.duplicate_helper import get_next_numbered_name
+            suggested_title = get_next_numbered_name(title, other_titles)
+            reply = QMessageBox.question(
+                self,
+                "هشدار عنوان تکراری",
+                f"الگوی برنامه غذایی دیگری با عنوان «{title}» از قبل در بانک الگوها ثبت شده است.\n\nدر صورت تایید، این الگو با عنوان «{suggested_title}» ذخیره خواهد شد.\nآیا مایل به ذخیره هستید؟",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No
+            )
+            if reply != QMessageBox.StandardButton.Yes:
+                self.txt_title.setFocus()
+                return None
+            title = suggested_title
+            plan_info["title"] = suggested_title
+            self.txt_title.setText(suggested_title)
+
         try:
             if self.editing_plan_id:
                 plan = NutritionService.update_nutrition_plan(self.editing_plan_id, plan_info, meals_data)
@@ -855,6 +1201,8 @@ class NutritionEditorView(QWidget):
                     self.combo_templates.blockSignals(True)
                     self.load_template_dropdown()
                     self.combo_templates.blockSignals(False)
+                from yalda.utils.logger import log_info
+                log_info(f"Updated nutrition plan template: '{plan.title}' (ID: {plan.id})")
                 QMessageBox.information(self, "موفقیت", f"الگوی برنامه غذایی «{plan.title}» با موفقیت به‌روزرسانی شد.")
             else:
                 plan = NutritionService.create_nutrition_plan(plan_info, meals_data)
@@ -865,10 +1213,22 @@ class NutritionEditorView(QWidget):
                 self.combo_templates.blockSignals(False)
                 if auto_reset:
                     self.setup_meal_tabs()
+                from yalda.utils.logger import log_info
+                log_info(f"Created nutrition plan template: '{plan.title}' (ID: {plan.id})")
                 QMessageBox.information(self, "موفقیت", "الگوی برنامه غذایی با موفقیت در بانک ذخیره شد.")
             return plan
         except Exception as e:
-            QMessageBox.critical(self, "خطا", f"خطا در ذخیره الگوی برنامه غذایی:\n{str(e)}")
+            import traceback
+            tb = traceback.format_exc()
+            from yalda.utils.logger import log_error
+            from yalda.views.components.error_dialog import show_error_dialog
+            log_error(f"Error saving nutrition template: {e}\n{tb}")
+            show_error_dialog(
+                parent=self,
+                message="متاسفانه در ذخیره‌سازی الگوی برنامه غذایی خطایی رخ داد.",
+                technical_details=tb,
+                title="خطا در ذخیره برنامه غذایی"
+            )
             return None
 
     def _do_reset_fields(self):
@@ -927,13 +1287,50 @@ class NutritionEditorView(QWidget):
             QMessageBox.warning(self, "خطا", "لطفاً ابتدا حداقل یک ماده غذایی به برنامه اضافه کنید.")
             return
 
+        # Check duplicate nutrition plan for this member
+        title = plan_info["title"].strip()
+        existing_asgns = NutritionService.get_member_assignments(member_id)
+        if existing_asgns:
+            from yalda.services.member_service import MemberService
+            member = MemberService.get_member_by_id(member_id)
+            member_name = member.full_name if member else "این ورزشکار"
+            other_titles = [asgn.plan.title for asgn in existing_asgns if asgn.plan and asgn.plan.title]
+            if any(t.strip().lower() == title.lower() for t in other_titles):
+                from yalda.utils.duplicate_helper import get_next_numbered_name
+                suggested_title = get_next_numbered_name(title, other_titles)
+                reply = QMessageBox.question(
+                    self,
+                    "هشدار برنامه تکراری برای ورزشکار",
+                    f"برای ورزشکار «{member_name}» قبلاً برنامه غذایی با عنوان «{title}» صادر شده است.\n\nدر صورت تایید، این برنامه با عنوان «{suggested_title}» برای ایشان صادر خواهد شد.\nآیا مطمئن هستید؟",
+                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                    QMessageBox.StandardButton.No
+                )
+                if reply != QMessageBox.StandardButton.Yes:
+                    self.txt_title.setFocus()
+                    return
+                title = suggested_title
+                plan_info["title"] = suggested_title
+                self.txt_title.setText(suggested_title)
+
         try:
             plan = NutritionService.create_nutrition_plan(plan_info, meals_data)
             NutritionService.assign_nutrition_plan(member_id, plan.id)
+            from yalda.utils.logger import log_info
+            log_info(f"Assigned nutrition plan '{plan.title}' to member ID {member_id}")
             QMessageBox.information(self, "موفقیت", "برنامه غذایی با موفقیت به ورزشکار تخصیص یافت.")
             self.reset_form()
         except Exception as e:
-            QMessageBox.critical(self, "خطا", f"خطا در تخصیص برنامه غذایی:\n{str(e)}")
+            import traceback
+            tb = traceback.format_exc()
+            from yalda.utils.logger import log_error
+            from yalda.views.components.error_dialog import show_error_dialog
+            log_error(f"Error assigning nutrition plan: {e}\n{tb}")
+            show_error_dialog(
+                parent=self,
+                message="متاسفانه در تخصیص برنامه غذایی به ورزشکار خطایی رخ داد.",
+                technical_details=tb,
+                title="خطا در تخصیص برنامه غذایی"
+            )
 
     def open_food_bank(self):
         from yalda.views.food_library_dialog import FoodLibraryDialog
