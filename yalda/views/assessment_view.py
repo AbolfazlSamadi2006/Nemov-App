@@ -101,17 +101,19 @@ class EditAssessmentDialog(QDialog):
 
         # Photos
         row_p = QHBoxLayout()
-        self.btn_before = QPushButton("📷 ویرایش عکس قبل")
-        self.btn_before.setObjectName("secondary_button")
-        self.btn_before.clicked.connect(self.select_before_photo)
-        if self.before_photo_path:
-            self.btn_before.setText(f"📷 عکس قبل: {os.path.basename(self.before_photo_path)[:12]}")
+        row_p.setSpacing(12)
 
-        self.btn_after = QPushButton("📷 ویرایش عکس بعد")
+        self.btn_before = QPushButton()
+        self.btn_before.setObjectName("secondary_button")
+        self.btn_before.setFixedHeight(38)
+        self.btn_before.clicked.connect(self.select_before_photo)
+
+        self.btn_after = QPushButton()
         self.btn_after.setObjectName("secondary_button")
+        self.btn_after.setFixedHeight(38)
         self.btn_after.clicked.connect(self.select_after_photo)
-        if self.after_photo_path:
-            self.btn_after.setText(f"📷 عکس بعد: {os.path.basename(self.after_photo_path)[:12]}")
+
+        self._update_photo_buttons()
 
         row_p.addWidget(self.btn_before)
         row_p.addWidget(self.btn_after)
@@ -131,21 +133,100 @@ class EditAssessmentDialog(QDialog):
         btn_box.addWidget(btn_cancel)
         layout.addLayout(btn_box)
 
+    def _update_photo_buttons(self):
+        # Before Photo
+        if self.before_photo_path and os.path.exists(self.before_photo_path):
+            self.btn_before.setText("📷 مشاهده و ویرایش عکس قبل")
+            self.btn_before.setToolTip(f"عکس قبل: {os.path.basename(self.before_photo_path)}\nجهت مشاهده، ویرایش، یا عکسبرداری مجدد کلیک کنید.")
+        else:
+            self.btn_before.setText("📷 ثبت عکس قبل")
+            self.btn_before.setToolTip("ثبت یا عکسبرداری عکس قبل از طریق دوربین یا سیستم")
+
+        # After Photo
+        if self.after_photo_path and os.path.exists(self.after_photo_path):
+            self.btn_after.setText("📷 مشاهده و ویرایش عکس بعد")
+            self.btn_after.setToolTip(f"عکس بعد: {os.path.basename(self.after_photo_path)}\nجهت مشاهده، ویرایش، یا عکسبرداری مجدد کلیک کنید.")
+        else:
+            self.btn_after.setText("📷 ثبت عکس بعد")
+            self.btn_after.setToolTip("ثبت یا عکسبرداری عکس بعد از طریق دوربین یا سیستم")
+
     def select_before_photo(self):
-        fp, _ = QFileDialog.getOpenFileName(self, "عکس قبل", "", "Images (*.png *.jpg *.jpeg *.bmp *.webp)")
-        if fp:
-            dest = config.PROGRESS_PHOTOS_DIR / f"before_{os.path.basename(fp)}"
-            shutil.copy2(fp, dest)
-            self.before_photo_path = str(dest)
-            self.btn_before.setText(f"📷 عکس قبل: {os.path.basename(fp)[:12]}")
+        from yalda.views.components.image_editor_dialog import ImageEditorDialog
+        from yalda.utils.image_source_chooser import get_image_file_path
+
+        cur_path = self.before_photo_path
+        if cur_path and os.path.exists(cur_path):
+            while True:
+                dlg = ImageEditorDialog(
+                    self,
+                    image_path=cur_path,
+                    title="مشاهده و ویرایش عکس قبل",
+                    allow_retake=True,
+                    is_square_default=False
+                )
+                if dlg.exec() == QDialog.DialogCode.Accepted and dlg.result_image_path:
+                    dest = config.PROGRESS_PHOTOS_DIR / f"before_{os.path.basename(dlg.result_image_path)}"
+                    if os.path.abspath(dlg.result_image_path) != os.path.abspath(dest):
+                        shutil.copy2(dlg.result_image_path, dest)
+                    self.before_photo_path = str(dest)
+                    self._update_photo_buttons()
+                    break
+                elif dlg.retake_triggered:
+                    new_fp = get_image_file_path(self, dialog_title="ثبت عکس جدید (Before)", is_square_default=False, enable_editor=False)
+                    if new_fp:
+                        cur_path = new_fp
+                        continue
+                    else:
+                        continue
+                else:
+                    break
+        else:
+            new_fp = get_image_file_path(self, dialog_title="ثبت عکس قبل (Before)", is_square_default=False, enable_editor=True)
+            if new_fp:
+                dest = config.PROGRESS_PHOTOS_DIR / f"before_{os.path.basename(new_fp)}"
+                if os.path.abspath(new_fp) != os.path.abspath(dest):
+                    shutil.copy2(new_fp, dest)
+                self.before_photo_path = str(dest)
+                self._update_photo_buttons()
 
     def select_after_photo(self):
-        fp, _ = QFileDialog.getOpenFileName(self, "عکس بعد", "", "Images (*.png *.jpg *.jpeg *.bmp *.webp)")
-        if fp:
-            dest = config.PROGRESS_PHOTOS_DIR / f"after_{os.path.basename(fp)}"
-            shutil.copy2(fp, dest)
-            self.after_photo_path = str(dest)
-            self.btn_after.setText(f"📷 عکس بعد: {os.path.basename(fp)[:12]}")
+        from yalda.views.components.image_editor_dialog import ImageEditorDialog
+        from yalda.utils.image_source_chooser import get_image_file_path
+
+        cur_path = self.after_photo_path
+        if cur_path and os.path.exists(cur_path):
+            while True:
+                dlg = ImageEditorDialog(
+                    self,
+                    image_path=cur_path,
+                    title="مشاهده و ویرایش عکس بعد",
+                    allow_retake=True,
+                    is_square_default=False
+                )
+                if dlg.exec() == QDialog.DialogCode.Accepted and dlg.result_image_path:
+                    dest = config.PROGRESS_PHOTOS_DIR / f"after_{os.path.basename(dlg.result_image_path)}"
+                    if os.path.abspath(dlg.result_image_path) != os.path.abspath(dest):
+                        shutil.copy2(dlg.result_image_path, dest)
+                    self.after_photo_path = str(dest)
+                    self._update_photo_buttons()
+                    break
+                elif dlg.retake_triggered:
+                    new_fp = get_image_file_path(self, dialog_title="ثبت عکس جدید (After)", is_square_default=False, enable_editor=False)
+                    if new_fp:
+                        cur_path = new_fp
+                        continue
+                    else:
+                        continue
+                else:
+                    break
+        else:
+            new_fp = get_image_file_path(self, dialog_title="ثبت عکس بعد (After)", is_square_default=False, enable_editor=True)
+            if new_fp:
+                dest = config.PROGRESS_PHOTOS_DIR / f"after_{os.path.basename(new_fp)}"
+                if os.path.abspath(new_fp) != os.path.abspath(dest):
+                    shutil.copy2(new_fp, dest)
+                self.after_photo_path = str(dest)
+                self._update_photo_buttons()
 
     def save_changes(self):
         w = self.spin_weight.value()
@@ -216,10 +297,7 @@ class CompareDialog(QDialog):
             table.setItem(row, 2, QTableWidgetItem(str(v2)))
             
             diff_item = QTableWidgetItem(f"{d:+}" if d else "0")
-            if d < 0:
-                diff_item.setForeground(Qt.GlobalColor.green if ("کمر" in name or "شکم" in name or "چربی" in name or "وزن" in name) else Qt.GlobalColor.red)
-            elif d > 0:
-                diff_item.setForeground(Qt.GlobalColor.green if ("بازو" in name or "سینه" in name or "ران" in name or "لگن" in name or "قد" in name) else Qt.GlobalColor.yellow)
+            diff_item.setForeground(Qt.GlobalColor.white)
             table.setItem(row, 3, diff_item)
 
         layout.addWidget(table)

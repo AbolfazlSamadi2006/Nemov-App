@@ -2,6 +2,9 @@ import os
 import uuid
 import json
 import ssl
+import time
+import socket
+import errno
 import tempfile
 import urllib.request
 import urllib.error
@@ -13,6 +16,36 @@ from yalda.models.database_models import Exercise
 
 VIDEO_EXTENSIONS = ['.mp4', '.avi', '.mkv', '.webm', '.mov']
 IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp', '.bmp', '.gif']
+
+
+def _is_transient_network_error(exc: Exception) -> bool:
+    """Checks if the exception is caused by transient network drops, TCP RST (10054), or timeouts."""
+    if isinstance(exc, (TimeoutError, socket.timeout, ConnectionResetError)):
+        return True
+    err_str = str(exc).lower()
+    if any(k in err_str for k in ("10054", "forcibly closed", "connection reset", "timed out", "remote end closed", "remotedisconnected")):
+        return True
+    if isinstance(exc, urllib.error.URLError):
+        reason = getattr(exc, "reason", None)
+        if isinstance(reason, (TimeoutError, socket.timeout, ConnectionResetError)):
+            return True
+        if isinstance(reason, OSError):
+            if getattr(reason, "errno", None) in (errno.ECONNRESET, 10054, errno.ETIMEDOUT, 10060):
+                return True
+        reason_str = str(reason).lower()
+        if any(k in reason_str for k in ("10054", "forcibly closed", "connection reset", "timed out", "remote disconnected")):
+            return True
+    return False
+
+
+def _format_network_error_message(exc: Exception) -> str:
+    """Converts raw socket / network exceptions into user-friendly Persian guidance."""
+    err_str = str(exc)
+    if "10054" in err_str or "forcibly closed" in err_str.lower() or "connection reset" in err_str.lower():
+        return "ارتباط با سرور ابری به دلیل اختلال لحظه‌ای شبکه یا فایروال اینترنت قطع شد (WinError 10054). لطفاً چند لحظه بعد مجدداً تلاش نمایید."
+    if "timed out" in err_str.lower() or isinstance(exc, (TimeoutError, socket.timeout)):
+        return "مهلت زمانی اتصال به سرور ابری به پایان رسید (Timeout). لطفاً سرعت اینترنت را بررسی نموده و دوباره تلاش کنید."
+    return f"خطای ارتباط با سرور ابری: {err_str}"
 
 
 def upload_exercise_video_to_cloud(video_path: str, custom_filename: str = None) -> tuple[bool, str, str]:
@@ -33,7 +66,7 @@ def upload_exercise_video_to_cloud(video_path: str, custom_filename: str = None)
     upload_path = video_path
     temp_h264_path = None
 
-    # Automatically ensure web-standard H.264 format before upload
+    # Automatically ensure web-standard H.264 format, 720p HD scaling, and high-efficiency compression before upload
     try:
         import subprocess
         import imageio_ffmpeg
@@ -44,10 +77,11 @@ def upload_exercise_video_to_cloud(video_path: str, custom_filename: str = None)
         cmd = [
             ffmpeg_exe, "-y",
             "-i", str(video_path),
+            "-vf", "scale=-2:min(720\\,ih)",
             "-c:v", "libx264",
-            "-r", "30",
+            "-r", "25",
             "-preset", "fast",
-            "-crf", "23",
+            "-crf", "26",
             "-pix_fmt", "yuv420p",
             "-movflags", "+faststart",
             "-an",
@@ -65,6 +99,9 @@ def upload_exercise_video_to_cloud(video_path: str, custom_filename: str = None)
     try:
         with open(upload_path, "rb") as f:
             video_bytes = f.read()
+
+        file_size_mb = len(video_bytes) / (1024 * 1024)
+        adaptive_timeout = max(180, int(file_size_mb * 45))
 
         boundary = f"----WebKitFormBoundary{uuid.uuid4().hex}"
         body = bytearray()
@@ -88,28 +125,43 @@ def upload_exercise_video_to_cloud(video_path: str, custom_filename: str = None)
         req.add_header("Content-Type", f"multipart/form-data; boundary={boundary}")
         req.add_header("X-API-Key", config.CLOUD_BACKUP_SECRET_KEY)
         req.add_header("User-Agent", f"YaldaGymDesktop/{config.APP_VERSION}")
+        req.add_header("Connection", "close")
 
         ctx = ssl.create_default_context()
         ctx.check_hostname = False
         ctx.verify_mode = ssl.CERT_NONE
 
-        with urllib.request.urlopen(req, timeout=60, context=ctx) as response:
-            resp_data = json.loads(response.read().decode("utf-8"))
-            if response.status in (200, 201) and resp_data.get("success", True):
-                video_url = resp_data.get("url", f"{base_url}/video/{filename}")
-                return True, video_url, filename
-            else:
-                return False, resp_data.get("detail", resp_data.get("message", "خطا در آپلود ویدیو")), filename
+        max_retries = 3
+        last_exc = None
+        for attempt in range(1, max_retries + 1):
+            try:
+                with urllib.request.urlopen(req, timeout=adaptive_timeout, context=ctx) as response:
+                    resp_data = json.loads(response.read().decode("utf-8"))
+                    if response.status in (200, 201) and resp_data.get("success", True):
+                        video_url = resp_data.get("url", f"{base_url}/video/{filename}")
+                        return True, video_url, filename
+                    else:
+                        return False, resp_data.get("detail", resp_data.get("message", "خطا در آپلود ویدیو")), filename
+            except urllib.error.HTTPError as e:
+                if e.code in (502, 503, 504) and attempt < max_retries:
+                    time.sleep(2 * attempt)
+                    continue
+                try:
+                    err_data = json.loads(e.read().decode("utf-8"))
+                    msg = err_data.get("detail", err_data.get("message", f"خطای سرور: {e.code}"))
+                except Exception:
+                    msg = f"خطای سرور ابری (کد {e.code})"
+                return False, msg, filename
+            except Exception as e:
+                last_exc = e
+                if _is_transient_network_error(e) and attempt < max_retries:
+                    time.sleep(2 * attempt)
+                    continue
+                break
 
-    except urllib.error.HTTPError as e:
-        try:
-            err_data = json.loads(e.read().decode("utf-8"))
-            msg = err_data.get("detail", err_data.get("message", f"خطای سرور: {e.code}"))
-        except Exception:
-            msg = f"خطای سرور ابری (کد {e.code})"
-        return False, msg, filename
-    except Exception as e:
-        return False, f"خطای ارتباط با سرور ابری: {str(e)}", filename
+        if last_exc:
+            return False, _format_network_error_message(last_exc), filename
+        return False, "خطا در ارسال ویدیو به سرور ابری", filename
     finally:
         if temp_h264_path and os.path.exists(temp_h264_path):
             try:
@@ -155,6 +207,9 @@ def upload_exercise_image_to_cloud(image_path: str, custom_filename: str = None)
         with open(upload_path, "rb") as f:
             img_bytes = f.read()
 
+        img_size_mb = len(img_bytes) / (1024 * 1024)
+        adaptive_timeout = max(90, int(img_size_mb * 30))
+
         boundary = f"----WebKitFormBoundary{uuid.uuid4().hex}"
         body = bytearray()
 
@@ -177,43 +232,60 @@ def upload_exercise_image_to_cloud(image_path: str, custom_filename: str = None)
         req.add_header("Content-Type", f"multipart/form-data; boundary={boundary}")
         req.add_header("X-API-Key", config.CLOUD_BACKUP_SECRET_KEY)
         req.add_header("User-Agent", f"YaldaGymDesktop/{config.APP_VERSION}")
+        req.add_header("Connection", "close")
 
         ctx = ssl.create_default_context()
         ctx.check_hostname = False
         ctx.verify_mode = ssl.CERT_NONE
 
-        try:
-            with urllib.request.urlopen(req, timeout=40, context=ctx) as response:
-                resp_data = json.loads(response.read().decode("utf-8"))
-                if response.status in (200, 201) and resp_data.get("success", True):
-                    image_url = resp_data.get("url", f"{base_url}/image/{filename}")
-                    return True, image_url, filename
-                else:
-                    return False, resp_data.get("detail", resp_data.get("message", "خطا در آپلود تصویر")), filename
-        except urllib.error.HTTPError as http_err:
-            # Fallback to /api/video/upload which also handles images
-            if http_err.code == 404:
-                fallback_endpoint = f"{base_url}/api/video/upload"
-                fallback_req = urllib.request.Request(fallback_endpoint, data=bytes(body), method="POST")
-                fallback_req.add_header("Content-Type", f"multipart/form-data; boundary={boundary}")
-                fallback_req.add_header("X-API-Key", config.CLOUD_BACKUP_SECRET_KEY)
-                fallback_req.add_header("User-Agent", f"YaldaGymDesktop/{config.APP_VERSION}")
-                with urllib.request.urlopen(fallback_req, timeout=40, context=ctx) as response:
-                    resp_data = json.loads(response.read().decode("utf-8"))
-                    if response.status in (200, 201) and resp_data.get("success", True):
-                        image_url = resp_data.get("url", f"{base_url}/image/{filename}")
-                        return True, image_url, filename
-            raise http_err
+        max_retries = 3
+        last_exc = None
+        for attempt in range(1, max_retries + 1):
+            try:
+                try:
+                    with urllib.request.urlopen(req, timeout=adaptive_timeout, context=ctx) as response:
+                        resp_data = json.loads(response.read().decode("utf-8"))
+                        if response.status in (200, 201) and resp_data.get("success", True):
+                            image_url = resp_data.get("url", f"{base_url}/image/{filename}")
+                            return True, image_url, filename
+                        else:
+                            return False, resp_data.get("detail", resp_data.get("message", "خطا در آپلود تصویر")), filename
+                except urllib.error.HTTPError as http_err:
+                    # Fallback to /api/video/upload which also handles images
+                    if http_err.code == 404:
+                        fallback_endpoint = f"{base_url}/api/video/upload"
+                        fallback_req = urllib.request.Request(fallback_endpoint, data=bytes(body), method="POST")
+                        fallback_req.add_header("Content-Type", f"multipart/form-data; boundary={boundary}")
+                        fallback_req.add_header("X-API-Key", config.CLOUD_BACKUP_SECRET_KEY)
+                        fallback_req.add_header("User-Agent", f"YaldaGymDesktop/{config.APP_VERSION}")
+                        fallback_req.add_header("Connection", "close")
+                        with urllib.request.urlopen(fallback_req, timeout=adaptive_timeout, context=ctx) as response:
+                            resp_data = json.loads(response.read().decode("utf-8"))
+                            if response.status in (200, 201) and resp_data.get("success", True):
+                                image_url = resp_data.get("url", f"{base_url}/image/{filename}")
+                                return True, image_url, filename
+                    raise http_err
 
-    except urllib.error.HTTPError as e:
-        try:
-            err_data = json.loads(e.read().decode("utf-8"))
-            msg = err_data.get("detail", err_data.get("message", f"خطای سرور: {e.code}"))
-        except Exception:
-            msg = f"خطای سرور ابری (کد {e.code})"
-        return False, msg, filename
-    except Exception as e:
-        return False, f"خطای ارتباط با سرور ابری: {str(e)}", filename
+            except urllib.error.HTTPError as e:
+                if e.code in (502, 503, 504) and attempt < max_retries:
+                    time.sleep(2 * attempt)
+                    continue
+                try:
+                    err_data = json.loads(e.read().decode("utf-8"))
+                    msg = err_data.get("detail", err_data.get("message", f"خطای سرور: {e.code}"))
+                except Exception:
+                    msg = f"خطای سرور ابری (کد {e.code})"
+                return False, msg, filename
+            except Exception as e:
+                last_exc = e
+                if _is_transient_network_error(e) and attempt < max_retries:
+                    time.sleep(2 * attempt)
+                    continue
+                break
+
+        if last_exc:
+            return False, _format_network_error_message(last_exc), filename
+        return False, "خطا در ارسال تصویر به سرور ابری", filename
     finally:
         if temp_img_path and os.path.exists(temp_img_path):
             try:

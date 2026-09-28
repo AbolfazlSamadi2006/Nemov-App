@@ -113,7 +113,7 @@ COLOR_BORDER = "#333333"
 FONT_FAMILY = "Vazirmatn"
 
 # Cloud Backup Server Settings
-DEFAULT_CLOUD_BACKUP_URL = "https://gymassistantbackup.a-samadi2006.workers.dev"
+DEFAULT_CLOUD_BACKUP_URL = os.environ.get("YALDA_CLOUD_URL", "https://gymassistantbackup.a-samadi2006.workers.dev")
 CLOUD_BACKUP_SECRET_KEY = "yalda_cloud_sec_2006_gym"
 
 # Support Email Settings (Gmail SMTP)

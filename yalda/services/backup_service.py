@@ -6,6 +6,8 @@ import json
 import urllib.request
 import urllib.error
 import ssl
+import time
+import errno
 from pathlib import Path
 from datetime import datetime
 import config
@@ -53,8 +55,52 @@ def export_offline_backup(target_file_path: str) -> bool:
         return False
 
 
-def is_internet_connected(timeout: float = 2.5) -> bool:
+def _is_transient_network_error(exc: Exception) -> bool:
+    """Checks if the exception is caused by transient network drops, TCP RST (10054), or timeouts."""
+    if isinstance(exc, (TimeoutError, socket.timeout, ConnectionResetError)):
+        return True
+    err_str = str(exc).lower()
+    if any(k in err_str for k in ("10054", "forcibly closed", "connection reset", "timed out", "remote end closed", "remotedisconnected")):
+        return True
+    if isinstance(exc, urllib.error.URLError):
+        reason = getattr(exc, "reason", None)
+        if isinstance(reason, (TimeoutError, socket.timeout, ConnectionResetError)):
+            return True
+        if isinstance(reason, OSError):
+            if getattr(reason, "errno", None) in (errno.ECONNRESET, 10054, errno.ETIMEDOUT, 10060):
+                return True
+        reason_str = str(reason).lower()
+        if any(k in reason_str for k in ("10054", "forcibly closed", "connection reset", "timed out", "remote disconnected")):
+            return True
+    return False
+
+
+def _format_network_error_message(exc: Exception) -> str:
+    """Converts raw socket / network exceptions into user-friendly Persian guidance."""
+    err_str = str(exc)
+    if "10054" in err_str or "forcibly closed" in err_str.lower() or "connection reset" in err_str.lower():
+        return "ارتباط با سرور ابری به دلیل اختلال لحظه‌ای شبکه یا فایروال اینترنت قطع شد (WinError 10054). لطفاً چند لحظه بعد مجدداً تلاش نمایید."
+    if "timed out" in err_str.lower() or isinstance(exc, (TimeoutError, socket.timeout)):
+        return "مهلت زمانی اتصال به سرور ابری به پایان رسید (Timeout). لطفاً سرعت اینترنت را بررسی نموده و دوباره تلاش کنید."
+    return f"خطا در ارتباط با سرور ابری: {err_str}"
+
+
+def is_internet_connected(timeout: float = 3.0) -> bool:
     """Checks if active internet connection is available."""
+    # First check cloud backup server or HTTPS
+    try:
+        req = urllib.request.Request(config.DEFAULT_CLOUD_BACKUP_URL.rstrip("/"), method="HEAD")
+        req.add_header("User-Agent", f"YaldaGymNetCheck/{config.APP_VERSION}")
+        ctx = ssl.create_default_context()
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+        with urllib.request.urlopen(req, timeout=timeout, context=ctx):
+            return True
+    except urllib.error.HTTPError:
+        return True
+    except Exception:
+        pass
+
     hosts = [
         ("8.8.8.8", 53),
         ("1.1.1.1", 53),
@@ -71,7 +117,7 @@ def is_internet_connected(timeout: float = 2.5) -> bool:
 
 
 def upload_cloud_backup(trainer_phone: str, trainer_name: str = "", server_url: str = None) -> tuple[bool, str]:
-    """Uploads the database to the Yalda Cloud Backup Server."""
+    """Uploads the database to the Yalda Cloud Backup Server with automatic retry on transient drops."""
     if not config.DB_PATH.exists():
         return False, "فایل پایگاه‌داده یافت نشد."
         
@@ -117,30 +163,51 @@ def upload_cloud_backup(trainer_phone: str, trainer_name: str = "", server_url: 
         # Closing boundary
         body.extend(f"--{boundary}--\r\n".encode("utf-8"))
         
+        db_size_mb = len(db_bytes) / (1024 * 1024)
+        adaptive_timeout = max(90, int(db_size_mb * 40))
+        
         req = urllib.request.Request(upload_endpoint, data=bytes(body), method="POST")
         req.add_header("Content-Type", f"multipart/form-data; boundary={boundary}")
         req.add_header("X-API-Key", config.CLOUD_BACKUP_SECRET_KEY)
         req.add_header("User-Agent", f"YaldaGymDesktop/{config.APP_VERSION}")
+        req.add_header("Connection", "close")
         
         ctx = ssl.create_default_context()
         ctx.check_hostname = False
         ctx.verify_mode = ssl.CERT_NONE
         
-        with urllib.request.urlopen(req, timeout=25, context=ctx) as response:
-            resp_data = json.loads(response.read().decode("utf-8"))
-            if response.status in (200, 201) and resp_data.get("success", True):
-                return True, "نسخه پشتیبان با موفقیت در سرور ابری و حافظه سیستم ذخیره شد."
-            else:
-                return False, resp_data.get("message", "خطا در ثبت بک‌آپ روی سرور.")
+        max_retries = 3
+        last_exc = None
+        for attempt in range(1, max_retries + 1):
+            try:
+                with urllib.request.urlopen(req, timeout=adaptive_timeout, context=ctx) as response:
+                    resp_data = json.loads(response.read().decode("utf-8"))
+                    if response.status in (200, 201) and resp_data.get("success", True):
+                        return True, "نسخه پشتیبان با موفقیت در سرور ابری و حافظه سیستم ذخیره شد."
+                    else:
+                        return False, resp_data.get("message", "خطا در ثبت بک‌آپ روی سرور.")
+            except urllib.error.HTTPError as e:
+                if e.code in (502, 503, 504) and attempt < max_retries:
+                    time.sleep(2 * attempt)
+                    continue
+                try:
+                    err_body = json.loads(e.read().decode("utf-8"))
+                    return False, err_body.get("detail", err_body.get("message", f"خطای سرور: {e.code}"))
+                except Exception:
+                    return False, f"خطای ارتباط با سرور (کد {e.code})"
+            except Exception as e:
+                last_exc = e
+                if _is_transient_network_error(e) and attempt < max_retries:
+                    time.sleep(2 * attempt)
+                    continue
+                break
                 
-    except urllib.error.HTTPError as e:
-        try:
-            err_body = json.loads(e.read().decode("utf-8"))
-            return False, err_body.get("detail", err_body.get("message", f"خطای سرور: {e.code}"))
-        except Exception:
-            return False, f"خطای ارتباط با سرور (کد {e.code})"
+        if last_exc:
+            return False, _format_network_error_message(last_exc)
+        return False, "خطا در برقراری ارتباط با سرور ابری."
+        
     except Exception as e:
-        return False, f"خطا در ارسال نسخه پشتیبان به سرور ابری: {str(e)}"
+        return False, f"خطا در آماده‌سازی نسخه پشتیبان: {str(e)}"
 
 
 def download_and_restore_cloud_backup(trainer_phone: str, server_url: str = None) -> tuple[bool, str]:
@@ -158,59 +225,74 @@ def download_and_restore_cloud_backup(trainer_phone: str, server_url: str = None
     else:
         download_endpoint = f"{url}api/backup/download/{clean_phone}"
 
-    try:
-        req = urllib.request.Request(download_endpoint, method="GET")
-        req.add_header("X-API-Key", config.CLOUD_BACKUP_SECRET_KEY)
-        req.add_header("User-Agent", f"YaldaGymDesktop/{config.APP_VERSION}")
+    max_retries = 3
+    last_exc = None
+    for attempt in range(1, max_retries + 1):
+        try:
+            req = urllib.request.Request(download_endpoint, method="GET")
+            req.add_header("X-API-Key", config.CLOUD_BACKUP_SECRET_KEY)
+            req.add_header("User-Agent", f"YaldaGymDesktop/{config.APP_VERSION}")
+            req.add_header("Connection", "close")
 
-        ctx = ssl.create_default_context()
-        ctx.check_hostname = False
-        ctx.verify_mode = ssl.CERT_NONE
+            ctx = ssl.create_default_context()
+            ctx.check_hostname = False
+            ctx.verify_mode = ssl.CERT_NONE
 
-        with urllib.request.urlopen(req, timeout=30, context=ctx) as response:
-            if response.status == 200:
-                data_bytes = response.read()
-                if not data_bytes or len(data_bytes) < 100:
-                    return False, "فایل دیتابیس دریافتی از سرور خالی یا نامعتبر است."
+            with urllib.request.urlopen(req, timeout=45, context=ctx) as response:
+                if response.status == 200:
+                    data_bytes = response.read()
+                    if not data_bytes or len(data_bytes) < 100:
+                        return False, "فایل دیتابیس دریافتی از سرور خالی یا نامعتبر است."
 
-                # Safety: Save current DB before overwriting
-                if config.DB_PATH.exists():
+                    # Safety: Save current DB before overwriting
+                    if config.DB_PATH.exists():
+                        try:
+                            create_local_backup()
+                        except Exception:
+                            pass
+
+                    config.DATA_DIR.mkdir(parents=True, exist_ok=True)
+                    with open(config.DB_PATH, "wb") as f:
+                        f.write(data_bytes)
+
+                    # Sync to AppData
                     try:
-                        create_local_backup()
+                        config.APPDATA_DATA_DIR.mkdir(parents=True, exist_ok=True)
+                        shutil.copy2(config.DB_PATH, config.APPDATA_DATA_DIR / "yalda.db")
                     except Exception:
                         pass
 
-                config.DATA_DIR.mkdir(parents=True, exist_ok=True)
-                with open(config.DB_PATH, "wb") as f:
-                    f.write(data_bytes)
+                    # Run database migrations in case schema needs updates
+                    try:
+                        from yalda.database.connection import check_and_migrate_db
+                        check_and_migrate_db()
+                    except Exception:
+                        pass
 
-                # Sync to AppData
-                try:
-                    config.APPDATA_DATA_DIR.mkdir(parents=True, exist_ok=True)
-                    shutil.copy2(config.DB_PATH, config.APPDATA_DATA_DIR / "yalda.db")
-                except Exception:
-                    pass
+                    return True, "اطلاعات و پایگاه‌داده با موفقیت از سرور ابری دریافت و بازیابی شد."
+                else:
+                    return False, f"سرور با وضعیت {response.status} پاسخ داد."
 
-                # Run database migrations in case schema needs updates
-                try:
-                    from yalda.database.connection import check_and_migrate_db
-                    check_and_migrate_db()
-                except Exception:
-                    pass
-
-                return True, "اطلاعات و پایگاه‌داده با موفقیت از سرور ابری دریافت و بازیابی شد."
+        except urllib.error.HTTPError as e:
+            if e.code == 404:
+                return False, "هیچ نسخه پشتیبانی برای این شماره موبایل در سرور ابری یافت نشد."
+            elif e.code == 401:
+                return False, "کلید احراز هویت سرور ابری نامعتبر است."
+            elif e.code in (502, 503, 504) and attempt < max_retries:
+                time.sleep(2 * attempt)
+                continue
             else:
-                return False, f"سرور با وضعیت {response.status} پاسخ داد."
+                return False, f"خطای ارتباط با سرور ابری (کد {e.code})"
+        except Exception as e:
+            last_exc = e
+            if _is_transient_network_error(e) and attempt < max_retries:
+                time.sleep(2 * attempt)
+                continue
+            break
 
-    except urllib.error.HTTPError as e:
-        if e.code == 404:
-            return False, "هیچ نسخه پشتیبانی برای این شماره موبایل در سرور ابری یافت نشد."
-        elif e.code == 401:
-            return False, "کلید احراز هویت سرور ابری نامعتبر است."
-        else:
-            return False, f"خطای ارتباط با سرور ابری (کد {e.code})"
-    except Exception as e:
-        return False, f"خطا در دریافت اطلاعات از سرور ابری: {str(e)}"
+    if last_exc:
+        return False, _format_network_error_message(last_exc)
+    return False, "خطا در دریافت اطلاعات از سرور ابری."
 
 
 class BackupService:

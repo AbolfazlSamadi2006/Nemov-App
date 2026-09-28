@@ -10,7 +10,7 @@ class FoodFormDialog(QDialog):
         self.food_data = food_data
         self.setWindowTitle("ویرایش ماده غذایی" if food_data else "افزودن ماده غذایی جدید")
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
-        self.setFixedSize(420, 380)
+        self.setFixedSize(500, 390)
         self.init_ui()
 
     def init_ui(self):
@@ -23,6 +23,7 @@ class FoodFormDialog(QDialog):
         self.combo_cat = QComboBox()
         self.combo_cat.addItem("برنج و نان (کربوهیدرات)", "rice")
         self.combo_cat.addItem("گوشت و مرغ و ماهی (پروتئین)", "meat")
+        self.combo_cat.addItem("حبوبات", "legumes")
         self.combo_cat.addItem("لبنیات", "dairy")
         self.combo_cat.addItem("میوه و سبزیجات", "fruits")
         self.combo_cat.addItem("مغزها و چربی‌های مفید", "nuts")

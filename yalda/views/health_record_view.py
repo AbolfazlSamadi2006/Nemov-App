@@ -587,7 +587,7 @@ class HealthRecordView(QWidget):
 
             # Title
             item_title = QTableWidgetItem(title_text)
-            item_title.setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+            item_title.setTextAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
 
             # Date
             item_date = QTableWidgetItem(doc.created_at_shamsi or "-")
@@ -595,7 +595,7 @@ class HealthRecordView(QWidget):
 
             # Notes
             item_notes = QTableWidgetItem(doc.notes or "-")
-            item_notes.setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+            item_notes.setTextAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
 
             # View Media Button
             btn_view = QPushButton("👁️ مشاهده")

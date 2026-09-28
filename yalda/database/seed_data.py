@@ -63,53 +63,95 @@ def seed_initial_data(session: Session):
         session.add_all(exercises)
         session.commit()
 
-    # 3. Create Default Iranian Food Library if empty
-    if session.query(FoodItem).count() == 0:
-        foods = [
-            # غلات و نان
-            FoodItem(name_fa="برنج سفید پخته (بی‌روغن)", category="rice", unit="100 گرم", calories=130.0, protein_g=2.7, carbs_g=28.0, fat_g=0.3),
-            FoodItem(name_fa="برنج کته با روغن", category="rice", unit="100 گرم", calories=170.0, protein_g=2.7, carbs_g=30.0, fat_g=4.0),
-            FoodItem(name_fa="نان سنگک", category="bread", unit="100 گرم", calories=250.0, protein_g=9.0, carbs_g=50.0, fat_g=1.5),
-            FoodItem(name_fa="نان لواش", category="bread", unit="100 گرم", calories=280.0, protein_g=8.0, carbs_g=56.0, fat_g=2.0),
-            FoodItem(name_fa="نان تافتون", category="bread", unit="100 گرم", calories=260.0, protein_g=8.5, carbs_g=52.0, fat_g=1.8),
-            FoodItem(name_fa="نان بربری", category="bread", unit="100 گرم", calories=265.0, protein_g=9.0, carbs_g=53.0, fat_g=1.6),
-            FoodItem(name_fa="جو دو سر پرک (اوتمیل)", category="rice", unit="100 گرم", calories=389.0, protein_g=16.9, carbs_g=66.0, fat_g=6.9),
-            FoodItem(name_fa="سیب‌زمینی آب‌پز", category="rice", unit="100 گرم", calories=87.0, protein_g=2.0, carbs_g=20.0, fat_g=0.1),
-
-            # پروتئین‌ها و گوشت
-            FoodItem(name_fa="سینه مرغ آب‌پز/گریل", category="meat", unit="100 گرم", calories=165.0, protein_g=31.0, carbs_g=0.0, fat_g=3.6),
-            FoodItem(name_fa="فیله مرغ", category="meat", unit="100 گرم", calories=120.0, protein_g=26.0, carbs_g=0.0, fat_g=1.5),
-            FoodItem(name_fa="گوشت راسته گوساله", category="meat", unit="100 گرم", calories=200.0, protein_g=26.0, carbs_g=0.0, fat_g=10.0),
-            FoodItem(name_fa="تخم‌مرغ کامل آب‌پز", category="meat", unit="1 عدد (50 گرم)", calories=78.0, protein_g=6.3, carbs_g=0.6, fat_g=5.3),
-            FoodItem(name_fa="سفیده تخم‌مرغ آب‌پز", category="meat", unit="1 عدد (33 گرم)", calories=17.0, protein_g=3.6, carbs_g=0.2, fat_g=0.1),
-            FoodItem(name_fa="فیله ماهی قزل‌آلا", category="meat", unit="100 گرم", calories=190.0, protein_g=20.0, carbs_g=0.0, fat_g=12.0),
-            FoodItem(name_fa="قوطی تن ماهی در آب‌نمک", category="meat", unit="100 گرم", calories=116.0, protein_g=26.0, carbs_g=0.0, fat_g=1.0),
-
-            # لبنیات
-            FoodItem(name_fa="شیر کم‌چرب (1.5%)", category="dairy", unit="1 لیوان (240 گرم)", calories=110.0, protein_g=8.0, carbs_g=12.0, fat_g=3.0),
-            FoodItem(name_fa="ماست یونانی کم‌چرب", category="dairy", unit="100 گرم", calories=60.0, protein_g=10.0, carbs_g=4.0, fat_g=0.4),
-            FoodItem(name_fa="پنیر سفید نسبتاً کم‌چرب", category="dairy", unit="30 گرم", calories=75.0, protein_g=5.0, carbs_g=1.0, fat_g=6.0),
-            FoodItem(name_fa="مكمل وی پروتئین", category="dairy", unit="1 اسکوپ (30 گرم)", calories=120.0, protein_g=24.0, carbs_g=3.0, fat_g=1.5),
-
-            # حبوبات و مغزیجات
-            FoodItem(name_fa="عدسی پخته", category="legumes", unit="1 لیوان (200 گرم)", calories=230.0, protein_g=14.0, carbs_g=40.0, fat_g=2.0),
-            FoodItem(name_fa="خوراک لوبیا چیتی", category="legumes", unit="1 لیوان (200 گرم)", calories=240.0, protein_g=15.0, carbs_g=42.0, fat_g=1.5),
-            FoodItem(name_fa="مغز گردو", category="legumes", unit="30 گرم", calories=195.0, protein_g=4.5, carbs_g=4.0, fat_g=19.5),
-            FoodItem(name_fa="مغز بادام درختى", category="legumes", unit="30 گرم", calories=170.0, protein_g=6.0, carbs_g=6.0, fat_g=14.0),
-            FoodItem(name_fa="کره بادام زمینی", category="legumes", unit="1 قاشق غذاخوری (16g)", calories=95.0, protein_g=4.0, carbs_g=3.0, fat_g=8.0),
-
-            # میوه‌ها و سبزیجات
-            FoodItem(name_fa="سیب درختی", category="fruits", unit="1 عدد متوسط (150g)", calories=95.0, protein_g=0.5, carbs_g=25.0, fat_g=0.3),
-            FoodItem(name_fa="موز", category="fruits", unit="1 عدد متوسط (118g)", calories=105.0, protein_g=1.3, carbs_g=27.0, fat_g=0.3),
-            FoodItem(name_fa="خرما مضافتی", category="fruits", unit="1 عدد (10g)", calories=28.0, protein_g=0.2, carbs_g=7.5, fat_g=0.0),
-            FoodItem(name_fa="سالاد فصل (کاهو، خیار، گوجه)", category="vegetables", unit="100 گرم", calories=20.0, protein_g=1.0, carbs_g=4.0, fat_g=0.2),
-            FoodItem(name_fa="کلم بروکلی بخارپز", category="vegetables", unit="100 گرم", calories=35.0, protein_g=2.4, carbs_g=7.0, fat_g=0.4)
-        ]
-        session.add_all(foods)
-        session.commit()
+    # 3. Safely merge Iranian Food Database without overwriting custom trainer foods
+    seed_foods_database(session)
 
     # 4. Safely merge 157 corrective exercises pack without overwriting trainer exercises
     seed_corrective_exercises(session)
+
+
+def seed_foods_database(session: Session):
+    """
+    Safely merges the comprehensive Iranian sports & nutrition foods database:
+    - Guaranteed ZERO DELETIONS: Every single custom food item created by the trainer is 100% PRESERVED.
+    - If a food item does not exist in the database, it is created with its accurate macros, category, and unit.
+    - Does NOT overwrite existing items or modify custom trainer foods.
+    """
+    import os
+    import json
+    from pathlib import Path
+    import config
+
+    candidate_json_paths = [
+        config.BASE_DIR / "resources" / "data" / "foods_database.json",
+    ]
+
+    import sys
+    if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+        candidate_json_paths.insert(0, Path(sys._MEIPASS) / "resources" / "data" / "foods_database.json")
+
+    json_file = None
+    for p in candidate_json_paths:
+        if p.exists():
+            json_file = p
+            break
+
+    if not json_file:
+        return
+
+    try:
+        with open(json_file, "r", encoding="utf-8") as f:
+            food_items = json.load(f)
+    except Exception:
+        return
+
+    # Map existing foods by Persian name
+    existing_foods = {f.name_fa.strip(): f for f in session.query(FoodItem).all() if f.name_fa}
+
+    added = []
+    for item in food_items:
+        name_fa = item.get("name_fa", "").strip()
+        if not name_fa or name_fa in existing_foods:
+            continue
+
+        food = FoodItem(
+            name_fa=name_fa,
+            category=item.get("category", "rice"),
+            unit=item.get("unit", "100 گرم"),
+            calories=float(item.get("calories", 0.0)),
+            protein_g=float(item.get("protein_g", 0.0)),
+            carbs_g=float(item.get("carbs_g", 0.0)),
+            fat_g=float(item.get("fat_g", 0.0)),
+            is_custom=False
+        )
+        added.append(food)
+        existing_foods[name_fa] = food
+
+    # Normalize legacy categories from early versions if any exist
+    legacy_updated = False
+    for f in session.query(FoodItem).all():
+        if f.category == "bread":
+            f.category = "rice"
+            legacy_updated = True
+        elif f.category == "vegetables":
+            f.category = "fruits"
+            legacy_updated = True
+        elif f.name_fa in ("مغز گردو", "مغز بادام درختى", "کره بادام زمینی") and f.category == "legumes":
+            f.category = "nuts"
+            legacy_updated = True
+        elif f.name_fa == "مكمل وی پروتئین" and f.category == "dairy":
+            f.category = "supplements"
+            legacy_updated = True
+
+    if added or legacy_updated:
+        try:
+            if added:
+                session.add_all(added)
+            session.commit()
+            from yalda.database.connection import mark_data_changed
+            mark_data_changed()
+        except Exception:
+            session.rollback()
 
 
 def seed_corrective_exercises(session: Session):

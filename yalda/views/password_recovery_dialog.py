@@ -1,7 +1,7 @@
 from PyQt6.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QMessageBox, QFrame, QScrollArea, QStackedWidget, QSizePolicy
+    QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QMessageBox, QFrame, QScrollArea, QStackedWidget, QSizePolicy, QCompleter
 )
-from PyQt6.QtCore import Qt, pyqtSignal, QTimer, QThread
+from PyQt6.QtCore import Qt, pyqtSignal, QTimer, QThread, QStringListModel
 from yalda.auth.authentication import (
     verify_recovery_credentials, update_trainer_profile, CurrentUser, find_user_by_email_or_phone
 )
@@ -146,6 +146,7 @@ class PasswordRecoveryDialog(QDialog):
         self.txt_email_identity.setFixedHeight(38)
         self.txt_email_identity.setPlaceholderText("مثال: coach@example.com یا 09123456789")
         page_email_layout.addWidget(self.txt_email_identity)
+        self._setup_email_completer()
 
         # Send Code Button
         self.btn_send_otp = QPushButton("📩 دریافت کد تایید در ایمیل")
@@ -398,12 +399,95 @@ class PasswordRecoveryDialog(QDialog):
 
         self.txt_phone.returnPressed.connect(self.do_verify_secret)
         self.txt_recovery_code.returnPressed.connect(self.do_verify_secret)
-        self.txt_email_identity.returnPressed.connect(self.do_send_email_otp)
+        self.txt_email_identity.returnPressed.connect(self._on_email_return_pressed)
         self.txt_entered_otp.returnPressed.connect(self.do_verify_email_otp)
         self.txt_new_password.returnPressed.connect(self.do_reset_and_login)
 
         # Default to Email Mode
         self.switch_mode(0)
+
+    def _get_registered_emails(self) -> list[str]:
+        try:
+            from yalda.database.connection import get_session
+            from yalda.models.database_models import User
+            session = get_session()
+            try:
+                results = session.query(User.email).filter(
+                    User.email.isnot(None),
+                    User.email != ""
+                ).distinct().all()
+                emails = [r[0].strip() for r in results if r[0] and r[0].strip()]
+                return sorted(list(set(emails)))
+            finally:
+                session.close()
+        except Exception:
+            return []
+
+    def _setup_email_completer(self):
+        emails = self._get_registered_emails()
+        self.email_completer = QCompleter(emails, self.txt_email_identity)
+        self.email_completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
+        self.email_completer.setFilterMode(Qt.MatchFlag.MatchStartsWith)
+        self.email_completer.setCompletionMode(QCompleter.CompletionMode.PopupCompletion)
+        self.email_completer.activated[str].connect(self._on_email_selected)
+
+        popup = self.email_completer.popup()
+        popup.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
+        popup.setStyleSheet("""
+            QListView {
+                background-color: #1F1F23;
+                color: #F3F4F6;
+                border: 1px solid #3F3F46;
+                border-radius: 8px;
+                padding: 4px;
+                font-family: 'Vazirmatn', 'Segoe UI', sans-serif;
+                font-size: 13px;
+                outline: none;
+            }
+            QListView::item {
+                padding: 8px 12px;
+                border-radius: 6px;
+                min-height: 24px;
+            }
+            QListView::item:hover {
+                background-color: #2D2D35;
+                color: #FFFFFF;
+            }
+            QListView::item:selected {
+                background-color: #DC2626;
+                color: #FFFFFF;
+            }
+        """)
+        self.txt_email_identity.setCompleter(self.email_completer)
+        self.txt_email_identity.textChanged.connect(self._on_email_text_changed)
+
+    def _on_email_selected(self, email: str):
+        self.txt_email_identity.setText(email)
+        self.txt_email_identity.setCursorPosition(len(email))
+
+    def _on_email_text_changed(self, text: str):
+        if hasattr(self, "email_completer") and self.email_completer.popup():
+            if not text.strip() or self.email_completer.completionModel().rowCount() == 0:
+                self.email_completer.popup().hide()
+
+    def _on_email_return_pressed(self):
+        if (
+            hasattr(self, "email_completer")
+            and self.email_completer.popup()
+            and self.email_completer.popup().isVisible()
+            and self.email_completer.completionModel().rowCount() > 0
+        ):
+            popup = self.email_completer.popup()
+            idx = popup.currentIndex()
+            if idx.isValid():
+                self._on_email_selected(idx.data())
+            else:
+                first_idx = self.email_completer.completionModel().index(0, 0)
+                if first_idx.isValid():
+                    self._on_email_selected(first_idx.data())
+            popup.hide()
+            return
+        self.do_send_email_otp()
 
     def keyPressEvent(self, event):
         if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
@@ -416,6 +500,23 @@ class PasswordRecoveryDialog(QDialog):
                 event.accept()
                 return
             elif self.stack.currentIndex() == 0:
+                if (
+                    hasattr(self, "email_completer")
+                    and self.email_completer.popup()
+                    and self.email_completer.popup().isVisible()
+                    and self.email_completer.completionModel().rowCount() > 0
+                ):
+                    popup = self.email_completer.popup()
+                    idx = popup.currentIndex()
+                    if idx.isValid():
+                        self._on_email_selected(idx.data())
+                    else:
+                        first_idx = self.email_completer.completionModel().index(0, 0)
+                        if first_idx.isValid():
+                            self._on_email_selected(first_idx.data())
+                    popup.hide()
+                    event.accept()
+                    return
                 if self.otp_verify_box.isVisible():
                     self.do_verify_email_otp()
                 else:
@@ -442,6 +543,9 @@ class PasswordRecoveryDialog(QDialog):
                 self.setFixedSize(540, 730)
 
         if index == 0:
+            if hasattr(self, "email_completer") and self.email_completer.model():
+                emails = self._get_registered_emails()
+                self.email_completer.model().setStringList(emails)
             self.btn_tab_email.setStyleSheet("background-color: #DC2626; color: white; font-weight: bold; border-radius: 6px; border: none;")
             self.btn_tab_secret.setStyleSheet("background-color: #27272A; color: #9CA3AF; border: 1px solid #3F3F46; border-radius: 6px;")
         else:
@@ -474,7 +578,10 @@ class PasswordRecoveryDialog(QDialog):
 
         user = find_user_by_email_or_phone(identity)
         if not user:
-            QMessageBox.critical(self, "یافت نشد", "هیچ حسابی با این مشخصات یافت نشد.")
+            if "@" in identity:
+                QMessageBox.critical(self, "یافت نشد", "حسابی با این ایمیل وجود ندارد.")
+            else:
+                QMessageBox.critical(self, "یافت نشد", "هیچ حسابی با این مشخصات یافت نشد.")
             return
 
         if not user.email:

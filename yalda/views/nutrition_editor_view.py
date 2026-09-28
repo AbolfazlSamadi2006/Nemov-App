@@ -85,29 +85,41 @@ class NutritionEditorView(QWidget):
         layout_form.setSpacing(10)
         layout_form.setContentsMargins(12, 12, 12, 12)
 
-        # Template Picker Row (Full width like Workout Editor)
-        row_tpl = QHBoxLayout()
-        row_tpl.setSpacing(10)
+        # Row 1: Template Picker & Diet Title
+        row_top = QHBoxLayout()
+        row_top.setSpacing(12)
+
+        lbl_tpl = QLabel("📂 الگوهای آماده بانک:")
         self.combo_templates = QComboBox()
-        self.combo_templates.addItem("--- انتخاب و بارگذاری الگوی آماده از بانک ---", None)
+        self.combo_templates.setFixedHeight(34)
+        self.combo_templates.addItem("--- انتخاب و بارگذاری الگوی آماده رژیم از بانک ---", None)
         self.load_template_dropdown()
         self.combo_templates.currentIndexChanged.connect(self.on_template_selected)
 
-        row_tpl.addWidget(QLabel("📂 الگوهای آماده بانک:"))
-        row_tpl.addWidget(self.combo_templates)
-        layout_form.addLayout(row_tpl)
-
-        # Row 2: Title -> Goal -> Days Pattern
-        row1 = QHBoxLayout()
-        row1.setSpacing(12)
-
         lbl_title = QLabel("عنوان رژیم:")
         self.txt_title = QLineEdit()
+        self.txt_title.setFixedHeight(34)
         self.txt_title.setPlaceholderText("مثلاً: رژیم افزایش حجم عضلانی...")
         self.txt_title.textEdited.connect(lambda: self._snapshot_change())
 
+        row_top.addWidget(lbl_tpl)
+        row_top.addWidget(self.combo_templates, 1)
+        row_top.addWidget(lbl_title)
+        row_top.addWidget(self.txt_title, 1)
+        layout_form.addLayout(row_top)
+
+        # Row 2: Athlete Selection -> Goal -> Days Pattern
+        row_mid = QHBoxLayout()
+        row_mid.setSpacing(12)
+
+        lbl_top_member = QLabel("ورزشکار:")
+        self.combo_member_top = SearchableComboBox(placeholder="انتخاب ورزشکار...")
+        self.combo_member_top.setFixedHeight(34)
+        self.combo_member_top.setMinimumWidth(185)
+
         lbl_goal = QLabel("هدف رژیم:")
         self.combo_goal = QComboBox()
+        self.combo_goal.setFixedHeight(34)
         self.combo_goal.addItem("عضله‌سازی (Muscle Gain)", "muscle_gain")
         self.combo_goal.addItem("کاهش وزن و چربی‌سوزی (Weight Loss)", "weight_loss")
         self.combo_goal.addItem("افزایش وزن (Weight Gain)", "weight_gain")
@@ -116,6 +128,7 @@ class NutritionEditorView(QWidget):
 
         lbl_days = QLabel("روزهای هفته:")
         self.combo_days = QComboBox()
+        self.combo_days.setFixedHeight(34)
         self.combo_days.addItem("📅 شنبه تا جمعه (۷ روز هفته)", "7_days")
         self.combo_days.addItem("📅 روزهای تمرینی و استراحت", "training_rest")
         self.combo_days.addItem("📅 ۲ روز در هفته", "2_days")
@@ -126,42 +139,102 @@ class NutritionEditorView(QWidget):
         self.combo_days.addItem("📅 الگوی ثابت (کلیه روزهای هفته)", "all_days")
         self.combo_days.currentIndexChanged.connect(self.on_days_pattern_changed)
 
-        row1.addWidget(lbl_title)
-        row1.addWidget(self.txt_title, 2)
-        row1.addWidget(lbl_goal)
-        row1.addWidget(self.combo_goal, 1)
-        row1.addWidget(lbl_days)
-        row1.addWidget(self.combo_days, 1)
-        layout_form.addLayout(row1)
+        row_mid.addWidget(lbl_top_member)
+        row_mid.addWidget(self.combo_member_top, 2)
+        row_mid.addWidget(lbl_goal)
+        row_mid.addWidget(self.combo_goal, 1)
+        row_mid.addWidget(lbl_days)
+        row_mid.addWidget(self.combo_days, 1)
+        layout_form.addLayout(row_mid)
 
-        # Row 3: Athlete Selection, Default TDEE Field, Dynamic Total Calories Field & Live Comparison
+        # Row 3: TDEE Field & Adjust Buttons, Dynamic Total Calories Field & Live Comparison
         row_cal = QHBoxLayout()
-        row_cal.setSpacing(10)
+        row_cal.setSpacing(6)
 
         self._current_member_tdee = 0
         self._foods_cache_by_id = {}
 
-        lbl_top_member = QLabel("ورزشکار:")
-        self.combo_member_top = SearchableComboBox(placeholder="انتخاب ورزشکار...")
-        self.combo_member_top.setFixedHeight(34)
-        self.combo_member_top.setMinimumWidth(185)
-
         lbl_tdee = QLabel("کالری دریافتی روزانه (TDEE):")
-        self.txt_member_tdee = QLineEdit()
-        self.txt_member_tdee.setPlaceholderText("خودکار با انتخاب شاگرد")
+        self.txt_member_tdee = QLineEdit("0")
         self.txt_member_tdee.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.txt_member_tdee.setFixedWidth(130)
+        self.txt_member_tdee.setFixedWidth(110)
         self.txt_member_tdee.setFixedHeight(34)
         self.txt_member_tdee.setStyleSheet(
             "font-weight: bold; color: #FBBF24; background-color: #1F2937; border: 1px solid #374151; border-radius: 6px; padding: 2px 6px;"
         )
         self.txt_member_tdee.textEdited.connect(self._on_manual_tdee_edited)
 
+        # Quick TDEE adjustment buttons: +300, +500, -300, -500
+        btn_style_plus = """
+            QPushButton {
+                background-color: #1A2E26;
+                color: #34D399;
+                border: 1px solid #059669;
+                border-radius: 6px;
+                font-weight: bold;
+                font-size: 11px;
+                padding: 0px;
+            }
+            QPushButton:hover {
+                background-color: #059669;
+                color: #FFFFFF;
+            }
+            QPushButton:pressed {
+                background-color: #047857;
+            }
+        """
+        btn_style_minus = """
+            QPushButton {
+                background-color: #2E1A1A;
+                color: #F87171;
+                border: 1px solid #DC2626;
+                border-radius: 6px;
+                font-weight: bold;
+                font-size: 11px;
+                padding: 0px;
+            }
+            QPushButton:hover {
+                background-color: #DC2626;
+                color: #FFFFFF;
+            }
+            QPushButton:pressed {
+                background-color: #B91C1C;
+            }
+        """
+
+        self.btn_tdee_p300 = QPushButton("+300")
+        self.btn_tdee_p300.setFixedSize(46, 34)
+        self.btn_tdee_p300.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_tdee_p300.setStyleSheet(btn_style_plus)
+        self.btn_tdee_p300.setToolTip("افزودن ۳۰۰ کیلوکالری به TDEE")
+        self.btn_tdee_p300.clicked.connect(lambda: self.adjust_tdee(300))
+
+        self.btn_tdee_p500 = QPushButton("+500")
+        self.btn_tdee_p500.setFixedSize(46, 34)
+        self.btn_tdee_p500.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_tdee_p500.setStyleSheet(btn_style_plus)
+        self.btn_tdee_p500.setToolTip("افزودن ۵۰۰ کیلوکالری به TDEE")
+        self.btn_tdee_p500.clicked.connect(lambda: self.adjust_tdee(500))
+
+        self.btn_tdee_m300 = QPushButton("-300")
+        self.btn_tdee_m300.setFixedSize(46, 34)
+        self.btn_tdee_m300.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_tdee_m300.setStyleSheet(btn_style_minus)
+        self.btn_tdee_m300.setToolTip("کاستن ۳۰۰ کیلوکالری از TDEE")
+        self.btn_tdee_m300.clicked.connect(lambda: self.adjust_tdee(-300))
+
+        self.btn_tdee_m500 = QPushButton("-500")
+        self.btn_tdee_m500.setFixedSize(46, 34)
+        self.btn_tdee_m500.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_tdee_m500.setStyleSheet(btn_style_minus)
+        self.btn_tdee_m500.setToolTip("کاستن ۵۰۰ کیلوکالری از TDEE")
+        self.btn_tdee_m500.clicked.connect(lambda: self.adjust_tdee(-500))
+
         self.lbl_total_calories_title = QLabel("مجموع کالری دریافتی:")
         self.txt_total_calories = QLineEdit("\u200f0 کالری")
         self.txt_total_calories.setReadOnly(True)
         self.txt_total_calories.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.txt_total_calories.setFixedWidth(130)
+        self.txt_total_calories.setFixedWidth(110)
         self.txt_total_calories.setFixedHeight(34)
         self.txt_total_calories.setStyleSheet(
             "font-weight: bold; color: #34D399; background-color: #1F2937; border: 1px solid #374151; border-radius: 6px; padding: 2px 6px;"
@@ -170,15 +243,18 @@ class NutritionEditorView(QWidget):
         self.lbl_calorie_comparison = QLabel("\u200f⚖️ وضعیت کالری: ورزشکار انتخاب نشده")
         self.lbl_calorie_comparison.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.lbl_calorie_comparison.setFixedHeight(34)
-        self.lbl_calorie_comparison.setMinimumWidth(220)
+        self.lbl_calorie_comparison.setMinimumWidth(210)
         self.lbl_calorie_comparison.setStyleSheet(
             "font-size: 11px; font-weight: bold; padding: 4px 10px; border-radius: 6px; background-color: #374151; color: #E5E7EB;"
         )
 
-        row_cal.addWidget(lbl_top_member)
-        row_cal.addWidget(self.combo_member_top, 1)
         row_cal.addWidget(lbl_tdee)
         row_cal.addWidget(self.txt_member_tdee)
+        row_cal.addWidget(self.btn_tdee_p300)
+        row_cal.addWidget(self.btn_tdee_p500)
+        row_cal.addWidget(self.btn_tdee_m300)
+        row_cal.addWidget(self.btn_tdee_m500)
+        row_cal.addSpacing(6)
         row_cal.addWidget(self.lbl_total_calories_title)
         row_cal.addWidget(self.txt_total_calories)
         row_cal.addWidget(self.lbl_calorie_comparison, 1)
@@ -264,12 +340,24 @@ class NutritionEditorView(QWidget):
         self._current_member_tdee = int(digits) if digits else 0
         self.update_dynamic_calories()
 
+    def adjust_tdee(self, delta: int):
+        persian_to_eng = str.maketrans("۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩", "01234567890123456789")
+        cur_text = self.txt_member_tdee.text().translate(persian_to_eng)
+        digits = "".join(ch for ch in cur_text if ch.isdigit())
+        base_val = int(digits) if digits else (getattr(self, "_current_member_tdee", 0) or 0)
+
+        new_val = max(0, base_val + delta)
+        self._current_member_tdee = new_val
+        self.txt_member_tdee.setText(f"\u200f{new_val:,} کالری")
+        self.update_dynamic_calories()
+        self._snapshot_change()
+
     def update_member_tdee_display(self, member_id=None):
         if member_id is None:
             member_id = self.combo_member.currentData()
         if not member_id:
             self._current_member_tdee = 0
-            self.txt_member_tdee.setText("")
+            self.txt_member_tdee.setText("0")
             self.txt_member_tdee.setToolTip("با انتخاب ورزشکار، مقدار TDEE ایشان به صورت خودکار محاسبه و درج می‌شود.")
             self.update_dynamic_calories()
             return
@@ -278,7 +366,7 @@ class NutritionEditorView(QWidget):
         member = MemberService.get_member_by_id(member_id)
         if not member:
             self._current_member_tdee = 0
-            self.txt_member_tdee.setText("")
+            self.txt_member_tdee.setText("0")
             self.update_dynamic_calories()
             return
 

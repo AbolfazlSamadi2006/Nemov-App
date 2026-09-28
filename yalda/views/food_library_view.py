@@ -48,6 +48,7 @@ class FoodLibraryView(QWidget):
         self.combo_cat.addItem("همه دسته‌بندی‌ها", "all")
         self.combo_cat.addItem("برنج و نان (کربوهیدرات)", "rice")
         self.combo_cat.addItem("گوشت و مرغ و ماهی (پروتئین)", "meat")
+        self.combo_cat.addItem("حبوبات", "legumes")
         self.combo_cat.addItem("لبنیات", "dairy")
         self.combo_cat.addItem("میوه و سبزیجات", "fruits")
         self.combo_cat.addItem("مغزها و چربی‌های مفید", "nuts")
@@ -102,7 +103,7 @@ class FoodLibraryView(QWidget):
         header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
         self.table.setColumnWidth(0, 52)   # انتخاب
         self.table.setColumnWidth(2, 120)  # دسته‌بندی
-        self.table.setColumnWidth(3, 135)  # واحد اندازه‌گیری
+        self.table.setColumnWidth(3, 210)  # واحد اندازه‌گیری
         self.table.setColumnWidth(4, 95)   # کالری (kcal)
         self.table.setColumnWidth(5, 85)   # پروتئین (g)
         self.table.setColumnWidth(6, 105)  # کربوهیدرات (g)
@@ -125,8 +126,9 @@ class FoodLibraryView(QWidget):
         foods = NutritionService.get_all_foods(category=category, search_query=search_query)
 
         cat_map = {
-            "rice": "برنج و نان", "meat": "پروتئین‌ها", "dairy": "لبنیات",
-            "fruits": "میوه و سبزیجات", "nuts": "مغزها", "supplements": "مکمل‌ها"
+            "rice": "برنج و نان", "meat": "پروتئین‌ها", "legumes": "حبوبات",
+            "dairy": "لبنیات", "fruits": "میوه و سبزیجات", "nuts": "مغزها",
+            "supplements": "مکمل‌ها"
         }
 
         self.chk_select_all.blockSignals(True)

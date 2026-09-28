@@ -6,8 +6,12 @@ from PyQt6.QtCore import Qt
 from yalda.services.accounting_service import AccountingService
 from yalda.services.member_service import MemberService
 from yalda.database.connection import get_session
+from yalda.models.database_models import TuitionPayment
 from yalda.views.components.jalali_calendar_widget import JalaliDatePicker
-from yalda.utils.jalali_date import get_today_shamsi, is_valid_shamsi, add_months_shamsi, normalize_digits
+from yalda.utils.jalali_date import (
+    get_today_shamsi, is_valid_shamsi, add_months_shamsi,
+    normalize_digits, days_until_expire
+)
 from yalda.auth.authentication import CurrentUser
 
 class TuitionPaymentDialog(QDialog):
@@ -121,6 +125,7 @@ class TuitionPaymentDialog(QDialog):
         layout.addWidget(QLabel("تاریخ پرداخت (شمسی): *"))
         self.date_picker = JalaliDatePicker()
         self.date_picker.setText(get_today_shamsi())
+        self.date_picker.date_changed.connect(lambda _: self._update_extend_checkbox())
         layout.addWidget(self.date_picker)
 
         # 4. Payment Type
@@ -167,8 +172,7 @@ class TuitionPaymentDialog(QDialog):
                     self.combo_member.setCurrentIndex(idx)
                     self.combo_member.setEnabled(False)
                     break
-        else:
-            self._on_member_changed()
+        self._on_member_changed()
 
         if self.is_edit and self.payment:
             self.chk_extend.setVisible(False)
@@ -194,11 +198,58 @@ class TuitionPaymentDialog(QDialog):
                 self.chk_extend.setChecked(False)
             elif text == "شهریه دوره ماهانه":
                 self.chk_extend.setChecked(True)
+        self._update_extend_checkbox()
+
+    def _calculate_new_expiry(self, m, payment_date: str) -> str:
+        if not m or not is_valid_shamsi(payment_date):
+            return ""
+
+        curr_exp = m.membership_expire_shamsi if (m.membership_expire_shamsi and is_valid_shamsi(m.membership_expire_shamsi)) else None
+
+        # If no current expiration date or it is already expired (days_until_expire < 0), renew 1 month from payment date
+        if not curr_exp or days_until_expire(curr_exp) < 0:
+            return add_months_shamsi(payment_date, 1)
+
+        # Member is currently active (curr_exp is in the future).
+        # Check if member has any recorded tuition payments prior to this one:
+        session = get_session()
+        try:
+            prev_payments_count = session.query(TuitionPayment).filter(TuitionPayment.member_id == m.id).count()
+        except Exception:
+            prev_payments_count = 0
+        finally:
+            session.close()
+
+        # If member has 0 previous tuition payments:
+        # This payment is the initial payment for the registration period!
+        # The member's expiration date was already initialized to 1 month from start date.
+        # Do not add a second month prematurely.
+        if prev_payments_count == 0:
+            return curr_exp
+
+        # Otherwise, this is a renewal payment for the next month: extend 1 month from current expiration
+        return add_months_shamsi(curr_exp, 1)
+
+    def _update_extend_checkbox(self):
+        if not hasattr(self, "chk_extend") or self.is_edit:
+            return
+        mid = self.combo_member.currentData()
+        if not mid:
+            self.chk_extend.setText("تمدید خودکار تاریخ انقضای عضویت ورزشکار به مدت ۱ ماه")
+            return
+        m = MemberService.get_member_by_id(mid)
+        payment_date = self.date_picker.get_date()
+        new_exp = self._calculate_new_expiry(m, payment_date)
+        if new_exp:
+            self.chk_extend.setText(f"تمدید خودکار تاریخ انقضا به مدت ۱ ماه (انقضای جدید: {new_exp})")
+        else:
+            self.chk_extend.setText("تمدید خودکار تاریخ انقضای عضویت ورزشکار به مدت ۱ ماه")
 
     def _on_member_changed(self):
         mid = self.combo_member.currentData()
         if not mid:
             self.lbl_member_info.setText("ورزشکاری انتخاب نشده است.")
+            self._update_extend_checkbox()
             return
 
         m = MemberService.get_member_by_id(mid)
@@ -214,6 +265,7 @@ class TuitionPaymentDialog(QDialog):
             )
             if fee > 0 and not self.txt_amount.text().strip():
                 self.txt_amount.setText(f"{fee:,}")
+        self._update_extend_checkbox()
 
     def _format_amount_input(self, text: str):
         clean = text.replace(",", "").replace("٬", "").strip()
@@ -279,13 +331,12 @@ class TuitionPaymentDialog(QDialog):
 
             # Optionally extend membership expiration
             if self.chk_extend.isChecked() and m:
-                # If current expiration is valid and in future, extend from current expiration, else from payment date
-                base_date = m.membership_expire_shamsi if (m.membership_expire_shamsi and is_valid_shamsi(m.membership_expire_shamsi)) else date_val
-                new_exp = add_months_shamsi(base_date, 1)
-                MemberService.update_member(mid, {
-                    "membership_expire_shamsi": new_exp,
-                    "tuition_fee": amount
-                })
+                new_exp = self._calculate_new_expiry(m, date_val)
+                if new_exp:
+                    MemberService.update_member(mid, {
+                        "membership_expire_shamsi": new_exp,
+                        "tuition_fee": amount
+                    })
 
             QMessageBox.information(self, "موفقیت", "پرداخت شهریه با موفقیت ثبت شد و در تراز مالی قرار گرفت.")
             self.accept()

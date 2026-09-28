@@ -72,6 +72,127 @@ class ExerciseNotesDialog(QDialog):
         self.result_notes = self.txt_notes.toPlainText().strip()
         self.accept()
 
+class IncompletePlanWarningDialog(QDialog):
+    """Warning modal when one or more training days have no exercises."""
+
+    def __init__(self, empty_days: list, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("هشدار تکمیل نبودن روزهای برنامه")
+        self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
+        self.setFixedSize(520, 290)
+        self.setStyleSheet("""
+            QDialog {
+                background-color: #181818;
+                border: 1px solid #333333;
+                border-radius: 8px;
+            }
+            QLabel {
+                color: #FFFFFF;
+                font-size: 13px;
+            }
+        """)
+
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(22, 20, 22, 20)
+        layout.setSpacing(12)
+
+        header_layout = QHBoxLayout()
+        header_layout.setSpacing(12)
+        lbl_icon = QLabel("⚠️")
+        lbl_icon.setStyleSheet("font-size: 28px;")
+
+        lbl_header = QLabel("برخی از روزهای برنامه تمرینی فاقد حرکت هستند!")
+        lbl_header.setStyleSheet("font-size: 14px; font-weight: bold; color: #FBBF24;")
+        lbl_header.setWordWrap(True)
+        header_layout.addWidget(lbl_icon)
+        header_layout.addWidget(lbl_header, 1)
+        layout.addLayout(header_layout)
+
+        lbl_desc_top = QLabel("روزهای زیر هنوز تکمیل نشده‌اند و هیچ حرکتی در آن‌ها تعریف نشده است:")
+        lbl_desc_top.setWordWrap(True)
+        lbl_desc_top.setStyleSheet("color: #D1D5DB; font-size: 13px;")
+        layout.addWidget(lbl_desc_top)
+
+        days_names = " ، ".join([title for _, title in empty_days])
+        lbl_days_badge = QLabel(f"◀  {days_names}")
+        lbl_days_badge.setWordWrap(True)
+        lbl_days_badge.setStyleSheet("""
+            color: #F87171;
+            font-size: 13px;
+            font-weight: bold;
+            background-color: #2D1515;
+            border: 1px solid #7F1D1D;
+            border-radius: 6px;
+            padding: 8px 12px;
+        """)
+        layout.addWidget(lbl_days_badge)
+
+        lbl_desc_bottom = QLabel("آیا مایلید عملیات را لغو کرده و برنامه را تکمیل کنید، یا برنامه به همین صورت ناقص ثبت شود؟")
+        lbl_desc_bottom.setWordWrap(True)
+        lbl_desc_bottom.setStyleSheet("color: #E5E7EB; font-size: 12px; font-weight: 500;")
+        layout.addWidget(lbl_desc_bottom)
+
+        layout.addStretch()
+
+        btn_box = QHBoxLayout()
+        btn_box.setSpacing(12)
+
+        # Default button: Red & Focused (Cancel and Complete)
+        self.btn_cancel_and_complete = QPushButton("❌ لغو و تکمیل برنامه")
+        self.btn_cancel_and_complete.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_cancel_and_complete.setFixedHeight(40)
+        self.btn_cancel_and_complete.setDefault(True)
+        self.btn_cancel_and_complete.setStyleSheet("""
+            QPushButton {
+                background-color: #DC2626;
+                color: #FFFFFF;
+                border: 1px solid #EF4444;
+                border-radius: 6px;
+                font-size: 13px;
+                font-weight: bold;
+                padding: 0 16px;
+            }
+            QPushButton:hover {
+                background-color: #B91C1C;
+                border: 1px solid #DC2626;
+            }
+            QPushButton:pressed {
+                background-color: #991B1B;
+            }
+        """)
+        self.btn_cancel_and_complete.clicked.connect(self.reject)
+
+        # Secondary button: Proceed Incomplete
+        self.btn_proceed_incomplete = QPushButton("⚠️ ادامه و ثبت ناقص")
+        self.btn_proceed_incomplete.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_proceed_incomplete.setFixedHeight(40)
+        self.btn_proceed_incomplete.setStyleSheet("""
+            QPushButton {
+                background-color: #262626;
+                color: #D1D5DB;
+                border: 1px solid #4B5563;
+                border-radius: 6px;
+                font-size: 12px;
+                font-weight: bold;
+                padding: 0 14px;
+            }
+            QPushButton:hover {
+                background-color: #374151;
+                color: #FFFFFF;
+                border: 1px solid #6B7280;
+            }
+            QPushButton:pressed {
+                background-color: #1F2937;
+            }
+        """)
+        self.btn_proceed_incomplete.clicked.connect(self.accept)
+
+        btn_box.addWidget(self.btn_cancel_and_complete, 2)
+        btn_box.addWidget(self.btn_proceed_incomplete, 2)
+        layout.addLayout(btn_box)
+
+        self.btn_cancel_and_complete.setFocus()
+
 class WorkoutEditorView(QWidget):
     manage_templates_requested = pyqtSignal()
     open_exercise_bank_requested = pyqtSignal()
@@ -211,6 +332,8 @@ class WorkoutEditorView(QWidget):
         self.combo_member.setFixedHeight(36)
         self.combo_member.setMinimumWidth(260)
         self.load_members_dropdown()
+        self.combo_member.currentIndexChanged.connect(self._on_member_changed)
+        self.combo_member.currentTextChanged.connect(self._on_member_text_matched)
 
         btn_save = QPushButton("💾 ذخیره الگو در بانک")
         btn_save.setObjectName("secondary_button")
@@ -244,11 +367,79 @@ class WorkoutEditorView(QWidget):
             self.combo_member.set_empty()
         self.combo_member.blockSignals(False)
 
+    def _on_member_changed(self, _index: int = None):
+        member_id = self.combo_member.currentData()
+        if member_id:
+            self.apply_member_membership_days(member_id)
+
+    def _on_member_text_matched(self, text: str):
+        if not text:
+            return
+        cleaned = text.strip()
+        idx = self.combo_member.findText(cleaned, Qt.MatchFlag.MatchExactly)
+        if idx >= 0 and self.combo_member.currentIndex() != idx:
+            self.combo_member.setCurrentIndex(idx)
+
+    @staticmethod
+    def _get_membership_days(membership_type: str) -> int:
+        mapping = {
+            "8_sessions": 2,
+            "12_sessions": 3,
+            "16_sessions": 4,
+            "20_sessions": 5,
+            "daily_access": 6,
+        }
+        if membership_type in mapping:
+            return mapping[membership_type]
+        if membership_type:
+            m_str = str(membership_type).strip()
+            if m_str.isdigit():
+                val = int(m_str)
+                if val in (2, 3, 4, 5, 6):
+                    return val
+                if val == 8:
+                    return 2
+                elif val == 12:
+                    return 3
+                elif val == 16:
+                    return 4
+                elif val == 20:
+                    return 5
+                elif val >= 24:
+                    return 6
+        return 3
+
+    def apply_member_membership_days(self, member_id: int):
+        if not member_id:
+            return
+        if getattr(self, "editing_plan_id", None) is not None:
+            return
+        member = MemberService.get_member_by_id(member_id)
+        if not member:
+            return
+        target_days = self._get_membership_days(getattr(member, "membership_type", None))
+        cur_days = self.combo_days.currentData() or 3
+        if cur_days == target_days:
+            return
+
+        current_days_data = self._extract_current_days_data()
+        if not self._has_non_empty_days(current_days_data):
+            self.combo_days.blockSignals(True)
+            idx_d = self.combo_days.findData(target_days)
+            if idx_d >= 0:
+                self.combo_days.setCurrentIndex(idx_d)
+            self.combo_days.blockSignals(False)
+            self._prev_num_days = target_days
+            self.setup_day_tabs_with_data(target_days, None)
+            self._snapshot_change()
+
     def set_selected_member(self, member_id: int):
         self.load_members_dropdown()
         idx = self.combo_member.findData(member_id)
         if idx >= 0:
             self.combo_member.setCurrentIndex(idx)
+        if member_id:
+            self.apply_member_membership_days(member_id)
 
     def _on_tab_moved(self, from_idx: int, to_idx: int):
         if from_idx == to_idx:
@@ -1025,6 +1216,20 @@ class WorkoutEditorView(QWidget):
         if total_exercises == 0:
             QMessageBox.warning(self, "خطا", "لطفاً ابتدا حداقل یک حرکت ورزشی به برنامه اضافه کنید.")
             return
+
+        # Check for empty days in the workout plan
+        empty_days = []
+        for i, d in enumerate(days_data):
+            if len(d.get("exercises", [])) == 0:
+                empty_days.append((i, d.get("day_title") or f"روز {i + 1}"))
+
+        if empty_days:
+            dlg = IncompletePlanWarningDialog(empty_days, self)
+            if dlg.exec() != QDialog.DialogCode.Accepted:
+                first_empty_idx = empty_days[0][0]
+                if 0 <= first_empty_idx < self.tabs.count():
+                    self.tabs.setCurrentIndex(first_empty_idx)
+                return
 
         # Check duplicate workout plan for this member
         title = plan_info["title"].strip()

@@ -21,7 +21,9 @@ dist/
 # Antigravity & IDE settings
 .idea/
 .vscode/
+.agents/
 .user_uploaded/
 scratch/
 *.log
-data/
+/data/
+!resources/data/

@@ -584,7 +584,7 @@ class ImageEditorDialog(QDialog):
         panel_layout.addWidget(btn_reset_all)
 
         if self.allow_retake:
-            btn_retake = QPushButton("🔄 عکس مجدد با دوربین")
+            btn_retake = QPushButton("🔄 ثبت عکس جدید / عکسبرداری مجدد")
             btn_retake.setObjectName("secondary_button")
             btn_retake.setStyleSheet("font-size: 12px; font-weight: bold; padding: 8px; background-color: #555555; color: white; border-radius: 5px;")
             btn_retake.clicked.connect(self.on_retake_clicked)
