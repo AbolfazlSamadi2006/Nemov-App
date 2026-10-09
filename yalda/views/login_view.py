@@ -1,11 +1,13 @@
 from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QMessageBox, QFrame
+    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QMessageBox, QFrame,
+    QCheckBox, QCompleter
 )
-from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtCore import Qt, pyqtSignal, QStringListModel
 from PyQt6.QtGui import QPixmap
 import config
 from yalda.auth.authentication import authenticate_user, is_app_license_active, check_username_exists
 from yalda.utils.security import normalize_digits
+from yalda.utils.credential_manager import CredentialManager
 from yalda.views.password_recovery_dialog import PasswordRecoveryDialog
 from yalda.views.trainer_register_dialog import TrainerRegisterDialog
 from yalda.views.cloud_restore_dialog import CloudRestoreDialog
@@ -46,6 +48,7 @@ class LoginView(QWidget):
         self.setWindowTitle(f"{config.APP_NAME} - ورود به سیستم")
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
         self.setStyleSheet("background-color: #121212;")
+        self._is_auto_filling = False
         self.init_ui()
 
     def showEvent(self, event):
@@ -53,6 +56,27 @@ class LoginView(QWidget):
         self.refresh_activation_state()
         self.clear_user_error()
         self.clear_pass_error()
+        self.load_remembered_credentials()
+
+    def keyPressEvent(self, event):
+        if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
+            u_norm = normalize_digits(self.txt_username.text().strip())
+            p_text = self.txt_password.text().strip()
+            if u_norm and p_text:
+                self.do_login()
+                event.accept()
+                return
+            elif u_norm and not p_text:
+                if CredentialManager.has_credential(u_norm):
+                    self.on_account_selected(u_norm)
+                    if self.txt_password.text().strip():
+                        self.do_login()
+                        event.accept()
+                        return
+                self.txt_password.setFocus()
+                event.accept()
+                return
+        super().keyPressEvent(event)
 
     def init_ui(self):
         main_layout = QVBoxLayout(self)
@@ -60,7 +84,7 @@ class LoginView(QWidget):
 
         # Login Card Container
         card = QFrame()
-        card.setFixedSize(480, 590)
+        card.setFixedSize(480, 610)
         card.setObjectName("login_card")
         card.setStyleSheet("""
             QFrame#login_card {
@@ -101,9 +125,46 @@ class LoginView(QWidget):
         self.txt_username.setFixedHeight(40)
         self.txt_username.setPlaceholderText("نام کاربری را وارد کنید")
         self.txt_username.setStyleSheet(STYLE_INPUT_NORMAL)
-        self.txt_username.textChanged.connect(self.clear_user_error)
-        self.txt_username.returnPressed.connect(lambda: self.txt_password.setFocus())
+        self.txt_username.textChanged.connect(self.on_username_text_changed)
+        self.txt_username.returnPressed.connect(self.on_username_return_pressed)
         
+        # Setup Auto-Complete Completer for Remembered Users
+        self.completer = QCompleter(self)
+        self.completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
+        self.completer.setFilterMode(Qt.MatchFlag.MatchStartsWith)
+        self.completer.setCompletionMode(QCompleter.CompletionMode.PopupCompletion)
+        self.completer.setMaxVisibleItems(8)
+        popup = self.completer.popup()
+        if popup:
+            popup.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
+            popup.setStyleSheet("""
+                QListView {
+                    background-color: #1A1A1A;
+                    color: #FFFFFF;
+                    border: 1px solid #333333;
+                    border-radius: 6px;
+                    selection-background-color: #8B0000;
+                    selection-color: #FFFFFF;
+                    padding: 4px;
+                    font-size: 13px;
+                    outline: none;
+                }
+                QListView::item {
+                    padding: 8px 12px;
+                    border-radius: 4px;
+                }
+                QListView::item:hover {
+                    background-color: #2D1515;
+                    color: #FFFFFF;
+                }
+                QListView::item:selected {
+                    background-color: #8B0000;
+                    color: #FFFFFF;
+                }
+            """)
+        self.txt_username.setCompleter(self.completer)
+        self.completer.activated[str].connect(self.on_account_selected)
+
         self.lbl_user_error = QLabel()
         self.lbl_user_error.setStyleSheet("color: #EF4444; font-size: 12px; font-weight: bold; background: transparent; padding: 2px;")
         self.lbl_user_error.setVisible(False)
@@ -160,6 +221,44 @@ class LoginView(QWidget):
         card_layout.addWidget(lbl_pass)
         card_layout.addLayout(pass_box)
         card_layout.addWidget(self.lbl_pass_error)
+
+        # Remember Me Checkbox Row
+        check_icon_path = str(config.BASE_DIR / "resources" / "images" / "check.svg").replace("\\", "/")
+        row_remember = QHBoxLayout()
+        row_remember.setSpacing(8)
+        self.chk_remember = QCheckBox("مرا به خاطر بسپار")
+        self.chk_remember.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.chk_remember.setStyleSheet(f"""
+            QCheckBox {{
+                color: #CCCCCC;
+                font-size: 13px;
+                font-weight: 500;
+                background: transparent;
+                spacing: 8px;
+            }}
+            QCheckBox:hover {{
+                color: #FFFFFF;
+            }}
+            QCheckBox::indicator {{
+                width: 18px;
+                height: 18px;
+                border: 1px solid #444444;
+                border-radius: 4px;
+                background-color: #1E1E1E;
+            }}
+            QCheckBox::indicator:hover {{
+                border: 1px solid #8B0000;
+            }}
+            QCheckBox::indicator:checked {{
+                background-color: #8B0000;
+                border: 1px solid #A00000;
+                image: url("{check_icon_path}");
+            }}
+        """)
+        self.chk_remember.toggled.connect(self.on_remember_toggled)
+        row_remember.addWidget(self.chk_remember)
+        row_remember.addStretch()
+        card_layout.addLayout(row_remember)
         card_layout.addSpacing(4)
 
         # Actions Row: Forgot Password & Register New Trainer
@@ -216,10 +315,12 @@ class LoginView(QWidget):
         card_layout.addSpacing(6)
 
         # Submit Login Button
-        btn_login = QPushButton("ورود به سیستم")
-        btn_login.setFixedHeight(44)
-        btn_login.setCursor(Qt.CursorShape.PointingHandCursor)
-        btn_login.setStyleSheet("""
+        self.btn_login = QPushButton("ورود به سیستم")
+        self.btn_login.setFixedHeight(44)
+        self.btn_login.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_login.setDefault(True)
+        self.btn_login.setAutoDefault(True)
+        self.btn_login.setStyleSheet("""
             QPushButton {
                 background-color: #8B0000;
                 color: #FFFFFF;
@@ -232,8 +333,8 @@ class LoginView(QWidget):
                 background-color: #A00000;
             }
         """)
-        btn_login.clicked.connect(self.do_login)
-        card_layout.addWidget(btn_login)
+        self.btn_login.clicked.connect(self.do_login)
+        card_layout.addWidget(self.btn_login)
 
         main_layout.addWidget(card)
         self.refresh_activation_state()
@@ -306,6 +407,80 @@ class LoginView(QWidget):
         dlg.restore_success.connect(self.login_success.emit)
         dlg.exec()
 
+    def refresh_completer(self):
+        saved_users = CredentialManager.get_all_saved_usernames()
+        model = QStringListModel(saved_users, self.completer)
+        self.completer.setModel(model)
+
+    def load_remembered_credentials(self):
+        self._is_auto_filling = True
+        try:
+            self.refresh_completer()
+            self.txt_username.clear()
+            self.txt_password.clear()
+            self.chk_remember.setChecked(False)
+            self.txt_username.setFocus()
+        finally:
+            self._is_auto_filling = False
+
+    def on_account_selected(self, text_or_index):
+        if not text_or_index:
+            return
+        if isinstance(text_or_index, str):
+            username = text_or_index
+        else:
+            try:
+                username = text_or_index.data()
+            except Exception:
+                username = str(text_or_index)
+        u_norm = normalize_digits(username.strip())
+        self._is_auto_filling = True
+        try:
+            self.txt_username.setText(u_norm)
+            saved_pwd = CredentialManager.get_password(u_norm)
+            if saved_pwd:
+                self.txt_password.setText(saved_pwd)
+                self.chk_remember.setChecked(True)
+                self.btn_login.setFocus()
+            else:
+                self.txt_password.clear()
+                self.chk_remember.setChecked(False)
+                self.txt_password.setFocus()
+        finally:
+            self._is_auto_filling = False
+
+    def on_username_text_changed(self, text: str):
+        self.clear_user_error()
+        if self._is_auto_filling:
+            return
+        # When typing, do not auto-fill password until chosen from suggestions.
+        # Clear password if it was previously auto-filled to prevent mismatched credentials.
+        if self.txt_password.text():
+            self._is_auto_filling = True
+            try:
+                self.txt_password.clear()
+                self.chk_remember.setChecked(False)
+            finally:
+                self._is_auto_filling = False
+
+    def on_username_return_pressed(self):
+        u_norm = normalize_digits(self.txt_username.text().strip())
+        if u_norm and CredentialManager.has_credential(u_norm) and not self.txt_password.text().strip():
+            self.on_account_selected(u_norm)
+
+        if u_norm and self.txt_password.text().strip():
+            self.do_login()
+        else:
+            self.txt_password.setFocus()
+
+    def on_remember_toggled(self, checked: bool):
+        if not checked and not self._is_auto_filling:
+            raw_u = self.txt_username.text().strip()
+            u_norm = normalize_digits(raw_u)
+            if u_norm and CredentialManager.has_credential(u_norm):
+                CredentialManager.remove_credential(u_norm)
+                self.refresh_completer()
+
     def do_login(self):
         self.clear_user_error()
         self.clear_pass_error()
@@ -336,8 +511,19 @@ class LoginView(QWidget):
             self.txt_username.setFocus()
             return
 
+        # Check Hardware License: if app is not active on this machine and user is NOT admin, block login!
+        if target_user != "admin" and not is_app_license_active():
+            self.txt_username.setStyleSheet(STYLE_INPUT_ERROR)
+            self.lbl_user_error.setText("⛔ این نسخه برای سخت‌افزار این رایانه فعال نشده است.\nجهت فعال‌سازی با مدیر سیستم تماس بگیرید.")
+            self.lbl_user_error.setVisible(True)
+            return
+
         user = authenticate_user(target_user, password)
         if user:
+            if self.chk_remember.isChecked():
+                CredentialManager.save_credential(target_user, password)
+            else:
+                CredentialManager.remove_credential(target_user)
             self.login_success.emit()
         else:
             self.txt_password.setStyleSheet(STYLE_INPUT_ERROR)

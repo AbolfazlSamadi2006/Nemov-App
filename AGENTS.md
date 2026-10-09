@@ -26,3 +26,7 @@
    - Check geometry, alignment, margins/padding, clipping/truncation, text direction (RTL/BiDi), and runtime behavior using test renders, geometry checks, or verification scripts.
    - Proactively detect and fix any visual distortion, overlap, clipping, or bug in the modified target so the delivered output is 100% complete and flawless.
 
+8. **Mandatory Post-Change GitHub Push Confirmation (پرسش اجباری برای پوش به گیتهاب پس از هر تغییر با پیش‌فرض بله)**:
+   - After completing each task/change and verifying QA, ALWAYS ask the user whether they want to commit and push the changes (including any newly generated setup installer if requested) to GitHub.
+   - The default option/recommendation must always be Yes (بله).
+

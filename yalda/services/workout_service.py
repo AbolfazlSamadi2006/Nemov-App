@@ -7,10 +7,12 @@ from yalda.utils.jalali_date import get_today_shamsi
 
 class WorkoutService:
     @staticmethod
-    def get_all_exercises(muscle_group: str = None, equipment: str = None, search_query: str = None):
+    def get_all_exercises(muscle_group: str = None, equipment: str = None, search_query: str = None, include_unlisted: bool = False):
         session = get_session()
         try:
             query = session.query(Exercise)
+            if not include_unlisted:
+                query = query.filter((Exercise.is_unlisted == False) | (Exercise.is_unlisted == None))
             if muscle_group and muscle_group != "all":
                 if muscle_group == "corrective":
                     query = query.filter(Exercise.is_corrective == True)
@@ -32,9 +34,9 @@ class WorkoutService:
             ex = Exercise(
                 name_fa=data.get("name_fa"),
                 name_en=data.get("name_en"),
-                primary_muscle=data.get("primary_muscle"),
+                primary_muscle=data.get("primary_muscle") or "سایر",
                 secondary_muscles=data.get("secondary_muscles"),
-                equipment=data.get("equipment"),
+                equipment=data.get("equipment") or "سایر",
                 media_path=data.get("media_path"),
                 media_type=data.get("media_type", "image"),
                 video_url=data.get("video_url"),
@@ -42,7 +44,9 @@ class WorkoutService:
                 thumbnail_path=data.get("thumbnail_path"),
                 video_cloud_url=data.get("video_cloud_url"),
                 contraindications=data.get("contraindications"),
-                description=data.get("description")
+                description=data.get("description"),
+                is_custom=data.get("is_custom", False),
+                is_unlisted=data.get("is_unlisted", False)
             )
             session.add(ex)
             session.commit()
@@ -134,11 +138,25 @@ class WorkoutService:
 
                 for idx, ex_info in enumerate(day_info.get("exercises", []), start=1):
                     ex_id = ex_info.get("exercise_id")
+                    custom_name = ex_info.get("custom_exercise_name")
                     if not ex_id:
-                        continue
+                        if custom_name and custom_name.strip():
+                            unlisted_ex = Exercise(
+                                name_fa=custom_name.strip(),
+                                primary_muscle="سایر",
+                                equipment="سایر",
+                                is_custom=True,
+                                is_unlisted=True
+                            )
+                            session.add(unlisted_ex)
+                            session.flush()
+                            ex_id = unlisted_ex.id
+                        else:
+                            continue
                     w_ex = WorkoutExercise(
                         day_id=w_day.id,
                         exercise_id=ex_id,
+                        custom_exercise_name=custom_name,
                         sets=int(ex_info.get("sets", 3)),
                         reps=str(ex_info.get("reps", "10")),
                         weight_suggestion=ex_info.get("weight_suggestion"),
@@ -339,11 +357,25 @@ class WorkoutService:
 
                 for idx, ex_info in enumerate(day_info.get("exercises", []), start=1):
                     ex_id = ex_info.get("exercise_id")
+                    custom_name = ex_info.get("custom_exercise_name")
                     if not ex_id:
-                        continue
+                        if custom_name and custom_name.strip():
+                            unlisted_ex = Exercise(
+                                name_fa=custom_name.strip(),
+                                primary_muscle="سایر",
+                                equipment="سایر",
+                                is_custom=True,
+                                is_unlisted=True
+                            )
+                            session.add(unlisted_ex)
+                            session.flush()
+                            ex_id = unlisted_ex.id
+                        else:
+                            continue
                     w_ex = WorkoutExercise(
                         day_id=w_day.id,
                         exercise_id=ex_id,
+                        custom_exercise_name=custom_name,
                         sets=int(ex_info.get("sets", 3)),
                         reps=str(ex_info.get("reps", "10")),
                         weight_suggestion=ex_info.get("weight_suggestion"),

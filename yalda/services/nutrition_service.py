@@ -7,10 +7,12 @@ from yalda.utils.jalali_date import get_today_shamsi
 
 class NutritionService:
     @staticmethod
-    def get_all_foods(category: str = None, search_query: str = None):
+    def get_all_foods(category: str = None, search_query: str = None, include_unlisted: bool = False):
         session = get_session()
         try:
             query = session.query(FoodItem)
+            if not include_unlisted:
+                query = query.filter((FoodItem.is_unlisted == False) | (FoodItem.is_unlisted == None))
             if category and category != "all":
                 query = query.filter(FoodItem.category == category)
             if search_query:
@@ -26,13 +28,14 @@ class NutritionService:
         try:
             food = FoodItem(
                 name_fa=data.get("name_fa"),
-                category=data.get("category", "rice"),
-                unit=data.get("unit", "100 گرم"),
+                category=data.get("category", "other"),
+                unit=data.get("unit", "واحد"),
                 calories=float(data.get("calories", 0.0)),
                 protein_g=float(data.get("protein_g", 0.0)),
                 carbs_g=float(data.get("carbs_g", 0.0)),
                 fat_g=float(data.get("fat_g", 0.0)),
-                is_custom=True
+                is_custom=data.get("is_custom", True),
+                is_unlisted=data.get("is_unlisted", False)
             )
             session.add(food)
             session.commit()
@@ -123,11 +126,29 @@ class NutritionService:
 
                 for item_info in m_info.get("items", []):
                     f_id = item_info.get("food_id")
+                    custom_name = item_info.get("custom_food_name")
                     if not f_id:
-                        continue
+                        if custom_name and custom_name.strip():
+                            unlisted_food = FoodItem(
+                                name_fa=custom_name.strip(),
+                                category="other",
+                                unit="واحد",
+                                calories=0.0,
+                                protein_g=0.0,
+                                carbs_g=0.0,
+                                fat_g=0.0,
+                                is_custom=True,
+                                is_unlisted=True
+                            )
+                            session.add(unlisted_food)
+                            session.flush()
+                            f_id = unlisted_food.id
+                        else:
+                            continue
                     m_item = MealItem(
                         meal_id=meal.id,
                         food_id=f_id,
+                        custom_food_name=custom_name,
                         amount=float(item_info.get("amount", 1.0)),
                         unit=item_info.get("unit"),
                         notes=item_info.get("notes")
@@ -286,11 +307,29 @@ class NutritionService:
 
                 for item_info in m_info.get("items", []):
                     f_id = item_info.get("food_id")
+                    custom_name = item_info.get("custom_food_name")
                     if not f_id:
-                        continue
+                        if custom_name and custom_name.strip():
+                            unlisted_food = FoodItem(
+                                name_fa=custom_name.strip(),
+                                category="other",
+                                unit="واحد",
+                                calories=0.0,
+                                protein_g=0.0,
+                                carbs_g=0.0,
+                                fat_g=0.0,
+                                is_custom=True,
+                                is_unlisted=True
+                            )
+                            session.add(unlisted_food)
+                            session.flush()
+                            f_id = unlisted_food.id
+                        else:
+                            continue
                     m_item = MealItem(
                         meal_id=meal.id,
                         food_id=f_id,
+                        custom_food_name=custom_name,
                         amount=float(item_info.get("amount", 1.0)),
                         unit=item_info.get("unit"),
                         notes=item_info.get("notes")

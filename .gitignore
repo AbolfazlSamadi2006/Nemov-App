@@ -11,8 +11,13 @@ ENV/
 
 # PyInstaller & Build outputs
 build/
-dist/
+dist/*
+!dist/Yalda_Setup_v3.2.1.exe
 *.spec
+
+# Test Exports & QA screenshots
+exports/
+qa_*.png
 
 # Database & SQLite files
 *.db

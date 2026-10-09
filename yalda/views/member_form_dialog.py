@@ -473,6 +473,20 @@ class MemberFormDialog(QDialog):
                 QMessageBox.information(self, "موفقیت", "اطلاعات ورزشکار با موفقیت ویرایش شد.")
             else:
                 MemberService.create_member(data)
+                # Automatically trigger welcome SMS if enabled by coach
+                try:
+                    import threading
+                    from yalda.services.sms_service import SmsService
+                    full_n = f"{data.get('first_name', '')} {data.get('last_name', '')}".strip()
+                    phone_n = data.get('phone', '')
+                    if phone_n and phone_n != "-":
+                        threading.Thread(
+                            target=SmsService.send_welcome_sms_if_enabled,
+                            args=(full_n, phone_n),
+                            daemon=True
+                        ).start()
+                except Exception:
+                    pass
                 QMessageBox.information(self, "موفقیت", "ورزشکار جدید با موفقیت ثبت شد.")
             self.accept()
         except Exception as e:

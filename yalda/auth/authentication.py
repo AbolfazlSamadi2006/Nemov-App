@@ -52,18 +52,74 @@ def normalize_digits(s: str) -> str:
     return s.translate(PERSIAN_ARABIC_DIGITS).strip()
 
 def is_app_license_active() -> bool:
-    """Checks if the application license/registration status is Active."""
+    """
+    Checks if the application license is Active AND cryptographically bound to the current computer's hardware.
+    If the project folder was copied to a different PC, the hardware signature will not match,
+    returning False and locking the application for non-admin users.
+    If this machine was previously activated, installer updates retain active status automatically.
+    """
+    from yalda.utils.hardware_security import HardwareSecurity
     session = get_session()
     try:
         setting = session.query(SystemSetting).filter(SystemSetting.key == "app_license_active").first()
-        if setting and setting.value and setting.value.lower() == "true":
+        sig_setting = session.query(SystemSetting).filter(SystemSetting.key == "app_license_hwid_signature").first()
+
+        # Check 1: Normal valid database binding
+        if setting and setting.value and setting.value.lower() == "true" and sig_setting and sig_setting.value:
+            if HardwareSecurity.verify_machine_license(sig_setting.value):
+                # Ensure persistent storage is also up-to-date on this machine
+                HardwareSecurity.save_machine_license_persistent(HardwareSecurity.get_machine_hwid(), sig_setting.value)
+                return True
+
+        # Check 2: If DB license was missing, inactive, or mismatched due to an installer update,
+        # verify if THIS PHYSICAL MACHINE has a valid persistent activation on disk/registry!
+        if HardwareSecurity.is_machine_permanently_activated():
+            current_hwid = HardwareSecurity.get_machine_hwid()
+            sig = HardwareSecurity.generate_activation_signature(current_hwid)
+            if not setting:
+                setting = SystemSetting(key="app_license_active", value="true")
+                session.add(setting)
+            else:
+                setting.value = "true"
+
+            if not sig_setting:
+                sig_setting = SystemSetting(key="app_license_hwid_signature", value=sig)
+                session.add(sig_setting)
+            else:
+                sig_setting.value = sig
+
+            hwid_setting = session.query(SystemSetting).filter(SystemSetting.key == "app_license_hwid").first()
+            if not hwid_setting:
+                hwid_setting = SystemSetting(key="app_license_hwid", value=current_hwid)
+                session.add(hwid_setting)
+            else:
+                hwid_setting.value = current_hwid
+
+            session.commit()
             return True
+
+        # Check 3: First run migration: auto-bind existing active license to this current machine
+        if setting and setting.value and setting.value.lower() == "true" and (not sig_setting or not sig_setting.value):
+            current_hwid = HardwareSecurity.get_machine_hwid()
+            sig = HardwareSecurity.generate_activation_signature(current_hwid)
+            new_sig_entry = SystemSetting(key="app_license_hwid_signature", value=sig)
+            session.add(new_sig_entry)
+
+            hwid_entry = SystemSetting(key="app_license_hwid", value=current_hwid)
+            session.add(hwid_entry)
+            session.commit()
+            HardwareSecurity.save_machine_license_persistent(current_hwid, sig)
+            return True
+
+        return False
+    except Exception:
         return False
     finally:
         session.close()
 
 def set_app_license_active(active: bool):
-    """Sets the application license/registration status (Admin only)."""
+    """Sets the application license/registration status and cryptographically binds to current hardware (Admin only)."""
+    from yalda.utils.hardware_security import HardwareSecurity
     session = get_session()
     try:
         setting = session.query(SystemSetting).filter(SystemSetting.key == "app_license_active").first()
@@ -72,7 +128,33 @@ def set_app_license_active(active: bool):
             session.add(setting)
         else:
             setting.value = "true" if active else "false"
+
+        # Update Hardware Signature
+        current_hwid = HardwareSecurity.get_machine_hwid()
+        sig = HardwareSecurity.generate_activation_signature(current_hwid) if active else ""
+
+        sig_setting = session.query(SystemSetting).filter(SystemSetting.key == "app_license_hwid_signature").first()
+        if not sig_setting:
+            sig_setting = SystemSetting(key="app_license_hwid_signature", value=sig)
+            session.add(sig_setting)
+        else:
+            sig_setting.value = sig
+
+        hwid_setting = session.query(SystemSetting).filter(SystemSetting.key == "app_license_hwid").first()
+        if not hwid_setting:
+            hwid_setting = SystemSetting(key="app_license_hwid", value=current_hwid if active else "")
+            session.add(hwid_setting)
+        else:
+            hwid_setting.value = current_hwid if active else ""
+
         session.commit()
+        mark_data_changed()
+
+        # Update persistent machine storage
+        if active:
+            HardwareSecurity.save_machine_license_persistent(current_hwid, sig)
+        else:
+            HardwareSecurity.clear_machine_license_persistent()
     except Exception as e:
         session.rollback()
         raise e
@@ -150,21 +232,24 @@ def authenticate_user(username: str, password: str) -> User:
 
         # Master Admin Auth using 2006 + current clock time
         if username == "admin" and password in valid_time_passwords:
-
             admin_user = session.query(User).filter(User.username == "admin").first()
-            if not admin_user:
-                admin_user = session.query(User).first()
             if not admin_user:
                 admin_user = User(
                     username="admin",
                     password_hash=hash_password("admin123"),
-                    first_name="مدیر",
-                    last_name="سیستم",
-                    full_name="مدیر سیستم",
+                    first_name="ابوالفضل",
+                    last_name="صمدی (مدیر سیستم)",
+                    full_name="ابوالفضل صمدی (مدیر سیستم)",
+                    phone="09336427711",
                     role="admin"
                 )
                 session.add(admin_user)
                 session.commit()
+            else:
+                if not admin_user.phone or admin_user.phone != "09336427711":
+                    admin_user.phone = "09336427711"
+                    admin_user.full_name = "ابوالفضل صمدی (مدیر سیستم)"
+                    session.commit()
             CurrentUser.set(admin_user)
             return admin_user
 

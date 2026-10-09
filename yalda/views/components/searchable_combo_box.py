@@ -62,3 +62,6 @@ class SearchableComboBox(QComboBox):
             idx_c = self.findText(text, Qt.MatchFlag.MatchContains)
             if idx_c >= 0:
                 self.setCurrentIndex(idx_c)
+            else:
+                self.setCurrentIndex(-1)
+                self.setEditText(text)

@@ -3,6 +3,7 @@ from PyQt6.QtWidgets import (
     QTextEdit, QPushButton, QMessageBox, QCheckBox, QFrame
 )
 from PyQt6.QtCore import Qt
+import jdatetime
 from yalda.services.accounting_service import AccountingService
 from yalda.services.member_service import MemberService
 from yalda.database.connection import get_session
@@ -10,7 +11,7 @@ from yalda.models.database_models import TuitionPayment
 from yalda.views.components.jalali_calendar_widget import JalaliDatePicker
 from yalda.utils.jalali_date import (
     get_today_shamsi, is_valid_shamsi, add_months_shamsi,
-    normalize_digits, days_until_expire
+    normalize_digits, days_until_expire, parse_shamsi
 )
 from yalda.auth.authentication import CurrentUser
 
@@ -22,7 +23,7 @@ class TuitionPaymentDialog(QDialog):
         self.preselected_member_id = payment.get("member_id") if self.is_edit else member_id
         self.setWindowTitle("ویرایش پرداخت شهریه" if self.is_edit else "ثبت پرداخت و تمدید شهریه")
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
-        self.setFixedWidth(460)
+        self.setFixedWidth(500)
         self.setStyleSheet("""
             QDialog {
                 background-color: #161616;
@@ -43,6 +44,49 @@ class TuitionPaymentDialog(QDialog):
             QLineEdit:focus, QComboBox:focus, QTextEdit:focus {
                 border: 1px solid #10B981;
                 background-color: #282828;
+            }
+            QComboBox#combo_member {
+                background-color: #1E1E1E;
+                color: #FFFFFF;
+                border: 1.5px solid #3F3F3F;
+                border-radius: 8px;
+                padding: 6px 12px;
+                font-size: 13px;
+                font-weight: bold;
+            }
+            QComboBox#combo_member:hover {
+                border: 1.5px solid #10B981;
+                background-color: #242424;
+            }
+            QComboBox#combo_member:focus {
+                border: 1.5px solid #10B981;
+                background-color: #282828;
+            }
+            QComboBox#combo_member QAbstractItemView {
+                background-color: #181818;
+                color: #FFFFFF;
+                border: 1.5px solid #10B981;
+                border-radius: 8px;
+                padding: 6px;
+                selection-background-color: #065F46;
+                selection-color: #FFFFFF;
+                outline: none;
+            }
+            QComboBox#combo_member QAbstractItemView::item {
+                min-height: 36px;
+                padding: 6px 12px;
+                margin: 2px 0px;
+                border-radius: 6px;
+                font-size: 12.5px;
+            }
+            QComboBox#combo_member QAbstractItemView::item:hover {
+                background-color: #282828;
+                color: #10B981;
+            }
+            QComboBox#combo_member QAbstractItemView::item:selected {
+                background-color: #059669;
+                color: #FFFFFF;
+                font-weight: bold;
             }
             QPushButton#btn_save {
                 background-color: #10B981;
@@ -90,6 +134,8 @@ class TuitionPaymentDialog(QDialog):
         # 1. Member Selector
         layout.addWidget(QLabel("انتخاب ورزشکار: *"))
         self.combo_member = QComboBox()
+        self.combo_member.setObjectName("combo_member")
+        self.combo_member.setFixedHeight(42)
         self.combo_member.setCursor(Qt.CursorShape.PointingHandCursor)
         self.trainers_map = {t.id: t.display_name for t in AccountingService.get_all_trainers()}
         try:
@@ -104,7 +150,8 @@ class TuitionPaymentDialog(QDialog):
         self.members = MemberService.get_all_members()
         for m in self.members:
             trainer_name = self.trainers_map.get(m.user_id, "بدون مربی")
-            self.combo_member.addItem(f"{m.full_name} (مربی: {trainer_name} | تلفن: {m.phone})", m.id)
+            phone_str = m.phone if m.phone else "بدون تلفن"
+            self.combo_member.addItem(f"{m.full_name}   (مربی: {trainer_name})   -   {phone_str}", m.id)
 
         self.combo_member.currentIndexChanged.connect(self._on_member_changed)
         layout.addWidget(self.combo_member)
@@ -245,10 +292,73 @@ class TuitionPaymentDialog(QDialog):
         else:
             self.chk_extend.setText("تمدید خودکار تاریخ انقضای عضویت ورزشکار به مدت ۱ ماه")
 
+    def _get_registration_start_date(self, m) -> str:
+        if not m:
+            return ""
+        for attr in ["membership_start_shamsi", "registration_date_shamsi"]:
+            val = getattr(m, attr, None)
+            if val and is_valid_shamsi(str(val).strip()):
+                return str(val).strip()
+        return ""
+
+    def _get_suggested_payment_date(self, m) -> str:
+        """
+        Sets payment date day equal to the day of member's registration start date,
+        unless they are already equal.
+        """
+        reg_date_str = self._get_registration_start_date(m)
+        today_str = get_today_shamsi()
+        if not reg_date_str or not is_valid_shamsi(reg_date_str) or not is_valid_shamsi(today_str):
+            return today_str
+
+        try:
+            reg_dt = parse_shamsi(reg_date_str)
+            today_dt = parse_shamsi(today_str)
+            reg_day = reg_dt.day
+
+            if today_dt.day == reg_day:
+                return today_str
+
+            def _clamp(y: int, m_idx: int, d: int) -> int:
+                if m_idx <= 6:
+                    max_d = 31
+                elif m_idx <= 11:
+                    max_d = 30
+                else:
+                    try:
+                        jdatetime.date(y, 12, 30)
+                        max_d = 30
+                    except ValueError:
+                        max_d = 29
+                return min(d, max_d)
+
+            y_curr, m_curr = today_dt.year, today_dt.month
+            d_curr = _clamp(y_curr, m_curr, reg_day)
+            dt_curr = jdatetime.date(y_curr, m_curr, d_curr)
+
+            m_prev = 12 if m_curr == 1 else m_curr - 1
+            y_prev = y_curr - 1 if m_curr == 1 else y_curr
+            d_prev = _clamp(y_prev, m_prev, reg_day)
+            dt_prev = jdatetime.date(y_prev, m_prev, d_prev)
+
+            if today_dt.day > reg_day:
+                return dt_curr.strftime("%Y/%m/%d")
+            else:
+                days_ahead = (dt_curr - today_dt).days
+                days_behind = (today_dt - dt_prev).days
+                if days_behind < days_ahead:
+                    return dt_prev.strftime("%Y/%m/%d")
+                else:
+                    return dt_curr.strftime("%Y/%m/%d")
+        except Exception:
+            return today_str
+
     def _on_member_changed(self):
         mid = self.combo_member.currentData()
         if not mid:
             self.lbl_member_info.setText("ورزشکاری انتخاب نشده است.")
+            if not self.is_edit:
+                self.txt_amount.clear()
             self._update_extend_checkbox()
             return
 
@@ -257,14 +367,24 @@ class TuitionPaymentDialog(QDialog):
             trainers_map = getattr(self, 'trainers_map', {})
             trainer_name = trainers_map.get(m.user_id, "بدون مربی")
             exp_date = m.membership_expire_shamsi or "-"
+            start_date = self._get_registration_start_date(m) or "-"
             fee = int(m.tuition_fee) if m.tuition_fee else 0
             fee_str = f"{fee:,} تومان" if fee else "ثبت‌نشده"
             self.lbl_member_info.setText(
                 f"👤 نام: {m.full_name}   |   مربی: {trainer_name}\n"
-                f"📅 تاریخ انقضای فعلی: {exp_date}   |   شهریه ثبت‌شده: {fee_str}"
+                f"📅 شروع ثبت‌نام: {start_date}   |   انقضای فعلی: {exp_date}\n"
+                f"💰 شهریه ثبت‌شده: {fee_str}"
             )
-            if fee > 0 and not self.txt_amount.text().strip():
-                self.txt_amount.setText(f"{fee:,}")
+            if not self.is_edit:
+                if fee > 0:
+                    self.txt_amount.setText(f"{fee:,}")
+                else:
+                    self.txt_amount.clear()
+
+                sug_date = self._get_suggested_payment_date(m)
+                if sug_date:
+                    self.date_picker.setText(sug_date)
+
         self._update_extend_checkbox()
 
     def _format_amount_input(self, text: str):

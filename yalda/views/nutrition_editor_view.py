@@ -7,6 +7,7 @@ from yalda.services.nutrition_service import NutritionService
 from yalda.services.member_service import MemberService
 from yalda.views.components.searchable_combo_box import SearchableComboBox
 from yalda.views.components.day_management_dialogs import DaySelectionReductionDialog, DayIncreaseChoiceDialog
+from yalda.views.components.unregistered_items_dialog import UnregisteredItemsDialog
 
 class NutritionEditorView(QWidget):
     manage_templates_requested = pyqtSignal()
@@ -549,6 +550,7 @@ class NutritionEditorView(QWidget):
                         table.insertRow(r)
                         self._create_food_row_widgets(table, r, foods_list, {
                             "food_id": item.food_id,
+                            "food_text": (item.food.name_fa if item.food else None) or getattr(item, "custom_food_name", None),
                             "amount": item.amount or 1.0,
                             "notes": item.notes or ""
                         })
@@ -979,14 +981,19 @@ class NutritionEditorView(QWidget):
             combo_food.addItem(f"{f.name_fa} ({f.unit} - {int(f.calories)}kcal)", f.id)
 
         f_id = data.get("food_id")
+        custom_name = data.get("food_text") or data.get("custom_food_name")
         if f_id:
             idx_f = combo_food.findData(f_id)
             if idx_f >= 0:
                 combo_food.setCurrentIndex(idx_f)
+            elif custom_name:
+                combo_food.setCurrentIndex(-1)
+                combo_food.setEditText(custom_name)
             else:
                 combo_food.set_empty()
-        elif data.get("food_text"):
-            combo_food.setCurrentText(data["food_text"])
+        elif custom_name:
+            combo_food.setCurrentIndex(-1)
+            combo_food.setEditText(custom_name)
         else:
             combo_food.set_empty()
 
@@ -1206,15 +1213,62 @@ class NutritionEditorView(QWidget):
         total_f = 0.0
         days_count = max(1, len(self.meal_tables) // 6) if len(self.meal_tables) >= 6 else 1
 
+        # Build bank foods lookup by name and display format
+        bank_foods = NutritionService.get_all_foods(include_unlisted=False)
+        bank_food_by_name = {f.name_fa.strip().lower(): f for f in bank_foods}
+
         for idx, (meal_key, table) in enumerate(self.meal_tables, start=1):
             items = []
             for row in range(table.rowCount()):
                 combo_food = table.cellWidget(row, 0)
                 if not combo_food:
                     continue
-                food_id = combo_food.currentData()
-                if not food_id:
+                raw_text = combo_food.currentText().strip()
+                if not raw_text:
                     continue
+
+                food_id = combo_food.currentData()
+                custom_name = None
+
+                # Check if currentData matches currentText
+                idx_curr = combo_food.currentIndex()
+                if idx_curr >= 0:
+                    selected_item_text = combo_food.itemText(idx_curr).strip().lower()
+                    if selected_item_text != raw_text.lower():
+                        # The user modified the text, verify against bank
+                        lower_text = raw_text.lower()
+                        if lower_text in bank_food_by_name:
+                            matched_food = bank_food_by_name[lower_text]
+                            food_id = matched_food.id
+                        else:
+                            matched = None
+                            for f in bank_foods:
+                                if f.name_fa.strip().lower() == lower_text:
+                                    matched = f
+                                    break
+                            if matched:
+                                food_id = matched.id
+                            else:
+                                food_id = None
+                                custom_name = raw_text
+                else:
+                    # User typed freely
+                    lower_text = raw_text.lower()
+                    if lower_text in bank_food_by_name:
+                        matched_food = bank_food_by_name[lower_text]
+                        food_id = matched_food.id
+                    else:
+                        matched = None
+                        for f in bank_foods:
+                            if f.name_fa.strip().lower() == lower_text:
+                                matched = f
+                                break
+                        if matched:
+                            food_id = matched.id
+                        else:
+                            food_id = None
+                            custom_name = raw_text
+
                 amount_str = table.cellWidget(row, 1).text().strip()
                 notes_widget = table.cellWidget(row, 3)
                 notes = notes_widget.text().strip() if notes_widget else ""
@@ -1223,7 +1277,7 @@ class NutritionEditorView(QWidget):
                 if amount <= 0:
                     amount = 1.0
 
-                food = self._foods_cache_by_id.get(food_id)
+                food = self._foods_cache_by_id.get(food_id) if food_id else None
                 if food:
                     total_cal += (food.calories or 0.0) * amount
                     total_p += (food.protein_g or 0.0) * amount
@@ -1232,6 +1286,7 @@ class NutritionEditorView(QWidget):
 
                 items.append({
                     "food_id": food_id,
+                    "custom_food_name": custom_name,
                     "amount": amount,
                     "notes": notes
                 })
@@ -1251,6 +1306,66 @@ class NutritionEditorView(QWidget):
             "target_fat": round(total_f / days_count, 1)
         }
         return plan_info, meals_data
+
+    def _handle_unregistered_foods(self, meals_data: list, mode: str = "assign") -> bool:
+        """
+        Scans meals_data for food items that don't have a food_id in the bank.
+        If any are found, shows UnregisteredItemsDialog.
+        Returns True to proceed with plan creation/assignment, or False if canceled.
+        """
+        unregistered_names = []
+        for m in meals_data:
+            for itm in m.get("items", []):
+                if not itm.get("food_id") and itm.get("custom_food_name"):
+                    name = itm["custom_food_name"]
+                    if name not in unregistered_names:
+                        unregistered_names.append(name)
+
+        if not unregistered_names:
+            return True
+
+        dlg = UnregisteredItemsDialog(
+            item_type="food",
+            unregistered_items=unregistered_names,
+            mode=mode,
+            parent=self
+        )
+        if dlg.exec() != QDialog.DialogCode.Accepted:
+            return False
+
+        action = dlg.action_result
+        if action == UnregisteredItemsDialog.ACTION_CANCEL:
+            return False
+
+        is_unlisted = (action == UnregisteredItemsDialog.ACTION_UNLISTED)
+        name_to_id = {}
+        for name in unregistered_names:
+            created_food = NutritionService.add_custom_food({
+                "name_fa": name,
+                "category": "other",
+                "unit": "واحد",
+                "calories": 0.0,
+                "protein_g": 0.0,
+                "carbs_g": 0.0,
+                "fat_g": 0.0,
+                "is_custom": True,
+                "is_unlisted": is_unlisted
+            })
+            name_to_id[name] = created_food.id
+
+        # Update meals_data with newly created IDs
+        for m in meals_data:
+            for itm in m.get("items", []):
+                c_name = itm.get("custom_food_name")
+                if not itm.get("food_id") and c_name in name_to_id:
+                    itm["food_id"] = name_to_id[c_name]
+                    if not is_unlisted:
+                        itm["custom_food_name"] = None
+
+        if not is_unlisted:
+            self.refresh_editor()
+
+        return True
 
     def save_plan(self, auto_reset: bool = True):
         plan_info, meals_data = self.get_plan_data()
@@ -1279,6 +1394,10 @@ class NutritionEditorView(QWidget):
             title = suggested_title
             plan_info["title"] = suggested_title
             self.txt_title.setText(suggested_title)
+
+        # Check and handle unregistered food items in the bank
+        if not self._handle_unregistered_foods(meals_data, mode="save"):
+            return None
 
         try:
             if self.editing_plan_id:
@@ -1399,6 +1518,10 @@ class NutritionEditorView(QWidget):
                 title = suggested_title
                 plan_info["title"] = suggested_title
                 self.txt_title.setText(suggested_title)
+
+        # Check and handle unregistered food items in the bank
+        if not self._handle_unregistered_foods(meals_data, mode="assign"):
+            return
 
         try:
             plan = NutritionService.create_nutrition_plan(plan_info, meals_data)

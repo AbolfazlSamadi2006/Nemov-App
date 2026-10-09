@@ -5,7 +5,7 @@ Unicode True
 
 !define PRODUCT_NAME "Yalda Gym Management"
 !define PRODUCT_NAME_EN "Yalda Gym"
-!define PRODUCT_VERSION "3.1.0"
+!define PRODUCT_VERSION "3.2.1"
 !define PRODUCT_PUBLISHER "Abolfazl Samadi"
 !define PRODUCT_WEB_SITE "https://github.com/AbolfazlSamadi2006/Yalda-Gym-App"
 !define PRODUCT_EXE "Yalda.exe"
@@ -41,7 +41,7 @@ SetCompressorDictSize 64
 ; English UI (Default)
 !insertmacro MUI_LANGUAGE "English"
 
-VIProductVersion "3.1.0.0"
+VIProductVersion "3.2.1.0"
 VIAddVersionKey "ProductName" "${PRODUCT_NAME}"
 VIAddVersionKey "CompanyName" "${PRODUCT_PUBLISHER}"
 VIAddVersionKey "LegalCopyright" "Copyright (c) 2026 Abolfazl Samadi. All rights reserved."
@@ -71,6 +71,7 @@ Section "MainSection" SEC01
     CreateDirectory "$INSTDIR\data\uploads\profile-photos"
     CreateDirectory "$INSTDIR\data\uploads\progress-photos"
     CreateDirectory "$INSTDIR\data\uploads\exercise-media"
+    File /oname=$INSTDIR\data\yalda.db "data\yalda.db"
     SetOverwrite on
 
     WriteUninstaller "$INSTDIR\Uninstall.exe"

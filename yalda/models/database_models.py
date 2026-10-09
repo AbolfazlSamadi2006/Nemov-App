@@ -213,6 +213,8 @@ class Exercise(Base):
     video_cloud_url = Column(String(500), nullable=True)
     contraindications = Column(Text, nullable=True)  # e.g. 'back_injury', 'knee_injury'
     description = Column(Text, nullable=True)
+    is_custom = Column(Boolean, default=False)
+    is_unlisted = Column(Boolean, default=False)
 
 class WorkoutPlan(Base):
     __tablename__ = "workout_plans"
@@ -249,6 +251,7 @@ class WorkoutExercise(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     day_id = Column(Integer, ForeignKey("workout_days.id"), nullable=False)
     exercise_id = Column(Integer, ForeignKey("exercises.id"), nullable=False)
+    custom_exercise_name = Column(String(100), nullable=True)
     
     sets = Column(Integer, default=3)
     reps = Column(String(50), default="10-12")
@@ -289,6 +292,7 @@ class FoodItem(Base):
     carbs_g = Column(Float, nullable=False, default=0.0)
     fat_g = Column(Float, nullable=False, default=0.0)
     is_custom = Column(Boolean, default=False)
+    is_unlisted = Column(Boolean, default=False)
 
 class NutritionPlan(Base):
     __tablename__ = "nutrition_plans"
@@ -324,6 +328,7 @@ class MealItem(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     meal_id = Column(Integer, ForeignKey("meal_plans.id"), nullable=False)
     food_id = Column(Integer, ForeignKey("food_items.id"), nullable=False)
+    custom_food_name = Column(String(100), nullable=True)
     amount = Column(Float, nullable=False, default=1.0)
     unit = Column(String(30), nullable=True)
     notes = Column(Text, nullable=True)

@@ -50,6 +50,28 @@ class DashboardView(QWidget):
         btn_add_member.setFixedHeight(36)
         btn_add_member.clicked.connect(lambda: self.navigate_to.emit("add_member"))
 
+        btn_quick_tuition = QPushButton("💰 ثبت شهریه")
+        btn_quick_tuition.setFixedHeight(36)
+        btn_quick_tuition.setCursor(Qt.CursorShape.PointingHandCursor)
+        btn_quick_tuition.setStyleSheet("""
+            QPushButton {
+                background-color: #10B981;
+                color: #FFFFFF;
+                font-weight: bold;
+                border: none;
+                border-radius: 6px;
+                padding: 0 14px;
+                font-size: 13px;
+            }
+            QPushButton:hover {
+                background-color: #059669;
+            }
+            QPushButton:pressed {
+                background-color: #047857;
+            }
+        """)
+        btn_quick_tuition.clicked.connect(lambda: self.navigate_to.emit("pay_tuition"))
+
         btn_new_workout = QPushButton("🏋️ ساخت برنامه تمرینی")
         btn_new_workout.setObjectName("secondary_button")
         btn_new_workout.setFixedHeight(36)
@@ -62,6 +84,7 @@ class DashboardView(QWidget):
 
         actions_layout.addWidget(lbl_quick)
         actions_layout.addWidget(btn_add_member)
+        actions_layout.addWidget(btn_quick_tuition)
         actions_layout.addWidget(btn_new_workout)
         actions_layout.addWidget(btn_new_nutrition)
         actions_layout.addStretch()

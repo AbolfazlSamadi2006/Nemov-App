@@ -146,7 +146,7 @@ class ViewWorkoutPlanDialog(QDialog):
                 exercises = day.workout_exercises or []
                 table.setRowCount(len(exercises))
                 for idx, we in enumerate(exercises):
-                    ex_name = we.exercise.name_fa if we.exercise else "-"
+                    ex_name = (we.exercise.name_fa if we.exercise else None) or getattr(we, "custom_exercise_name", None) or "-"
                     table.setItem(idx, 0, QTableWidgetItem(str(idx + 1)))
 
                     item_name = QTableWidgetItem(ex_name)
@@ -322,7 +322,7 @@ class ViewNutritionPlanDialog(QDialog):
 
         table.setRowCount(len(rows))
         for idx, (m_fa, item) in enumerate(rows):
-            f_name = item.food.name_fa if item.food else "-"
+            f_name = (item.food.name_fa if item.food else None) or getattr(item, "custom_food_name", None) or "-"
             table.setItem(idx, 0, QTableWidgetItem(str(idx + 1)))
 
             it_meal = QTableWidgetItem(m_fa)

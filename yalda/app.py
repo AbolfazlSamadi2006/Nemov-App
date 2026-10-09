@@ -67,26 +67,13 @@ class YaldaApplication:
 
     def run(self):
         self.login_view.showMaximized()
-        # Schedule deferred background pre-rendering of MainWindow 1 second after login UI appears
-        QTimer.singleShot(1000, self.preload_main_window)
-        return self.app.exec()
-
-    def preload_main_window(self):
-        """Asynchronously pre-instantiates MainWindow and OpenCV in background while user types credentials."""
-        if not self.main_window:
-            try:
-                from yalda.views.main_window import MainWindow
-                self.main_window = MainWindow()
-                self.main_window.logout_signal.connect(self.on_logout)
-            except Exception:
-                pass
-
         # Pre-warm OpenCV C++ DLLs silently in background thread so camera opens instantly
         try:
             import threading
             threading.Thread(target=self._preload_opencv, daemon=True).start()
         except Exception:
             pass
+        return self.app.exec()
 
     def _preload_opencv(self):
         """Warm up OpenCV C++ codecs and drivers in background."""

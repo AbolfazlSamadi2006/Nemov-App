@@ -5,17 +5,8 @@ from PyQt6.QtCore import Qt, pyqtSignal
 import config
 from yalda.views.components.sidebar import Sidebar
 from yalda.views.dashboard_view import DashboardView
-from yalda.views.member_list_view import MemberListView
 from yalda.views.member_detail_view import MemberDetailView
 from yalda.views.member_form_dialog import MemberFormDialog
-from yalda.views.workout_editor_view import WorkoutEditorView
-from yalda.views.nutrition_editor_view import NutritionEditorView
-from yalda.views.templates_manager_view import TemplatesManagerView
-from yalda.views.workout_library_view import WorkoutLibraryView
-from yalda.views.food_library_view import FoodLibraryView
-from yalda.views.backup_view import BackupView
-from yalda.views.accounting_view import AccountingView
-from yalda.views.developer_view import DeveloperView
 from yalda.views.components.exit_backup_dialog import ExitBackupDialog
 from yalda.auth.authentication import CurrentUser
 
@@ -41,6 +32,17 @@ class MainWindow(QMainWindow):
             self.resize(1280, 800)
             self.setMinimumSize(960, 560)
 
+        self._view_members = None
+        self._view_workouts = None
+        self._view_nutrition = None
+        self._view_templates = None
+        self._view_exercises = None
+        self._view_foods = None
+        self._view_developer = None
+        self._view_backup = None
+        self._view_accounting = None
+        self._view_sms = None
+
         self.init_ui()
 
     def init_ui(self):
@@ -57,70 +59,129 @@ class MainWindow(QMainWindow):
         self.sidebar.logout_requested.connect(self.logout)
         self.sidebar.member_birthday_clicked.connect(self.open_member_detail)
         self.sidebar.member_expiration_clicked.connect(self.open_member_detail)
+        self.sidebar.notifications_marked_read.connect(self._on_sidebar_notifications_marked_read)
         main_layout.addWidget(self.sidebar)
 
         # Stacked Container for Views
         self.stack = QStackedWidget()
         main_layout.addWidget(self.stack)
 
-        # Instantiate Views
+        # Dashboard View (Index 0) loaded immediately
         self.view_dashboard = DashboardView()
         self.view_dashboard.navigate_to.connect(self.handle_dashboard_navigation)
-
-        self.view_members = MemberListView()
-        self.view_members.open_member_detail.connect(self.open_member_detail)
-
-        self.view_workouts = WorkoutEditorView()
-        self.view_workouts.manage_templates_requested.connect(lambda: self.sidebar.navigate("templates"))
-        self.view_workouts.open_exercise_bank_requested.connect(lambda: self.sidebar.navigate("exercises"))
-        self.view_workouts.back_requested.connect(self.go_back)
-
-        self.view_nutrition = NutritionEditorView()
-        self.view_nutrition.manage_templates_requested.connect(lambda: self.sidebar.navigate("templates"))
-        self.view_nutrition.open_food_bank_requested.connect(lambda: self.sidebar.navigate("foods"))
-        self.view_nutrition.back_requested.connect(self.go_back)
-
-        self.view_templates = TemplatesManagerView()
-        self.view_templates.edit_workout_requested.connect(self.open_workout_editor_with_plan)
-        self.view_templates.edit_nutrition_requested.connect(self.open_nutrition_editor_with_plan)
-        self.view_templates.new_workout_requested.connect(self.open_new_workout_editor)
-        self.view_templates.new_nutrition_requested.connect(self.open_new_nutrition_editor)
-        self.view_templates.back_requested.connect(self.go_back)
-
-        self.view_exercises = WorkoutLibraryView()
-        self.view_exercises.back_requested.connect(self.go_back)
-        self.view_exercises.cloud_sync_progress.connect(self.sidebar.show_cloud_sync_progress)
-        self.view_exercises.cloud_sync_finished.connect(self.sidebar.finish_cloud_sync_progress)
-
-        self.view_foods = FoodLibraryView()
-        self.view_foods.back_requested.connect(self.go_back)
-
-        self.view_developer = DeveloperView()
-        self.view_developer.back_requested.connect(self.go_back)
-
-        self.view_backup = BackupView()
-        self.view_backup.account_deleted_signal.connect(self.on_account_deleted)
-        self.view_backup.back_requested.connect(self.go_back)
-        self.view_backup.notifications_changed_signal.connect(self.sidebar.refresh_notifications)
-        self.sidebar.notifications_marked_read.connect(self.view_backup.load_notification_history)
-
-        self.view_accounting = AccountingView()
-        self.view_accounting.member_clicked.connect(self.open_member_detail)
+        self.stack.addWidget(self.view_dashboard)  # Index 0
 
         self._nav_history = []
         self._is_navigating_back = False
         self._current_page_state = ("page", "dashboard")
 
-        self.stack.addWidget(self.view_dashboard)  # Index 0
-        self.stack.addWidget(self.view_members)    # Index 1
-        self.stack.addWidget(self.view_workouts)   # Index 2
-        self.stack.addWidget(self.view_nutrition)  # Index 3
-        self.stack.addWidget(self.view_templates)  # Index 4
-        self.stack.addWidget(self.view_exercises)  # Index 5
-        self.stack.addWidget(self.view_foods)      # Index 6
-        self.stack.addWidget(self.view_developer)  # Index 7
-        self.stack.addWidget(self.view_backup)     # Index 8
-        self.stack.addWidget(self.view_accounting) # Index 9
+    @property
+    def view_members(self):
+        if self._view_members is None:
+            from yalda.views.member_list_view import MemberListView
+            self._view_members = MemberListView()
+            self._view_members.open_member_detail.connect(self.open_member_detail)
+            self.stack.addWidget(self._view_members)
+        return self._view_members
+
+    @property
+    def view_workouts(self):
+        if self._view_workouts is None:
+            from yalda.views.workout_editor_view import WorkoutEditorView
+            self._view_workouts = WorkoutEditorView()
+            self._view_workouts.manage_templates_requested.connect(lambda: self.sidebar.navigate("templates"))
+            self._view_workouts.open_exercise_bank_requested.connect(lambda: self.sidebar.navigate("exercises"))
+            self._view_workouts.back_requested.connect(self.go_back)
+            self.stack.addWidget(self._view_workouts)
+        return self._view_workouts
+
+    @property
+    def view_nutrition(self):
+        if self._view_nutrition is None:
+            from yalda.views.nutrition_editor_view import NutritionEditorView
+            self._view_nutrition = NutritionEditorView()
+            self._view_nutrition.manage_templates_requested.connect(lambda: self.sidebar.navigate("templates"))
+            self._view_nutrition.open_food_bank_requested.connect(lambda: self.sidebar.navigate("foods"))
+            self._view_nutrition.back_requested.connect(self.go_back)
+            self.stack.addWidget(self._view_nutrition)
+        return self._view_nutrition
+
+    @property
+    def view_templates(self):
+        if self._view_templates is None:
+            from yalda.views.templates_manager_view import TemplatesManagerView
+            self._view_templates = TemplatesManagerView()
+            self._view_templates.edit_workout_requested.connect(self.open_workout_editor_with_plan)
+            self._view_templates.edit_nutrition_requested.connect(self.open_nutrition_editor_with_plan)
+            self._view_templates.new_workout_requested.connect(self.open_new_workout_editor)
+            self._view_templates.new_nutrition_requested.connect(self.open_new_nutrition_editor)
+            self._view_templates.back_requested.connect(self.go_back)
+            self.stack.addWidget(self._view_templates)
+        return self._view_templates
+
+    @property
+    def view_exercises(self):
+        if self._view_exercises is None:
+            from yalda.views.workout_library_view import WorkoutLibraryView
+            self._view_exercises = WorkoutLibraryView()
+            self._view_exercises.back_requested.connect(self.go_back)
+            self._view_exercises.cloud_sync_progress.connect(self.sidebar.show_cloud_sync_progress)
+            self._view_exercises.cloud_sync_finished.connect(self.sidebar.finish_cloud_sync_progress)
+            self.stack.addWidget(self._view_exercises)
+        return self._view_exercises
+
+    @property
+    def view_foods(self):
+        if self._view_foods is None:
+            from yalda.views.food_library_view import FoodLibraryView
+            self._view_foods = FoodLibraryView()
+            self._view_foods.back_requested.connect(self.go_back)
+            self.stack.addWidget(self._view_foods)
+        return self._view_foods
+
+    @property
+    def view_developer(self):
+        if self._view_developer is None:
+            from yalda.views.developer_view import DeveloperView
+            self._view_developer = DeveloperView()
+            self._view_developer.back_requested.connect(self.go_back)
+            self.stack.addWidget(self._view_developer)
+        return self._view_developer
+
+    @property
+    def view_backup(self):
+        if self._view_backup is None:
+            from yalda.views.backup_view import BackupView
+            self._view_backup = BackupView()
+            self._view_backup.account_deleted_signal.connect(self.on_account_deleted)
+            self._view_backup.back_requested.connect(self.go_back)
+            self._view_backup.notifications_changed_signal.connect(self.sidebar.refresh_notifications)
+            self.stack.addWidget(self._view_backup)
+        return self._view_backup
+
+    def _on_sidebar_notifications_marked_read(self):
+        if self._view_backup is not None:
+            try:
+                self._view_backup.load_notification_history()
+            except Exception:
+                pass
+
+    @property
+    def view_accounting(self):
+        if self._view_accounting is None:
+            from yalda.views.accounting_view import AccountingView
+            self._view_accounting = AccountingView()
+            self._view_accounting.member_clicked.connect(self.open_member_detail)
+            self.stack.addWidget(self._view_accounting)
+        return self._view_accounting
+
+    @property
+    def view_sms(self):
+        if self._view_sms is None:
+            from yalda.views.sms_view import SmsView
+            self._view_sms = SmsView()
+            self.stack.addWidget(self._view_sms)
+        return self._view_sms
 
     def go_back(self):
         if self._nav_history:
@@ -140,45 +201,52 @@ class MainWindow(QMainWindow):
 
     def switch_page(self, page_id: str):
         self.sidebar.refresh_notifications()
-        page_map = {
-            "dashboard": 0,
-            "members": 1,
-            "workouts": 2,
-            "nutrition": 3,
-            "templates": 4,
-            "exercises": 5,
-            "foods": 6,
-            "developer": 7,
-            "backup": 8,
-            "accounting": 9
+        page_dict = {
+            "dashboard": lambda: self.view_dashboard,
+            "members": lambda: self.view_members,
+            "workouts": lambda: self.view_workouts,
+            "nutrition": lambda: self.view_nutrition,
+            "templates": lambda: self.view_templates,
+            "exercises": lambda: self.view_exercises,
+            "foods": lambda: self.view_foods,
+            "developer": lambda: self.view_developer,
+            "backup": lambda: self.view_backup,
+            "accounting": lambda: self.view_accounting,
+            "sms": lambda: self.view_sms,
         }
-        if page_id in page_map:
+        if page_id in page_dict:
             if not self._is_navigating_back and hasattr(self, '_current_page_state'):
                 if self._current_page_state != ("page", page_id):
                     self._nav_history.append(self._current_page_state)
             self._current_page_state = ("page", page_id)
 
+            target_widget = page_dict[page_id]()
+
             if page_id == "dashboard":
-                self.view_dashboard.refresh_dashboard()
+                target_widget.refresh_dashboard()
             elif page_id == "members":
-                self.view_members.load_members()
+                target_widget.load_members()
             elif page_id == "workouts":
-                self.view_workouts.refresh_editor()
+                target_widget.refresh_editor()
             elif page_id == "nutrition":
-                self.view_nutrition.refresh_editor()
+                target_widget.refresh_editor()
             elif page_id == "templates":
-                self.view_templates.load_all_templates()
+                target_widget.load_all_templates()
             elif page_id == "exercises":
-                self.view_exercises.load_exercises()
+                target_widget.load_exercises()
             elif page_id == "foods":
-                self.view_foods.load_foods()
+                target_widget.load_foods()
             elif page_id == "developer":
-                self.view_developer.load_data()
+                target_widget.load_data()
             elif page_id == "backup":
-                self.view_backup.load_backups()
+                target_widget.load_backups()
             elif page_id == "accounting":
-                self.view_accounting.load_data()
-            self.stack.setCurrentIndex(page_map[page_id])
+                target_widget.load_data()
+            elif page_id == "sms":
+                target_widget.refresh_balance()
+                target_widget.load_members()
+
+            self.stack.setCurrentWidget(target_widget)
 
     def open_workout_editor_with_plan(self, plan_id: int, member_id: int = None):
         self.sidebar.navigate("workouts")
@@ -236,6 +304,18 @@ class MainWindow(QMainWindow):
                     self.view_members.load_members()
             except Exception as e:
                 QMessageBox.critical(self, "خطا", f"خطایی رخ داد: {str(e)}")
+        elif target == "pay_tuition":
+            try:
+                from yalda.views.components.tuition_payment_dialog import TuitionPaymentDialog
+                dialog = TuitionPaymentDialog(self)
+                if dialog.exec() == QDialog.DialogCode.Accepted:
+                    self.view_dashboard.refresh_dashboard()
+                    if hasattr(self, 'view_members') and self.view_members:
+                        self.view_members.load_members()
+                    if hasattr(self, 'view_accounting') and self.view_accounting:
+                        self.view_accounting.load_data()
+            except Exception as e:
+                QMessageBox.critical(self, "خطا", f"خطا در باز کردن پنجره ثبت شهریه: {str(e)}")
         elif target == "new_workout":
             self.sidebar.navigate("workouts")
         elif target == "new_nutrition":

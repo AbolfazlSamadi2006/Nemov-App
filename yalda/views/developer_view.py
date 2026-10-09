@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QMessageBox, QGroupBox, QGridLayout, QComboBox
+    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QMessageBox, QGroupBox, QGridLayout, QComboBox, QScrollArea, QFrame
 )
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QPixmap
@@ -9,6 +9,7 @@ import config
 from yalda.auth.authentication import (
     CurrentUser, get_developer_info, set_developer_info, is_app_license_active, set_app_license_active
 )
+from yalda.utils.hardware_security import HardwareSecurity
 from yalda.utils.image_utils import get_circular_pixmap
 
 
@@ -27,12 +28,14 @@ class DeveloperView(QWidget):
         self.load_data()
 
     def init_ui(self):
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(20, 20, 20, 20)
-        layout.setSpacing(15)
+        main_vbox = QVBoxLayout(self)
+        main_vbox.setContentsMargins(0, 0, 0, 0)
+        main_vbox.setSpacing(0)
 
         # Header Title and Back Button
-        header = QHBoxLayout()
+        header_widget = QWidget()
+        header = QHBoxLayout(header_widget)
+        header.setContentsMargins(20, 15, 20, 10)
         btn_back = QPushButton("⬅️ بازگشت به صفحه قبل")
         btn_back.setObjectName("back_button")
         btn_back.clicked.connect(self.back_requested.emit)
@@ -43,7 +46,19 @@ class DeveloperView(QWidget):
         header.addWidget(btn_back)
         header.addWidget(title)
         header.addStretch()
-        layout.addLayout(header)
+        main_vbox.addWidget(header_widget)
+
+        # Scroll Area for Cards
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.Shape.NoFrame)
+        scroll.setStyleSheet("QScrollArea { background: transparent; border: none; }")
+
+        container = QWidget()
+        container.setStyleSheet("background: transparent;")
+        layout = QVBoxLayout(container)
+        layout.setContentsMargins(20, 10, 20, 20)
+        layout.setSpacing(15)
 
         # ----------------------------------------------------
         # BOX 1: Developer Display Card (For All Users)
@@ -153,22 +168,23 @@ class DeveloperView(QWidget):
         # ----------------------------------------------------
         # BOX 2: App License Status Control
         # ----------------------------------------------------
-        license_box = QGroupBox("🟢 وضعیت فعال‌سازی و مجوز برنامه (App License Status)")
+        license_box = QGroupBox("🟢 وضعیت فعال‌سازی برنامه")
         layout_lic = QHBoxLayout(license_box)
         layout_lic.setContentsMargins(15, 15, 15, 15)
         layout_lic.setSpacing(12)
 
-        lbl_lic_status = QLabel("وضعیت فعلی سیستم:")
+        lbl_lic_status = QLabel("وضعیت لایسنس برنامه:")
         lbl_lic_status.setStyleSheet("font-weight: bold; font-size: 14px;")
 
         self.combo_license = QComboBox()
         self.combo_license.setFixedHeight(38)
-        self.combo_license.addItem("🔴 غیرفعال", "false")
-        self.combo_license.addItem("🟢 فعال", "true")
-
+        self.combo_license.setMinimumWidth(320)
+        self.combo_license.addItem("🔴 غیرفعال (غیرقابل استفاده در سیستم‌های جدید)", "false")
+        self.combo_license.addItem("🟢 فعال و قفل‌شده برای این رایانه", "true")
 
         self.btn_save_license = QPushButton("💾 ثبت وضعیت برنامه")
         self.btn_save_license.setFixedHeight(38)
+        self.btn_save_license.setMinimumWidth(180)
         self.btn_save_license.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_save_license.clicked.connect(self.save_license_status)
 
@@ -278,6 +294,9 @@ class DeveloperView(QWidget):
 
         layout.addWidget(self.dev_edit_box)
         layout.addStretch()
+
+        scroll.setWidget(container)
+        main_vbox.addWidget(scroll)
 
     def check_dev_dirty(self):
         if getattr(self, "_loading_dev", False):
@@ -389,8 +408,9 @@ class DeveloperView(QWidget):
         val = self.combo_license.currentData() == "true"
         try:
             set_app_license_active(val)
-            status_str = "فعال 🟢" if val else "غیرفعال 🔴"
-            QMessageBox.information(self, "موفقیت", f"وضعیت سیستم با موفقیت به '{status_str}' تغییر یافت.")
+            self.load_data()
+            status_str = "فعال و قفل‌شده روی این رایانه 🟢" if val else "غیرفعال 🔴"
+            QMessageBox.information(self, "موفقیت", f"وضعیت لایسنس سخت‌افزاری با موفقیت به '{status_str}' به‌روزرسانی شد.")
         except Exception as e:
             QMessageBox.critical(self, "خطا", f"خطا در ثبت وضعیت برنامه: {str(e)}")
 
@@ -427,7 +447,7 @@ class DeveloperView(QWidget):
             self.lbl_dev_photo.setText("👨‍💻")
             self.lbl_dev_photo.setStyleSheet("font-size: 50px;")
 
-        # 2. License Status
+        # 2. License Status & Hardware Binding
         active = is_app_license_active()
         self.combo_license.setCurrentIndex(1 if active else 0)
 

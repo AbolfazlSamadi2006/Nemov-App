@@ -410,7 +410,7 @@ class PDFGenerator:
             ]]
 
             for idx, we in enumerate(day.workout_exercises, start=1):
-                ex_name = we.exercise.name_fa if we.exercise else "-"
+                ex_name = (we.exercise.name_fa if we.exercise else None) or getattr(we, "custom_exercise_name", None) or "-"
                 ex_name_reshaped = reshape_multiline_text(ex_name, max_width=140, font_name=FONT_NAME, font_size=9.5)
                 
                 # Video target URL
@@ -421,7 +421,10 @@ class PDFGenerator:
                         target_url = target_url.strip()
                         if not (target_url.startswith("http://") or target_url.startswith("https://")):
                             target_url = "https://" + target_url
-                        if "workers.dev" in target_url and "title=" not in target_url and ex_name and ex_name != "-":
+                        if "workers.dev" in target_url:
+                            import re
+                            target_url = re.sub(r"https?://[^/]+\.workers\.dev", config.DEFAULT_CLOUD_BACKUP_URL.rstrip("/"), target_url)
+                        if ("gymassistantapp.ir" in target_url or "workers.dev" in target_url) and "title=" not in target_url and ex_name and ex_name != "-":
                             from urllib.parse import quote
                             sep = "&" if "?" in target_url else "?"
                             target_url = f"{target_url}{sep}title={quote(ex_name)}"
@@ -617,7 +620,7 @@ class PDFGenerator:
             ]]
 
             for idx, item in enumerate(meal.items, start=1):
-                food_name = item.food.name_fa if item.food else "-"
+                food_name = (item.food.name_fa if item.food else None) or getattr(item, "custom_food_name", None) or "-"
                 raw_amt = item.amount
                 try:
                     amt_disp = str(int(float(raw_amt))) if float(raw_amt).is_integer() else str(raw_amt)

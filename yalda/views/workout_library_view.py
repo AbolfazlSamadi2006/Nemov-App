@@ -157,7 +157,7 @@ class ExerciseFormDialog(QDialog):
         self.video_cloud_url = None
         # Clear previous cloud video link from txt_video_url so the old URL is not kept
         current_url = self.txt_video_url.text().strip()
-        if "workers.dev/video" in current_url:
+        if "workers.dev" in current_url or "gymassistantapp.ir" in current_url:
             self.txt_video_url.clear()
 
         self.lbl_media_status.setText(f"فایل: {os.path.basename(stored_path)}")
@@ -175,7 +175,7 @@ class ExerciseFormDialog(QDialog):
                 self.media_type = "image"
                 self.video_cloud_url = None
                 current_url = self.txt_video_url.text().strip()
-                if "workers.dev" in current_url:
+                if "workers.dev" in current_url or "gymassistantapp.ir" in current_url:
                     self.txt_video_url.clear()
                 self.btn_edit_media.setText("🎨 ویرایش تصویر")
                 self.btn_edit_media.show()
@@ -188,7 +188,7 @@ class ExerciseFormDialog(QDialog):
                 self.media_type = "video"
                 self.video_cloud_url = None
                 current_url = self.txt_video_url.text().strip()
-                if "workers.dev/video" in current_url:
+                if "workers.dev" in current_url or "gymassistantapp.ir" in current_url:
                     self.txt_video_url.clear()
                 self.btn_edit_media.setText("✂️ ویرایش ویدیو")
                 self.btn_edit_media.show()
@@ -213,7 +213,7 @@ class ExerciseFormDialog(QDialog):
                 self.thumbnail_path = dlg.result_thumbnail_path
                 self.video_cloud_url = None
                 current_url = self.txt_video_url.text().strip()
-                if "workers.dev/video" in current_url:
+                if "workers.dev" in current_url or "gymassistantapp.ir" in current_url:
                     self.txt_video_url.clear()
                 self.btn_remove_media.show()
                 self.lbl_media_status.setText(f"ویدیو ویرایش‌شده: {os.path.basename(self.media_path)}")
@@ -225,7 +225,7 @@ class ExerciseFormDialog(QDialog):
                 self.thumbnail_path = dlg.result_image_path
                 self.video_cloud_url = None
                 current_url = self.txt_video_url.text().strip()
-                if "workers.dev" in current_url:
+                if "workers.dev" in current_url or "gymassistantapp.ir" in current_url:
                     self.txt_video_url.clear()
                 self.btn_edit_media.setText("🎨 ویرایش تصویر")
                 self.btn_edit_media.show()
@@ -247,7 +247,7 @@ class ExerciseFormDialog(QDialog):
             self.thumbnail_path = None
             self.video_cloud_url = None
             current_url = self.txt_video_url.text().strip()
-            if "workers.dev/video" in current_url:
+            if "workers.dev" in current_url or "gymassistantapp.ir" in current_url:
                 self.txt_video_url.clear()
             self.lbl_media_status.setText("فایلی انتخاب نشده است")
             self.lbl_media_status.setStyleSheet("color: #888888; font-size: 11px;")
@@ -307,7 +307,12 @@ class ExerciseFormDialog(QDialog):
         if idx_e >= 0: self.combo_equip.setCurrentIndex(idx_e)
 
         self.txt_contra.setText(ex.contraindications or "")
-        self.txt_video_url.setText(ex.video_url or "")
+        raw_video_url = ex.video_url or ""
+        if "workers.dev" in raw_video_url:
+            import re
+            target_base = config.DEFAULT_CLOUD_BACKUP_URL.rstrip("/")
+            raw_video_url = re.sub(r"https?://[^/]+\.workers\.dev", target_base, raw_video_url)
+        self.txt_video_url.setText(raw_video_url)
         self.txt_desc.setText(ex.description or "")
         self.chk_corrective.setChecked(bool(getattr(ex, "is_corrective", False)))
         self.media_path = ex.media_path
@@ -717,6 +722,9 @@ class WorkoutLibraryView(QWidget):
 
     def show_media(self, exercise):
         target_video = exercise.video_cloud_url or exercise.video_url
+        if target_video and "workers.dev" in target_video:
+            import re
+            target_video = re.sub(r"https?://[^/]+\.workers\.dev", config.DEFAULT_CLOUD_BACKUP_URL.rstrip("/"), target_video)
         dlg = MediaViewerDialog(
             title=exercise.name_fa,
             media_path=exercise.media_path,

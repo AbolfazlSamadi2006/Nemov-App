@@ -7,6 +7,7 @@ from yalda.services.workout_service import WorkoutService
 from yalda.services.member_service import MemberService
 from yalda.views.components.searchable_combo_box import SearchableComboBox
 from yalda.views.components.day_management_dialogs import DaySelectionReductionDialog, DayIncreaseChoiceDialog
+from yalda.views.components.unregistered_items_dialog import UnregisteredItemsDialog
 
 class ExerciseNotesDialog(QDialog):
     def __init__(self, exercise_name: str, current_notes: str, default_bank_notes: str = "", parent=None):
@@ -816,14 +817,19 @@ class WorkoutEditorView(QWidget):
             combo_ex.addItem(f"{ex.name_fa} ({ex.primary_muscle})", ex.id)
 
         ex_id = data.get("exercise_id")
+        custom_name = data.get("exercise_text") or data.get("custom_exercise_name")
         if ex_id:
             idx = combo_ex.findData(ex_id)
             if idx >= 0:
                 combo_ex.setCurrentIndex(idx)
+            elif custom_name:
+                combo_ex.setCurrentIndex(-1)
+                combo_ex.setEditText(custom_name)
             else:
                 combo_ex.set_empty()
-        elif data.get("exercise_text"):
-            combo_ex.setCurrentText(data["exercise_text"])
+        elif custom_name:
+            combo_ex.setCurrentIndex(-1)
+            combo_ex.setEditText(custom_name)
         else:
             combo_ex.set_empty()
 
@@ -975,15 +981,49 @@ class WorkoutEditorView(QWidget):
         title = self.txt_title.text().strip() or "برنامه تمرینی سفارشی"
         days_data = []
 
+        # Build bank exercises lookup by name and display format
+        bank_exercises = WorkoutService.get_all_exercises(include_unlisted=False)
+        bank_by_name = {ex.name_fa.strip().lower(): ex.id for ex in bank_exercises}
+        bank_by_display = {f"{ex.name_fa} ({ex.primary_muscle})".strip().lower(): ex.id for ex in bank_exercises}
+
         for idx, (txt_day_title, table) in enumerate(self.day_tables, start=1):
             ex_list = []
             for row in range(table.rowCount()):
                 combo_ex = table.cellWidget(row, 0)
                 if not combo_ex:
                     continue
-                ex_id = combo_ex.currentData()
-                if not ex_id:
+                raw_text = combo_ex.currentText().strip()
+                if not raw_text:
                     continue
+
+                ex_id = combo_ex.currentData()
+                custom_name = None
+
+                # Check if currentData matches currentText
+                idx_curr = combo_ex.currentIndex()
+                if idx_curr >= 0:
+                    selected_item_text = combo_ex.itemText(idx_curr).strip().lower()
+                    if selected_item_text != raw_text.lower():
+                        # The user modified the text, verify against bank
+                        lower_text = raw_text.lower()
+                        if lower_text in bank_by_name:
+                            ex_id = bank_by_name[lower_text]
+                        elif lower_text in bank_by_display:
+                            ex_id = bank_by_display[lower_text]
+                        else:
+                            ex_id = None
+                            custom_name = raw_text
+                else:
+                    # User typed freely
+                    lower_text = raw_text.lower()
+                    if lower_text in bank_by_name:
+                        ex_id = bank_by_name[lower_text]
+                    elif lower_text in bank_by_display:
+                        ex_id = bank_by_display[lower_text]
+                    else:
+                        ex_id = None
+                        custom_name = raw_text
+
                 sets = table.cellWidget(row, 1).text().strip()
                 reps = table.cellWidget(row, 2).text().strip()
                 weight = table.cellWidget(row, 3).text().strip()
@@ -994,6 +1034,7 @@ class WorkoutEditorView(QWidget):
 
                 ex_list.append({
                     "exercise_id": ex_id,
+                    "custom_exercise_name": custom_name,
                     "sets": int(sets) if sets.isdigit() else 3,
                     "reps": reps,
                     "weight_suggestion": weight,
@@ -1015,6 +1056,62 @@ class WorkoutEditorView(QWidget):
             "training_level": self.combo_level.currentData()
         }
         return plan_info, days_data
+
+    def _handle_unregistered_exercises(self, days_data: list, mode: str = "assign") -> bool:
+        """
+        Scans days_data for exercises that don't have an exercise_id in the bank.
+        If any are found, shows UnregisteredItemsDialog.
+        Returns True to proceed with plan creation/assignment, or False if canceled.
+        """
+        unregistered_names = []
+        for d in days_data:
+            for ex in d.get("exercises", []):
+                if not ex.get("exercise_id") and ex.get("custom_exercise_name"):
+                    name = ex["custom_exercise_name"]
+                    if name not in unregistered_names:
+                        unregistered_names.append(name)
+
+        if not unregistered_names:
+            return True
+
+        dlg = UnregisteredItemsDialog(
+            item_type="exercise",
+            unregistered_items=unregistered_names,
+            mode=mode,
+            parent=self
+        )
+        if dlg.exec() != QDialog.DialogCode.Accepted:
+            return False
+
+        action = dlg.action_result
+        if action == UnregisteredItemsDialog.ACTION_CANCEL:
+            return False
+
+        is_unlisted = (action == UnregisteredItemsDialog.ACTION_UNLISTED)
+        name_to_id = {}
+        for name in unregistered_names:
+            created_ex = WorkoutService.create_exercise({
+                "name_fa": name,
+                "primary_muscle": "سایر",
+                "equipment": "سایر",
+                "is_custom": True,
+                "is_unlisted": is_unlisted
+            })
+            name_to_id[name] = created_ex.id
+
+        # Update days_data with newly created IDs
+        for d in days_data:
+            for ex in d.get("exercises", []):
+                c_name = ex.get("custom_exercise_name")
+                if not ex.get("exercise_id") and c_name in name_to_id:
+                    ex["exercise_id"] = name_to_id[c_name]
+                    if not is_unlisted:
+                        ex["custom_exercise_name"] = None
+
+        if not is_unlisted:
+            self.refresh_editor()
+
+        return True
 
     def load_template_dropdown(self):
         cur = self.combo_templates.currentData()
@@ -1072,6 +1169,7 @@ class WorkoutEditorView(QWidget):
                         table.insertRow(r)
                         self._create_exercise_row_widgets(table, r, exercises_list, {
                             "exercise_id": we.exercise_id,
+                            "exercise_text": (we.exercise.name_fa if we.exercise else None) or getattr(we, "custom_exercise_name", None),
                             "sets": we.sets or 3,
                             "reps": we.reps or "10-12",
                             "weight": we.weight_suggestion or "-",
@@ -1173,6 +1271,10 @@ class WorkoutEditorView(QWidget):
             plan_info["title"] = suggested_title
             self.txt_title.setText(suggested_title)
 
+        # Check and handle unregistered exercises in the bank
+        if not self._handle_unregistered_exercises(days_data, mode="save"):
+            return None
+
         try:
             if self.editing_plan_id:
                 plan = WorkoutService.update_workout_plan(self.editing_plan_id, plan_info, days_data)
@@ -1271,6 +1373,10 @@ class WorkoutEditorView(QWidget):
             reply = QMessageBox.question(self, "هشدار پزشکی", msg, QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
             if reply != QMessageBox.StandardButton.Yes:
                 return
+
+        # Check and handle unregistered exercises in the bank
+        if not self._handle_unregistered_exercises(days_data, mode="assign"):
+            return
 
         try:
             plan = WorkoutService.create_workout_plan(plan_info, days_data)

@@ -2,7 +2,7 @@ import os
 import time
 from pathlib import Path
 from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QTableWidget, QTableWidgetItem, QHeaderView, QFileDialog, QMessageBox, QGroupBox, QGridLayout, QFrame, QDialog, QScrollArea, QProgressBar, QInputDialog, QCheckBox, QAbstractItemView
+    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QTableWidget, QTableWidgetItem, QHeaderView, QFileDialog, QMessageBox, QGroupBox, QGridLayout, QFrame, QDialog, QScrollArea, QProgressBar, QInputDialog, QCheckBox, QAbstractItemView, QTabWidget
 )
 from PyQt6.QtCore import Qt, pyqtSignal, QTimer, QThread
 from PyQt6.QtGui import QPixmap, QColor, QBrush
@@ -151,37 +151,99 @@ class BackupView(QWidget):
 
     def init_ui(self):
         main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(0, 0, 0, 0)
-
-        scroll_area = QScrollArea()
-        scroll_area.setWidgetResizable(True)
-        scroll_area.setFrameShape(QFrame.Shape.NoFrame)
-        scroll_area.setStyleSheet("QScrollArea { background-color: transparent; border: none; }")
-
-        container = QWidget()
-        layout = QVBoxLayout(container)
-        layout.setContentsMargins(20, 20, 20, 20)
-        layout.setSpacing(15)
+        main_layout.setContentsMargins(16, 12, 16, 12)
+        main_layout.setSpacing(10)
 
         # Header Title and Actions
-        header = QHBoxLayout()
+        header_frame = QFrame()
+        header_frame.setObjectName("backupHeaderCard")
+        header_frame.setStyleSheet("""
+            QFrame#backupHeaderCard {
+                background-color: #1A1A1A;
+                border: 1px solid #282828;
+                border-radius: 12px;
+                padding: 10px 16px;
+            }
+        """)
+        header_layout = QHBoxLayout(header_frame)
+        header_layout.setContentsMargins(10, 6, 10, 6)
+        header_layout.setSpacing(14)
+
         btn_back = QPushButton("⬅️ بازگشت به صفحه قبل")
         btn_back.setObjectName("back_button")
+        btn_back.setFixedHeight(36)
         btn_back.clicked.connect(self.back_requested.emit)
 
+        title_box = QVBoxLayout()
+        title_box.setSpacing(2)
         title = QLabel("⚙️ اطلاعات شخص مربی و پشتیبان‌گیری دیتابیس")
-        title.setObjectName("h1")
+        title.setStyleSheet("font-size: 17px; font-weight: bold; color: #FFFFFF;")
+        subtitle = QLabel("مدیریت مشخصات و امنیت مربی، مرکز آرشیو و بازگردانی پشتیبان، تاریخچه اعلانات و لاگ‌های خطا")
+        subtitle.setStyleSheet("font-size: 11px; color: #888888;")
+        title_box.addWidget(title)
+        title_box.addWidget(subtitle)
 
-        header.addWidget(btn_back)
-        header.addWidget(title)
-        header.addStretch()
-        layout.addLayout(header)
+        header_layout.addWidget(btn_back)
+        header_layout.addLayout(title_box, 1)
+        header_layout.addStretch()
+        main_layout.addWidget(header_frame)
 
-        # ----------------------------------------------------
+        # Tabs
+        self.tabs = QTabWidget()
+        self.tabs.setStyleSheet("""
+            QTabWidget::pane {
+                background-color: #1A1A1A;
+                border: 1px solid #282828;
+                border-radius: 10px;
+                padding: 10px;
+            }
+            QTabBar::tab {
+                background-color: #141414;
+                color: #A0A0A0;
+                padding: 10px 22px;
+                font-size: 13px;
+                font-weight: bold;
+                border-top-left-radius: 8px;
+                border-top-right-radius: 8px;
+                margin-left: 4px;
+            }
+            QTabBar::tab:selected {
+                background-color: #1A1A1A;
+                color: #FFFFFF;
+                border-bottom: 2px solid #8B0000;
+            }
+            QTabBar::tab:hover:!selected {
+                background-color: #222222;
+                color: #E0E0E0;
+            }
+        """)
+
+        self.tab_profile = self._create_profile_tab()
+        self.tab_backup = self._create_backup_tab()
+        self.tab_logs_notifs = self._create_logs_notifs_tab()
+
+        self.tabs.addTab(self.tab_profile, "👤  مشخصات مربی و امنیت حساب")
+        self.tabs.addTab(self.tab_backup, "💾  مرکز پشتیبان‌گیری و بازگردانی دیتابیس")
+        self.tabs.addTab(self.tab_logs_notifs, "🔔  تاریخچه اعلانات و لاگ‌های سیستم")
+
+        main_layout.addWidget(self.tabs, 1)
+
+        self.load_all_data()
+
+    def _create_profile_tab(self) -> QWidget:
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.Shape.NoFrame)
+        scroll.setStyleSheet("QScrollArea { background-color: transparent; border: none; }")
+
+        container = QWidget()
+        container.setStyleSheet("background: transparent;")
+        layout = QVBoxLayout(container)
+        layout.setContentsMargins(8, 8, 8, 8)
+        layout.setSpacing(14)
+
         # BOX 1: Trainer Profile & Credentials Settings
-        # ----------------------------------------------------
         profile_box = QGroupBox("👤 اطلاعات شخص مربی و تنظیمات ورود")
-
         layout_prof = QVBoxLayout(profile_box)
         layout_prof.setSpacing(12)
 
@@ -242,7 +304,6 @@ class BackupView(QWidget):
         grid_prof.addWidget(self.txt_last_name, 0, 4)
 
         # Phone & Birthdate
-
         self.txt_phone = QLineEdit()
         self.txt_phone.setFixedHeight(36)
         self.txt_phone.setPlaceholderText("شماره همراه مربی")
@@ -255,7 +316,6 @@ class BackupView(QWidget):
         grid_prof.addWidget(self.txt_phone, 1, 2)
         grid_prof.addWidget(QLabel("تاریخ تولد:"), 1, 3)
         grid_prof.addWidget(self.picker_birth_date, 1, 4)
-
 
         # Username, Passwords & Secret Recovery Code
         self.txt_username = QLineEdit()
@@ -423,12 +483,9 @@ class BackupView(QWidget):
         row_prof_actions.addStretch()
 
         layout_prof.addLayout(row_prof_actions)
-
         layout.addWidget(profile_box)
 
-        # ----------------------------------------------------
         # BOX 2: Admin Trainers Management & Account Deletion (Admin Only)
-        # ----------------------------------------------------
         self.box_admin_trainers = QGroupBox("👥 مدیریت مربیان و حذف حساب‌ها (مخصوص مدیر ارشد سیستم)")
         layout_adm = QVBoxLayout(self.box_admin_trainers)
         layout_adm.setSpacing(10)
@@ -459,19 +516,35 @@ class BackupView(QWidget):
         layout_adm.addWidget(self.table_trainers)
 
         layout.addWidget(self.box_admin_trainers)
+        layout.addStretch()
 
-        # ----------------------------------------------------
-        # BOX 3: Backup & Restore Table
-        # ----------------------------------------------------
-        action_box = QGroupBox("💾 پشتیبان‌گیری محلی دیتابیس و عکس‌ها")
-        layout_act = QHBoxLayout(action_box)
+        scroll.setWidget(container)
+        return scroll
 
-        lbl_desc = QLabel("با کلیک روی کلید زیر، از فایل دیتابیس و تمامی تصاویر فشرده‌سازی ZIP ایجاد می‌شود.")
-        lbl_desc.setStyleSheet("color: #AAAAAA;")
+    def _create_backup_tab(self) -> QWidget:
+        widget = QWidget()
+        layout = QVBoxLayout(widget)
+        layout.setContentsMargins(8, 8, 8, 8)
+        layout.setSpacing(10)
+
+        # Top Control Card / Backup & Restore Actions
+        toolbar_frame = QFrame()
+        toolbar_frame.setStyleSheet("""
+            QFrame {
+                background-color: #202024;
+                border: 1px solid #2E2E32;
+                border-radius: 8px;
+                padding: 4px;
+            }
+        """)
+        toolbar_layout = QHBoxLayout(toolbar_frame)
+        toolbar_layout.setContentsMargins(12, 8, 12, 8)
+        toolbar_layout.setSpacing(10)
 
         btn_create = QPushButton("⚡ ایجاد فایل پشتیبان جدید")
-        btn_create.setFixedSize(220, 42)
+        btn_create.setFixedHeight(36)
         btn_create.setCursor(Qt.CursorShape.PointingHandCursor)
+        btn_create.setToolTip("ایجاد نسخه پشتیبان جدید از پایگاه داده و تصاویر")
         btn_create.setStyleSheet("""
             QPushButton {
                 background-color: #8B0000;
@@ -479,8 +552,8 @@ class BackupView(QWidget):
                 border: 1px solid #A91D22;
                 border-radius: 6px;
                 font-weight: bold;
-                font-size: 13px;
-                padding: 6px 14px;
+                font-size: 12px;
+                padding: 0 14px;
             }
             QPushButton:hover {
                 background-color: #A00000;
@@ -491,13 +564,56 @@ class BackupView(QWidget):
             }
         """)
         btn_create.clicked.connect(self.create_backup)
+        toolbar_layout.addWidget(btn_create)
 
-        layout_act.addWidget(lbl_desc)
-        layout_act.addStretch()
-        layout_act.addWidget(btn_create)
-        layout.addWidget(action_box)
+        btn_restore_cloud = QPushButton("☁️ بازگردانی از سرور ابری")
+        btn_restore_cloud.setFixedHeight(36)
+        btn_restore_cloud.setCursor(Qt.CursorShape.PointingHandCursor)
+        btn_restore_cloud.setToolTip("بازگردانی آخرین نسخه پشتیبان از سرور ابری کلودفلر")
+        btn_restore_cloud.setStyleSheet("""
+            QPushButton {
+                background-color: #1E3A8A;
+                color: #93C5FD;
+                border: 1px solid #2563EB;
+                border-radius: 6px;
+                padding: 0 12px;
+                font-weight: bold;
+                font-size: 12px;
+            }
+            QPushButton:hover {
+                background-color: #2563EB;
+                color: #FFFFFF;
+            }
+        """)
+        btn_restore_cloud.clicked.connect(self.open_cloud_restore_dialog)
+        toolbar_layout.addWidget(btn_restore_cloud)
 
-        # Non-blocking Backup Progress Card (styled in Red as requested)
+        btn_restore_file = QPushButton("📁 بازگردانی از فایل خارجی")
+        btn_restore_file.setFixedHeight(36)
+        btn_restore_file.setCursor(Qt.CursorShape.PointingHandCursor)
+        btn_restore_file.setToolTip("بازگردانی نسخه پشتیبان از فایل خارجی در سیستم")
+        btn_restore_file.setStyleSheet("""
+            QPushButton {
+                background-color: #262626;
+                color: #FFFFFF;
+                border: 1px solid #3F3F46;
+                border-radius: 6px;
+                padding: 0 12px;
+                font-weight: bold;
+                font-size: 12px;
+            }
+            QPushButton:hover {
+                background-color: #333333;
+                border: 1px solid #71717A;
+            }
+        """)
+        btn_restore_file.clicked.connect(self.restore_from_file)
+        toolbar_layout.addWidget(btn_restore_file)
+
+        toolbar_layout.addStretch()
+        layout.addWidget(toolbar_frame)
+
+        # Non-blocking Backup Progress Card
         self.progress_card = QFrame()
         self.progress_card.setObjectName("progressCard")
         self.progress_card.setStyleSheet("""
@@ -580,20 +696,29 @@ class BackupView(QWidget):
         layout.addWidget(self.progress_card)
         self.progress_card.setVisible(False)
 
-        # Backups List Table
-        row_table_header = QHBoxLayout()
-        lbl_table = QLabel("📋 لیست آرشیوهای پشتیبان موجود")
-        lbl_table.setObjectName("h2")
-        row_table_header.addWidget(lbl_table)
-        row_table_header.addStretch()
-        layout.addLayout(row_table_header)
+        # Archive List Header Frame (Title on Right, Selection/Deletion Buttons on Left - matching Notification History)
+        table_header_frame = QFrame()
+        table_header_frame.setStyleSheet("""
+            QFrame {
+                background-color: #18181B;
+                border: 1px solid #27272A;
+                border-radius: 8px;
+                padding: 4px;
+            }
+        """)
+        th_layout = QHBoxLayout(table_header_frame)
+        th_layout.setContentsMargins(12, 6, 12, 6)
+        th_layout.setSpacing(10)
 
-        row_backup_actions = QHBoxLayout()
-        row_backup_actions.setSpacing(10)
+        lbl_table_title = QLabel("📋 لیست آرشیوهای پشتیبان موجود")
+        lbl_table_title.setStyleSheet("font-size: 13px; font-weight: bold; color: #E4E4E7;")
+        th_layout.addWidget(lbl_table_title)
+        th_layout.addStretch()
 
-        self.btn_select_all_backups = QPushButton("☑️ انتخاب همه / لغو انتخاب")
-        self.btn_select_all_backups.setFixedHeight(36)
+        self.btn_select_all_backups = QPushButton("☑️ انتخاب همه")
+        self.btn_select_all_backups.setFixedHeight(34)
         self.btn_select_all_backups.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_select_all_backups.setToolTip("انتخاب یا لغو انتخاب تمام ردیف‌های جدول")
         self.btn_select_all_backups.setStyleSheet("""
             QPushButton {
                 background-color: #27272A;
@@ -602,7 +727,7 @@ class BackupView(QWidget):
                 border-radius: 6px;
                 font-weight: bold;
                 font-size: 12px;
-                padding: 0 14px;
+                padding: 0 10px;
             }
             QPushButton:hover {
                 background-color: #3F3F46;
@@ -610,11 +735,12 @@ class BackupView(QWidget):
             }
         """)
         self.btn_select_all_backups.clicked.connect(self.toggle_select_all_backups)
-        row_backup_actions.addWidget(self.btn_select_all_backups)
+        th_layout.addWidget(self.btn_select_all_backups)
 
-        self.btn_delete_selected_backups = QPushButton("🗑️ حذف موارد انتخاب‌شده")
-        self.btn_delete_selected_backups.setFixedHeight(36)
+        self.btn_delete_selected_backups = QPushButton("🗑️ حذف انتخاب‌شده")
+        self.btn_delete_selected_backups.setFixedHeight(34)
         self.btn_delete_selected_backups.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_delete_selected_backups.setToolTip("حذف موارد انتخاب‌شده در جدول")
         self.btn_delete_selected_backups.setStyleSheet("""
             QPushButton {
                 background-color: #7F1D1D;
@@ -623,7 +749,7 @@ class BackupView(QWidget):
                 border-radius: 6px;
                 font-weight: bold;
                 font-size: 12px;
-                padding: 0 14px;
+                padding: 0 10px;
             }
             QPushButton:hover {
                 background-color: #DC2626;
@@ -631,11 +757,12 @@ class BackupView(QWidget):
             }
         """)
         self.btn_delete_selected_backups.clicked.connect(self.delete_selected_backups)
-        row_backup_actions.addWidget(self.btn_delete_selected_backups)
+        th_layout.addWidget(self.btn_delete_selected_backups)
 
-        self.btn_delete_all_backups = QPushButton("🧹 حذف همگانی آرشیو")
-        self.btn_delete_all_backups.setFixedHeight(36)
+        self.btn_delete_all_backups = QPushButton("🧹 حذف همگانی")
+        self.btn_delete_all_backups.setFixedHeight(34)
         self.btn_delete_all_backups.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_delete_all_backups.setToolTip("حذف کلیه نسخه‌های پشتیبان موجود در آرشیو")
         self.btn_delete_all_backups.setStyleSheet("""
             QPushButton {
                 background-color: transparent;
@@ -644,7 +771,7 @@ class BackupView(QWidget):
                 border-radius: 6px;
                 font-weight: bold;
                 font-size: 12px;
-                padding: 0 14px;
+                padding: 0 10px;
             }
             QPushButton:hover {
                 background-color: #DC2626;
@@ -652,54 +779,11 @@ class BackupView(QWidget):
             }
         """)
         self.btn_delete_all_backups.clicked.connect(self.delete_all_backups_history)
-        row_backup_actions.addWidget(self.btn_delete_all_backups)
+        th_layout.addWidget(self.btn_delete_all_backups)
 
-        row_backup_actions.addStretch()
+        layout.addWidget(table_header_frame)
 
-        btn_restore_cloud = QPushButton("☁️ بازگردانی از سرور ابری...")
-        btn_restore_cloud.setFixedHeight(36)
-        btn_restore_cloud.setCursor(Qt.CursorShape.PointingHandCursor)
-        btn_restore_cloud.setStyleSheet("""
-            QPushButton {
-                background-color: #1E3A8A;
-                color: #93C5FD;
-                border: 1px solid #2563EB;
-                border-radius: 6px;
-                padding: 0 14px;
-                font-weight: bold;
-                font-size: 12px;
-            }
-            QPushButton:hover {
-                background-color: #2563EB;
-                color: #FFFFFF;
-            }
-        """)
-        btn_restore_cloud.clicked.connect(self.open_cloud_restore_dialog)
-
-        btn_restore_file = QPushButton("📁 بازگردانی از فایل خارجی...")
-        btn_restore_file.setFixedHeight(36)
-        btn_restore_file.setCursor(Qt.CursorShape.PointingHandCursor)
-        btn_restore_file.setStyleSheet("""
-            QPushButton {
-                background-color: #262626;
-                color: #FFFFFF;
-                border: 1px solid #3F3F46;
-                border-radius: 6px;
-                padding: 0 14px;
-                font-weight: bold;
-                font-size: 12px;
-            }
-            QPushButton:hover {
-                background-color: #333333;
-                border: 1px solid #71717A;
-            }
-        """)
-        btn_restore_file.clicked.connect(self.restore_from_file)
-
-        row_backup_actions.addWidget(btn_restore_cloud)
-        row_backup_actions.addWidget(btn_restore_file)
-        layout.addLayout(row_backup_actions)
-
+        # Backups Table
         self.table = QTableWidget()
         self.table.setColumnCount(7)
         self.table.setHorizontalHeaderLabels([
@@ -720,31 +804,128 @@ class BackupView(QWidget):
         self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.table.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
-        self.table.setMinimumHeight(270)
 
-        layout.addWidget(self.table)
+        layout.addWidget(self.table, 1)
 
-        # ----------------------------------------------------
-        # BOX 3.5: Notification History (تاریخچه اعلانات و یادآوری‌ها)
-        # ----------------------------------------------------
-        notif_history_box = QGroupBox("🔔 تاریخچه اعلانات و یادآوری‌ها")
-        layout_notif_hist = QVBoxLayout(notif_history_box)
-        layout_notif_hist.setSpacing(10)
+        return widget
 
-        lbl_notif_hist_desc = QLabel(
-            "در این بخش تمامی اعلانات و یادآوری‌های سیستم از ابتدا تا این لحظه نگهداری می‌شوند تا در صورت ثبت به عنوان "
-            "«خوانده‌شده» بتوانید مجدداً آن‌ها را مشاهده کنید. امکان انتخاب چندتایی و حذف گروهی یا همگانی نیز فراهم است."
-        )
-        lbl_notif_hist_desc.setStyleSheet("color: #AAAAAA; font-size: 13px;")
-        lbl_notif_hist_desc.setWordWrap(True)
-        layout_notif_hist.addWidget(lbl_notif_hist_desc)
+    def _create_logs_notifs_tab(self) -> QWidget:
+        widget = QWidget()
+        layout = QVBoxLayout(widget)
+        layout.setContentsMargins(8, 8, 8, 8)
+        layout.setSpacing(10)
 
-        row_notif_actions = QHBoxLayout()
-        row_notif_actions.setSpacing(10)
+        # Top Card: System Error Logs & Diagnostics
+        logs_card = QFrame()
+        logs_card.setStyleSheet("""
+            QFrame {
+                background-color: #202024;
+                border: 1px solid #2E2E32;
+                border-radius: 8px;
+                padding: 4px;
+            }
+        """)
+        logs_layout = QHBoxLayout(logs_card)
+        logs_layout.setContentsMargins(12, 8, 12, 8)
+        logs_layout.setSpacing(12)
 
-        self.btn_select_all_notifs = QPushButton("☑️ انتخاب همه / لغو انتخاب")
-        self.btn_select_all_notifs.setFixedHeight(36)
+        desc_box = QVBoxLayout()
+        desc_box.setSpacing(2)
+        lbl_logs_title = QLabel("🛠️ گزارش وقایع و لاگ‌های تشخیصی سیستم")
+        lbl_logs_title.setStyleSheet("font-size: 13px; font-weight: bold; color: #E4E4E7;")
+        lbl_logs_desc = QLabel("کلیه وقایع و خطاهای احتمالی ثبت می‌شوند. در صورت نیاز می‌توانید گزارش لاگ را مشاهده یا ارسال فرمایید.")
+        lbl_logs_desc.setStyleSheet("color: #888888; font-size: 11px;")
+        desc_box.addWidget(lbl_logs_title)
+        desc_box.addWidget(lbl_logs_desc)
+        logs_layout.addLayout(desc_box, 1)
+
+        btn_view_logs = QPushButton("👁️ مشاهده لاگ‌ها")
+        btn_view_logs.setFixedHeight(36)
+        btn_view_logs.setCursor(Qt.CursorShape.PointingHandCursor)
+        btn_view_logs.setToolTip("مشاهده کامل گزارش وقایع و خطاهای سیستم")
+        btn_view_logs.setStyleSheet("""
+            QPushButton {
+                background-color: #2563EB;
+                color: #FFFFFF;
+                border-radius: 6px;
+                font-weight: bold;
+                font-size: 12px;
+                padding: 0 12px;
+            }
+            QPushButton:hover {
+                background-color: #1D4ED8;
+            }
+        """)
+        btn_view_logs.clicked.connect(self.open_log_viewer_dialog)
+        logs_layout.addWidget(btn_view_logs)
+
+        btn_open_logs_folder = QPushButton("📁 پوشه لاگ‌ها")
+        btn_open_logs_folder.setFixedHeight(36)
+        btn_open_logs_folder.setCursor(Qt.CursorShape.PointingHandCursor)
+        btn_open_logs_folder.setToolTip("باز کردن پوشه حاوی فایل‌های لاگ در ویندوز")
+        btn_open_logs_folder.setStyleSheet("""
+            QPushButton {
+                background-color: #374151;
+                color: #F3F4F6;
+                border: 1px solid #4B5563;
+                border-radius: 6px;
+                font-weight: bold;
+                font-size: 12px;
+                padding: 0 12px;
+            }
+            QPushButton:hover {
+                background-color: #4B5563;
+            }
+        """)
+        btn_open_logs_folder.clicked.connect(self.open_logs_folder_action)
+        logs_layout.addWidget(btn_open_logs_folder)
+
+        self.btn_copy_last_err = QPushButton("📋 کپی آخرین خطا")
+        self.btn_copy_last_err.setFixedHeight(36)
+        self.btn_copy_last_err.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_copy_last_err.setToolTip("کپی متن آخرین خطای رخ‌داده در کلیپ‌بورد")
+        self.btn_copy_last_err.setStyleSheet("""
+            QPushButton {
+                background-color: #1F2937;
+                color: #D1D5DB;
+                border: 1px solid #4B5563;
+                border-radius: 6px;
+                font-size: 12px;
+                padding: 0 12px;
+            }
+            QPushButton:hover {
+                background-color: #374151;
+                color: #FFFFFF;
+            }
+        """)
+        self.btn_copy_last_err.clicked.connect(self.copy_last_error_action)
+        logs_layout.addWidget(self.btn_copy_last_err)
+
+        layout.addWidget(logs_card)
+
+        # Bottom Section: Notification History
+        notif_header_frame = QFrame()
+        notif_header_frame.setStyleSheet("""
+            QFrame {
+                background-color: #18181B;
+                border: 1px solid #27272A;
+                border-radius: 8px;
+                padding: 4px;
+            }
+        """)
+        notif_top_layout = QHBoxLayout(notif_header_frame)
+        notif_top_layout.setContentsMargins(12, 6, 12, 6)
+        notif_top_layout.setSpacing(10)
+
+        lbl_notif_title = QLabel("🔔 تاریخچه اعلانات و یادآوری‌ها")
+        lbl_notif_title.setStyleSheet("font-size: 13px; font-weight: bold; color: #E4E4E7;")
+        notif_top_layout.addWidget(lbl_notif_title)
+        notif_top_layout.addStretch()
+
+        self.btn_select_all_notifs = QPushButton("☑️ انتخاب همه")
+        self.btn_select_all_notifs.setFixedHeight(34)
         self.btn_select_all_notifs.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_select_all_notifs.setToolTip("انتخاب یا لغو انتخاب تمام ردیف‌های جدول")
         self.btn_select_all_notifs.setStyleSheet("""
             QPushButton {
                 background-color: #27272A;
@@ -753,7 +934,7 @@ class BackupView(QWidget):
                 border-radius: 6px;
                 font-weight: bold;
                 font-size: 12px;
-                padding: 0 14px;
+                padding: 0 10px;
             }
             QPushButton:hover {
                 background-color: #3F3F46;
@@ -761,11 +942,12 @@ class BackupView(QWidget):
             }
         """)
         self.btn_select_all_notifs.clicked.connect(self.toggle_select_all_notifications)
-        row_notif_actions.addWidget(self.btn_select_all_notifs)
+        notif_top_layout.addWidget(self.btn_select_all_notifs)
 
-        self.btn_delete_selected_notifs = QPushButton("🗑️ حذف موارد انتخاب‌شده")
-        self.btn_delete_selected_notifs.setFixedHeight(36)
+        self.btn_delete_selected_notifs = QPushButton("🗑️ حذف انتخاب‌شده")
+        self.btn_delete_selected_notifs.setFixedHeight(34)
         self.btn_delete_selected_notifs.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_delete_selected_notifs.setToolTip("حذف موارد انتخاب‌شده در جدول")
         self.btn_delete_selected_notifs.setStyleSheet("""
             QPushButton {
                 background-color: #7F1D1D;
@@ -774,7 +956,7 @@ class BackupView(QWidget):
                 border-radius: 6px;
                 font-weight: bold;
                 font-size: 12px;
-                padding: 0 14px;
+                padding: 0 10px;
             }
             QPushButton:hover {
                 background-color: #DC2626;
@@ -782,11 +964,12 @@ class BackupView(QWidget):
             }
         """)
         self.btn_delete_selected_notifs.clicked.connect(self.delete_selected_notifications)
-        row_notif_actions.addWidget(self.btn_delete_selected_notifs)
+        notif_top_layout.addWidget(self.btn_delete_selected_notifs)
 
-        self.btn_delete_all_notifs = QPushButton("🧹 حذف همگانی تاریخچه")
-        self.btn_delete_all_notifs.setFixedHeight(36)
+        self.btn_delete_all_notifs = QPushButton("🧹 حذف همگانی")
+        self.btn_delete_all_notifs.setFixedHeight(34)
         self.btn_delete_all_notifs.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_delete_all_notifs.setToolTip("حذف کلیه اعلانات موجود در تاریخچه")
         self.btn_delete_all_notifs.setStyleSheet("""
             QPushButton {
                 background-color: transparent;
@@ -795,7 +978,7 @@ class BackupView(QWidget):
                 border-radius: 6px;
                 font-weight: bold;
                 font-size: 12px;
-                padding: 0 14px;
+                padding: 0 10px;
             }
             QPushButton:hover {
                 background-color: #DC2626;
@@ -803,10 +986,9 @@ class BackupView(QWidget):
             }
         """)
         self.btn_delete_all_notifs.clicked.connect(self.delete_all_notifications_history)
-        row_notif_actions.addWidget(self.btn_delete_all_notifs)
+        notif_top_layout.addWidget(self.btn_delete_all_notifs)
 
-        row_notif_actions.addStretch()
-        layout_notif_hist.addLayout(row_notif_actions)
+        layout.addWidget(notif_header_frame)
 
         self.table_notif_history = QTableWidget()
         self.table_notif_history.setColumnCount(7)
@@ -828,94 +1010,10 @@ class BackupView(QWidget):
         self.table_notif_history.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.table_notif_history.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
         self.table_notif_history.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
-        self.table_notif_history.setMinimumHeight(230)
-        layout_notif_hist.addWidget(self.table_notif_history)
 
-        layout.addWidget(notif_history_box)
+        layout.addWidget(self.table_notif_history, 1)
 
-        # ----------------------------------------------------
-        # BOX 4: System Error Logs & Diagnostics (گزارش خطاها و لاگ‌های سیستم)
-        # ----------------------------------------------------
-        logs_box = QGroupBox("🛠️ گزارش خطاها و لاگ‌های سیستم")
-        layout_logs = QVBoxLayout(logs_box)
-        layout_logs.setSpacing(10)
-
-        lbl_logs_desc = QLabel(
-            "کلیه وقایع و خطاهای احتمالی سیستم به صورت خودکار ثبت می‌شوند. در صورت بروز هرگونه مشکل فنی، "
-            "می‌توانید گزارش لاگ‌ها را مشاهده، کپی، یا پوشه آن را در ویندوز باز کرده و برای پشتیبان ارسال فرمایید."
-        )
-        lbl_logs_desc.setStyleSheet("color: #AAAAAA; font-size: 13px;")
-        lbl_logs_desc.setWordWrap(True)
-        layout_logs.addWidget(lbl_logs_desc)
-
-        row_logs_btns = QHBoxLayout()
-        row_logs_btns.setSpacing(10)
-
-        btn_view_logs = QPushButton("👁️ مشاهده لاگ‌های سیستم...")
-        btn_view_logs.setFixedHeight(40)
-        btn_view_logs.setCursor(Qt.CursorShape.PointingHandCursor)
-        btn_view_logs.setStyleSheet("""
-            QPushButton {
-                background-color: #2563EB;
-                color: #FFFFFF;
-                border-radius: 6px;
-                font-weight: bold;
-                padding: 0 16px;
-            }
-            QPushButton:hover {
-                background-color: #1D4ED8;
-            }
-        """)
-        btn_view_logs.clicked.connect(self.open_log_viewer_dialog)
-        row_logs_btns.addWidget(btn_view_logs)
-
-        btn_open_logs_folder = QPushButton("📁 باز کردن پوشه لاگ‌ها در ویندوز")
-        btn_open_logs_folder.setFixedHeight(40)
-        btn_open_logs_folder.setCursor(Qt.CursorShape.PointingHandCursor)
-        btn_open_logs_folder.setStyleSheet("""
-            QPushButton {
-                background-color: #374151;
-                color: #F3F4F6;
-                border: 1px solid #4B5563;
-                border-radius: 6px;
-                font-weight: bold;
-                padding: 0 16px;
-            }
-            QPushButton:hover {
-                background-color: #4B5563;
-            }
-        """)
-        btn_open_logs_folder.clicked.connect(self.open_logs_folder_action)
-        row_logs_btns.addWidget(btn_open_logs_folder)
-
-        self.btn_copy_last_err = QPushButton("📋 کپی آخرین گزارش خطا")
-        self.btn_copy_last_err.setFixedHeight(40)
-        self.btn_copy_last_err.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_copy_last_err.setStyleSheet("""
-            QPushButton {
-                background-color: #1F2937;
-                color: #D1D5DB;
-                border: 1px solid #4B5563;
-                border-radius: 6px;
-                padding: 0 16px;
-            }
-            QPushButton:hover {
-                background-color: #374151;
-                color: #FFFFFF;
-            }
-        """)
-        self.btn_copy_last_err.clicked.connect(self.copy_last_error_action)
-        row_logs_btns.addWidget(self.btn_copy_last_err)
-
-        row_logs_btns.addStretch()
-        layout_logs.addLayout(row_logs_btns)
-
-        layout.addWidget(logs_box)
-
-        scroll_area.setWidget(container)
-        main_layout.addWidget(scroll_area)
-
-        self.load_all_data()
+        return widget
 
     def open_log_viewer_dialog(self):
         from yalda.views.components.error_dialog import LogViewerDialog

@@ -90,7 +90,7 @@ DATABASE_URI = f"sqlite:///{DB_PATH}"
 # App Details
 APP_NAME = "یلدا"
 APP_ENGLISH_NAME = "Yalda Gym"
-APP_VERSION = "v3.1.0"
+APP_VERSION = "v3.2.1"
 GYM_ADDRESS = "باشگاه بدنسازی یلدا | مازندران، قائمشهر، خیابان کوچکسرا، نبش شقایق ۳"
 
 
@@ -113,7 +113,7 @@ COLOR_BORDER = "#333333"
 FONT_FAMILY = "Vazirmatn"
 
 # Cloud Backup Server Settings
-DEFAULT_CLOUD_BACKUP_URL = os.environ.get("YALDA_CLOUD_URL", "https://gymassistantbackup.a-samadi2006.workers.dev")
+DEFAULT_CLOUD_BACKUP_URL = os.environ.get("YALDA_CLOUD_URL", "https://storage.gymassistantapp.ir")
 CLOUD_BACKUP_SECRET_KEY = "yalda_cloud_sec_2006_gym"
 
 # Support Email Settings (Gmail SMTP)

@@ -91,6 +91,31 @@ def check_and_migrate_db():
                 conn.execute(text("ALTER TABLE exercises ADD COLUMN thumbnail_path VARCHAR(500);"))
             if "video_cloud_url" not in ex_columns:
                 conn.execute(text("ALTER TABLE exercises ADD COLUMN video_cloud_url VARCHAR(500);"))
+            if "is_custom" not in ex_columns:
+                conn.execute(text("ALTER TABLE exercises ADD COLUMN is_custom BOOLEAN DEFAULT 0;"))
+            if "is_unlisted" not in ex_columns:
+                conn.execute(text("ALTER TABLE exercises ADD COLUMN is_unlisted BOOLEAN DEFAULT 0;"))
+            conn.commit()
+
+    if "food_items" in inspector.get_table_names():
+        fi_columns = [c["name"] for c in inspector.get_columns("food_items")]
+        with engine.connect() as conn:
+            if "is_unlisted" not in fi_columns:
+                conn.execute(text("ALTER TABLE food_items ADD COLUMN is_unlisted BOOLEAN DEFAULT 0;"))
+            conn.commit()
+
+    if "workout_exercises" in inspector.get_table_names():
+        we_columns = [c["name"] for c in inspector.get_columns("workout_exercises")]
+        with engine.connect() as conn:
+            if "custom_exercise_name" not in we_columns:
+                conn.execute(text("ALTER TABLE workout_exercises ADD COLUMN custom_exercise_name VARCHAR(100);"))
+            conn.commit()
+
+    if "meal_items" in inspector.get_table_names():
+        mi_columns = [c["name"] for c in inspector.get_columns("meal_items")]
+        with engine.connect() as conn:
+            if "custom_food_name" not in mi_columns:
+                conn.execute(text("ALTER TABLE meal_items ADD COLUMN custom_food_name VARCHAR(100);"))
             conn.commit()
 
     if "members" in inspector.get_table_names():
@@ -123,6 +148,20 @@ def check_and_migrate_db():
             session.rollback()
         finally:
             session.close()
+
+    # Automatically migrate legacy workers.dev URLs in exercises table to official storage domain
+    if "exercises" in inspector.get_table_names():
+        target_domain = config.DEFAULT_CLOUD_BACKUP_URL.replace("https://", "").replace("http://", "").rstrip("/")
+        with engine.connect() as conn:
+            conn.execute(text(
+                f"UPDATE exercises SET video_url = REPLACE(video_url, 'gymassistantbackup.a-samadi2006.workers.dev', '{target_domain}') "
+                "WHERE video_url LIKE '%workers.dev%';"
+            ))
+            conn.execute(text(
+                f"UPDATE exercises SET video_cloud_url = REPLACE(video_cloud_url, 'gymassistantbackup.a-samadi2006.workers.dev', '{target_domain}') "
+                "WHERE video_cloud_url LIKE '%workers.dev%';"
+            ))
+            conn.commit()
 
 
 

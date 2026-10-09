@@ -2,7 +2,7 @@ import os
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QComboBox, QPushButton, QTableWidget, QTableWidgetItem, QHeaderView, QMessageBox, QDialog, QCheckBox, QSizePolicy
 )
-from PyQt6.QtCore import pyqtSignal, Qt
+from PyQt6.QtCore import pyqtSignal, Qt, QTimer
 from PyQt6.QtGui import QPixmap
 from yalda.services.member_service import MemberService
 from yalda.views.member_form_dialog import MemberFormDialog
@@ -93,30 +93,30 @@ class MemberListView(QWidget):
         self.table.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
 
         header = self.table.horizontalHeader()
-        header.setMinimumSectionSize(44)
+        header.setMinimumSectionSize(20)
         header.setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
-        self.table.setColumnWidth(0, 52)
+        self.table.setColumnWidth(0, 44)
 
         header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
 
         header.setSectionResizeMode(2, QHeaderView.ResizeMode.Interactive)
-        self.table.setColumnWidth(2, 115)
+        self.table.setColumnWidth(2, 110)
 
         header.setSectionResizeMode(3, QHeaderView.ResizeMode.Interactive)
-        self.table.setColumnWidth(3, 106)
+        self.table.setColumnWidth(3, 105)
 
         header.setSectionResizeMode(4, QHeaderView.ResizeMode.Interactive)
-        self.table.setColumnWidth(4, 104)
+        self.table.setColumnWidth(4, 105)
 
         header.setSectionResizeMode(5, QHeaderView.ResizeMode.Interactive)
         self.table.setColumnWidth(5, 95)
 
         header.setSectionResizeMode(6, QHeaderView.ResizeMode.Interactive)
-        self.table.setColumnWidth(6, 172)
+        self.table.setColumnWidth(6, 125)
 
         header.setSectionResizeMode(7, QHeaderView.ResizeMode.Fixed)
-        self.table.setColumnWidth(7, 228)
+        self.table.setColumnWidth(7, 290)
 
         self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
@@ -129,29 +129,55 @@ class MemberListView(QWidget):
         self.load_members()
 
     def _adjust_table_columns(self):
-        """Proportionally scales columns based on available table width so NO column is ever truncated."""
+        """Proportionally scales columns based on available table width so the table fills 100% of the screen with ZERO void."""
+        header = self.table.horizontalHeader()
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
+        header.setSectionResizeMode(7, QHeaderView.ResizeMode.Fixed)
+        self.table.setColumnWidth(0, 44)
+        self.table.setColumnWidth(7, 290)
+
         vw = self.table.viewport().width()
         if vw <= 100:
             vw = max(960, self.width() - 40)
-        if vw < 1100:
-            # TV HDMI / Compact Laptop mode: exact fit for all 8 columns with zero truncation
-            self.table.setColumnWidth(0, 52)
-            self.table.setColumnWidth(2, 112)
-            self.table.setColumnWidth(3, 104)
-            self.table.setColumnWidth(4, 104)
-            self.table.setColumnWidth(5, 95)
-            self.table.setColumnWidth(6, 172)
-            self.table.setColumnWidth(7, 228)
+
+        col0_w = 44
+        col2_w = 110
+        col3_w = 105
+        col4_w = 105
+        col5_w = 95
+        col6_w = 125
+        col7_w = 290
+        min_col1_w = 110
+        min_total = col0_w + min_col1_w + col2_w + col3_w + col4_w + col5_w + col6_w + col7_w  # 984px
+
+        if vw >= min_total:
+            header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
+            extra = vw - min_total
+            c2 = min(135, col2_w + int(extra * 0.05))
+            c3 = min(120, col3_w + int(extra * 0.04))
+            c4 = min(120, col4_w + int(extra * 0.04))
+            c5 = min(110, col5_w + int(extra * 0.03))
+            c6 = min(150, col6_w + int(extra * 0.06))
+            self.table.setColumnWidth(2, c2)
+            self.table.setColumnWidth(3, c3)
+            self.table.setColumnWidth(4, c4)
+            self.table.setColumnWidth(5, c5)
+            self.table.setColumnWidth(6, c6)
+            self.table.setColumnWidth(7, col7_w)
         else:
-            # Standard Desktop / Wide Monitor mode: scale secondary columns generously
-            extra = vw - 1100
-            self.table.setColumnWidth(0, 52)
-            self.table.setColumnWidth(2, min(165, 120 + int(extra * 0.12)))
-            self.table.setColumnWidth(3, min(145, 112 + int(extra * 0.08)))
-            self.table.setColumnWidth(4, min(145, 110 + int(extra * 0.08)))
-            self.table.setColumnWidth(5, min(130, 100 + int(extra * 0.06)))
-            self.table.setColumnWidth(6, min(190, 160 + int(extra * 0.10)))
-            self.table.setColumnWidth(7, 232)
+            header.setSectionResizeMode(1, QHeaderView.ResizeMode.Interactive)
+            self.table.setColumnWidth(1, min_col1_w)
+            self.table.setColumnWidth(2, col2_w)
+            self.table.setColumnWidth(3, col3_w)
+            self.table.setColumnWidth(4, col4_w)
+            self.table.setColumnWidth(5, col5_w)
+            self.table.setColumnWidth(6, col6_w)
+            self.table.setColumnWidth(7, col7_w)
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        self._adjust_table_columns()
+        QTimer.singleShot(0, self._adjust_table_columns)
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
@@ -293,26 +319,38 @@ class MemberListView(QWidget):
                 status_item = QTableWidgetItem(status_text)
                 status_item.setForeground(Qt.GlobalColor.yellow)
             else:
-                status_text = f"فعال ({days_left} روز باقی‌مانده) 🟢"
+                status_text = f"فعال ({days_left} روز) 🟢"
                 status_item = QTableWidgetItem(status_text)
                 status_item.setForeground(Qt.GlobalColor.green)
             status_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             self.table.setItem(row, 6, status_item)
 
-            # Column 7: Actions Button Widget (Index 7: View File, Edit, Delete)
+            # Column 7: Actions Button Widget (Index 7: Tuition, View File, Edit, Delete)
             btn_container = QWidget()
             btn_container.setStyleSheet("background: transparent;")
             btn_layout = QHBoxLayout(btn_container)
             btn_layout.setContentsMargins(4, 2, 4, 2)
             btn_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            btn_layout.setSpacing(5)
+            btn_layout.setSpacing(4)
+
+            btn_tuition = QPushButton("💰 شهریه")
+            btn_tuition.setFixedHeight(30)
+            btn_tuition.setToolTip(f"ثبت سریع پرداخت و تمدید شهریه برای {m.full_name}")
+            btn_tuition.setCursor(Qt.CursorShape.PointingHandCursor)
+            btn_tuition.setStyleSheet("""
+                QPushButton {
+                    background-color: #10B981; color: #FFFFFF; font-weight: bold; border-radius: 6px; padding: 2px 7px; font-size: 11px;
+                }
+                QPushButton:hover { background-color: #059669; }
+            """)
+            btn_tuition.clicked.connect(lambda _, mid=m.id: self.open_tuition_dialog(mid))
 
             btn_view = QPushButton("📋 پرونده")
             btn_view.setFixedHeight(30)
             btn_view.setCursor(Qt.CursorShape.PointingHandCursor)
             btn_view.setStyleSheet("""
                 QPushButton {
-                    background-color: #2563EB; color: #FFFFFF; font-weight: bold; border-radius: 6px; padding: 2px 8px; font-size: 11px;
+                    background-color: #2563EB; color: #FFFFFF; font-weight: bold; border-radius: 6px; padding: 2px 7px; font-size: 11px;
                 }
                 QPushButton:hover { background-color: #1D4ED8; }
             """)
@@ -323,7 +361,7 @@ class MemberListView(QWidget):
             btn_edit.setCursor(Qt.CursorShape.PointingHandCursor)
             btn_edit.setStyleSheet("""
                 QPushButton {
-                    background-color: #D97706; color: #FFFFFF; font-weight: bold; border-radius: 6px; padding: 2px 8px; font-size: 11px;
+                    background-color: #D97706; color: #FFFFFF; font-weight: bold; border-radius: 6px; padding: 2px 7px; font-size: 11px;
                 }
                 QPushButton:hover { background-color: #B45309; }
             """)
@@ -335,17 +373,34 @@ class MemberListView(QWidget):
             btn_delete.setCursor(Qt.CursorShape.PointingHandCursor)
             btn_delete.setStyleSheet("""
                 QPushButton {
-                    background-color: #DC2626; color: #FFFFFF; font-weight: bold; border-radius: 6px; padding: 2px 8px; font-size: 11px;
+                    background-color: #DC2626; color: #FFFFFF; font-weight: bold; border-radius: 6px; padding: 2px 7px; font-size: 11px;
                 }
                 QPushButton:hover { background-color: #B91C1C; }
             """)
             btn_delete.clicked.connect(lambda _, member=m: self.delete_member(member))
 
+            btn_layout.addWidget(btn_tuition)
             btn_layout.addWidget(btn_view)
             btn_layout.addWidget(btn_edit)
             btn_layout.addWidget(btn_delete)
 
             self.table.setCellWidget(row, 7, btn_container)
+
+        self._adjust_table_columns()
+
+    def open_tuition_dialog(self, member_id: int):
+        try:
+            from yalda.views.components.tuition_payment_dialog import TuitionPaymentDialog
+            dlg = TuitionPaymentDialog(self, member_id=member_id)
+            if dlg.exec():
+                self.load_members()
+                parent_win = self.window()
+                if hasattr(parent_win, 'view_dashboard') and hasattr(parent_win.view_dashboard, 'refresh_dashboard'):
+                    parent_win.view_dashboard.refresh_dashboard()
+                if hasattr(parent_win, 'view_accounting') and hasattr(parent_win.view_accounting, 'load_data'):
+                    parent_win.view_accounting.load_data()
+        except Exception as e:
+            QMessageBox.critical(self, "خطا", f"خطا در باز کردن پنجره ثبت شهریه: {str(e)}")
 
     def toggle_select_all(self, checked):
         for r in range(self.table.rowCount()):
