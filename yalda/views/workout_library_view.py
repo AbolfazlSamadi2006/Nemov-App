@@ -1,11 +1,12 @@
 from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QComboBox, QPushButton, QTableWidget, QTableWidgetItem, QHeaderView, QDialog, QMessageBox, QTextEdit, QFileDialog, QCheckBox
+    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QComboBox, QPushButton, QTableWidget, QTableWidgetItem, QHeaderView, QDialog, QMessageBox, QTextEdit, QFileDialog, QCheckBox, QFrame, QScrollArea
 )
 from PyQt6.QtCore import Qt, pyqtSignal, QThread
 from yalda.services.workout_service import WorkoutService
 from yalda.views.components.media_viewer_dialog import MediaViewerDialog
 from yalda.views.components.undo_delete_banner import UndoDeleteBanner
 import os
+from yalda.views.components.muscle_selector_widget import MuscleSelectorWidget, MUSCLE_DEFINITIONS
 
 class ExerciseFormDialog(QDialog):
     def __init__(self, parent=None, exercise_data=None):
@@ -17,23 +18,48 @@ class ExerciseFormDialog(QDialog):
         self.video_cloud_url = None
         self.setWindowTitle("ویرایش حرکت ورزشی" if exercise_data else "افزودن حرکت جدید به بانک")
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
-        self.setFixedSize(500, 620)
+        self.resize(880, 640)
+        self.setMinimumSize(800, 520)
         self.init_ui()
 
     def init_ui(self):
-        layout = QVBoxLayout(self)
-        layout.setSpacing(9)
+        main_layout = QHBoxLayout(self)
+        main_layout.setContentsMargins(16, 16, 16, 16)
+        main_layout.setSpacing(18)
+
+        # Right Column: Form Inputs with responsive scroll container and pinned save button
+        vlay_form = QVBoxLayout()
+        vlay_form.setSpacing(8)
+
+        scroll_form = QScrollArea()
+        scroll_form.setWidgetResizable(True)
+        scroll_form.setFrameShape(QFrame.Shape.NoFrame)
+        scroll_form.setStyleSheet("QScrollArea { background: transparent; border: none; }")
+
+        form_container = QWidget()
+        form_container.setStyleSheet("background: transparent;")
+        vlay_form_fields = QVBoxLayout(form_container)
+        vlay_form_fields.setContentsMargins(6, 0, 6, 0)
+        vlay_form_fields.setSpacing(7)
 
         self.txt_name = QLineEdit()
         self.txt_name.setPlaceholderText("نام حرکت به فارسی...")
 
         self.combo_muscle = QComboBox()
-        self.combo_muscle.addItem("سینه", "chest")
-        self.combo_muscle.addItem("پا و سرینی", "legs")
-        self.combo_muscle.addItem("پشت و زیربغل", "back")
-        self.combo_muscle.addItem("سرشانه", "shoulders")
-        self.combo_muscle.addItem("بازو", "arms")
-        self.combo_muscle.addItem("شکم و مرکز بدن", "abs")
+        self.combo_muscle.addItem("انتخاب عضله هدف...", "")
+        # 15 Detailed Muscles
+        for m_key, m_info in MUSCLE_DEFINITIONS.items():
+            self.combo_muscle.addItem(f"{m_info['name_fa']}", m_key)
+        # General legacy categories
+        self.combo_muscle.addItem("--- دسته‌بندی‌های کلی ---", "")
+        self.combo_muscle.addItem("سینه (کلی)", "chest")
+        self.combo_muscle.addItem("پا و سرینی (کلی)", "legs")
+        self.combo_muscle.addItem("پشت و زیربغل (کلی)", "back")
+        self.combo_muscle.addItem("سرشانه (کلی)", "shoulders")
+        self.combo_muscle.addItem("بازو (کلی)", "arms")
+        self.combo_muscle.addItem("شکم و مرکز بدن (کلی)", "abs")
+
+        self.combo_muscle.currentIndexChanged.connect(self._on_combo_muscle_changed)
 
         self.combo_equip = QComboBox()
         self.combo_equip.addItem("هالتر", "barbell")
@@ -88,29 +114,73 @@ class ExerciseFormDialog(QDialog):
         self.txt_desc.setPlaceholderText("توضیحات و نحوه اجرای صحیح...")
         self.txt_desc.setMaximumHeight(65)
 
-        layout.addWidget(QLabel("نام حرکت ورزشی:"))
-        layout.addWidget(self.txt_name)
-        layout.addWidget(QLabel("عضله اصلی:"))
-        layout.addWidget(self.combo_muscle)
-        layout.addWidget(QLabel("تجهیزات لازم:"))
-        layout.addWidget(self.combo_equip)
-        layout.addWidget(QLabel("منع مصرف پزشکی (آسیب‌دیدگی‌ها):"))
-        layout.addWidget(self.txt_contra)
-        layout.addWidget(QLabel("🌐 لینک ویدیو یا آموزش اینترنتی (اختیاری):"))
-        layout.addWidget(self.txt_video_url)
-        layout.addWidget(QLabel("فایل عکس/فیلم آموزشی آفلاین (اختیاری):"))
-        layout.addLayout(row_media)
-        layout.addWidget(self.lbl_media_status)
-        layout.addWidget(self.chk_corrective)
-        layout.addWidget(QLabel("توضیحات:"))
-        layout.addWidget(self.txt_desc)
+        vlay_form_fields.addWidget(QLabel("نام حرکت ورزشی:"))
+        vlay_form_fields.addWidget(self.txt_name)
+        vlay_form_fields.addWidget(QLabel("عضله هدف (انتخاب از لیست یا کلیک روی آدمک):"))
+        vlay_form_fields.addWidget(self.combo_muscle)
+        vlay_form_fields.addWidget(QLabel("تجهیزات لازم:"))
+        vlay_form_fields.addWidget(self.combo_equip)
+        vlay_form_fields.addWidget(QLabel("منع مصرف پزشکی (آسیب‌دیدگی‌ها):"))
+        vlay_form_fields.addWidget(self.txt_contra)
+        vlay_form_fields.addWidget(QLabel("🌐 لینک ویدیو یا آموزش اینترنتی (اختیاری):"))
+        vlay_form_fields.addWidget(self.txt_video_url)
+        vlay_form_fields.addWidget(QLabel("فایل عکس/فیلم آموزشی آفلاین (اختیاری):"))
+        vlay_form_fields.addLayout(row_media)
+        vlay_form_fields.addWidget(self.lbl_media_status)
+        vlay_form_fields.addWidget(self.chk_corrective)
+        vlay_form_fields.addWidget(QLabel("توضیحات:"))
+        vlay_form_fields.addWidget(self.txt_desc)
+
+        scroll_form.setWidget(form_container)
+        vlay_form.addWidget(scroll_form, 1)
 
         btn_save = QPushButton("ذخیره تغییرات" if self.exercise_data else "ذخیره حرکت")
+        btn_save.setFixedHeight(38)
+        btn_save.setCursor(Qt.CursorShape.PointingHandCursor)
         btn_save.clicked.connect(self.save)
-        layout.addWidget(btn_save)
+        vlay_form.addWidget(btn_save)
+
+        # Left Column: Mannequin Visual Selector
+        vlay_anatomy = QVBoxLayout()
+        vlay_anatomy.setSpacing(6)
+        lbl_anat_title = QLabel("🧍 انتخاب آناتومیک روی بدن (روبرو و پشت)")
+        lbl_anat_title.setStyleSheet("font-weight: bold; color: #F87171; font-size: 12px;")
+        vlay_anatomy.addWidget(lbl_anat_title)
+
+        self.muscle_selector = MuscleSelectorWidget(self, is_filter_mode=False)
+        self.muscle_selector.muscle_changed.connect(self._on_mannequin_muscle_changed)
+        vlay_anatomy.addWidget(self.muscle_selector, 1)
+
+        main_layout.addLayout(vlay_form, 1)
+        main_layout.addLayout(vlay_anatomy, 1)
 
         if self.exercise_data:
             self.load_data()
+        else:
+            cur_key = self.combo_muscle.currentData()
+            if cur_key:
+                self.muscle_selector.set_selected_muscle(cur_key)
+            else:
+                self.muscle_selector.clear_selection()
+
+    def _on_mannequin_muscle_changed(self, muscle_key: str, name_fa: str):
+        if muscle_key:
+            idx = self.combo_muscle.findData(muscle_key)
+            if idx >= 0:
+                self.combo_muscle.blockSignals(True)
+                self.combo_muscle.setCurrentIndex(idx)
+                self.combo_muscle.blockSignals(False)
+        else:
+            self.combo_muscle.blockSignals(True)
+            self.combo_muscle.setCurrentIndex(0)
+            self.combo_muscle.blockSignals(False)
+
+    def _on_combo_muscle_changed(self, idx: int):
+        m_key = self.combo_muscle.currentData()
+        if m_key:
+            self.muscle_selector.set_selected_muscle(m_key)
+        else:
+            self.muscle_selector.clear_selection()
 
     def choose_media(self):
         import shutil
@@ -260,6 +330,11 @@ class ExerciseFormDialog(QDialog):
             QMessageBox.warning(self, "خطا", "لطفاً نام حرکت ورزشی را وارد کنید.")
             return
 
+        muscle_key = self.combo_muscle.currentData()
+        if not muscle_key:
+            QMessageBox.warning(self, "خطا", "لطفاً عضله هدف حرکت را از لیست یا روی آدمک انتخاب کنید.")
+            return
+
         # Check duplicate exercise name in bank
         exercises = WorkoutService.get_all_exercises()
         other_names = [ex.name_fa for ex in exercises if not (self.exercise_data and ex.id == self.exercise_data.id) and ex.name_fa]
@@ -301,7 +376,14 @@ class ExerciseFormDialog(QDialog):
         self.txt_name.setText(ex.name_fa or "")
         
         idx_m = self.combo_muscle.findData(ex.primary_muscle)
-        if idx_m >= 0: self.combo_muscle.setCurrentIndex(idx_m)
+        if idx_m >= 0:
+            self.combo_muscle.setCurrentIndex(idx_m)
+        else:
+            self.combo_muscle.setCurrentIndex(0)
+        if ex.primary_muscle:
+            self.muscle_selector.set_selected_muscle(ex.primary_muscle)
+        else:
+            self.muscle_selector.clear_selection()
 
         idx_e = self.combo_equip.findData(ex.equipment)
         if idx_e >= 0: self.combo_equip.setCurrentIndex(idx_e)
@@ -421,23 +503,60 @@ class WorkoutLibraryView(QWidget):
         controls = QHBoxLayout()
         self.txt_search = QLineEdit()
         self.txt_search.setPlaceholderText("جستجو در نام حرکات...")
+        self.txt_search.setMinimumWidth(125)
         self.txt_search.textChanged.connect(self.load_exercises)
 
         self.combo_muscle = QComboBox()
         self.combo_muscle.addItem("همه عضلات", "all")
         self.combo_muscle.addItem("✨ حرکات اصلاحی", "corrective")
-        self.combo_muscle.addItem("سینه", "chest")
-        self.combo_muscle.addItem("پا", "legs")
-        self.combo_muscle.addItem("پشت و زیربغل", "back")
-        self.combo_muscle.addItem("سرشانه", "shoulders")
-        self.combo_muscle.addItem("بازو", "arms")
-        self.combo_muscle.addItem("شکم", "abs")
-        self.combo_muscle.currentIndexChanged.connect(self.load_exercises)
+        for m_key, m_info in MUSCLE_DEFINITIONS.items():
+            self.combo_muscle.addItem(f"{m_info['name_fa']}", m_key)
+        self.combo_muscle.addItem("--- گروه‌های کلی ---", "")
+        self.combo_muscle.addItem("سینه (کلی)", "chest")
+        self.combo_muscle.addItem("پا و سرینی (کلی)", "legs")
+        self.combo_muscle.addItem("پشت و زیربغل (کلی)", "back")
+        self.combo_muscle.addItem("سرشانه (کلی)", "shoulders")
+        self.combo_muscle.addItem("بازو (کلی)", "arms")
+        self.combo_muscle.addItem("شکم و مرکز بدن (کلی)", "abs")
+        self.combo_muscle.currentIndexChanged.connect(self._on_filter_muscle_combo_changed)
+
+        self.btn_toggle_mannequin = QPushButton("🧍 مخفی‌سازی آدمک آناتومی")
+        self.btn_toggle_mannequin.setCheckable(True)
+        self.btn_toggle_mannequin.setChecked(True)
+        self.btn_toggle_mannequin.setFixedHeight(32)
+        self.btn_toggle_mannequin.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_toggle_mannequin.setStyleSheet("""
+            QPushButton {
+                background-color: #1F2937;
+                color: #60A5FA;
+                font-family: "Vazirmatn", "Segoe UI", sans-serif;
+                font-weight: bold;
+                border: 1px solid #3B82F6;
+                border-radius: 6px;
+                padding: 4px 12px;
+                font-size: 11.5px;
+            }
+            QPushButton:hover {
+                background-color: #2563EB;
+                color: #FFFFFF;
+            }
+            QPushButton:!checked {
+                background-color: #181F2A;
+                color: #94A3B8;
+                border: 1px solid #475569;
+            }
+            QPushButton:!checked:hover {
+                background-color: #334155;
+                color: #F8FAFC;
+            }
+        """)
+        self.btn_toggle_mannequin.toggled.connect(self.toggle_anatomy_filter)
 
         controls.addWidget(QLabel("جستجو:"))
-        controls.addWidget(self.txt_search)
+        controls.addWidget(self.txt_search, 1)
         controls.addWidget(QLabel("عضله هدف:"))
         controls.addWidget(self.combo_muscle)
+        controls.addWidget(self.btn_toggle_mannequin)
 
         self.chk_select_all = QCheckBox("انتخاب همه")
         self.chk_select_all.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -472,6 +591,89 @@ class WorkoutLibraryView(QWidget):
         controls.addWidget(self.btn_bulk_delete)
         layout.addLayout(controls)
 
+        # Anatomy Filter Card Frame (Visual Mannequin above table)
+        self.anat_filter_frame = QFrame()
+        self.anat_filter_frame.setObjectName("anatFilterCard")
+        self.anat_filter_frame.setStyleSheet("""
+            QFrame#anatFilterCard {
+                background-color: #11141A;
+                border: 1px solid #232936;
+                border-radius: 10px;
+            }
+        """)
+        anat_layout = QHBoxLayout(self.anat_filter_frame)
+        anat_layout.setContentsMargins(14, 8, 14, 8)
+        anat_layout.setSpacing(16)
+
+        # Right side in RTL: Quick Info & Guidance Card
+        vlay_info = QVBoxLayout()
+        vlay_info.setSpacing(6)
+
+        lbl_anat_head = QLabel("🎯 فیلتر تصویری و هوشمند بر اساس آناتومی بدن")
+        lbl_anat_head.setStyleSheet("color: #F87171; font-weight: bold; font-size: 13px;")
+
+        lbl_anat_desc = QLabel(
+            "با کلیک روی هر عضله از بدن آدمک (نمای روبرو یا پشت)، جدول حرکات فوراً بر اساس آن عضله فیلتر می‌شود.\n"
+            "برای مشاهده مجدد تمام حرکات، روی دکمه «همه عضلات» کلیک کنید."
+        )
+        lbl_anat_desc.setStyleSheet("color: #9CA3AF; font-size: 11px;")
+        lbl_anat_desc.setWordWrap(True)
+
+        self.lbl_filter_stats = QLabel("در حال بارگذاری...")
+        self.lbl_filter_stats.setStyleSheet("""
+            QLabel {
+                color: #E2E8F0;
+                font-family: "Vazirmatn", "Segoe UI", sans-serif;
+                font-weight: bold;
+                font-size: 11.5px;
+                background-color: #1E2430;
+                border: 1px solid #333C4D;
+                border-radius: 6px;
+                padding: 5px 12px;
+            }
+        """)
+
+        btn_show_all = QPushButton("نمایش همه عضلات")
+        btn_show_all.setCursor(Qt.CursorShape.PointingHandCursor)
+        btn_show_all.setStyleSheet("""
+            QPushButton {
+                background-color: #2D3748;
+                color: #CBD5E1;
+                font-family: "Vazirmatn", "Segoe UI", sans-serif;
+                border: 1px solid #4A5568;
+                border-radius: 6px;
+                padding: 5px 12px;
+                font-size: 11px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #4A5568;
+                color: #FFFFFF;
+            }
+        """)
+        btn_show_all.clicked.connect(self.clear_anatomy_filter)
+
+        row_info_btns = QHBoxLayout()
+        row_info_btns.addWidget(self.lbl_filter_stats)
+        row_info_btns.addWidget(btn_show_all)
+        row_info_btns.addStretch()
+
+        vlay_info.addWidget(lbl_anat_head)
+        vlay_info.addWidget(lbl_anat_desc)
+        vlay_info.addLayout(row_info_btns)
+        vlay_info.addStretch()
+
+        # Left side in RTL: Mannequin widget
+        self.anat_selector = MuscleSelectorWidget(self, is_filter_mode=True)
+        self.anat_selector.setFixedHeight(225)
+        self.anat_selector.setFixedWidth(340)
+        self.anat_selector.muscle_changed.connect(self._on_anat_selector_muscle_changed)
+
+        anat_layout.addLayout(vlay_info, 1)
+        anat_layout.addWidget(self.anat_selector)
+
+        layout.addWidget(self.anat_filter_frame)
+
         # Exercises Table
         self.table = QTableWidget()
         self.table.setColumnCount(7)
@@ -481,15 +683,15 @@ class WorkoutLibraryView(QWidget):
         header.setMinimumSectionSize(40)
         header.setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
-        self.table.setColumnWidth(0, 52)
-        self.table.setColumnWidth(1, 185)
-        self.table.setColumnWidth(2, 125)
+        self.table.setColumnWidth(0, 44)
+        self.table.setColumnWidth(1, 195)
+        self.table.setColumnWidth(2, 150)
         header.setSectionResizeMode(3, QHeaderView.ResizeMode.Fixed)
-        self.table.setColumnWidth(3, 68)
-        self.table.setColumnWidth(4, 138)
+        self.table.setColumnWidth(3, 65)
+        self.table.setColumnWidth(4, 145)
         header.setSectionResizeMode(5, QHeaderView.ResizeMode.Stretch)
         header.setSectionResizeMode(6, QHeaderView.ResizeMode.Fixed)
-        self.table.setColumnWidth(6, 245)
+        self.table.setColumnWidth(6, 250)
         self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
 
@@ -500,14 +702,61 @@ class WorkoutLibraryView(QWidget):
 
         self.load_exercises()
 
+    def toggle_anatomy_filter(self, checked: bool):
+        self.anat_filter_frame.setVisible(checked)
+        if checked:
+            self.btn_toggle_mannequin.setText("🧍 مخفی‌سازی آدمک آناتومی")
+        else:
+            self.btn_toggle_mannequin.setText("🧍 نمایش آدمک آناتومی")
+
+    def _on_filter_muscle_combo_changed(self):
+        m_key = self.combo_muscle.currentData()
+        if hasattr(self, "anat_selector"):
+            if m_key and m_key not in ["all", "corrective", ""]:
+                self.anat_selector.blockSignals(True)
+                self.anat_selector.set_selected_muscle(m_key)
+                self.anat_selector.blockSignals(False)
+            else:
+                self.anat_selector.blockSignals(True)
+                self.anat_selector.clear_selection(emit_signal=False)
+                self.anat_selector.blockSignals(False)
+        self.load_exercises()
+
+    def _on_anat_selector_muscle_changed(self, muscle_key: str, name_fa: str):
+        if muscle_key:
+            idx = self.combo_muscle.findData(muscle_key)
+            if idx >= 0:
+                self.combo_muscle.blockSignals(True)
+                self.combo_muscle.setCurrentIndex(idx)
+                self.combo_muscle.blockSignals(False)
+        else:
+            self.combo_muscle.blockSignals(True)
+            self.combo_muscle.setCurrentIndex(0)
+            self.combo_muscle.blockSignals(False)
+        self.load_exercises()
+
+    def clear_anatomy_filter(self):
+        self.anat_selector.clear_selection(emit_signal=True)
+
     def load_exercises(self):
         search_query = self.txt_search.text().strip()
         muscle = self.combo_muscle.currentData()
         exercises = WorkoutService.get_all_exercises(muscle_group=muscle, search_query=search_query)
 
+        total_count = len(exercises)
+        cur_muscle_name = self.combo_muscle.currentText()
+        if hasattr(self, "lbl_filter_stats"):
+            if muscle == "corrective":
+                self.lbl_filter_stats.setText(f"✨ حرکات اصلاحی ({total_count} حرکت)")
+            elif muscle and muscle not in ["all", ""]:
+                self.lbl_filter_stats.setText(f"🎯 عضله: {cur_muscle_name} | {total_count} حرکت یافت شد")
+            else:
+                self.lbl_filter_stats.setText(f"📋 تمام حرکات بانک ({total_count} حرکت)")
+
         muscle_map = {
             "chest": "سینه", "legs": "پا و سرینی", "back": "پشت و زیربغل",
-            "shoulders": "سرشانه", "arms": "بازو", "abs": "شکم"
+            "shoulders": "سرشانه", "arms": "بازو", "abs": "شکم",
+            **{k: v["name_fa"] for k, v in MUSCLE_DEFINITIONS.items()}
         }
         equip_map = {
             "barbell": "هالتر", "dumbbell": "دمبل", "machine": "دستگاه",
@@ -536,34 +785,49 @@ class WorkoutLibraryView(QWidget):
             chk_l.addWidget(chk)
             self.table.setCellWidget(row, 0, chk_w)
 
-            self.table.setItem(row, 1, QTableWidgetItem(ex.name_fa))
+            it_name = QTableWidgetItem(ex.name_fa)
+            it_name.setToolTip(ex.name_fa)
+            self.table.setItem(row, 1, it_name)
             
             muscle_name = muscle_map.get(ex.primary_muscle, ex.primary_muscle)
             if getattr(ex, "is_corrective", False):
                 muscle_display = f"{muscle_name} (اصلاحی)"
             else:
                 muscle_display = muscle_name
-            self.table.setItem(row, 2, QTableWidgetItem(muscle_display))
+            it_muscle = QTableWidgetItem(muscle_display)
+            it_muscle.setToolTip(muscle_display)
+            self.table.setItem(row, 2, it_muscle)
 
             it_equip = QTableWidgetItem(equip_map.get(ex.equipment, ex.equipment or "-"))
             it_equip.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+            it_equip.setToolTip(equip_map.get(ex.equipment, ex.equipment or "-"))
             self.table.setItem(row, 3, it_equip)
-            self.table.setItem(row, 4, QTableWidgetItem(ex.contraindications or "-"))
-            self.table.setItem(row, 5, QTableWidgetItem(ex.description or "-"))
+
+            contra_txt = ex.contraindications or "-"
+            it_contra = QTableWidgetItem(contra_txt)
+            if ex.contraindications:
+                it_contra.setToolTip(ex.contraindications)
+            self.table.setItem(row, 4, it_contra)
+
+            desc_txt = ex.description or "-"
+            it_desc = QTableWidgetItem(desc_txt)
+            if ex.description:
+                it_desc.setToolTip(ex.description)
+            self.table.setItem(row, 5, it_desc)
 
             # Operations Widget (Media, Edit, Delete)
             btn_container = QWidget()
             btn_container.setStyleSheet("background: transparent;")
             btn_layout = QHBoxLayout(btn_container)
             btn_layout.setContentsMargins(4, 2, 4, 2)
-            btn_layout.setSpacing(5)
+            btn_layout.setSpacing(6)
             btn_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
             has_cloud = bool(getattr(ex, "video_cloud_url", None))
             btn_media = QPushButton("🎬 رسانه ☁️" if has_cloud else "🎬 رسانه")
             if has_cloud:
                 btn_media.setToolTip("ویدیو در سرور ابری آنلاین است.")
-            btn_media.setFixedSize(86, 30)
+            btn_media.setFixedSize(84, 30)
             btn_media.setCursor(Qt.CursorShape.PointingHandCursor)
             btn_media.setStyleSheet("""
                 QPushButton {
@@ -582,7 +846,7 @@ class WorkoutLibraryView(QWidget):
             btn_media.clicked.connect(lambda _, item=ex: self.show_media(item))
 
             btn_edit = QPushButton("✏️ ویرایش")
-            btn_edit.setFixedSize(74, 30)
+            btn_edit.setFixedSize(72, 30)
             btn_edit.setCursor(Qt.CursorShape.PointingHandCursor)
             btn_edit.setStyleSheet("""
                 QPushButton {
@@ -600,9 +864,9 @@ class WorkoutLibraryView(QWidget):
             """)
             btn_edit.clicked.connect(lambda _, item=ex: self.open_edit_dialog(item))
 
-            btn_delete = QPushButton("🗑️")
+            btn_delete = QPushButton("🗑️ حذف")
             btn_delete.setToolTip("حذف حرکت")
-            btn_delete.setFixedSize(32, 30)
+            btn_delete.setFixedSize(58, 30)
             btn_delete.setCursor(Qt.CursorShape.PointingHandCursor)
             btn_delete.setStyleSheet("""
                 QPushButton {
@@ -611,8 +875,8 @@ class WorkoutLibraryView(QWidget):
                     font-weight: bold;
                     border: none;
                     border-radius: 6px;
-                    padding: 2px;
-                    font-size: 13px;
+                    padding: 2px 4px;
+                    font-size: 11px;
                 }
                 QPushButton:hover {
                     background-color: #B71C1C;

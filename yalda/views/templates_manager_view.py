@@ -226,16 +226,16 @@ class TemplatesManagerView(QWidget):
         header.setMinimumSectionSize(40)
         header.setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
-        self.table_workouts.setColumnWidth(0, 52)   # انتخاب
+        self.table_workouts.setColumnWidth(0, 46)   # انتخاب
         self.table_workouts.setColumnWidth(1, 46)   # ردیف
         header.setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch) # عنوان
-        self.table_workouts.setColumnWidth(3, 162)  # هدف
+        self.table_workouts.setColumnWidth(3, 150)  # هدف
         self.table_workouts.setColumnWidth(4, 86)   # روزها
         self.table_workouts.setColumnWidth(5, 80)   # سطح
         self.table_workouts.setColumnWidth(6, 84)   # تعداد حرکات
         self.table_workouts.setColumnWidth(7, 87)   # شاگردان
         header.setSectionResizeMode(8, QHeaderView.ResizeMode.Fixed)
-        self.table_workouts.setColumnWidth(8, 268)  # عملیات
+        self.table_workouts.setColumnWidth(8, 286)  # عملیات
 
         self.table_workouts.verticalHeader().setVisible(False)
         self.table_workouts.verticalHeader().setDefaultSectionSize(52)
@@ -311,16 +311,16 @@ class TemplatesManagerView(QWidget):
         header.setMinimumSectionSize(40)
         header.setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
-        self.table_nutrition.setColumnWidth(0, 52)   # انتخاب
+        self.table_nutrition.setColumnWidth(0, 46)   # انتخاب
         self.table_nutrition.setColumnWidth(1, 46)   # ردیف
         header.setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch) # عنوان
-        self.table_nutrition.setColumnWidth(3, 162)  # هدف
+        self.table_nutrition.setColumnWidth(3, 150)  # هدف
         self.table_nutrition.setColumnWidth(4, 86)   # کالری
-        self.table_nutrition.setColumnWidth(5, 160)  # P/C/F
+        self.table_nutrition.setColumnWidth(5, 155)  # P/C/F
         self.table_nutrition.setColumnWidth(6, 85)   # وعده‌ها
         self.table_nutrition.setColumnWidth(7, 87)   # شاگردان
         header.setSectionResizeMode(8, QHeaderView.ResizeMode.Fixed)
-        self.table_nutrition.setColumnWidth(8, 268)  # عملیات
+        self.table_nutrition.setColumnWidth(8, 286)  # عملیات
 
         self.table_nutrition.verticalHeader().setVisible(False)
         self.table_nutrition.verticalHeader().setDefaultSectionSize(52)
@@ -419,15 +419,15 @@ class TemplatesManagerView(QWidget):
             action_w = QWidget()
             action_w.setStyleSheet("background: transparent;")
             action_l = QHBoxLayout(action_w)
-            action_l.setContentsMargins(4, 2, 4, 2)
-            action_l.setSpacing(5)
+            action_l.setContentsMargins(6, 2, 6, 2)
+            action_l.setSpacing(6)
             action_l.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
             btn_assign = QPushButton("🎯 تخصیص")
             btn_assign.setToolTip("تخصیص این الگو به یکی از شاگردان باشگاه")
-            btn_assign.setFixedSize(76, 30)
+            btn_assign.setFixedSize(78, 30)
             btn_assign.setCursor(Qt.CursorShape.PointingHandCursor)
-            btn_assign.setStyleSheet("background-color: #10B981; color: #FFFFFF; font-weight: bold; border-radius: 6px; padding: 2px 6px; font-size: 11px;")
+            btn_assign.setStyleSheet("background-color: #10B981; color: #FFFFFF; font-weight: bold; border-radius: 6px; padding: 2px 4px; font-size: 11px;")
             btn_assign.clicked.connect(lambda _, pid=p.id, ptitle=p.title: self.open_assign_dialog("workout", pid, ptitle))
 
             btn_edit = QPushButton("✏️ ویرایش")
@@ -441,7 +441,7 @@ class TemplatesManagerView(QWidget):
                     font-weight: bold;
                     border: none;
                     border-radius: 6px;
-                    padding: 2px 6px;
+                    padding: 2px 4px;
                     font-size: 11px;
                 }
                 QPushButton:hover {
@@ -459,7 +459,7 @@ class TemplatesManagerView(QWidget):
 
             btn_del = QPushButton("🗑️")
             btn_del.setToolTip("حذف الگو از بانک")
-            btn_del.setFixedSize(32, 30)
+            btn_del.setFixedSize(36, 30)
             btn_del.setCursor(Qt.CursorShape.PointingHandCursor)
             btn_del.setStyleSheet("background-color: #DC2626; color: #FFFFFF; font-weight: bold; border-radius: 6px; font-size: 12px;")
             btn_del.clicked.connect(lambda _, pid=p.id, ptitle=p.title: self.delete_workout_template(pid, ptitle))
@@ -542,15 +542,15 @@ class TemplatesManagerView(QWidget):
             action_w = QWidget()
             action_w.setStyleSheet("background: transparent;")
             action_l = QHBoxLayout(action_w)
-            action_l.setContentsMargins(4, 2, 4, 2)
-            action_l.setSpacing(5)
+            action_l.setContentsMargins(6, 2, 6, 2)
+            action_l.setSpacing(6)
             action_l.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
             btn_assign = QPushButton("🎯 تخصیص")
             btn_assign.setToolTip("تخصیص این الگو به یکی از شاگردان باشگاه")
-            btn_assign.setFixedSize(76, 30)
+            btn_assign.setFixedSize(78, 30)
             btn_assign.setCursor(Qt.CursorShape.PointingHandCursor)
-            btn_assign.setStyleSheet("background-color: #10B981; color: #FFFFFF; font-weight: bold; border-radius: 6px; padding: 2px 6px; font-size: 11px;")
+            btn_assign.setStyleSheet("background-color: #10B981; color: #FFFFFF; font-weight: bold; border-radius: 6px; padding: 2px 4px; font-size: 11px;")
             btn_assign.clicked.connect(lambda _, pid=p.id, ptitle=p.title: self.open_assign_dialog("nutrition", pid, ptitle))
 
             btn_edit = QPushButton("✏️ ویرایش")
@@ -564,7 +564,7 @@ class TemplatesManagerView(QWidget):
                     font-weight: bold;
                     border: none;
                     border-radius: 6px;
-                    padding: 2px 6px;
+                    padding: 2px 4px;
                     font-size: 11px;
                 }
                 QPushButton:hover {
@@ -582,7 +582,7 @@ class TemplatesManagerView(QWidget):
 
             btn_del = QPushButton("🗑️")
             btn_del.setToolTip("حذف الگو از بانک")
-            btn_del.setFixedSize(32, 30)
+            btn_del.setFixedSize(36, 30)
             btn_del.setCursor(Qt.CursorShape.PointingHandCursor)
             btn_del.setStyleSheet("background-color: #DC2626; color: #FFFFFF; font-weight: bold; border-radius: 6px; font-size: 12px;")
             btn_del.clicked.connect(lambda _, pid=p.id, ptitle=p.title: self.delete_nutrition_template(pid, ptitle))

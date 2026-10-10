@@ -24,6 +24,7 @@
 7. **Mandatory Post-Change Visual & Functional QA Inspection (بررسی و کنترل کیفیت ظاهری و عملکردی پس از هر تغییر)**:
    - Whenever adding a feature or applying a modification (UI widgets, tables, buttons, PDFs, Excel exports, layouts, or logic), ALWAYS perform an end-to-end visual and functional verification of the modified component before delivering the final result.
    - Check geometry, alignment, margins/padding, clipping/truncation, text direction (RTL/BiDi), and runtime behavior using test renders, geometry checks, or verification scripts.
+   - Meticulously inspect all micro and macro details (spacing uniformity between adjacent buttons, padding from cell and container borders, zero clipping of button corners, text or icons, and complete visibility across all resolutions).
    - Proactively detect and fix any visual distortion, overlap, clipping, or bug in the modified target so the delivered output is 100% complete and flawless.
 
 8. **Mandatory Post-Change GitHub Push Confirmation (پرسش اجباری برای پوش به گیتهاب پس از هر تغییر با پیش‌فرض بله)**:

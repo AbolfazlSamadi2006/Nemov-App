@@ -17,7 +17,37 @@ class WorkoutService:
                 if muscle_group == "corrective":
                     query = query.filter(Exercise.is_corrective == True)
                 else:
-                    query = query.filter(Exercise.primary_muscle == muscle_group)
+                    from yalda.views.components.muscle_selector_widget import LEGACY_TO_KEYS, KEY_TO_LEGACY
+                    if muscle_group in LEGACY_TO_KEYS:
+                        all_matching = [muscle_group] + LEGACY_TO_KEYS[muscle_group]
+                        query = query.filter(Exercise.primary_muscle.in_(all_matching))
+                    elif muscle_group in KEY_TO_LEGACY:
+                        legacy = KEY_TO_LEGACY[muscle_group]
+                        name_keywords = {
+                            "biceps": ["جلو بازو", "جلوبازو"],
+                            "triceps": ["پشت بازو", "پشتبازو"],
+                            "forearms": ["ساعد", "مچ"],
+                            "legs_front": ["جلو پا", "چهارسر", "اسکوات", "پرس پا", "لانج", "سییسی"],
+                            "legs_back": ["پشت پا", "همسترینگ", "ددلیفت رومانیایی", "سلام ژاپنی"],
+                            "glutes": ["باسن", "سرینی", "هیپ تراست", "پل باسن"],
+                            "calves": ["ساق", "ساق پا"],
+                            "upper_back": ["بالای کمر", "لت", "زیربغل", "قایقی", "تی بار", "بارفیکس"],
+                            "lats": ["زیربغل", "لت", "پشت", "پول داون", "پول‌داون"],
+                            "lower_back": ["فیله", "پایین کمر", "فیله کمر"],
+                            "traps": ["کول", "شراگ"],
+                            "shoulders": ["سرشانه", "نشر", "دلتا"],
+                            "chest": ["سینه", "پرس سینه", "بالا سینه", "زیر سینه", "قفسه سینه", "شنا"],
+                            "abs": ["شکم", "کرانچ", "پلانک", "شکم خلبانی"],
+                            "neck": ["گردن"]
+                        }
+                        kws = name_keywords.get(muscle_group, [])
+                        from sqlalchemy import or_
+                        clauses = [Exercise.primary_muscle == muscle_group]
+                        for kw in kws:
+                            clauses.append((Exercise.primary_muscle == legacy) & (Exercise.name_fa.like(f"%{kw}%")))
+                        query = query.filter(or_(*clauses))
+                    else:
+                        query = query.filter(Exercise.primary_muscle == muscle_group)
             if equipment and equipment != "all":
                 query = query.filter(Exercise.equipment == equipment)
             if search_query:
