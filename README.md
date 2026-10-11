@@ -1,17 +1,17 @@
 <div align="center">
 
-<a href="https://github.com/AbolfazlSamadi2006/Yalda-Gym-App/releases/download/v3.2.1/Yalda_Setup_v3.2.1.exe">
-  <img src="resources/github_assets/download_btn_v3_2_1.png" width="840" alt="دانلود مستقیم فایل نصاب نسخه ۳.۲.۱ (Yalda_Setup_v3.2.1.exe)" />
+<a href="https://github.com/AbolfazlSamadi2006/Nemov-App/releases/download/v3.3.0/Nemov_Setup_v3.3.0.exe">
+  <img src="resources/github_assets/download_btn_v3_2_1.png" width="840" alt="دانلود مستقیم فایل نصاب نسخه ۳.۳.۰ (Nemov_Setup_v3.3.0.exe)" />
 </a>
 
 <br/><br/>
 
-<img src="resources/github_assets/readme_full_showcase.png" width="100%" alt="سامانه هوشمند مدیریت باشگاه بدنسازی و برنامه‌ریزی ورزشی یلدا - نسخه ۳.۲.۱" />
+<img src="resources/github_assets/readme_full_showcase.png" width="100%" alt="نرم‌افزار مدیریت ورزشی نِمُو (Nemov) - نسخه ۳.۳.۰" />
 
 <br/><br/>
 
-<a href="https://github.com/AbolfazlSamadi2006/Yalda-Gym-App/releases/download/v3.2.1/Yalda_Setup_v3.2.1.exe">
-  <img src="resources/github_assets/download_btn_v3_2_1.png" width="840" alt="دانلود مستقیم فایل نصاب نسخه ۳.۲.۱ (Yalda_Setup_v3.2.1.exe)" />
+<a href="https://github.com/AbolfazlSamadi2006/Nemov-App/releases/download/v3.3.0/Nemov_Setup_v3.3.0.exe">
+  <img src="resources/github_assets/download_btn_v3_2_1.png" width="840" alt="دانلود مستقیم فایل نصاب نسخه ۳.۳.۰ (Nemov_Setup_v3.3.0.exe)" />
 </a>
 
 </div>
@@ -28,8 +28,8 @@
 
 ```powershell
 # 1. Clone repository
-git clone https://github.com/AbolfazlSamadi2006/Yalda-Gym-App.git
-cd Yalda-Gym-App
+git clone https://github.com/AbolfazlSamadi2006/Nemov-App.git
+cd Nemov-App
 
 # 2. Create virtual environment & install dependencies
 python -m venv venv
@@ -39,8 +39,8 @@ pip install -r requirements.txt
 # 3. Run application from source
 python main.py
 
-# 4. Build standalone executable & Windows installer (Yalda_Setup_v3.2.1.exe)
-.\venv\Scripts\pyinstaller.exe --noconfirm --clean Yalda.spec
+# 4. Build standalone executable & Windows installer (Nemov_Setup_v3.3.0.exe)
+.\venv\Scripts\pyinstaller.exe --noconfirm --clean Nemov.spec
 "C:\Program Files (x86)\NSIS\makensis.exe" installer.nsi
 ```
 

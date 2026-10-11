@@ -11,7 +11,7 @@ class YaldaApplication:
         # Set Windows AppUserModelID so Windows Taskbar pins and displays the custom logo
         try:
             import ctypes
-            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("yalda.gym.management.desktop.v2")
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(getattr(config, "APP_USER_MODEL_ID", "nemov.sports.management.desktop.v3"))
         except Exception:
             pass
 
@@ -25,10 +25,25 @@ class YaldaApplication:
         self.app = QApplication(sys.argv)
         self.app.setApplicationName(config.APP_NAME)
 
-        # Set Global Application & Taskbar Icon
-        icon_path = config.BASE_DIR / "resources" / "images" / "app_icon.png"
-        if icon_path.exists():
-            self.app.setWindowIcon(QIcon(str(icon_path)))
+        # Set Global Application & Taskbar Icon with multi-resolution .ico support
+        ico_path = config.BASE_DIR / "resources" / "icons" / "nemov.ico"
+        png_path = config.BASE_DIR / "resources" / "images" / "nemov_logo.png"
+        legacy_ico = config.BASE_DIR / "resources" / "images" / "app_icon.ico"
+        legacy_png = config.BASE_DIR / "resources" / "images" / "app_icon.png"
+
+        self.app_icon = QIcon()
+        if ico_path.exists():
+            self.app_icon.addFile(str(ico_path))
+        elif legacy_ico.exists():
+            self.app_icon.addFile(str(legacy_ico))
+
+        if png_path.exists():
+            self.app_icon.addFile(str(png_path))
+        elif legacy_png.exists():
+            self.app_icon.addFile(str(legacy_png))
+
+        if not self.app_icon.isNull():
+            self.app.setWindowIcon(self.app_icon)
 
         # Check for Database presence (Portable mode check)
         db_file = config.DATA_DIR / "yalda.db"
@@ -45,8 +60,8 @@ class YaldaApplication:
 
         # Windows setup
         self.login_view = LoginView()
-        if icon_path.exists():
-            self.login_view.setWindowIcon(QIcon(str(icon_path)))
+        if not self.app_icon.isNull():
+            self.login_view.setWindowIcon(self.app_icon)
         self.main_window = None
 
         self.login_view.login_success.connect(self.on_login_success)

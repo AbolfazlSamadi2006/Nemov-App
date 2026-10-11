@@ -4,15 +4,27 @@ from pathlib import Path
 import sys
 import shutil
 
+if sys.stdout and hasattr(sys.stdout, 'reconfigure'):
+    try:
+        sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    except Exception:
+        pass
+if sys.stderr and hasattr(sys.stderr, 'reconfigure'):
+    try:
+        sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+    except Exception:
+        pass
+
 # Base directories
 BASE_DIR = Path(__file__).resolve().parent
 
 # AppData persistent path
-APPDATA_DATA_DIR = Path(os.environ.get("APPDATA", Path.home())) / "YaldaGym" / "data"
+APPDATA_DATA_DIR = Path(os.environ.get("APPDATA", Path.home())) / "Nemov" / "data"
+LEGACY_APPDATA_DATA_DIR = Path(os.environ.get("APPDATA", Path.home())) / "YaldaGym" / "data"
 APPDATA_DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 if getattr(sys, 'frozen', False):
-    # Running as compiled PyInstaller EXE: place data folder right next to Yalda.exe
+    # Running as compiled PyInstaller EXE: place data folder right next to Nemov.exe
     EXE_DIR = Path(sys.executable).resolve().parent
     DATA_DIR = EXE_DIR / "data"
 else:
@@ -20,16 +32,25 @@ else:
     DATA_DIR = BASE_DIR / "data"
 
 DATA_DIR.mkdir(parents=True, exist_ok=True)
+BRANDING_DIR = DATA_DIR / "branding"
+BRANDING_DIR.mkdir(parents=True, exist_ok=True)
 
 def sync_data_directories():
-    """Finds the latest yalda.db across runtime data folder, backups folder, and persistent AppData folder to guarantee zero data loss."""
-    candidate_locations = [
+    """Finds the latest yalda.db across runtime data folder, backups folder, and persistent AppData folder (with legacy YaldaGym migration fallback) to guarantee zero data loss."""
+    search_locations = [
+        DATA_DIR,
+        APPDATA_DATA_DIR
+    ]
+    if LEGACY_APPDATA_DATA_DIR.exists():
+        search_locations.append(LEGACY_APPDATA_DATA_DIR)
+
+    target_locations = [
         DATA_DIR,
         APPDATA_DATA_DIR
     ]
     
     db_candidates = []
-    for loc in candidate_locations:
+    for loc in search_locations:
         db_p = loc / "yalda.db"
         if db_p.exists() and db_p.stat().st_size > 0:
             db_candidates.append((db_p.stat().st_mtime, db_p, loc))
@@ -42,8 +63,8 @@ def sync_data_directories():
         db_candidates.sort(key=lambda x: x[0], reverse=True)
         latest_mtime, latest_db, latest_loc = db_candidates[0]
         
-        # Mirror latest DB to all candidate locations
-        for target_loc in candidate_locations:
+        # Mirror latest DB to all target locations
+        for target_loc in target_locations:
             target_loc.mkdir(parents=True, exist_ok=True)
             target_db = target_loc / "yalda.db"
             if not target_db.exists() or target_db.stat().st_mtime < latest_mtime:
@@ -67,6 +88,21 @@ def sync_data_directories():
                         except Exception:
                             pass
 
+            # Mirror branding folder if present
+            src_branding = latest_loc / "branding"
+            tgt_branding = target_loc / "branding"
+            if src_branding.exists():
+                for item in src_branding.rglob("*"):
+                    if item.is_file():
+                        try:
+                            rel_p = item.relative_to(src_branding)
+                            dest_p = tgt_branding / rel_p
+                            dest_p.parent.mkdir(parents=True, exist_ok=True)
+                            if not dest_p.exists() or dest_p.stat().st_mtime < item.stat().st_mtime:
+                                shutil.copy2(item, dest_p)
+                        except Exception:
+                            pass
+
 # Execute initial sync
 sync_data_directories()
 
@@ -78,7 +114,7 @@ EXERCISE_MEDIA_DIR = UPLOADS_DIR / "exercise-media"
 PDF_EXPORTS_DIR = DATA_DIR / "pdf"
 BACKUPS_DIR = DATA_DIR / "backups"
 
-for folder in [UPLOADS_DIR, PROFILE_PHOTOS_DIR, PROGRESS_PHOTOS_DIR, EXERCISE_MEDIA_DIR, PDF_EXPORTS_DIR, BACKUPS_DIR]:
+for folder in [UPLOADS_DIR, PROFILE_PHOTOS_DIR, PROGRESS_PHOTOS_DIR, EXERCISE_MEDIA_DIR, PDF_EXPORTS_DIR, BACKUPS_DIR, BRANDING_DIR]:
     folder.mkdir(parents=True, exist_ok=True)
 
 # Database URI
@@ -88,9 +124,11 @@ DATABASE_URI = f"sqlite:///{DB_PATH}"
 
 
 # App Details
-APP_NAME = "یلدا"
-APP_ENGLISH_NAME = "Yalda Gym"
-APP_VERSION = "v3.2.1"
+APP_NAME = "نِمُو"
+APP_TITLE = "نرم‌افزار مدیریت ورزشی نِمُو"
+APP_ENGLISH_NAME = "Nemov"
+APP_VERSION = "v3.3.0"
+APP_USER_MODEL_ID = "nemov.sports.management.desktop.v3"
 GYM_ADDRESS = "باشگاه بدنسازی یلدا | مازندران، قائمشهر، خیابان کوچکسرا، نبش شقایق ۳"
 
 

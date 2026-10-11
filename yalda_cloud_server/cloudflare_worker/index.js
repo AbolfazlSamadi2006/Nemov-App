@@ -1696,23 +1696,23 @@ function renderLandingPage() {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
-    <title>همیار باشگاه | سامانه جامع مدیریت هوشمند و مربیگری باشگاه‌های ورزشی</title>
+    <title>نرم‌افزار مدیریت ورزشی نِمُو (Nemov) | نسخه ۳.۳.۰</title>
     
     <!-- SEO Semantic Meta Tags -->
-    <meta name="description" content="سامانه یکپارچه مربیگری و اتوماسیون مدیریت باشگاه ورزشی «همیار باشگاه». پرونده سلامت فیزیکی، بانک ویدیو حرکات، رژیم غذایی و کالری‌شماری هوشمند، حسابداری مالی و صدور شناسنامه چاپی بدون نیاز به اینترنت با پشتیبان‌گیری ابری.">
-    <meta name="keywords" content="همیار باشگاه, نرم افزار مدیریت باشگاه, نرم افزار بدنسازی, برنامه تمرینی, برنامه غذایی بدنسازی, مدیریت باشگاه بدنسازی, باشگاه بدنسازی یلدا, محراب حاجی پور, ابوالفضل صمدی, Gym Assistant App">
+    <meta name="description" content="نرم‌افزار مدیریت ورزشی نِمُو (Nemov). پرونده سلامت فیزیکی، بانک ویدیو حرکات، رژیم غذایی و کالری‌شماری هوشمند، حسابداری مالی و صدور شناسنامه چاپی بدون نیاز به اینترنت با پشتیبان‌گیری ابری.">
+    <meta name="keywords" content="نمو, Nemov, نرم افزار مدیریت ورزشی نمو, نرم افزار مدیریت باشگاه, نرم افزار بدنسازی, برنامه تمرینی, برنامه غذایی بدنسازی, مدیریت باشگاه بدنسازی, باشگاه بدنسازی یلدا, محراب حاجی پور, ابوالفضل صمدی, Nemov App">
     <link rel="canonical" href="https://gymassistantapp.ir/">
     <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
     <meta name="author" content="ابوالفضل صمدی کوچکسرائی">
-    <meta name="publisher" content="همیار باشگاه">
-    <meta name="application-name" content="همیار باشگاه">
+    <meta name="publisher" content="نرم‌افزار مدیریت ورزشی نِمُو (Nemov)">
+    <meta name="application-name" content="نِمُو">
     <meta name="theme-color" content="#090A0E">
     <meta name="msapplication-TileColor" content="#DC2626">
 
     <!-- Open Graph Meta Tags (Telegram, WhatsApp, Social Cards) -->
     <meta property="og:type" content="website">
-    <meta property="og:site_name" content="همیار باشگاه | Gym Assistant App">
-    <meta property="og:title" content="همیار باشگاه | سامانه جامع مدیریت هوشمند و مربیگری باشگاه‌های ورزشی">
+    <meta property="og:site_name" content="نرم‌افزار مدیریت ورزشی نِمُو | Nemov">
+    <meta property="og:title" content="نرم‌افزار مدیریت ورزشی نِمُو (Nemov) | نسخه ۳.۳.۰">
     <meta property="og:description" content="سامانه یکپارچه مربیگری و اتوماسیون باشگاه؛ پرونده سلامت، بانک حرکات با ویدیو، طراحی تخصصی رژیم غذایی، حسابداری مالی و صدور شناسنامه چاپی.">
     <meta property="og:url" content="https://gymassistantapp.ir/">
     <meta property="og:image" content="https://gymassistantapp.ir/images/yalda_logo.jpg">
@@ -1720,15 +1720,15 @@ function renderLandingPage() {
     <meta property="og:image:type" content="image/jpeg">
     <meta property="og:image:width" content="600">
     <meta property="og:image:height" content="600">
-    <meta property="og:image:alt" content="سامانه هوشمند همیار باشگاه">
+    <meta property="og:image:alt" content="نرم‌افزار مدیریت ورزشی نِمُو (Nemov)">
     <meta property="og:locale" content="fa_IR">
 
     <!-- Twitter Card Meta Tags -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="همیار باشگاه | سامانه جامع مدیریت هوشمند و مربیگری باشگاه‌های ورزشی">
+    <meta name="twitter:title" content="نرم‌افزار مدیریت ورزشی نِمُو (Nemov) | نسخه ۳.۳.۰">
     <meta name="twitter:description" content="سامانه یکپارچه مربیگری و اتوماسیون باشگاه؛ پرونده سلامت، بانک حرکات با ویدیو، طراحی تخصصی رژیم غذایی، حسابداری مالی و صدور شناسنامه چاپی.">
     <meta name="twitter:image" content="https://gymassistantapp.ir/images/yalda_logo.jpg">
-    <meta name="twitter:image:alt" content="سامانه هوشمند همیار باشگاه">
+    <meta name="twitter:image:alt" content="نرم‌افزار مدیریت ورزشی نِمُو (Nemov)">
 
     <!-- Favicon -->
     <link rel="icon" type="image/jpeg" href="/images/yalda_logo.jpg">
@@ -1741,14 +1741,15 @@ function renderLandingPage() {
         {
           "@type": "SoftwareApplication",
           "@id": "https://gymassistantapp.ir/#software",
-          "name": "همیار باشگاه",
-          "alternateName": ["Gym Assistant App", "سامانه همیار باشگاه"],
+          "name": "نرم‌افزار مدیریت ورزشی نِمُو",
+          "alternateName": ["Nemov", "Nemov Sports Management Software", "همیار باشگاه"],
           "applicationCategory": "SportsApplication",
           "operatingSystem": "Windows 10, Windows 11",
-          "description": "سامانه جامع مدیریت هوشمند و مربیگری باشگاه‌های ورزشی شامل پرونده سلامت، طراحی تمرین با ویدیو، رژیم غذایی و کالری‌شماری، حسابداری و صدور شناسنامه ورزشی چاپی.",
+          "description": "نرم‌افزار مدیریت ورزشی نِمُو (Nemov)؛ شامل پرونده سلامت، طراحی تمرین با ویدیو، رژیم غذایی و کالری‌شماری، حسابداری و صدور شناسنامه ورزشی چاپی.",
           "url": "https://gymassistantapp.ir/",
           "image": "https://gymassistantapp.ir/images/yalda_logo.jpg",
-          "softwareVersion": "2.0.0",
+          "version": "3.3.0",
+          "softwareVersion": "3.3.0",
           "offers": {
             "@type": "Offer",
             "price": "0",

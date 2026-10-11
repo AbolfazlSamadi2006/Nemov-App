@@ -1,27 +1,27 @@
-; NSIS Script for Yalda Gym Management Application
+; NSIS Script for Nemov Sports Management Application
 Unicode True
 !include "MUI2.nsh"
 !include "FileFunc.nsh"
 
-!define PRODUCT_NAME "Yalda Gym Management"
-!define PRODUCT_NAME_EN "Yalda Gym"
-!define PRODUCT_VERSION "3.2.1"
+!define PRODUCT_NAME "Nemov"
+!define PRODUCT_NAME_EN "Nemov"
+!define PRODUCT_VERSION "3.3.0"
 !define PRODUCT_PUBLISHER "Abolfazl Samadi"
-!define PRODUCT_WEB_SITE "https://github.com/AbolfazlSamadi2006/Yalda-Gym-App"
-!define PRODUCT_EXE "Yalda.exe"
-!define PRODUCT_UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\YaldaGym"
+!define PRODUCT_WEB_SITE "https://github.com/AbolfazlSamadi2006/Nemov-App"
+!define PRODUCT_EXE "Nemov.exe"
+!define PRODUCT_UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\Nemov"
 
 Name "${PRODUCT_NAME} v${PRODUCT_VERSION}"
-OutFile "dist\Yalda_Setup_v${PRODUCT_VERSION}.exe"
-InstallDir "$LOCALAPPDATA\Programs\YaldaGym"
+OutFile "dist\Nemov_Setup_v${PRODUCT_VERSION}.exe"
+InstallDir "$LOCALAPPDATA\Programs\Nemov"
 InstallDirRegKey HKCU "${PRODUCT_UNINST_KEY}" "InstallLocation"
 RequestExecutionLevel user
 
 SetCompressor /SOLID lzma
 SetCompressorDictSize 64
 
-!define MUI_ICON "resources\images\app_icon.ico"
-!define MUI_UNICON "resources\images\app_icon.ico"
+!define MUI_ICON "resources\icons\nemov.ico"
+!define MUI_UNICON "resources\icons\nemov.ico"
 !define MUI_ABORTWARNING
 
 ; Standard English Pages
@@ -41,27 +41,29 @@ SetCompressorDictSize 64
 ; English UI (Default)
 !insertmacro MUI_LANGUAGE "English"
 
-VIProductVersion "3.2.1.0"
+VIProductVersion "3.3.0.0"
 VIAddVersionKey "ProductName" "${PRODUCT_NAME}"
 VIAddVersionKey "CompanyName" "${PRODUCT_PUBLISHER}"
 VIAddVersionKey "LegalCopyright" "Copyright (c) 2026 Abolfazl Samadi. All rights reserved."
-VIAddVersionKey "FileDescription" "${PRODUCT_NAME}"
+VIAddVersionKey "FileDescription" "Nemov Sports Management Application"
 VIAddVersionKey "FileVersion" "v${PRODUCT_VERSION}"
 VIAddVersionKey "ProductVersion" "v${PRODUCT_VERSION}"
 
 Function .onInit
-    ; Close any running Yalda.exe instance before installation starts
+    ; Close any running Nemov.exe or Yalda.exe instance before installation starts
     nsExec::Exec 'taskkill /F /IM ${PRODUCT_EXE}'
+    nsExec::Exec 'taskkill /F /IM Yalda.exe'
 FunctionEnd
 
 Section "MainSection" SEC01
     ; Ensure running app is closed before extracting files
     nsExec::Exec 'taskkill /F /IM ${PRODUCT_EXE}'
+    nsExec::Exec 'taskkill /F /IM Yalda.exe'
     Sleep 500
 
     SetOutPath "$INSTDIR"
     SetOverwrite on
-    File /r "dist\Yalda\*.*"
+    File /r "dist\Nemov\*.*"
 
     SetOverwrite off
     CreateDirectory "$INSTDIR\data"
@@ -71,18 +73,23 @@ Section "MainSection" SEC01
     CreateDirectory "$INSTDIR\data\uploads\profile-photos"
     CreateDirectory "$INSTDIR\data\uploads\progress-photos"
     CreateDirectory "$INSTDIR\data\uploads\exercise-media"
+    CreateDirectory "$INSTDIR\data\branding"
     File /oname=$INSTDIR\data\yalda.db "data\yalda.db"
     SetOverwrite on
 
     WriteUninstaller "$INSTDIR\Uninstall.exe"
 
-    CreateDirectory "$SMPROGRAMS\Yalda Gym"
-    CreateShortcut "$SMPROGRAMS\Yalda Gym\Yalda Gym.lnk" "$INSTDIR\${PRODUCT_EXE}" "" "$INSTDIR\_internal\resources\images\app_icon.ico" 0
-    CreateShortcut "$SMPROGRAMS\Yalda Gym\Uninstall.lnk" "$INSTDIR\Uninstall.exe"
-    CreateShortcut "$DESKTOP\Yalda Gym.lnk" "$INSTDIR\${PRODUCT_EXE}" "" "$INSTDIR\_internal\resources\images\app_icon.ico" 0
+    CreateDirectory "$SMPROGRAMS\Nemov"
+    CreateShortcut "$SMPROGRAMS\Nemov\Nemov.lnk" "$INSTDIR\${PRODUCT_EXE}" "" "$INSTDIR\_internal\resources\icons\nemov.ico" 0
+    CreateShortcut "$SMPROGRAMS\Nemov\Uninstall.lnk" "$INSTDIR\Uninstall.exe"
+    CreateShortcut "$DESKTOP\Nemov.lnk" "$INSTDIR\${PRODUCT_EXE}" "" "$INSTDIR\_internal\resources\icons\nemov.ico" 0
 
     ; Clean up legacy shortcuts if upgrading from older version
+    Delete "$DESKTOP\Yalda Gym.lnk"
     Delete "$DESKTOP\نرم‌افزار باشگاه یلدا.lnk"
+    Delete "$SMPROGRAMS\Yalda Gym\Yalda Gym.lnk"
+    Delete "$SMPROGRAMS\Yalda Gym\Uninstall.lnk"
+    RMDir "$SMPROGRAMS\Yalda Gym"
     Delete "$SMPROGRAMS\باشگاه یلدا\نرم‌افزار باشگاه یلدا.lnk"
     Delete "$SMPROGRAMS\باشگاه یلدا\حذف نرم‌افزار.lnk"
     RMDir "$SMPROGRAMS\باشگاه یلدا"
@@ -91,7 +98,7 @@ Section "MainSection" SEC01
     WriteRegStr HKCU "${PRODUCT_UNINST_KEY}" "DisplayVersion" "v${PRODUCT_VERSION}"
     WriteRegStr HKCU "${PRODUCT_UNINST_KEY}" "Publisher" "${PRODUCT_PUBLISHER}"
     WriteRegStr HKCU "${PRODUCT_UNINST_KEY}" "URLInfoAbout" "${PRODUCT_WEB_SITE}"
-    WriteRegStr HKCU "${PRODUCT_UNINST_KEY}" "DisplayIcon" "$INSTDIR\_internal\resources\images\app_icon.ico,0"
+    WriteRegStr HKCU "${PRODUCT_UNINST_KEY}" "DisplayIcon" "$INSTDIR\_internal\resources\icons\nemov.ico,0"
     WriteRegStr HKCU "${PRODUCT_UNINST_KEY}" "UninstallString" '"$INSTDIR\Uninstall.exe"'
     WriteRegStr HKCU "${PRODUCT_UNINST_KEY}" "InstallLocation" "$INSTDIR"
     WriteRegDWORD HKCU "${PRODUCT_UNINST_KEY}" "NoModify" 1
@@ -103,8 +110,12 @@ Section "MainSection" SEC01
 SectionEnd
 
 Section "Uninstall"
+    Delete "$DESKTOP\Nemov.lnk"
     Delete "$DESKTOP\Yalda Gym.lnk"
     Delete "$DESKTOP\نرم‌افزار باشگاه یلدا.lnk"
+    Delete "$SMPROGRAMS\Nemov\Nemov.lnk"
+    Delete "$SMPROGRAMS\Nemov\Uninstall.lnk"
+    RMDir "$SMPROGRAMS\Nemov"
     Delete "$SMPROGRAMS\Yalda Gym\Yalda Gym.lnk"
     Delete "$SMPROGRAMS\Yalda Gym\Uninstall.lnk"
     RMDir "$SMPROGRAMS\Yalda Gym"

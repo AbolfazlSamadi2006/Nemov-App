@@ -3,7 +3,7 @@ from PyQt6.QtWidgets import (
     QCheckBox, QCompleter
 )
 from PyQt6.QtCore import Qt, pyqtSignal, QStringListModel
-from PyQt6.QtGui import QPixmap
+from PyQt6.QtGui import QPixmap, QIcon
 import config
 from yalda.auth.authentication import authenticate_user, is_app_license_active, check_username_exists
 from yalda.utils.security import normalize_digits
@@ -45,7 +45,22 @@ class LoginView(QWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle(f"{config.APP_NAME} - ورود به سیستم")
+        self.setWindowTitle(f"{config.APP_TITLE} - ورود به سیستم")
+
+        # Explicitly set window icon to multi-resolution nemov.ico
+        ico_path = config.BASE_DIR / "resources" / "icons" / "nemov.ico"
+        png_path = config.BASE_DIR / "resources" / "images" / "nemov_logo.png"
+        legacy_ico = config.BASE_DIR / "resources" / "images" / "app_icon.ico"
+        app_icon = QIcon()
+        if ico_path.exists():
+            app_icon.addFile(str(ico_path))
+        elif legacy_ico.exists():
+            app_icon.addFile(str(legacy_ico))
+        if png_path.exists():
+            app_icon.addFile(str(png_path))
+        if not app_icon.isNull():
+            self.setWindowIcon(app_icon)
+
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
         self.setStyleSheet("background-color: #121212;")
         self._is_auto_filling = False
@@ -103,7 +118,9 @@ class LoginView(QWidget):
         card_layout.setSpacing(8)
 
         # Logo Image (Enlarged)
-        icon_path = config.BASE_DIR / "resources" / "images" / "app_icon.png"
+        icon_path = config.BASE_DIR / "resources" / "images" / "nemov_logo.png"
+        if not icon_path.exists():
+            icon_path = config.BASE_DIR / "resources" / "images" / "app_icon.png"
         if icon_path.exists():
             lbl_logo = QLabel()
             pix = QPixmap(str(icon_path)).scaled(110, 110, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
@@ -112,7 +129,7 @@ class LoginView(QWidget):
             card_layout.addWidget(lbl_logo)
 
         # Subtitle Text
-        sub_lbl = QLabel("ورود به نرم‌افزار مدیریت باشگاه بدنسازی یلدا")
+        sub_lbl = QLabel(f"ورود به {config.APP_TITLE}")
         sub_lbl.setStyleSheet("color: #E2E8F0; font-size: 14px; font-weight: bold; background: transparent; margin-top: 4px; margin-bottom: 6px;")
         sub_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
         card_layout.addWidget(sub_lbl)

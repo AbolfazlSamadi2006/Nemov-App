@@ -69,6 +69,9 @@ def resolve_image_path(path_str: str) -> str:
 
     filename = p.name
     candidate_dirs = [
+        getattr(config, "BRANDING_DIR", config.DATA_DIR / "branding"),
+        config.DATA_DIR / "branding",
+        config.APPDATA_DATA_DIR / "branding",
         config.PROFILE_PHOTOS_DIR,
         config.EXERCISE_MEDIA_DIR,
         config.DATA_DIR / "uploads" / "exercise-media",
@@ -89,6 +92,8 @@ def resolve_image_path(path_str: str) -> str:
 
     local_app_data = os.environ.get("LOCALAPPDATA")
     if local_app_data:
+        installed_nemov = Path(local_app_data) / "Programs" / "Nemov" / "data"
+        candidate_dirs.append(installed_nemov / "branding")
         installed_data = Path(local_app_data) / "Programs" / "YaldaGym" / "data" / "uploads"
         candidate_dirs.append(installed_data / "exercise-media")
         candidate_dirs.append(installed_data / "profile-photos")

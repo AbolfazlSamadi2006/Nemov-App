@@ -138,6 +138,7 @@ class BackupView(QWidget):
     account_deleted_signal = pyqtSignal()
     back_requested = pyqtSignal()
     notifications_changed_signal = pyqtSignal()
+    branding_changed_signal = pyqtSignal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -176,9 +177,9 @@ class BackupView(QWidget):
 
         title_box = QVBoxLayout()
         title_box.setSpacing(2)
-        title = QLabel("⚙️ اطلاعات شخص مربی و پشتیبان‌گیری دیتابیس")
+        title = QLabel("⚙️ تنظیمات سیستم، برندینگ و پشتیبان‌گیری")
         title.setStyleSheet("font-size: 17px; font-weight: bold; color: #FFFFFF;")
-        subtitle = QLabel("مدیریت مشخصات و امنیت مربی، مرکز آرشیو و بازگردانی پشتیبان، تاریخچه اعلانات و لاگ‌های خطا")
+        subtitle = QLabel("مدیریت مشخصات و امنیت مربی، تنظیمات ظاهری و برندینگ باشگاه، مرکز آرشیو و بازگردانی پشتیبان، تاریخچه اعلانات")
         subtitle.setStyleSheet("font-size: 11px; color: #888888;")
         title_box.addWidget(title)
         title_box.addWidget(subtitle)
@@ -221,14 +222,344 @@ class BackupView(QWidget):
         self.tab_profile = self._create_profile_tab()
         self.tab_backup = self._create_backup_tab()
         self.tab_logs_notifs = self._create_logs_notifs_tab()
+        self.tab_appearance = self._create_appearance_tab()
 
         self.tabs.addTab(self.tab_profile, "👤  مشخصات مربی و امنیت حساب")
         self.tabs.addTab(self.tab_backup, "💾  مرکز پشتیبان‌گیری و بازگردانی دیتابیس")
         self.tabs.addTab(self.tab_logs_notifs, "🔔  تاریخچه اعلانات و لاگ‌های سیستم")
+        self.tabs.addTab(self.tab_appearance, "🎨  تنظیمات ظاهری و برندینگ باشگاه")
 
         main_layout.addWidget(self.tabs, 1)
 
         self.load_all_data()
+
+    def _create_appearance_tab(self) -> QWidget:
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.Shape.NoFrame)
+        scroll.setStyleSheet("QScrollArea { background-color: transparent; border: none; }")
+
+        container = QWidget()
+        container.setStyleSheet("background: transparent;")
+        layout = QVBoxLayout(container)
+        layout.setContentsMargins(12, 12, 12, 12)
+        layout.setSpacing(16)
+
+        # -------------------------------------------------------------
+        # GROUP 1: مشخصات باشگاه و مجموعه ورزشی
+        # -------------------------------------------------------------
+        club_box = QGroupBox("🏢 مشخصات باشگاه و مجموعه ورزشی")
+        club_box.setStyleSheet("""
+            QGroupBox {
+                background-color: #141414;
+                border: 1px solid #282828;
+                border-radius: 10px;
+                margin-top: 14px;
+                padding-top: 18px;
+                font-weight: bold;
+                color: #FFFFFF;
+            }
+            QGroupBox::title {
+                subcontrol-origin: margin;
+                subcontrol-position: top right;
+                padding: 0 10px;
+                color: #FFFFFF;
+            }
+        """)
+        layout_club = QVBoxLayout(club_box)
+        layout_club.setContentsMargins(16, 14, 16, 14)
+        layout_club.setSpacing(10)
+
+        grid_club = QGridLayout()
+        grid_club.setHorizontalSpacing(14)
+        grid_club.setVerticalSpacing(10)
+
+        lbl_club_name = QLabel("نام مجموعه ورزشی:")
+        lbl_club_name.setStyleSheet("color: #CCCCCC; font-size: 12px; font-weight: bold;")
+        self.txt_club_name = QLineEdit()
+        self.txt_club_name.setPlaceholderText("مثال: باشگاه بدنسازی یلدا (پیش‌فرض: نرم‌افزار مدیریت ورزشی نِمُو)")
+        self.txt_club_name.setFixedHeight(34)
+        self.txt_club_name.setStyleSheet("""
+            QLineEdit {
+                background-color: #1E1E1E;
+                color: #FFFFFF;
+                border: 1px solid #333333;
+                border-radius: 6px;
+                padding: 6px 10px;
+                font-size: 12px;
+            }
+            QLineEdit:focus {
+                border: 1px solid #8B0000;
+            }
+        """)
+
+        lbl_club_phone = QLabel("شماره تماس باشگاه:")
+        lbl_club_phone.setStyleSheet("color: #CCCCCC; font-size: 12px; font-weight: bold;")
+        self.txt_club_phone = QLineEdit()
+        self.txt_club_phone.setPlaceholderText("مثال: 0911... یا 011...")
+        self.txt_club_phone.setFixedHeight(34)
+        self.txt_club_phone.setStyleSheet("""
+            QLineEdit {
+                background-color: #1E1E1E;
+                color: #FFFFFF;
+                border: 1px solid #333333;
+                border-radius: 6px;
+                padding: 6px 10px;
+                font-size: 12px;
+            }
+            QLineEdit:focus {
+                border: 1px solid #8B0000;
+            }
+        """)
+
+        lbl_club_address = QLabel("آدرس کامل مجموعه:")
+        lbl_club_address.setStyleSheet("color: #CCCCCC; font-size: 12px; font-weight: bold;")
+        self.txt_club_address = QLineEdit()
+        self.txt_club_address.setPlaceholderText("مثال: مازندران، قائمشهر، خیابان کوچکسرا، نبش شقایق ۳")
+        self.txt_club_address.setFixedHeight(34)
+        self.txt_club_address.setStyleSheet("""
+            QLineEdit {
+                background-color: #1E1E1E;
+                color: #FFFFFF;
+                border: 1px solid #333333;
+                border-radius: 6px;
+                padding: 6px 10px;
+                font-size: 12px;
+            }
+            QLineEdit:focus {
+                border: 1px solid #8B0000;
+            }
+        """)
+
+        grid_club.addWidget(lbl_club_name, 0, 0)
+        grid_club.addWidget(self.txt_club_name, 0, 1)
+        grid_club.addWidget(lbl_club_phone, 0, 2)
+        grid_club.addWidget(self.txt_club_phone, 0, 3)
+        grid_club.addWidget(lbl_club_address, 1, 0)
+        grid_club.addWidget(self.txt_club_address, 1, 1, 1, 3)
+
+        layout_club.addLayout(grid_club)
+
+        # Action button and status row
+        row_club_actions = QHBoxLayout()
+        row_club_actions.setSpacing(12)
+
+        self.btn_save_club_info = QPushButton("💾 ذخیره مشخصات باشگاه")
+        self.btn_save_club_info.setFixedHeight(36)
+        self.btn_save_club_info.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_save_club_info.setStyleSheet("""
+            QPushButton {
+                background-color: #8B0000;
+                color: #FFFFFF;
+                font-weight: bold;
+                font-size: 12px;
+                border-radius: 6px;
+                padding: 6px 18px;
+            }
+            QPushButton:hover {
+                background-color: #A91D22;
+            }
+            QPushButton:pressed {
+                background-color: #6B0000;
+            }
+        """)
+        self.btn_save_club_info.clicked.connect(self.save_club_info_action)
+
+        self.lbl_club_save_status = QLabel("")
+        self.lbl_club_save_status.setStyleSheet("color: #34D399; font-size: 11px; font-weight: bold;")
+
+        row_club_actions.addWidget(self.btn_save_club_info)
+        row_club_actions.addWidget(self.lbl_club_save_status)
+        row_club_actions.addStretch()
+        layout_club.addLayout(row_club_actions)
+
+        layout.addWidget(club_box)
+
+        # -------------------------------------------------------------
+        # GROUP 2: لوگوی اختصاصی باشگاه (Custom Club Logo)
+        # -------------------------------------------------------------
+        logo_box = QGroupBox("🖼️ لوگوی اختصاصی باشگاه و نشان تجاری")
+        logo_box.setStyleSheet("""
+            QGroupBox {
+                background-color: #141414;
+                border: 1px solid #282828;
+                border-radius: 10px;
+                margin-top: 14px;
+                padding-top: 18px;
+                font-weight: bold;
+                color: #FFFFFF;
+            }
+            QGroupBox::title {
+                subcontrol-origin: margin;
+                subcontrol-position: top right;
+                padding: 0 10px;
+                color: #FFFFFF;
+            }
+        """)
+        layout_logo = QHBoxLayout(logo_box)
+        layout_logo.setContentsMargins(16, 14, 16, 14)
+        layout_logo.setSpacing(20)
+
+        # Logo Preview Box
+        self.lbl_logo_preview = QLabel("🖼️")
+        self.lbl_logo_preview.setFixedSize(92, 92)
+        self.lbl_logo_preview.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.lbl_logo_preview.setStyleSheet("""
+            QLabel {
+                background-color: #1E1E1E;
+                border: 2px dashed #444444;
+                border-radius: 12px;
+                color: #888888;
+                font-size: 26px;
+            }
+        """)
+        layout_logo.addWidget(self.lbl_logo_preview)
+
+        # Details and Action Controls
+        details_layout = QVBoxLayout()
+        details_layout.setSpacing(8)
+
+        self.lbl_logo_status = QLabel("لوگوی پیش‌فرض نِمُو فعال است")
+        self.lbl_logo_status.setStyleSheet("color: #93C5FD; font-size: 12px; font-weight: bold;")
+        details_layout.addWidget(self.lbl_logo_status)
+
+        lbl_logo_desc = QLabel("این لوگو در سربرگ شناسنامه تمرینی، رژیم‌های غذایی، خروجی‌های PDF چاپی و بالای سایدبار نرم‌افزار نمایش می‌یابد. فرمت‌های مجاز: PNG و JPG.")
+        lbl_logo_desc.setStyleSheet("color: #8E8E93; font-size: 11px;")
+        lbl_logo_desc.setWordWrap(True)
+        details_layout.addWidget(lbl_logo_desc)
+
+        btn_row_logo = QHBoxLayout()
+        btn_row_logo.setSpacing(10)
+
+        self.btn_upload_logo = QPushButton("📁 آپلود لوگوی جدید")
+        self.btn_upload_logo.setFixedHeight(34)
+        self.btn_upload_logo.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_upload_logo.setStyleSheet("""
+            QPushButton {
+                background-color: #2D3748;
+                color: #FFFFFF;
+                font-weight: bold;
+                font-size: 11px;
+                border-radius: 6px;
+                padding: 6px 14px;
+            }
+            QPushButton:hover {
+                background-color: #3B4758;
+            }
+        """)
+        self.btn_upload_logo.clicked.connect(self.upload_custom_logo_action)
+
+        self.btn_reset_logo = QPushButton("🔄 بازنشانی به لوگوی پیش‌فرض نِمُو")
+        self.btn_reset_logo.setFixedHeight(34)
+        self.btn_reset_logo.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_reset_logo.setStyleSheet("""
+            QPushButton {
+                background-color: #1F2937;
+                color: #E2E8F0;
+                font-size: 11px;
+                font-weight: bold;
+                border: 1px solid #374151;
+                border-radius: 6px;
+                padding: 6px 14px;
+            }
+            QPushButton:hover {
+                background-color: #374151;
+                color: #FFFFFF;
+            }
+            QPushButton:disabled {
+                background-color: #161B22;
+                color: #555555;
+                border-color: #222222;
+            }
+        """)
+        self.btn_reset_logo.clicked.connect(self.reset_to_default_logo_action)
+
+        btn_row_logo.addWidget(self.btn_upload_logo)
+        btn_row_logo.addWidget(self.btn_reset_logo)
+        btn_row_logo.addStretch()
+        details_layout.addLayout(btn_row_logo)
+
+        layout_logo.addLayout(details_layout, 1)
+        layout.addWidget(logo_box)
+
+        # -------------------------------------------------------------
+        # GROUP 3: انتخاب تم و پالت رنگی نرم‌افزار
+        # -------------------------------------------------------------
+        from yalda.views.components.theme_card import ThemePaletteCard, PALETTES_METADATA
+
+        theme_box = QGroupBox("🎨 انتخاب تم و پالت رنگی نرم‌افزار")
+        theme_box.setStyleSheet("""
+            QGroupBox {
+                background-color: #141414;
+                border: 1px solid #282828;
+                border-radius: 10px;
+                margin-top: 14px;
+                padding-top: 18px;
+                font-weight: bold;
+                color: #FFFFFF;
+            }
+            QGroupBox::title {
+                subcontrol-origin: margin;
+                subcontrol-position: top right;
+                padding: 0 10px;
+                color: #FFFFFF;
+            }
+        """)
+        layout_theme = QVBoxLayout(theme_box)
+        layout_theme.setContentsMargins(16, 14, 16, 14)
+        layout_theme.setSpacing(14)
+
+        lbl_theme_desc = QLabel("پالت رنگی مورد نظر خود را انتخاب کنید تا ظاهر پنجره‌ها، دکمه‌ها و سربرگ‌های نرم‌افزار به‌صورت آنی هماهنگ شود:")
+        lbl_theme_desc.setStyleSheet("color: #8E8E93; font-size: 11px;")
+        layout_theme.addWidget(lbl_theme_desc)
+
+        self.theme_cards = {}
+
+        # Sub-section: 🌙 تم‌های دارک مدرن (۱۲ پالت)
+        lbl_dark_section = QLabel("🌙 تم‌های دارک مدرن (۱۲ پالت)")
+        lbl_dark_section.setStyleSheet("color: #FFFFFF; font-size: 13px; font-weight: bold; margin-top: 6px;")
+        layout_theme.addWidget(lbl_dark_section)
+
+        grid_dark = QGridLayout()
+        grid_dark.setHorizontalSpacing(10)
+        grid_dark.setVerticalSpacing(10)
+
+        dark_palettes = [p for p in PALETTES_METADATA if p.get("is_dark", True)]
+        for idx, p_data in enumerate(dark_palettes):
+            card = ThemePaletteCard(p_data)
+            card.clicked.connect(self._on_theme_card_clicked)
+            self.theme_cards[p_data["id"]] = card
+            row = idx // 4
+            col = idx % 4
+            grid_dark.addWidget(card, row, col)
+
+        layout_theme.addLayout(grid_dark)
+
+        # Sub-section: ☀️ تم‌های لایت اختصاصی (۵ پالت)
+        lbl_light_section = QLabel("☀️ تم‌های لایت اختصاصی (۵ پالت)")
+        lbl_light_section.setStyleSheet("color: #FFFFFF; font-size: 13px; font-weight: bold; margin-top: 12px;")
+        layout_theme.addWidget(lbl_light_section)
+
+        grid_light = QGridLayout()
+        grid_light.setHorizontalSpacing(10)
+        grid_light.setVerticalSpacing(10)
+
+        light_palettes = [p for p in PALETTES_METADATA if not p.get("is_dark", True)]
+        for idx, p_data in enumerate(light_palettes):
+            card = ThemePaletteCard(p_data)
+            card.clicked.connect(self._on_theme_card_clicked)
+            self.theme_cards[p_data["id"]] = card
+            row = idx // 4
+            col = idx % 4
+            grid_light.addWidget(card, row, col)
+
+        layout_theme.addLayout(grid_light)
+
+        layout.addWidget(theme_box)
+        layout.addStretch(1)
+
+        scroll.setWidget(container)
+        return scroll
 
     def _create_profile_tab(self) -> QWidget:
         scroll = QScrollArea()
@@ -1229,6 +1560,139 @@ class BackupView(QWidget):
 
         # 4. Notification History
         self.load_notification_history()
+
+        # 5. Appearance & Branding Settings
+        self.load_appearance_data()
+
+    def load_appearance_data(self):
+        """Loads club branding information, logo preview, and selected theme palette."""
+        try:
+            from yalda.services.branding_service import BrandingService
+            info = BrandingService.get_club_info()
+
+            if hasattr(self, "txt_club_name"):
+                self.txt_club_name.setText(info.get("club_name") or "")
+            if hasattr(self, "txt_club_phone"):
+                self.txt_club_phone.setText(info.get("club_phone") or "")
+            if hasattr(self, "txt_club_address"):
+                self.txt_club_address.setText(info.get("club_address") or "")
+
+            self._refresh_logo_preview()
+
+            active_theme = BrandingService.get_selected_theme_id()
+            if hasattr(self, "theme_cards"):
+                for cid, card in self.theme_cards.items():
+                    card.set_selected(cid == active_theme)
+        except Exception:
+            pass
+
+    def _refresh_logo_preview(self):
+        """Updates the logo preview image and status badge in the Appearance tab."""
+        if not hasattr(self, "lbl_logo_preview"):
+            return
+        try:
+            from yalda.services.branding_service import BrandingService
+            info = BrandingService.get_club_info()
+            custom_logo = (info.get("club_logo_path") or "").strip()
+            active_logo = BrandingService.get_active_logo_path()
+
+            if custom_logo:
+                self.lbl_logo_status.setText("✨ لوگوی اختصاصی باشگاه فعال است")
+                self.lbl_logo_status.setStyleSheet("color: #34D399; font-weight: bold; font-size: 12px;")
+                self.btn_reset_logo.setEnabled(True)
+            else:
+                self.lbl_logo_status.setText("🛡️ لوگوی پیش‌فرض نِمُو فعال است")
+                self.lbl_logo_status.setStyleSheet("color: #93C5FD; font-weight: bold; font-size: 12px;")
+                self.btn_reset_logo.setEnabled(False)
+
+            if active_logo and os.path.exists(active_logo):
+                pix = QPixmap(active_logo).scaled(
+                    84, 84, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation
+                )
+                if not pix.isNull():
+                    self.lbl_logo_preview.setPixmap(pix)
+                else:
+                    self.lbl_logo_preview.setText("🖼️")
+            else:
+                self.lbl_logo_preview.setText("🖼️")
+        except Exception:
+            pass
+
+    def save_club_info_action(self):
+        """Saves club name, phone, and address into database."""
+        try:
+            from yalda.services.branding_service import BrandingService
+            name = self.txt_club_name.text().strip()
+            phone = self.txt_club_phone.text().strip()
+            address = self.txt_club_address.text().strip()
+
+            BrandingService.save_club_info(name=name, phone=phone, address=address)
+            self.lbl_club_save_status.setText("✓ مشخصات باشگاه با موفقیت ذخیره شد")
+            QTimer.singleShot(3000, lambda: self.lbl_club_save_status.setText("") if hasattr(self, "lbl_club_save_status") else None)
+            self.branding_changed_signal.emit()
+        except Exception as e:
+            QMessageBox.critical(self, "خطا در ذخیره‌سازی", f"ذخیره مشخصات باشگاه با خطا مواجه شد:\n{e}")
+
+    def upload_custom_logo_action(self):
+        """Opens file dialog for trainer to upload custom club logo (PNG/JPG)."""
+        try:
+            from yalda.services.branding_service import BrandingService
+            from yalda.utils.image_source_chooser import get_image_file_path
+
+            chosen_path = get_image_file_path(
+                self,
+                dialog_title="انتخاب لوگوی اختصاصی باشگاه",
+                file_filter="فایل‌های تصویری (*.png *.jpg *.jpeg *.bmp *.webp)"
+            )
+            if chosen_path and os.path.exists(chosen_path):
+                BrandingService.save_custom_logo(chosen_path)
+                self._refresh_logo_preview()
+                self.branding_changed_signal.emit()
+                QMessageBox.information(
+                    self,
+                    "بارگذاری لوگو",
+                    "لوگوی اختصاصی باشگاه با موفقیت بارگذاری و فعال شد.\nاین لوگو در سربرگ پرینت‌ها و سایدبار اعمال گردید."
+                )
+        except Exception as e:
+            QMessageBox.critical(self, "خطای بارگذاری", f"بارگذاری لوگو با خطا مواجه شد:\n{e}")
+
+    def reset_to_default_logo_action(self):
+        """Restores official Nemov default logo and clears custom club logo."""
+        try:
+            from yalda.services.branding_service import BrandingService
+            reply = QMessageBox.question(
+                self,
+                "تایید بازنشانی لوگو",
+                "آیا مطمئن هستید که می‌خواهید لوگوی اختصاصی را حذف کرده و به لوگوی پیش‌فرض نِمُو بازگردید؟",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No
+            )
+            if reply == QMessageBox.StandardButton.Yes:
+                BrandingService.reset_to_default_logo()
+                self._refresh_logo_preview()
+                self.branding_changed_signal.emit()
+        except Exception as e:
+            QMessageBox.critical(self, "خطا", f"بازنشانی لوگو با خطا مواجه شد:\n{e}")
+
+    def _on_theme_card_clicked(self, theme_id: str):
+        """Handles selection of a theme palette card."""
+        try:
+            from yalda.services.branding_service import BrandingService
+            BrandingService.save_selected_theme_id(theme_id)
+
+            if hasattr(self, "theme_cards"):
+                for cid, card in self.theme_cards.items():
+                    card.set_selected(cid == theme_id)
+
+            try:
+                from yalda.utils.theme_manager import ThemeManager
+                ThemeManager.apply_theme(theme_id)
+            except Exception:
+                pass
+
+            self.branding_changed_signal.emit()
+        except Exception:
+            pass
 
     def load_notification_history(self):
         if not hasattr(self, "table_notif_history"):

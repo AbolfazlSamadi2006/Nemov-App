@@ -2,6 +2,7 @@ from PyQt6.QtWidgets import (
     QMainWindow, QWidget, QHBoxLayout, QStackedWidget, QMessageBox, QDialog
 )
 from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtGui import QIcon
 import config
 from yalda.views.components.sidebar import Sidebar
 from yalda.views.dashboard_view import DashboardView
@@ -15,7 +16,21 @@ class MainWindow(QMainWindow):
 
     def __init__(self):
         super().__init__()
-        self.setWindowTitle(f"{config.APP_NAME} - نرم‌افزار مدیریت باشگاه بدنسازی (نسخه {config.APP_VERSION})")
+        self.setWindowTitle(f"{config.APP_TITLE} (نسخه {config.APP_VERSION})")
+
+        # Explicitly set window icon to multi-resolution nemov.ico
+        ico_path = config.BASE_DIR / "resources" / "icons" / "nemov.ico"
+        png_path = config.BASE_DIR / "resources" / "images" / "nemov_logo.png"
+        legacy_ico = config.BASE_DIR / "resources" / "images" / "app_icon.ico"
+        app_icon = QIcon()
+        if ico_path.exists():
+            app_icon.addFile(str(ico_path))
+        elif legacy_ico.exists():
+            app_icon.addFile(str(legacy_ico))
+        if png_path.exists():
+            app_icon.addFile(str(png_path))
+        if not app_icon.isNull():
+            self.setWindowIcon(app_icon)
 
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
         from PyQt6.QtWidgets import QApplication
@@ -156,6 +171,7 @@ class MainWindow(QMainWindow):
             self._view_backup.account_deleted_signal.connect(self.on_account_deleted)
             self._view_backup.back_requested.connect(self.go_back)
             self._view_backup.notifications_changed_signal.connect(self.sidebar.refresh_notifications)
+            self._view_backup.branding_changed_signal.connect(self.sidebar.refresh_branding)
             self.stack.addWidget(self._view_backup)
         return self._view_backup
 

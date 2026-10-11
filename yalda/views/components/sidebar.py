@@ -153,6 +153,7 @@ class Sidebar(QFrame):
         self.buttons = {}
         self.init_ui()
         self.refresh_notifications()
+        self.refresh_branding()
 
     def init_ui(self):
         layout = QVBoxLayout(self)
@@ -163,7 +164,9 @@ class Sidebar(QFrame):
         # Brand Header
         header = QHBoxLayout()
         self.logo_lbl = QLabel()
-        icon_path = config.BASE_DIR / "resources" / "images" / "app_icon.png"
+        icon_path = config.BASE_DIR / "resources" / "images" / "nemov_logo.png"
+        if not icon_path.exists():
+            icon_path = config.BASE_DIR / "resources" / "images" / "app_icon.png"
         if icon_path.exists():
             pix = QPixmap(str(icon_path)).scaled(36, 36, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
             self.logo_lbl.setPixmap(pix)
@@ -179,7 +182,7 @@ class Sidebar(QFrame):
         header.addStretch()
         layout.addLayout(header)
 
-        self.sub_lbl = QLabel("نرم‌افزار مدیریت باشگاه بدنسازی")
+        self.sub_lbl = QLabel("نرم‌افزار مدیریت ورزشی")
         self.sub_lbl.setStyleSheet("color: #666666; font-size: 11px; margin-bottom: 6px;")
         layout.addWidget(self.sub_lbl)
 
@@ -738,6 +741,35 @@ class Sidebar(QFrame):
             else:
                 self.lbl_dev_photo.setText("👨‍💻")
                 self.lbl_dev_photo.setStyleSheet("font-size: 20px;")
+        except Exception:
+            pass
+
+    def refresh_branding(self):
+        """Dynamically reloads the logo and title when updated in Appearance Settings."""
+        try:
+            from yalda.services.branding_service import BrandingService
+            from PyQt6.QtGui import QPixmap
+            import os
+
+            # 1. Update logo
+            active_logo = BrandingService.get_active_logo_path()
+            if active_logo and os.path.exists(active_logo):
+                pix = QPixmap(active_logo).scaled(36, 36, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+                if not pix.isNull():
+                    self.logo_lbl.setPixmap(pix)
+            else:
+                self.logo_lbl.setText("🔥")
+                self.logo_lbl.setStyleSheet("font-size: 24px;")
+
+            # 2. Update title & subtitle
+            club_info = BrandingService.get_club_info()
+            custom_club = (club_info.get("club_name") or "").strip()
+            if custom_club:
+                self.title_lbl.setText(custom_club)
+                self.sub_lbl.setText(f"مدیریت ورزشی • {config.APP_NAME}")
+            else:
+                self.title_lbl.setText(config.APP_NAME)
+                self.sub_lbl.setText("نرم‌افزار مدیریت ورزشی")
         except Exception:
             pass
 

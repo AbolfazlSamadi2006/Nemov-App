@@ -207,8 +207,14 @@ class PDFGenerator:
         canvas_obj.drawCentredString(0, -55, "YALDA")
         canvas_obj.restoreState()
 
-        # 2. Draw dark red top bar
-        canvas_obj.setFillColor(colors.HexColor(config.COLOR_PRIMARY_ACCENT))
+        # 2. Draw top bar with active theme primary accent color
+        try:
+            from yalda.utils.theme_manager import ThemeManager
+            active_theme = ThemeManager.get_active_theme()
+            accent_hex = active_theme.primary if active_theme else getattr(config, 'COLOR_PRIMARY_ACCENT', '#8B0000')
+        except Exception:
+            accent_hex = getattr(config, 'COLOR_PRIMARY_ACCENT', '#8B0000')
+        canvas_obj.setFillColor(colors.HexColor(accent_hex))
         canvas_obj.rect(0, doc.height + doc.topMargin + 10, doc.width + doc.leftMargin + doc.rightMargin, 15, fill=1, stroke=0)
         
         # 3. Footer: Dividing line, Gym Address (Right) & Date (Left)
@@ -226,6 +232,12 @@ class PDFGenerator:
         # Print Date on LEFT
         footer_date = reshape_text(f"تاریخ چاپ: {get_today_shamsi()}")
         canvas_obj.drawString(doc.leftMargin, 16, footer_date)
+
+        # 4. Centered Official Nemov Footer Signature at y=7
+        canvas_obj.setFillColor(colors.HexColor("#777777"))
+        canvas_obj.setFont(FONT_NAME, 7)
+        official_sig = "طراحی و ارائه‌شده توسط نرم‌افزار مدیریت ورزشی نِمُو (Nemov)"
+        canvas_obj.drawCentredString((doc.width + doc.leftMargin + doc.rightMargin) / 2.0, 7, reshape_text(official_sig))
 
         canvas_obj.restoreState()
 

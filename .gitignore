@@ -12,7 +12,7 @@ ENV/
 # PyInstaller & Build outputs
 build/
 dist/*
-!dist/Yalda_Setup_v3.2.1.exe
+!dist/Nemov_Setup_v3.3.0.exe
 *.spec
 
 # Test Exports & QA screenshots

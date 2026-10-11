@@ -34,10 +34,16 @@ def thread_exception_hook(args):
     log_error(f"Unhandled exception in background thread '{thread_name}': {args.exc_value}\n{tb_str}")
 
 def main():
+    if sys.platform == "win32":
+        try:
+            import ctypes
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(getattr(config, "APP_USER_MODEL_ID", "nemov.sports.management.desktop.v3"))
+        except Exception:
+            pass
     setup_logging()
     sys.excepthook = exception_hook
     threading.excepthook = thread_exception_hook
-    log_info("Starting YaldaApplication...")
+    log_info("Starting Nemov Application...")
     app = YaldaApplication()
     sys.exit(app.run())
 
