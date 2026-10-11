@@ -194,17 +194,54 @@ class PDFGenerator:
     def _create_header_footer(canvas_obj, doc):
         canvas_obj.saveState()
         
-        # 1. Large Diagonal Watermark covering the full page diagonal
+        # 1. Large Diagonal Watermark covering the full page diagonal with Club Name
         import math
         canvas_obj.saveState()
-        canvas_obj.setFont("Helvetica-Bold", 175)
-        canvas_obj.setFillColor(colors.Color(0.80, 0.80, 0.80, alpha=0.26))
         page_w = doc.width + doc.leftMargin + doc.rightMargin
         page_h = doc.height + doc.topMargin + doc.bottomMargin
+        page_diag = math.hypot(page_w, page_h)
+
+        # Retrieve dynamic club name from branding settings with Yalda fallback
+        raw_club_name = ""
+        try:
+            from yalda.services.branding_service import BrandingService
+            club_info = BrandingService.get_club_info()
+            raw_club_name = (club_info.get("club_name") or "").strip()
+        except Exception:
+            pass
+
+        if not raw_club_name:
+            raw_club_name = getattr(config, 'APP_DEFAULT_CLUB_NAME', 'باشگاه بدنسازی یلدا')
+
+        # Determine font and reshape if Persian/Arabic
+        is_persian = any('\u0600' <= ch <= '\u06FF' for ch in raw_club_name)
+        if is_persian:
+            font_name = FONT_BOLD_NAME
+            watermark_text = reshape_text(raw_club_name)
+            base_size = 65
+            y_offset = -20
+        else:
+            font_name = "Helvetica-Bold"
+            watermark_text = raw_club_name
+            base_size = 90
+            y_offset = -30
+
+        # Dynamically scale font size if text is long to prevent clipping beyond margins
+        font_size = base_size
+        try:
+            max_allowed_width = page_diag * 0.75
+            text_width = canvas_obj.stringWidth(watermark_text, font_name, font_size)
+            if text_width > max_allowed_width and text_width > 0:
+                font_size = max(24, int(font_size * (max_allowed_width / text_width)))
+        except Exception:
+            pass
+
+        canvas_obj.setFont(font_name, font_size)
+        canvas_obj.setFillColor(colors.Color(0.82, 0.82, 0.82, alpha=0.25))
         canvas_obj.translate(page_w / 2.0, page_h / 2.0)
         diag_angle = math.degrees(math.atan2(page_h, page_w))
         canvas_obj.rotate(diag_angle)
-        canvas_obj.drawCentredString(0, -55, "YALDA")
+        canvas_obj.drawCentredString(0, y_offset, watermark_text)
         canvas_obj.restoreState()
 
         # 2. Draw top bar with active theme primary accent color
