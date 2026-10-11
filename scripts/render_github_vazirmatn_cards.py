@@ -50,6 +50,7 @@ def make_badge(text: str, bg: str, fg: str, border: str) -> QLabel:
 
 def make_section_header(title_text: str) -> QFrame:
     frame = QFrame()
+    frame.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
     frame.setStyleSheet("""
         QFrame {
             background: transparent;
@@ -78,6 +79,7 @@ def make_section_header(title_text: str) -> QFrame:
 
 def make_feature_table(rows_data: list) -> QFrame:
     tbl = QFrame()
+    tbl.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
     tbl.setObjectName("featTable")
     tbl.setStyleSheet("""
         QFrame#featTable {
@@ -92,6 +94,7 @@ def make_feature_table(rows_data: list) -> QFrame:
 
     # Header row
     hdr = QFrame()
+    hdr.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
     hdr.setStyleSheet("""
         QFrame {
             background-color: #21262D;
@@ -119,6 +122,7 @@ def make_feature_table(rows_data: list) -> QFrame:
 
     for idx, (col1, col2) in enumerate(rows_data):
         row_f = QFrame()
+        row_f.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
         is_last = (idx == len(rows_data) - 1)
         bg_col = "#161B22" if idx % 2 == 0 else "#13181E"
         b_bottom = "none" if is_last else "1px solid #262C36"
@@ -134,13 +138,15 @@ def make_feature_table(rows_data: list) -> QFrame:
         rlay.setContentsMargins(18, 14, 18, 14)
         rlay.setSpacing(16)
 
-        c1 = QLabel(col1)
+        c1 = QLabel()
+        c1.setText(f"<div dir='rtl' align='right' style='text-align: right;'>{col1.replace(chr(10), '<br/>')}</div>")
         c1.setFixedWidth(230)
         c1.setWordWrap(True)
         c1.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
         c1.setStyleSheet(f"color: #FFFFFF; font-family: '{FONT_FAMILY}'; font-size: 13px; font-weight: bold; border: none; background: transparent;")
 
-        c2 = QLabel(col2)
+        c2 = QLabel()
+        c2.setText(f"<div dir='rtl' align='right' style='text-align: right;'>{col2}</div>")
         c2.setWordWrap(True)
         c2.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
         c2.setStyleSheet(f"color: #D0D7DE; font-family: '{FONT_FAMILY}'; font-size: 13px; border: none; background: transparent;")
@@ -155,6 +161,7 @@ def make_feature_table(rows_data: list) -> QFrame:
 def build_download_button() -> QWidget:
     w = QFrame()
     w.setFixedSize(880, 84)
+    w.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
     w.setObjectName("dlBtn")
     w.setStyleSheet("""
         QFrame#dlBtn {
@@ -165,14 +172,16 @@ def build_download_button() -> QWidget:
         }
     """)
     lay = QVBoxLayout(w)
-    lay.setContentsMargins(20, 12, 20, 12)
+    lay.setContentsMargins(24, 12, 24, 12)
     lay.setSpacing(4)
 
-    t1 = QLabel("📥 دانلود مستقیم فایل نصاب نسخه ۳.۳.۰ (Nemov_Setup_v3.3.0.exe)")
+    t1 = QLabel()
+    t1.setText("<div align='center'>📥 دانلود مستقیم فایل نصاب نسخه ۳.۳.۰ (Nemov_Setup_v3.3.0.exe)</div>")
     t1.setAlignment(Qt.AlignmentFlag.AlignCenter)
     t1.setStyleSheet(f"color: #FFFFFF; font-family: '{FONT_FAMILY}'; font-size: 18px; font-weight: bold; background: transparent; border: none;")
 
-    t2 = QLabel("نصب خودکار به همراه تمامی پیش‌نیازها و فونت‌های فارسی  •  حجم: ۱۰۵ مگابایت  •  ویندوز ۱۰ و ۱۱ (۶۴ بیتی)")
+    t2 = QLabel()
+    t2.setText("<div align='center'>نصب خودکار به همراه تمامی پیش‌نیازها و فونت‌های فارسی  •  حجم: ۱۰۵ مگابایت  •  ویندوز ۱۰ و ۱۱ (۶۴ بیتی)</div>")
     t2.setAlignment(Qt.AlignmentFlag.AlignCenter)
     t2.setStyleSheet(f"color: #FEE2E2; font-family: '{FONT_FAMILY}'; font-size: 12.5px; background: transparent; border: none;")
 
@@ -183,6 +192,7 @@ def build_download_button() -> QWidget:
 
 def build_hero_box(is_release: bool = False) -> QFrame:
     hero = QFrame()
+    hero.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
     hero.setObjectName("heroBox")
     hero.setStyleSheet("""
         QFrame#heroBox {
@@ -196,36 +206,33 @@ def build_hero_box(is_release: bool = False) -> QFrame:
     vlay.setContentsMargins(24, 22, 24, 22)
     vlay.setSpacing(12)
 
-    lbl_title = QLabel("🏆 نرم‌افزار جامع مدیریت ورزشی و باشگاهی «نِمُو» (Nemov)")
-    lbl_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+    lbl_title = QLabel()
+    lbl_title.setText("<div dir='rtl' align='right' style='text-align: right;'>🏆 نرم‌افزار جامع مدیریت ورزشی و باشگاهی «نِمُو» (Nemov)</div>")
+    lbl_title.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
     lbl_title.setStyleSheet(f"color: #FFFFFF; font-family: '{FONT_FAMILY}'; font-size: 22px; font-weight: bold; background: transparent; border: none;")
 
-    lbl_en = QLabel("Nemov Sports & Gym Management Suite — v3.3.0")
-    lbl_en.setAlignment(Qt.AlignmentFlag.AlignCenter)
-    lbl_en.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
+    lbl_en = QLabel()
+    lbl_en.setText("<div dir='rtl' align='right' style='text-align: right;'>Nemov Sports & Gym Management Suite — v3.3.0</div>")
+    lbl_en.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
     lbl_en.setStyleSheet(f"color: #F87171; font-family: '{FONT_FAMILY}'; font-size: 14px; font-weight: bold; background: transparent; border: none;")
 
-    lbl_desc = QLabel(
-        "یک دستیار همه‌فن‌حریف، مدرن و کاملاً فارسی برای مربیان حرفه‌ای و مدیران باشگاه‌های ورزشی؛\n"
-        "مجهز به موتور ۱۷ پالت رنگی، تنظیمات لوگو و برندینگ، طراحی تخصصی تمرین و تغذیه، پیامک هوشمند و همگام‌سازی ابری"
-    )
-    lbl_desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
+    lbl_desc = QLabel()
+    lbl_desc.setText("<div dir='rtl' align='right' style='text-align: right;'>یک دستیار همه‌فن‌حریف، مدرن و کاملاً فارسی برای مربیان حرفه‌ای و مدیران باشگاه‌های ورزشی؛<br/>مجهز به موتور ۱۷ پالت رنگی، تنظیمات لوگو و برندینگ، طراحی تخصصی تمرین و تغذیه، پیامک هوشمند و همگام‌سازی ابری</div>")
+    lbl_desc.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
     lbl_desc.setWordWrap(True)
     lbl_desc.setStyleSheet(f"color: #C9D1D9; font-family: '{FONT_FAMILY}'; font-size: 13.5px; background: transparent; border: none;")
 
-    # Row 1 of Badges
+    # Row 1 of Badges (Right-aligned)
     row1 = QHBoxLayout()
     row1.setSpacing(10)
-    row1.addStretch()
     row1.addWidget(make_badge("🔥 نسخه ۳.۳.۰ (Latest Release)", "#7F1D1D", "#FECACA", "#DC2626"))
     row1.addWidget(make_badge("💻 ویندوز ۱۰ و ۱۱ (۶۴ بیتی)", "#1E3A8A", "#BFDBFE", "#3B82F6"))
     row1.addWidget(make_badge("🎨 ۱۷ پالت رنگی دارک و لایت", "#4C1D95", "#DDD6FE", "#8B5CF6"))
     row1.addStretch()
 
-    # Row 2 of Badges
+    # Row 2 of Badges (Right-aligned)
     row2 = QHBoxLayout()
     row2.setSpacing(10)
-    row2.addStretch()
     row2.addWidget(make_badge("📩 سامانه هوشمند پیامک فعال", "#047857", "#A7F3D0", "#10B981"))
     row2.addWidget(make_badge("☁️ پشتیبان‌گیری ابری و ایمیل فعال", "#7C2D12", "#FED7AA", "#F97316"))
     row2.addWidget(make_badge("✨ رابط کاربری ۱۰۰٪ فارسی و واکنش‌گرا", "#164E63", "#A5F3FC", "#06B6D4"))
@@ -242,6 +249,7 @@ def build_hero_box(is_release: bool = False) -> QFrame:
 
 def build_footer_box() -> QFrame:
     ftr = QFrame()
+    ftr.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
     ftr.setStyleSheet("""
         QFrame {
             background: transparent;
@@ -252,14 +260,16 @@ def build_footer_box() -> QFrame:
     """)
     lay = QVBoxLayout(ftr)
     lay.setContentsMargins(0, 12, 0, 4)
-    lay.setSpacing(4)
+    lay.setSpacing(6)
 
-    l1 = QLabel("طراحی و توسعه جهت ارتقای سطح حرفه‌ای مربیان و باشگاه‌های ورزشی ایران")
-    l1.setAlignment(Qt.AlignmentFlag.AlignCenter)
+    l1 = QLabel()
+    l1.setText("<div dir='rtl' align='right' style='text-align: right;'>طراحی و توسعه جهت ارتقای سطح حرفه‌ای مربیان و باشگاه‌های ورزشی ایران</div>")
+    l1.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
     l1.setStyleSheet(f"color: #C9D1D9; font-family: '{FONT_FAMILY}'; font-size: 13px; font-weight: bold; border: none;")
 
-    l2 = QLabel("© 2026 Abolfazl Samadi — تمامی حقوق این نرم‌افزار برای نِمُو (Nemov) محفوظ است.")
-    l2.setAlignment(Qt.AlignmentFlag.AlignCenter)
+    l2 = QLabel()
+    l2.setText("<div dir='rtl' align='right' style='text-align: right;'>تمامی حقوق این نرم‌افزار برای نِمُو (Nemov) محفوظ است — © ۲۰۲۶ ابوالفضل صمدی</div>")
+    l2.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
     l2.setStyleSheet(f"color: #8B949E; font-family: '{FONT_FAMILY}'; font-size: 12px; border: none;")
 
     lay.addWidget(l1)
@@ -289,6 +299,7 @@ HIGHLIGHTS_ROWS_V3_3_0 = [
 
 def build_steps_box() -> QFrame:
     box = QFrame()
+    box.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
     box.setObjectName("stepsBox")
     box.setStyleSheet("""
         QFrame#stepsBox {
@@ -308,7 +319,8 @@ def build_steps_box() -> QFrame:
         "۳. در صورت ارتقا از نسخه‌های پیشین، کلیه اطلاعات، پرونده‌ها، تنظیمات، پایگاه داده و لایسنس سیستم کاملاً حفظ خواهد شد.",
     ]
     for s in steps:
-        lbl = QLabel(s)
+        lbl = QLabel()
+        lbl.setText(f"<div dir='rtl' align='right' style='text-align: right; line-height: 1.5;'>{s}</div>")
         lbl.setWordWrap(True)
         lbl.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
         lbl.setStyleSheet(f"color: #E6EDF3; font-family: '{FONT_FAMILY}'; font-size: 13px; border: none; background: transparent;")
@@ -318,6 +330,7 @@ def build_steps_box() -> QFrame:
 
 def build_release_showcase() -> QWidget:
     root = QFrame()
+    root.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
     root.setFixedWidth(960)
     root.setObjectName("rootCard")
     root.setStyleSheet("""
@@ -332,7 +345,7 @@ def build_release_showcase() -> QWidget:
     vlay.setSpacing(16)
 
     vlay.addWidget(build_hero_box(is_release=True))
-    vlay.addWidget(make_section_header("🔥 ویژگی‌ها و تغییرات کلیدی نسخه ۳.۳.۰"))
+    vlay.addWidget(make_section_header("🔥 تازه‌های نسخه ۳.۳.۰ (Release Highlights)"))
     vlay.addWidget(make_feature_table(HIGHLIGHTS_ROWS_V3_3_0))
     vlay.addWidget(make_section_header("📥 راهنمای دانلود و نصب سریع (بدون نیاز به پیش‌نیاز)"))
     vlay.addWidget(build_steps_box())
@@ -343,6 +356,7 @@ def build_release_showcase() -> QWidget:
 
 def make_info_card(title: str, bullets: list) -> QFrame:
     card = QFrame()
+    card.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
     card.setObjectName("infoCard")
     card.setStyleSheet("""
         QFrame#infoCard {
@@ -355,7 +369,8 @@ def make_info_card(title: str, bullets: list) -> QFrame:
     vlay.setContentsMargins(18, 16, 18, 16)
     vlay.setSpacing(10)
 
-    lbl_t = QLabel(title)
+    lbl_t = QLabel()
+    lbl_t.setText(f"<div dir='rtl' align='right' style='text-align: right;'>{title}</div>")
     lbl_t.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
     lbl_t.setStyleSheet(f"""
         color: #FCA5A5;
@@ -369,7 +384,8 @@ def make_info_card(title: str, bullets: list) -> QFrame:
     vlay.addWidget(lbl_t)
 
     for b in bullets:
-        lbl_b = QLabel(f"•  {b}")
+        lbl_b = QLabel()
+        lbl_b.setText(f"<div dir='rtl' align='right' style='text-align: right; line-height: 1.45;'>•  {b}</div>")
         lbl_b.setWordWrap(True)
         lbl_b.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTop)
         lbl_b.setStyleSheet(f"color: #D0D7DE; font-family: '{FONT_FAMILY}'; font-size: 12.8px; border: none; background: transparent;")
@@ -381,6 +397,7 @@ def make_info_card(title: str, bullets: list) -> QFrame:
 
 def build_readme_showcase() -> QWidget:
     root = QFrame()
+    root.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
     root.setFixedWidth(960)
     root.setObjectName("rootCard")
     root.setStyleSheet("""
@@ -398,6 +415,7 @@ def build_readme_showcase() -> QWidget:
 
     # Intro callout box
     intro = QFrame()
+    intro.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
     intro.setObjectName("introBox")
     intro.setStyleSheet("""
         QFrame#introBox {
@@ -410,13 +428,12 @@ def build_readme_showcase() -> QWidget:
     ilay = QVBoxLayout(intro)
     ilay.setContentsMargins(20, 16, 20, 16)
     ilay.setSpacing(6)
-    it1 = QLabel("🌟 چرا نرم‌افزار ورزشی «نِمُو» (Nemov)؟")
+    it1 = QLabel()
+    it1.setText("<div dir='rtl' align='right' style='text-align: right;'>🌟 چرا نرم‌افزار ورزشی «نِمُو» (Nemov)؟</div>")
     it1.setAlignment(Qt.AlignmentFlag.AlignRight)
     it1.setStyleSheet(f"color: #FFFFFF; font-family: '{FONT_FAMILY}'; font-size: 15.5px; font-weight: bold; border: none; background: transparent;")
-    it2 = QLabel(
-        "نرم‌افزار نِمُو (Nemov) با درک عمیق نیازهای روزمره مربیان بدنسازی و فیتنس طراحی شده است؛ محیطی فوق‌العاده مدرن با ۱۷ تم دارک و لایت، "
-        "چیدمان کاملاً راست‌به‌چپ (RTL) و سرعت اجرای لحظه‌ای که به صورت ۱۰۰٪ آفلاین و بدون نیاز به اینترنت کار می‌کند و در عین حال به سرور ابری، سامانه پیامک و بانک جامع حرکات ورزشی و تغذیه مجهز است."
-    )
+    it2 = QLabel()
+    it2.setText("<div dir='rtl' align='right' style='text-align: right; line-height: 1.55;'>نرم‌افزار نِمُو (Nemov) با درک عمیق نیازهای روزمره مربیان بدنسازی و فیتنس طراحی شده است؛ محیطی فوق‌العاده مدرن با ۱۷ تم دارک و لایت، چیدمان کاملاً راست‌به‌چپ (RTL) و سرعت اجرای لحظه‌ای که به صورت ۱۰۰٪ آفلاین و بدون نیاز به اینترنت کار می‌کند و در عین حال به سرور ابری، سامانه پیامک و بانک جامع حرکات ورزشی و تغذیه مجهز است.</div>")
     it2.setWordWrap(True)
     it2.setAlignment(Qt.AlignmentFlag.AlignRight)
     it2.setStyleSheet(f"color: #D0D7DE; font-family: '{FONT_FAMILY}'; font-size: 13px; border: none; background: transparent;")
@@ -437,7 +454,7 @@ def build_readme_showcase() -> QWidget:
         "مدیریت مدارک پزشکی چندصفحه‌ای (PDF و تصویر) با قابلیت زوم و چرخش صفحات.",
     ]), 0, 0)
     grid.addWidget(make_info_card("۲. 🥗 مهندسی تغذیه، رژیم ایرانی و BMR / TDEE", [
-        "محاسبه خودکار متابولیسم پایه (BMR) و کالری تثبیت روزانه (TDEE) با فرمول Mifflin-St Jeor.",
+        "محاسبه خودکار متابولیسم پایه (BMR) و کالری تثبیت روزانه (TDEE) با فرمول علمی.",
         "محاسبه لحظه‌ای گرم و درصد پروتئین، کربوهیدرات و چربی بر اساس هدف شاگرد.",
         "بانک جامع غذاهای ایرانی و مکمل‌ها با ارزش غذایی دقیق و امکان افزودن خوراکی جدید.",
         "ذخیره و بارگذاری آنی الگوهای غذایی پرتکرار در بانک الگوها.",
@@ -461,18 +478,16 @@ def build_readme_showcase() -> QWidget:
 
     vlay.addWidget(make_section_header("🛠️ معماری و تکنولوژی‌های به‌کاررفته"))
     
-    # Row 1 of Tech Stack
+    # Row 1 of Tech Stack (Right-aligned)
     trow1 = QHBoxLayout()
     trow1.setSpacing(8)
-    trow1.addStretch()
     for t in ["Python 3.10+", "PyQt6 (RTL & High-DPI)", "SQLite 3 + SQLAlchemy", "ReportLab PDF", "OpenPyXL Excel"]:
         trow1.addWidget(make_badge(t, "#161B22", "#C9D1D9", "#30363D"))
     trow1.addStretch()
 
-    # Row 2 of Tech Stack
+    # Row 2 of Tech Stack (Right-aligned)
     trow2 = QHBoxLayout()
     trow2.setSpacing(8)
-    trow2.addStretch()
     for t in ["SMS.ir REST API", "OpenCV & PyMuPDF", "Cloudflare Workers Sync", "PyInstaller + NSIS Installer"]:
         trow2.addWidget(make_badge(t, "#161B22", "#C9D1D9", "#30363D"))
     trow2.addStretch()
@@ -515,4 +530,4 @@ save_widget_png(rel_w, OUT_DIR / "release_v3_3_0_showcase.png", BRAIN_DIR / "qa_
 rdm_w = build_readme_showcase()
 save_widget_png(rdm_w, OUT_DIR / "readme_full_showcase.png", BRAIN_DIR / "qa_readme_full_showcase.png")
 
-print("ALL ASSETS RENDERED SUCCESSFULLY FOR NEMOV v3.3.0!")
+print("ALL ASSETS RENDERED WITH FULL RIGHT-TO-LEFT ALIGNMENT!")
