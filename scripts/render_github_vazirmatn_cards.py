@@ -357,6 +357,7 @@ def build_release_showcase() -> QWidget:
 def make_info_card(title: str, bullets: list) -> QFrame:
     card = QFrame()
     card.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
+    card.setFixedSize(444, 280)
     card.setObjectName("infoCard")
     card.setStyleSheet("""
         QFrame#infoCard {
@@ -391,7 +392,6 @@ def make_info_card(title: str, bullets: list) -> QFrame:
         lbl_b.setStyleSheet(f"color: #D0D7DE; font-family: '{FONT_FAMILY}'; font-size: 12.8px; border: none; background: transparent;")
         vlay.addWidget(lbl_b)
 
-    vlay.addStretch()
     return card
 
 
@@ -445,7 +445,10 @@ def build_readme_showcase() -> QWidget:
     vlay.addWidget(make_feature_table(HIGHLIGHTS_ROWS_V3_3_0))
 
     vlay.addWidget(make_section_header("💎 امکانات جامع نرم‌افزار در یک نگاه"))
-    grid = QGridLayout()
+    grid_widget = QWidget()
+    grid_widget.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
+    grid = QGridLayout(grid_widget)
+    grid.setContentsMargins(0, 0, 0, 0)
     grid.setSpacing(16)
     grid.addWidget(make_info_card("۱. 👥 پرونده ورزشکاران و ارزیابی فیزیکی", [
         "ثبت اطلاعات فردی، تماس، تاریخ تولد شمسی و تصویر شاگرد",
@@ -471,7 +474,8 @@ def build_readme_showcase() -> QWidget:
         "ارسال خودکار پیامک‌های یادآوری و مناسبتی بدون قطعی بلک‌لیست مخابرات",
         "ثبت خودکار گزارش‌ها و لاگ‌های سیستم جهت مدیریت بهینه باشگاه",
     ]), 1, 1)
-    vlay.addLayout(grid)
+    grid_widget.setFixedHeight(576)
+    vlay.addWidget(grid_widget)
 
     vlay.addWidget(make_section_header("🚀 راهنمای دانلود و نصب سریع (ویژه مربیان — بدون نیاز به پیش‌نیاز)"))
     vlay.addWidget(build_steps_box())
@@ -488,9 +492,32 @@ def save_widget_png(w: QWidget, out_path: Path, qa_path: Path):
     w.adjustSize()
     app.processEvents()
 
-    # Exact required height after layout settles
-    real_h = w.layout().sizeHint().height() if w.layout() else w.sizeHint().height()
+    # If widget has a layout, lock child heights to their settled content heights
+    lay = w.layout()
+    if lay:
+        for i in range(lay.count()):
+            it = lay.itemAt(i)
+            wid = it.widget()
+            if wid and wid.height() > 0:
+                wid.setFixedHeight(wid.height())
+
+        total_h = lay.contentsMargins().top() + lay.contentsMargins().bottom()
+        for i in range(lay.count()):
+            it = lay.itemAt(i)
+            wid = it.widget()
+            if wid:
+                total_h += wid.height()
+            elif it.layout():
+                total_h += it.layout().sizeHint().height()
+            if i < lay.count() - 1:
+                total_h += lay.spacing()
+        real_h = total_h
+    else:
+        real_h = w.height()
+
     w.setFixedHeight(real_h)
+    if lay:
+        lay.activate()
     app.processEvents()
 
     dpr = app.primaryScreen().devicePixelRatio()
