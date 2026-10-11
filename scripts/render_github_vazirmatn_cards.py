@@ -265,13 +265,13 @@ def build_footer_box() -> QFrame:
     lay.setSpacing(6)
 
     l1 = QLabel()
-    l1.setText("<div align='right'>طراحی و توسعه اختصاصی برای مربیان و مدیران باشگاه‌های ورزشی</div>")
-    l1.setAlignment(Qt.AlignmentFlag.AlignLeading | Qt.AlignmentFlag.AlignVCenter)
+    l1.setText("<div align='center'>طراحی و توسعه اختصاصی برای مربیان و مدیران باشگاه‌های ورزشی</div>")
+    l1.setAlignment(Qt.AlignmentFlag.AlignCenter)
     l1.setStyleSheet(f"color: #C9D1D9; font-family: '{FONT_FAMILY}'; font-size: 13px; font-weight: bold; border: none;")
 
     l2 = QLabel()
-    l2.setText("<div align='right'>تمامی حقوق محفوظ است © ۲۰۲۶ — ابوالفضل صمدی | نرم‌افزار مدیریت ورزشی نِمُو (Nemov)</div>")
-    l2.setAlignment(Qt.AlignmentFlag.AlignLeading | Qt.AlignmentFlag.AlignVCenter)
+    l2.setText("<div align='center'>تمامی حقوق محفوظ است © ۲۰۲۶ — ابوالفضل صمدی | نرم‌افزار مدیریت ورزشی نِمُو (Nemov)</div>")
+    l2.setAlignment(Qt.AlignmentFlag.AlignCenter)
     l2.setStyleSheet(f"color: #8B949E; font-family: '{FONT_FAMILY}'; font-size: 12px; border: none;")
 
     lay.addWidget(l1)
@@ -476,24 +476,6 @@ def build_readme_showcase() -> QWidget:
     vlay.addWidget(make_section_header("🚀 راهنمای دانلود و نصب سریع (ویژه مربیان — بدون نیاز به پیش‌نیاز)"))
     vlay.addWidget(build_steps_box())
 
-    vlay.addWidget(make_section_header("🛠️ معماری و تکنولوژی‌های به‌کاررفته"))
-    
-    # Row 1 of Tech Stack (Right-aligned)
-    trow1 = QHBoxLayout()
-    trow1.setSpacing(8)
-    for t in ["Python 3.10+", "PyQt6 (RTL & High-DPI)", "SQLite 3 + SQLAlchemy", "ReportLab PDF", "OpenPyXL Excel"]:
-        trow1.addWidget(make_badge(t, "#161B22", "#C9D1D9", "#30363D"))
-    trow1.addStretch()
-
-    # Row 2 of Tech Stack (Right-aligned)
-    trow2 = QHBoxLayout()
-    trow2.setSpacing(8)
-    for t in ["SMS.ir REST API", "OpenCV & PyMuPDF", "Cloudflare Workers Sync", "PyInstaller + NSIS Installer"]:
-        trow2.addWidget(make_badge(t, "#161B22", "#C9D1D9", "#30363D"))
-    trow2.addStretch()
-
-    vlay.addLayout(trow1)
-    vlay.addLayout(trow2)
 
     vlay.addWidget(build_footer_box())
     root.adjustSize()
