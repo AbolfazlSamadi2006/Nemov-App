@@ -1,7 +1,7 @@
 <div align="center">
 
 <a href="https://github.com/AbolfazlSamadi2006/Nemov-App/releases/download/v3.3.0/Nemov_Setup_v3.3.0.exe">
-  <img src="resources/github_assets/download_btn_v3_2_1.png" width="840" alt="دانلود مستقیم فایل نصاب نسخه ۳.۳.۰ (Nemov_Setup_v3.3.0.exe)" />
+  <img src="resources/github_assets/download_btn_v3_3_0.png" width="840" alt="دانلود مستقیم فایل نصاب نسخه ۳.۳.۰ (Nemov_Setup_v3.3.0.exe)" />
 </a>
 
 <br/><br/>
@@ -11,7 +11,7 @@
 <br/><br/>
 
 <a href="https://github.com/AbolfazlSamadi2006/Nemov-App/releases/download/v3.3.0/Nemov_Setup_v3.3.0.exe">
-  <img src="resources/github_assets/download_btn_v3_2_1.png" width="840" alt="دانلود مستقیم فایل نصاب نسخه ۳.۳.۰ (Nemov_Setup_v3.3.0.exe)" />
+  <img src="resources/github_assets/download_btn_v3_3_0.png" width="840" alt="دانلود مستقیم فایل نصاب نسخه ۳.۳.۰ (Nemov_Setup_v3.3.0.exe)" />
 </a>
 
 </div>
