@@ -62,7 +62,7 @@ def make_section_header(title_text: str) -> QFrame:
     lay = QHBoxLayout(frame)
     lay.setContentsMargins(0, 8, 0, 6)
     lbl = QLabel(title_text)
-    lbl.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+    lbl.setAlignment(Qt.AlignmentFlag.AlignLeading | Qt.AlignmentFlag.AlignVCenter)
     lbl.setStyleSheet(f"""
         QLabel {{
             color: #FFFFFF;
@@ -109,11 +109,11 @@ def make_feature_table(rows_data: list) -> QFrame:
 
     lbl_h1 = QLabel("🎯 بخش / قابلیت")
     lbl_h1.setFixedWidth(230)
-    lbl_h1.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+    lbl_h1.setAlignment(Qt.AlignmentFlag.AlignLeading | Qt.AlignmentFlag.AlignVCenter)
     lbl_h1.setStyleSheet(f"color: #F87171; font-family: '{FONT_FAMILY}'; font-size: 13.5px; font-weight: bold; border: none; background: transparent;")
 
     lbl_h2 = QLabel("✨ شرح کامل ویژگی‌ها و ارتقای عملکرد")
-    lbl_h2.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+    lbl_h2.setAlignment(Qt.AlignmentFlag.AlignLeading | Qt.AlignmentFlag.AlignVCenter)
     lbl_h2.setStyleSheet(f"color: #F87171; font-family: '{FONT_FAMILY}'; font-size: 13.5px; font-weight: bold; border: none; background: transparent;")
 
     hlay.addWidget(lbl_h1)
@@ -139,16 +139,16 @@ def make_feature_table(rows_data: list) -> QFrame:
         rlay.setSpacing(16)
 
         c1 = QLabel()
-        c1.setText(f"<div dir='rtl' align='right' style='text-align: right;'>{col1.replace(chr(10), '<br/>')}</div>")
+        c1.setText(f"<div align='right'>{col1.replace(chr(10), '<br/>')}</div>")
         c1.setFixedWidth(230)
         c1.setWordWrap(True)
-        c1.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+        c1.setAlignment(Qt.AlignmentFlag.AlignLeading | Qt.AlignmentFlag.AlignVCenter)
         c1.setStyleSheet(f"color: #FFFFFF; font-family: '{FONT_FAMILY}'; font-size: 13px; font-weight: bold; border: none; background: transparent;")
 
         c2 = QLabel()
-        c2.setText(f"<div dir='rtl' align='right' style='text-align: right;'>{col2}</div>")
+        c2.setText(f"<div align='right'>{col2}</div>")
         c2.setWordWrap(True)
-        c2.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+        c2.setAlignment(Qt.AlignmentFlag.AlignLeading | Qt.AlignmentFlag.AlignVCenter)
         c2.setStyleSheet(f"color: #D0D7DE; font-family: '{FONT_FAMILY}'; font-size: 13px; border: none; background: transparent;")
 
         rlay.addWidget(c1)
@@ -217,7 +217,7 @@ def build_hero_box(is_release: bool = False) -> QFrame:
     lbl_en.setStyleSheet(f"color: #F87171; font-family: '{FONT_FAMILY}'; font-size: 14px; font-weight: bold; background: transparent; border: none;")
 
     lbl_desc = QLabel()
-    lbl_desc.setText("<div align='center'>یک دستیار همه‌فن‌حریف، مدرن و کاملاً فارسی برای مربیان حرفه‌ای و مدیران باشگاه‌های ورزشی؛<br/>مجهز به موتور ۱۷ پالت رنگی، تنظیمات لوگو و برندینگ، طراحی تخصصی تمرین و تغذیه، پیامک هوشمند و همگام‌سازی ابری</div>")
+    lbl_desc.setText("<div align='center'>نرم‌افزار جامع مدیریت باشگاه و مربیگری حرفه‌ای؛ از طراحی اختصاصی برنامه تمرین و رژیم غذایی<br/>تا حسابداری شهریه، پیامک خودکار و پشتیبان‌گیری ابری روی ویندوز ۱۰ و ۱۱</div>")
     lbl_desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
     lbl_desc.setWordWrap(True)
     lbl_desc.setStyleSheet(f"color: #C9D1D9; font-family: '{FONT_FAMILY}'; font-size: 13.5px; background: transparent; border: none;")
@@ -265,13 +265,13 @@ def build_footer_box() -> QFrame:
     lay.setSpacing(6)
 
     l1 = QLabel()
-    l1.setText("<div dir='rtl' align='right' style='text-align: right;'>طراحی و توسعه جهت ارتقای سطح حرفه‌ای مربیان و باشگاه‌های ورزشی ایران</div>")
-    l1.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+    l1.setText("<div align='right'>طراحی و توسعه اختصاصی برای مربیان و مدیران باشگاه‌های ورزشی</div>")
+    l1.setAlignment(Qt.AlignmentFlag.AlignLeading | Qt.AlignmentFlag.AlignVCenter)
     l1.setStyleSheet(f"color: #C9D1D9; font-family: '{FONT_FAMILY}'; font-size: 13px; font-weight: bold; border: none;")
 
     l2 = QLabel()
-    l2.setText("<div dir='rtl' align='right' style='text-align: right;'>تمامی حقوق این نرم‌افزار برای نِمُو (Nemov) محفوظ است — © ۲۰۲۶ ابوالفضل صمدی</div>")
-    l2.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+    l2.setText("<div align='right'>تمامی حقوق محفوظ است © ۲۰۲۶ — ابوالفضل صمدی | نرم‌افزار مدیریت ورزشی نِمُو (Nemov)</div>")
+    l2.setAlignment(Qt.AlignmentFlag.AlignLeading | Qt.AlignmentFlag.AlignVCenter)
     l2.setStyleSheet(f"color: #8B949E; font-family: '{FONT_FAMILY}'; font-size: 12px; border: none;")
 
     lay.addWidget(l1)
@@ -280,22 +280,20 @@ def build_footer_box() -> QFrame:
 
 
 HIGHLIGHTS_ROWS_V3_3_0 = [
-    ("🎨 موتور چندپالتی تم\n(17 Color Palettes)",
-     "موتور قدرتمند استایل‌شیت داینامیک با ۱۲ پالت دارک مدرن (زرشکی، طلایی، نئون، سیان، بنفش، ابسیدین و...) و ۵ پالت لایت اختصاصی، با اعمال لحظه‌ای و ذخیره پایدار در دیتابیس."),
-    ("🏷️ تب تنظیمات ظاهری\nو برندینگ اختصاصی باشگاه",
-     "ماژول اختصاصی در تنظیمات برای آپلود لوگوی سفارشی باشگاه، تنظیم نام و آدرس، و دکمه بازنشانی فوری به لوگوی پیش‌فرض نِمُو همراه با پیش‌نمایش زنده."),
-    ("📌 رفع قطعی نمایش آیکون\nدر تسک‌بار ویندوز",
-     "تولید و تزریق آیکون چندرزولوشنه nemov.ico (تمامی ۷ لایه استاندارد از ۱۶ تا ۲۵۶ پیکسل) به همراه ثبت شناسه یکتای سیستمی AppUserModelID در رجیستری ویندوز."),
-    ("📄 واترمارک اختصاصی و\nداینامیک در خروجی PDF",
-     "درج هوشمند نام باشگاه مربی به عنوان واترمارک مورب پس‌زمینه با مقیاس‌بندی خودکار قلم، به همراه امضای رسمی «طراحی و ارائه‌شده توسط نرم‌افزار مدیریت ورزشی نِمُو» در پاورقی."),
-    ("⚡ شورتکات و نام‌گذاری یکدست\nدر تمام بخش‌های سیستم",
-     "شورتکات دسکتاپ و استارت‌منو با عنوان یکتای Nemov، فایل باینری Nemov.exe و نصاب استاندارد Nemov_Setup_v3.3.0.exe بدون هیچ‌گونه ناهماهنگی نام."),
-    ("📩 سامانه هوشمند پیامک\nبا درج خودکار نام باشگاه",
-     "اتصال پایدار به پیامک خدماتی SMS.ir با قالب‌های تاییدشده جهت یادآوری سررسید شهریه، تبریک تولد و اطلاعیه تغییر سانس با جایگزینی خودکار متغیر #GYM#."),
-    ("🔐 لایسنس سخت‌افزاری پایدار\n(Persistent Hardware License)",
-     "تثبیت لایسنس روی شناسه سخت‌افزاری دستگاه؛ عدم قفل شدن نرم‌افزار پس از نصب آپدیت‌ها و نسخه‌های جدید نصاب بدون نیاز به ورود مجدد ادمین."),
-    ("☁️ همگام‌سازی ابری و\nلندینگ‌پیج رسمی کلودفلر",
-     "پشتیبان‌گیری رمزنگاری‌شده چندگانه در فضای ابری کلودفلر، ایمیل و حافظه محلی به همراه به‌روزرسانی لندینگ‌پیج رسمی با معرفی باشگاه‌های عضو."),
+    ("🎨 ۱۷ تم رنگی متنوع",
+     "امکان انتخاب ۱۷ تم رنگی متنوع (۱۲ تم تیره و ۵ تم روشن) برای شخصی‌سازی ظاهر برنامه متناسب با سلیقه شما یا رنگ سازمانی باشگاه."),
+    ("🏷️ تنظیمات ظاهری و برندینگ باشگاه",
+     "شخصی‌سازی کامل نام، آدرس و لوگوی اختصاصی باشگاه در سربرگ و واترمارک برنامه‌ها، به همراه دکمه بازگشت به لوگوی اصلی نِمُو."),
+    ("📄 واترمارک اختصاصی در خروجی PDF",
+     "چاپ خودکار نام باشگاه شما به صورت واترمارک در پس‌زمینه برنامه‌های تمرین و تغذیه، همراه با امضای رسمی نِمُو در پاورقی."),
+    ("⚡ عنوان و شورتکات یکدست Nemov",
+     "یکپارچه‌سازی کامل عنوان، شورتکات و فایل اجرایی برنامه با نام رسمی Nemov روی ویندوز ۱۰ و ۱۱."),
+    ("📩 سامانه پیامک با نام اختصاصی باشگاه",
+     "ارسال خودکار پیامک‌های یادآوری شهریه، تبریک تولد و اطلاعیه‌ها با نام اختصاصی باشگاه شما و بدون قطعی ناشی از بلک‌لیست مخابرات."),
+    ("🔐 لایسنس سخت‌افزاری پایدار",
+     "فعال‌سازی دائمی و هوشمند؛ با نصب نسخه‌ها و آپدیت‌های جدید، لایسنس و فعال‌سازی برنامه حفظ می‌شود و نیازی به فعال‌سازی مجدد نیست."),
+    ("☁️ همگام‌سازی ابری و وب‌سایت رسمی",
+     "پشتیبان‌گیری خودکار و امن ابری، محلی و ایمیلی از اطلاعات باشگاه، به همراه وب‌سایت رسمی معرفی امکانات و باشگاه‌های مجهز به سامانه."),
 ]
 
 
@@ -316,15 +314,15 @@ def build_steps_box() -> QFrame:
     lay.setSpacing(8)
 
     steps = [
-        "۱. روی دکمه قرمز «دانلود مستقیم فایل نصاب نسخه ۳.۳.۰» کلیک کنید (یا از بخش Assets در پایین صفحه، فایل Nemov_Setup_v3.3.0.exe را دانلود نمایید).",
-        "۲. فایل نصاب را اجرا کنید؛ تمامی فونت‌های فارسی و پیش‌نیازها به صورت خودکار نصب شده و میانبر Nemov روی دسکتاپ شما قرار می‌گیرد.",
-        "۳. در صورت ارتقا از نسخه‌های پیشین، کلیه اطلاعات، پرونده‌ها، تنظیمات، پایگاه داده و لایسنس سیستم کاملاً حفظ خواهد شد.",
+        "۱. فایل نصاب برنامه (Nemov_Setup_v3.3.0.exe) را از دکمه قرمز بالا یا بخش Assets در انتهای همین صفحه دریافت کنید.",
+        "۲. فایل نصاب را اجرا کنید؛ تمامی پیش‌نیازها و فونت‌ها خودکار نصب شده و آیکون نِمُو روی دسکتاپ قرار می‌گیرد.",
+        "۳. اگر نسخه قبلی را روی سیستم دارید، نیازی به حذف آن نیست؛ همه پرونده‌ها، اطلاعات شاگردان و تنظیمات شما پس از آپدیت دست‌نخورده باقی می‌ماند.",
     ]
     for s in steps:
         lbl = QLabel()
-        lbl.setText(f"<div dir='rtl' align='right' style='text-align: right; line-height: 1.5;'>{s}</div>")
+        lbl.setText(f"<div align='right' style='line-height: 1.5;'>{s}</div>")
         lbl.setWordWrap(True)
-        lbl.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+        lbl.setAlignment(Qt.AlignmentFlag.AlignLeading | Qt.AlignmentFlag.AlignVCenter)
         lbl.setStyleSheet(f"color: #E6EDF3; font-family: '{FONT_FAMILY}'; font-size: 13px; border: none; background: transparent;")
         lay.addWidget(lbl)
     return box
@@ -372,8 +370,8 @@ def make_info_card(title: str, bullets: list) -> QFrame:
     vlay.setSpacing(10)
 
     lbl_t = QLabel()
-    lbl_t.setText(f"<div dir='rtl' align='right' style='text-align: right;'>{title}</div>")
-    lbl_t.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+    lbl_t.setText(f"<div align='right'>{title}</div>")
+    lbl_t.setAlignment(Qt.AlignmentFlag.AlignLeading | Qt.AlignmentFlag.AlignVCenter)
     lbl_t.setStyleSheet(f"""
         color: #FCA5A5;
         font-family: '{FONT_FAMILY}';
@@ -387,9 +385,9 @@ def make_info_card(title: str, bullets: list) -> QFrame:
 
     for b in bullets:
         lbl_b = QLabel()
-        lbl_b.setText(f"<div dir='rtl' align='right' style='text-align: right; line-height: 1.45;'>•  {b}</div>")
+        lbl_b.setText(f"<div align='right' style='line-height: 1.45;'>•  {b}</div>")
         lbl_b.setWordWrap(True)
-        lbl_b.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTop)
+        lbl_b.setAlignment(Qt.AlignmentFlag.AlignLeading | Qt.AlignmentFlag.AlignTop)
         lbl_b.setStyleSheet(f"color: #D0D7DE; font-family: '{FONT_FAMILY}'; font-size: 12.8px; border: none; background: transparent;")
         vlay.addWidget(lbl_b)
 
@@ -431,13 +429,13 @@ def build_readme_showcase() -> QWidget:
     ilay.setContentsMargins(20, 16, 20, 16)
     ilay.setSpacing(6)
     it1 = QLabel()
-    it1.setText("<div dir='rtl' align='right' style='text-align: right;'>🌟 چرا نرم‌افزار ورزشی «نِمُو» (Nemov)؟</div>")
-    it1.setAlignment(Qt.AlignmentFlag.AlignRight)
+    it1.setText("<div align='right'>⚡ چرا نرم‌افزار نِمُو (Nemov)؟</div>")
+    it1.setAlignment(Qt.AlignmentFlag.AlignLeading)
     it1.setStyleSheet(f"color: #FFFFFF; font-family: '{FONT_FAMILY}'; font-size: 15.5px; font-weight: bold; border: none; background: transparent;")
     it2 = QLabel()
-    it2.setText("<div dir='rtl' align='right' style='text-align: right; line-height: 1.55;'>نرم‌افزار نِمُو (Nemov) با درک عمیق نیازهای روزمره مربیان بدنسازی و فیتنس طراحی شده است؛ محیطی فوق‌العاده مدرن با ۱۷ تم دارک و لایت، چیدمان کاملاً راست‌به‌چپ (RTL) و سرعت اجرای لحظه‌ای که به صورت ۱۰۰٪ آفلاین و بدون نیاز به اینترنت کار می‌کند و در عین حال به سرور ابری، سامانه پیامک و بانک جامع حرکات ورزشی و تغذیه مجهز است.</div>")
+    it2.setText("<div align='right' style='line-height: 1.55;'>نِمُو برای مربیانی طراحی شده که می‌خواهند بدون درگیری با کاغذبازی، شلوغی دفتر و قطعی اینترنت، همه کارهای باشگاه را در یک محیط زیبا و روان انجام دهند. برنامه‌ها را با نام و لوگوی باشگاه خودتان چاپ کنید، شهریه‌ها را مدیریت کنید و خیالتان از امنیت اطلاعات راحت باشد.</div>")
     it2.setWordWrap(True)
-    it2.setAlignment(Qt.AlignmentFlag.AlignRight)
+    it2.setAlignment(Qt.AlignmentFlag.AlignLeading)
     it2.setStyleSheet(f"color: #D0D7DE; font-family: '{FONT_FAMILY}'; font-size: 13px; border: none; background: transparent;")
     ilay.addWidget(it1)
     ilay.addWidget(it2)
@@ -449,29 +447,29 @@ def build_readme_showcase() -> QWidget:
     vlay.addWidget(make_section_header("💎 امکانات جامع نرم‌افزار در یک نگاه"))
     grid = QGridLayout()
     grid.setSpacing(16)
-    grid.addWidget(make_info_card("۱. 👥 پرونده کامل ورزشکاران و سنجش فیزیکی", [
-        "ثبت مشخصات فردی، تماس، تاریخ تولد شمسی و عکس پروفایل (وب‌کم یا فایل).",
-        "ارزیابی آنتروپومتریک (قد، وزن، درصد چربی، دور سینه، کمر، شکم، بازو، ران و ساق).",
-        "مقایسه تصویری قبل و بعد (Before & After) جهت پایش پیشرفت بدنی شاگرد.",
-        "مدیریت مدارک پزشکی چندصفحه‌ای (PDF و تصویر) با قابلیت زوم و چرخش صفحات.",
+    grid.addWidget(make_info_card("۱. 👥 پرونده ورزشکاران و ارزیابی فیزیکی", [
+        "ثبت اطلاعات فردی، تماس، تاریخ تولد شمسی و تصویر شاگرد",
+        "سنجش دقیق سایز عضلات، وزن، قد و درصد چربی",
+        "مقایسه تصویری قبل و بعد (Before & After) برای نمایش پیشرفت بدنی",
+        "بایگانی و نمایش مدارک پزشکی و آزمایش‌ها با امکان چرخش و زوم",
     ]), 0, 0)
-    grid.addWidget(make_info_card("۲. 🥗 مهندسی تغذیه، رژیم ایرانی و BMR / TDEE", [
-        "محاسبه خودکار متابولیسم پایه (BMR) و کالری تثبیت روزانه (TDEE) با فرمول علمی.",
-        "محاسبه لحظه‌ای گرم و درصد پروتئین، کربوهیدرات و چربی بر اساس هدف شاگرد.",
-        "بانک جامع غذاهای ایرانی و مکمل‌ها با ارزش غذایی دقیق و امکان افزودن خوراکی جدید.",
-        "ذخیره و بارگذاری آنی الگوهای غذایی پرتکرار در بانک الگوها.",
+    grid.addWidget(make_info_card("۲. 🥗 مهندسی تغذیه، رژیم ایرانی و کالری‌شماری", [
+        "محاسبه هوشمند کالری مصرفی روزانه و درشت‌مغذی‌ها (پروتئین، کربوهیدرات، چربی) متناسب با وزن و هدف شاگرد",
+        "بانک جامع غذاهای ایرانی و مکمل‌های ورزشی با امکان افزودن خوراکی جدید",
+        "ذخیره و بارگذاری آسان رژیم‌های پرتکرار در بانک الگوها",
+        "تنظیم و تفکیک دقیق وعده‌ها و میان‌وعده‌های روزانه",
     ]), 0, 1)
     grid.addWidget(make_info_card("۳. 🏋️‍♂️ طراحی برنامه تمرینی و بانک حرکات چندرسانه‌ای", [
-        "برنامه‌ریزی ۱ تا ۶ روز در هفته با تنظیم ست، تکرار، سیستم تمرینی و توضیحات حرکت.",
-        "بانک حرکات مجهز به تصویر و ویدیوی آموزشی با تفکیک عضله هدف و تجهیزات.",
-        "بانک الگوهای آماده تمرینی جهت صدور سریع برنامه برای شاگردان جدید.",
-        "خروجی چاپی PDF با واترمارک اختصاصی باشگاه، فایل وب تعاملی HTML و بسته فشرده ZIP.",
+        "تنظیم برنامه‌های ۱ تا ۶ روزه با تعداد ست، تکرار، وزنه، ریتم و زمان استراحت",
+        "بانک جامع حرکات ورزشی با ویدیوی اجرای صحیح و تصویر آناتومی عضلات",
+        "بانک الگوهای آماده جهت صدور سریع برنامه برای شاگردان جدید",
+        "خروجی چاپی باکیفیت PDF با واترمارک اختصاصی باشگاه، نسخه وب تعاملی و فایل ZIP",
     ]), 1, 0)
-    grid.addWidget(make_info_card("۴. 🔐 مدیریت چندمربی، امنیت و سامانه پیامک", [
-        "محیط کاری کاملاً مستقل و تفکیک‌شده برای هر مربی با نام کاربری و رمز اختصاصی.",
-        "ارسال آنی پیامک یادآوری شهریه و تبریک تولد از طریق وب‌سرویس رسمی SMS.ir.",
-        "پنل مدیریت ارشد (Admin) جهت مدیریت مربیان و لایسنس پایدار سخت‌افزاری.",
-        "ثبت خودکار وقایع و لاگ‌های فنی (System Diagnostics) با نمایشگر داخلی.",
+    grid.addWidget(make_info_card("۴. 💰 حسابداری شهریه، مدیریت مربیان و پیامک", [
+        "محیط کاری تفکیک‌شده برای هر مربی با دسترسی‌های مشخص",
+        "صندوق شهریه، ثبت تاریخ سررسید و یادآوری هوشمند زمان تمدید",
+        "ارسال خودکار پیامک‌های یادآوری و مناسبتی بدون قطعی بلک‌لیست مخابرات",
+        "ثبت خودکار گزارش‌ها و لاگ‌های سیستم جهت مدیریت بهینه باشگاه",
     ]), 1, 1)
     vlay.addLayout(grid)
 
