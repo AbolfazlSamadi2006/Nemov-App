@@ -154,6 +154,11 @@ class Sidebar(QFrame):
         self.init_ui()
         self.refresh_notifications()
         self.refresh_branding()
+        try:
+            from yalda.utils.theme_manager import ThemeManager
+            ThemeManager.theme_changed.connect(self._on_theme_changed)
+        except Exception:
+            pass
 
     def init_ui(self):
         layout = QVBoxLayout(self)
@@ -163,27 +168,31 @@ class Sidebar(QFrame):
 
         # Brand Header
         header = QHBoxLayout()
+        header.setSpacing(10)
         self.logo_lbl = QLabel()
+        self.logo_lbl.setFixedSize(48, 48)
+        self.logo_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
         icon_path = config.BASE_DIR / "resources" / "images" / "nemov_logo.png"
         if not icon_path.exists():
             icon_path = config.BASE_DIR / "resources" / "images" / "app_icon.png"
         if icon_path.exists():
-            pix = QPixmap(str(icon_path)).scaled(36, 36, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+            pix = QPixmap(str(icon_path)).scaled(48, 48, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
             self.logo_lbl.setPixmap(pix)
         else:
             self.logo_lbl.setText("🔥")
-            self.logo_lbl.setStyleSheet("font-size: 24px;")
+            self.logo_lbl.setStyleSheet("font-size: 32px;")
         
         self.title_lbl = QLabel(config.APP_NAME)
-        self.title_lbl.setStyleSheet("color: #8B0000; font-size: 20px; font-weight: bold;")
+        self.title_lbl.setObjectName("sidebarBrandTitle")
+        self.title_lbl.setStyleSheet("color: #B91C1C; font-size: 24px; font-weight: bold;")
 
-        header.addWidget(self.logo_lbl)
-        header.addWidget(self.title_lbl)
+        header.addWidget(self.logo_lbl, 0, Qt.AlignmentFlag.AlignVCenter)
+        header.addWidget(self.title_lbl, 0, Qt.AlignmentFlag.AlignVCenter)
         header.addStretch()
         layout.addLayout(header)
 
         self.sub_lbl = QLabel("نرم‌افزار مدیریت ورزشی")
-        self.sub_lbl.setStyleSheet("color: #666666; font-size: 11px; margin-bottom: 6px;")
+        self.sub_lbl.setStyleSheet("color: #71717A; font-size: 11px; margin-bottom: 6px;")
         layout.addWidget(self.sub_lbl)
 
         # Scrollable Navigation Container (prevents bottom overlap on any screen height)
@@ -751,15 +760,15 @@ class Sidebar(QFrame):
             from PyQt6.QtGui import QPixmap
             import os
 
-            # 1. Update logo
+            # 1. Update logo (48x48)
             active_logo = BrandingService.get_active_logo_path()
             if active_logo and os.path.exists(active_logo):
-                pix = QPixmap(active_logo).scaled(36, 36, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+                pix = QPixmap(active_logo).scaled(48, 48, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
                 if not pix.isNull():
                     self.logo_lbl.setPixmap(pix)
             else:
                 self.logo_lbl.setText("🔥")
-                self.logo_lbl.setStyleSheet("font-size: 24px;")
+                self.logo_lbl.setStyleSheet("font-size: 32px;")
 
             # 2. Update title & subtitle
             club_info = BrandingService.get_club_info()
@@ -770,8 +779,77 @@ class Sidebar(QFrame):
             else:
                 self.title_lbl.setText(config.APP_NAME)
                 self.sub_lbl.setText("نرم‌افزار مدیریت ورزشی")
+
+            # 3. Synchronize theme color and font-size
+            self._apply_theme_style()
         except Exception:
             pass
+
+    def _apply_theme_style(self):
+        """Updates brand title color and sidebar buttons dynamically to match active theme."""
+        try:
+            from yalda.utils.theme_manager import ThemeManager
+            palette = ThemeManager.get_current_palette()
+        except Exception:
+            palette = None
+
+        if palette:
+            if palette.key == "crimson_fury":
+                brand_color = "#B91C1C"  # Rich slightly brighter crimson (lighter than #8B0000, harmonizing with menu)
+            else:
+                brand_color = palette.primary_hover if palette.is_dark else palette.primary
+
+            bg_sidebar = palette.bg_sidebar
+            border_col = palette.border
+            btn_hover = palette.primary
+            btn_active = palette.primary
+            text_col = palette.text_secondary
+        else:
+            brand_color = "#B91C1C"
+            bg_sidebar = "#161616"
+            border_col = "#282828"
+            btn_hover = "#8B0000"
+            btn_active = "#8B0000"
+            text_col = "#B0B0B0"
+
+        self.setStyleSheet(f"""
+            QFrame#sidebar {{
+                background-color: {bg_sidebar};
+                border-left: 1px solid {border_col};
+            }}
+            QPushButton {{
+                background-color: transparent;
+                color: {text_col};
+                text-align: right;
+                padding: 12px 16px;
+                border: none;
+                border-radius: 6px;
+                font-size: 14px;
+            }}
+            QPushButton:hover {{
+                background-color: {btn_hover};
+                color: #FFFFFF;
+            }}
+            QPushButton[active="true"] {{
+                background-color: {btn_active};
+                color: #FFFFFF;
+                font-weight: bold;
+            }}
+        """)
+
+        if hasattr(self, "title_lbl"):
+            from yalda.services.branding_service import BrandingService
+            club_info = BrandingService.get_club_info()
+            custom_club = (club_info.get("club_name") or "").strip()
+            if custom_club:
+                f_size = 18 if len(custom_club) > 12 else 22
+                self.title_lbl.setStyleSheet(f"color: {brand_color}; font-size: {f_size}px; font-weight: bold;")
+            else:
+                self.title_lbl.setStyleSheet(f"color: {brand_color}; font-size: 24px; font-weight: bold;")
+
+    def _on_theme_changed(self, theme_key: str):
+        """Immediately re-applies brand title color when theme changes."""
+        self._apply_theme_style()
 
     def navigate(self, nav_id: str):
 

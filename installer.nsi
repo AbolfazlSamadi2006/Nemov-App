@@ -10,6 +10,7 @@ Unicode True
 !define PRODUCT_WEB_SITE "https://github.com/AbolfazlSamadi2006/Nemov-App"
 !define PRODUCT_EXE "Nemov.exe"
 !define PRODUCT_UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\Nemov"
+!define PRODUCT_APP_ID "nemov.sports.management.desktop.v3"
 
 Name "${PRODUCT_NAME} v${PRODUCT_VERSION}"
 OutFile "dist\Nemov_Setup_v${PRODUCT_VERSION}.exe"
@@ -30,6 +31,7 @@ SetCompressorDictSize 64
 !insertmacro MUI_PAGE_INSTFILES
 
 !define MUI_FINISHPAGE_RUN "$INSTDIR\${PRODUCT_EXE}"
+!define MUI_FINISHPAGE_RUN_DIR "$INSTDIR"
 !define MUI_FINISHPAGE_RUN_TEXT "Run ${PRODUCT_NAME}"
 !insertmacro MUI_PAGE_FINISH
 
@@ -64,6 +66,7 @@ Section "MainSection" SEC01
     SetOutPath "$INSTDIR"
     SetOverwrite on
     File /r "dist\Nemov\*.*"
+    File /oname=$INSTDIR\nemov.ico "resources\icons\nemov.ico"
 
     SetOverwrite off
     CreateDirectory "$INSTDIR\data"
@@ -80,9 +83,9 @@ Section "MainSection" SEC01
     WriteUninstaller "$INSTDIR\Uninstall.exe"
 
     CreateDirectory "$SMPROGRAMS\Nemov"
-    CreateShortcut "$SMPROGRAMS\Nemov\Nemov.lnk" "$INSTDIR\${PRODUCT_EXE}" "" "$INSTDIR\_internal\resources\icons\nemov.ico" 0
+    CreateShortcut "$SMPROGRAMS\Nemov\Nemov.lnk" "$INSTDIR\${PRODUCT_EXE}" "" "$INSTDIR\nemov.ico" 0
     CreateShortcut "$SMPROGRAMS\Nemov\Uninstall.lnk" "$INSTDIR\Uninstall.exe"
-    CreateShortcut "$DESKTOP\Nemov.lnk" "$INSTDIR\${PRODUCT_EXE}" "" "$INSTDIR\_internal\resources\icons\nemov.ico" 0
+    CreateShortcut "$DESKTOP\Nemov.lnk" "$INSTDIR\${PRODUCT_EXE}" "" "$INSTDIR\nemov.ico" 0
 
     ; Clean up legacy shortcuts if upgrading from older version
     Delete "$DESKTOP\Yalda Gym.lnk"
@@ -98,11 +101,21 @@ Section "MainSection" SEC01
     WriteRegStr HKCU "${PRODUCT_UNINST_KEY}" "DisplayVersion" "v${PRODUCT_VERSION}"
     WriteRegStr HKCU "${PRODUCT_UNINST_KEY}" "Publisher" "${PRODUCT_PUBLISHER}"
     WriteRegStr HKCU "${PRODUCT_UNINST_KEY}" "URLInfoAbout" "${PRODUCT_WEB_SITE}"
-    WriteRegStr HKCU "${PRODUCT_UNINST_KEY}" "DisplayIcon" "$INSTDIR\_internal\resources\icons\nemov.ico,0"
+    WriteRegStr HKCU "${PRODUCT_UNINST_KEY}" "DisplayIcon" "$INSTDIR\nemov.ico,0"
     WriteRegStr HKCU "${PRODUCT_UNINST_KEY}" "UninstallString" '"$INSTDIR\Uninstall.exe"'
     WriteRegStr HKCU "${PRODUCT_UNINST_KEY}" "InstallLocation" "$INSTDIR"
     WriteRegDWORD HKCU "${PRODUCT_UNINST_KEY}" "NoModify" 1
     WriteRegDWORD HKCU "${PRODUCT_UNINST_KEY}" "NoRepair" 1
+
+    ; Register App Paths for Windows Shell
+    WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\App Paths\${PRODUCT_EXE}" "" "$INSTDIR\${PRODUCT_EXE}"
+    WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\App Paths\${PRODUCT_EXE}" "Path" "$INSTDIR"
+
+    ; Register Application Capabilities and AppUserModelID in Windows Shell
+    WriteRegStr HKCU "Software\Classes\Applications\${PRODUCT_EXE}" "FriendlyAppName" "${PRODUCT_NAME}"
+    WriteRegStr HKCU "Software\Classes\Applications\${PRODUCT_EXE}" "AppUserModelID" "${PRODUCT_APP_ID}"
+    WriteRegStr HKCU "Software\Classes\Applications\${PRODUCT_EXE}\DefaultIcon" "" "$INSTDIR\nemov.ico,0"
+    WriteRegStr HKCU "Software\Classes\Applications\${PRODUCT_EXE}\shell\open\command" "" '"$INSTDIR\${PRODUCT_EXE}"'
 
     ${GetSize} "$INSTDIR" "/S=0K" $0 $1 $2
     IntFmt $0 "0x%08X" $0
@@ -132,8 +145,11 @@ keep_data:
 remove_program_files:
     Delete "$INSTDIR\${PRODUCT_EXE}"
     Delete "$INSTDIR\Uninstall.exe"
+    Delete "$INSTDIR\nemov.ico"
     RMDir /r "$INSTDIR\_internal"
     RMDir "$INSTDIR"
 
+    DeleteRegKey HKCU "Software\Microsoft\Windows\CurrentVersion\App Paths\${PRODUCT_EXE}"
+    DeleteRegKey HKCU "Software\Classes\Applications\${PRODUCT_EXE}"
     DeleteRegKey HKCU "${PRODUCT_UNINST_KEY}"
 SectionEnd

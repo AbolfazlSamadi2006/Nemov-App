@@ -1,7 +1,7 @@
 from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QComboBox, QPushButton, QTabWidget, QTableWidget, QHeaderView, QMessageBox, QGroupBox, QDialog
+    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QComboBox, QPushButton, QTabWidget, QTableWidget, QHeaderView, QMessageBox, QGroupBox, QDialog, QFrame, QMenu
 )
-from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtCore import Qt, pyqtSignal, QPoint
 from PyQt6.QtGui import QKeySequence, QShortcut
 from yalda.services.nutrition_service import NutritionService
 from yalda.services.member_service import MemberService
@@ -26,6 +26,7 @@ class NutritionEditorView(QWidget):
         self._is_undoing_redoing = False
         self._days_cache = {}
         self._prev_days_mode = "7_days"
+        self._current_member_weight_kg = 0.0
         self.init_ui()
         self._last_state = self._capture_state()
         self._update_undo_redo_ui()
@@ -125,7 +126,7 @@ class NutritionEditorView(QWidget):
         self.combo_goal.addItem("کاهش وزن و چربی‌سوزی (Weight Loss)", "weight_loss")
         self.combo_goal.addItem("افزایش وزن (Weight Gain)", "weight_gain")
         self.combo_goal.addItem("تثبیت وزن (Maintenance)", "maintenance")
-        self.combo_goal.currentIndexChanged.connect(lambda: self._snapshot_change())
+        self.combo_goal.currentIndexChanged.connect(self._on_goal_changed)
 
         lbl_days = QLabel("روزهای هفته:")
         self.combo_days = QComboBox()
@@ -155,7 +156,7 @@ class NutritionEditorView(QWidget):
         self._current_member_tdee = 0
         self._foods_cache_by_id = {}
 
-        lbl_tdee = QLabel("کالری دریافتی روزانه (TDEE):")
+        lbl_tdee = QLabel("کیلوکالری دریافتی روزانه (TDEE):")
         self.txt_member_tdee = QLineEdit("0")
         self.txt_member_tdee.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.txt_member_tdee.setFixedWidth(110)
@@ -231,8 +232,8 @@ class NutritionEditorView(QWidget):
         self.btn_tdee_m500.setToolTip("کاستن ۵۰۰ کیلوکالری از TDEE")
         self.btn_tdee_m500.clicked.connect(lambda: self.adjust_tdee(-500))
 
-        self.lbl_total_calories_title = QLabel("مجموع کالری دریافتی:")
-        self.txt_total_calories = QLineEdit("\u200f0 کالری")
+        self.lbl_total_calories_title = QLabel("مجموع کیلوکالری دریافتی:")
+        self.txt_total_calories = QLineEdit("\u200f0 کیلوکالری")
         self.txt_total_calories.setReadOnly(True)
         self.txt_total_calories.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.txt_total_calories.setFixedWidth(110)
@@ -241,7 +242,7 @@ class NutritionEditorView(QWidget):
             "font-weight: bold; color: #34D399; background-color: #1F2937; border: 1px solid #374151; border-radius: 6px; padding: 2px 6px;"
         )
 
-        self.lbl_calorie_comparison = QLabel("\u200f⚖️ وضعیت کالری: ورزشکار انتخاب نشده")
+        self.lbl_calorie_comparison = QLabel("\u200f⚖️ وضعیت انرژی: ورزشکار انتخاب نشده")
         self.lbl_calorie_comparison.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.lbl_calorie_comparison.setFixedHeight(34)
         self.lbl_calorie_comparison.setMinimumWidth(210)
@@ -260,6 +261,9 @@ class NutritionEditorView(QWidget):
         row_cal.addWidget(self.txt_total_calories)
         row_cal.addWidget(self.lbl_calorie_comparison, 1)
         layout_form.addLayout(row_cal)
+
+        # Row 4: Macronutrients Target Engine & Balance Cards
+        self._setup_macro_cards(layout_form)
 
         layout.addWidget(form_box)
 
@@ -330,16 +334,19 @@ class NutritionEditorView(QWidget):
     def _on_bottom_member_changed(self, _index: int):
         member_id = self.combo_member.currentData()
         self._sync_member_combos(member_id)
+        self._snapshot_change()
 
     def _on_top_member_changed(self, _index: int):
         member_id = self.combo_member_top.currentData()
         self._sync_member_combos(member_id)
+        self._snapshot_change()
 
     def _on_manual_tdee_edited(self, text: str):
         persian_to_eng = str.maketrans("۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩", "01234567890123456789")
         digits = "".join(ch for ch in text.translate(persian_to_eng) if ch.isdigit())
         self._current_member_tdee = int(digits) if digits else 0
         self.update_dynamic_calories()
+        self._snapshot_change()
 
     def adjust_tdee(self, delta: int):
         persian_to_eng = str.maketrans("۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩", "01234567890123456789")
@@ -349,7 +356,7 @@ class NutritionEditorView(QWidget):
 
         new_val = max(0, base_val + delta)
         self._current_member_tdee = new_val
-        self.txt_member_tdee.setText(f"\u200f{new_val:,} کالری")
+        self.txt_member_tdee.setText(f"\u200f{new_val:,} کیلوکالری")
         self.update_dynamic_calories()
         self._snapshot_change()
 
@@ -358,8 +365,10 @@ class NutritionEditorView(QWidget):
             member_id = self.combo_member.currentData()
         if not member_id:
             self._current_member_tdee = 0
+            self._current_member_weight_kg = 0.0
             self.txt_member_tdee.setText("0")
             self.txt_member_tdee.setToolTip("با انتخاب ورزشکار، مقدار TDEE ایشان به صورت خودکار محاسبه و درج می‌شود.")
+            self._recalculate_target_macros_from_weight()
             self.update_dynamic_calories()
             return
 
@@ -367,7 +376,9 @@ class NutritionEditorView(QWidget):
         member = MemberService.get_member_by_id(member_id)
         if not member:
             self._current_member_tdee = 0
+            self._current_member_weight_kg = 0.0
             self.txt_member_tdee.setText("0")
+            self._recalculate_target_macros_from_weight()
             self.update_dynamic_calories()
             return
 
@@ -385,14 +396,17 @@ class NutritionEditorView(QWidget):
             except Exception:
                 pass
 
+        self._current_member_weight_kg = w_kg
+        self._recalculate_target_macros_from_weight()
+
         age = calculate_age_from_shamsi(member.birth_date_shamsi)
         act_level = getattr(member, "activity_level", None) or "moderately_active"
         bmr, tdee, pal, act_title, _ = calculate_bmr_tdee(h_cm, w_kg, age, member.gender, act_level)
         self._current_member_tdee = tdee
         if tdee > 0:
-            self.txt_member_tdee.setText(f"\u200f{tdee:,} کالری")
+            self.txt_member_tdee.setText(f"\u200f{tdee:,} کیلوکالری")
             self.txt_member_tdee.setToolTip(
-                f"ورزشکار: {member.full_name} | BMR: {bmr:,} کالری | سطح فعالیت: {act_title} (ضریب {pal}) | TDEE: {tdee:,} کالری"
+                f"ورزشکار: {member.full_name} | BMR: {bmr:,} کیلوکالری | سطح فعالیت: {act_title} (ضریب {pal}) | TDEE: {tdee:,} کیلوکالری"
             )
         else:
             self.txt_member_tdee.setText("\u200fنامشخص (قد/وزن؟)")
@@ -467,6 +481,16 @@ class NutritionEditorView(QWidget):
             idx_g = self.combo_goal.findData(plan.goal)
             if idx_g >= 0:
                 self.combo_goal.setCurrentIndex(idx_g)
+
+            if getattr(plan, "target_protein", 0) and plan.target_protein > 0:
+                self.txt_target_p.setText(str(int(round(plan.target_protein))))
+            if getattr(plan, "target_carbs", 0) and plan.target_carbs > 0:
+                self.txt_target_c.setText(str(int(round(plan.target_carbs))))
+            if getattr(plan, "target_fat", 0) and plan.target_fat > 0:
+                self.txt_target_f.setText(str(int(round(plan.target_fat))))
+            if getattr(plan, "target_calories", 0) and plan.target_calories > 0:
+                self._current_member_tdee = int(round(plan.target_calories))
+                self.txt_member_tdee.setText(f"\u200f{int(round(plan.target_calories)):,} کیلوکالری")
 
             # Detect days pattern from meal names in plan
             has_7_days = any(any(d in m.meal_name for d in ["شنبه", "یکشنبه", "دوشنبه", "سه‌شنبه", "چهارشنبه", "پنج‌شنبه", "جمعه"]) for m in plan.meals)
@@ -751,6 +775,11 @@ class NutritionEditorView(QWidget):
             "goal": self.combo_goal.currentData(),
             "days_pattern": self.combo_days.currentData(),
             "tab_index": self.tabs.currentIndex(),
+            "target_p": self.txt_target_p.text() if hasattr(self, "txt_target_p") else "0",
+            "target_c": self.txt_target_c.text() if hasattr(self, "txt_target_c") else "0",
+            "target_f": self.txt_target_f.text() if hasattr(self, "txt_target_f") else "0",
+            "member_id": self.combo_member.currentData() if hasattr(self, "combo_member") else None,
+            "tdee": getattr(self, "_current_member_tdee", 0) or 0,
             "meals": []
         }
         for meal_key, table in self.meal_tables:
@@ -827,6 +856,27 @@ class NutritionEditorView(QWidget):
         try:
             self.txt_title.setText(state.get("title", ""))
 
+            if hasattr(self, "txt_target_p") and "target_p" in state:
+                self.txt_target_p.setText(state["target_p"])
+            if hasattr(self, "txt_target_c") and "target_c" in state:
+                self.txt_target_c.setText(state["target_c"])
+            if hasattr(self, "txt_target_f") and "target_f" in state:
+                self.txt_target_f.setText(state["target_f"])
+
+            # Restore athlete selection
+            st_member_id = state.get("member_id")
+            self._sync_member_combos(st_member_id)
+
+            # Restore TDEE
+            if "tdee" in state:
+                tdee_val = state.get("tdee", 0)
+                self._current_member_tdee = tdee_val
+                if hasattr(self, "txt_member_tdee"):
+                    if tdee_val > 0:
+                        self.txt_member_tdee.setText(f"\u200f{tdee_val:,} کیلوکالری")
+                    else:
+                        self.txt_member_tdee.setText("0")
+
             idx_g = self.combo_goal.findData(state.get("goal"))
             if idx_g >= 0: self.combo_goal.setCurrentIndex(idx_g)
 
@@ -895,10 +945,10 @@ class NutritionEditorView(QWidget):
                 if lbl_row_cal:
                     if food and amt > 0:
                         r_cal = int(round((food.calories or 0.0) * amt))
-                        lbl_row_cal.setText(f"\u200f{r_cal:,} کالری")
+                        lbl_row_cal.setText(f"\u200f{r_cal:,} کیلوکالری")
                         lbl_row_cal.setStyleSheet("color: #34D399; font-weight: bold; font-size: 12px;")
                     else:
-                        lbl_row_cal.setText("\u200f0 کالری")
+                        lbl_row_cal.setText("\u200f0 کیلوکالری")
                         lbl_row_cal.setStyleSheet("color: #9CA3AF; font-size: 12px;")
 
         days_mode = self.combo_days.currentData() if hasattr(self, "combo_days") else "all_days"
@@ -930,45 +980,695 @@ class NutritionEditorView(QWidget):
                     total_f += (food.fat_g or 0.0) * amt
 
         total_cal_int = int(round(total_cal))
-        self.lbl_total_calories_title.setText(f"مجموع کالری دریافتی{day_suffix}:")
-        self.txt_total_calories.setText(f"\u200f{total_cal_int:,} کالری")
+        self.lbl_total_calories_title.setText(f"مجموع کیلوکالری دریافتی{day_suffix}:")
+        self.txt_total_calories.setText(f"\u200f{total_cal_int:,} کیلوکالری")
         self.txt_total_calories.setToolTip(
-            f"درشت‌مغذی‌های محاسبه‌شده{day_suffix}: پروتئین {int(round(total_p))}g | کربوهیدرات {int(round(total_c))}g | چربی {int(round(total_f))}g"
+            f"درشت‌مغذی‌های محاسبه‌شده{day_suffix}: پروتئین {int(round(total_p))} گرم | کربوهیدرات {int(round(total_c))} گرم | چربی {int(round(total_f))} گرم"
         )
 
         tdee = getattr(self, "_current_member_tdee", 0) or 0
         if tdee > 0:
             diff = total_cal_int - tdee
             if total_cal_int == 0:
-                self.lbl_calorie_comparison.setText(f"\u200f⚖️ هدف روزانه (TDEE): {tdee:,} کالری")
+                self.lbl_calorie_comparison.setText(f"\u200f⚖️ هدف روزانه (TDEE): {tdee:,} کیلوکالری")
                 self.lbl_calorie_comparison.setStyleSheet(
                     "font-size: 11px; font-weight: bold; padding: 4px 10px; border-radius: 6px; background-color: #374151; color: #E5E7EB;"
                 )
             elif abs(diff) <= 50:
-                self.lbl_calorie_comparison.setText(f"\u200f✅ منطبق با TDEE ({diff:+,} کالری)")
+                self.lbl_calorie_comparison.setText(f"\u200f✅ منطبق با TDEE ({diff:+,} کیلوکالری)")
                 self.lbl_calorie_comparison.setStyleSheet(
                     "font-size: 11px; font-weight: bold; padding: 4px 10px; border-radius: 6px; background-color: #065F46; color: #FFFFFF;"
                 )
             elif diff < -50:
-                self.lbl_calorie_comparison.setText(f"\u200f📉 {abs(diff):,} کالری کمتر از TDEE")
+                self.lbl_calorie_comparison.setText(f"\u200f📉 {abs(diff):,} کیلوکالری کمتر از TDEE")
                 self.lbl_calorie_comparison.setStyleSheet(
                     "font-size: 11px; font-weight: bold; padding: 4px 10px; border-radius: 6px; background-color: #1E40AF; color: #FFFFFF;"
                 )
             else:
-                self.lbl_calorie_comparison.setText(f"\u200f📈 {diff:,} کالری بیشتر از TDEE")
+                self.lbl_calorie_comparison.setText(f"\u200f📈 {diff:,} کیلوکالری بیشتر از TDEE")
                 self.lbl_calorie_comparison.setStyleSheet(
                     "font-size: 11px; font-weight: bold; padding: 4px 10px; border-radius: 6px; background-color: #B45309; color: #FFFFFF;"
                 )
         else:
             if total_cal_int > 0:
                 self.lbl_calorie_comparison.setText(
-                    f"\u200fP: {int(round(total_p))}g | C: {int(round(total_c))}g | F: {int(round(total_f))}g"
+                    f"\u200fپروتئین: {int(round(total_p))} گرم | کربوهیدرات: {int(round(total_c))} گرم | چربی: {int(round(total_f))} گرم"
                 )
             else:
-                self.lbl_calorie_comparison.setText("\u200f⚖️ وضعیت کالری: ورزشکار انتخاب نشده")
+                self.lbl_calorie_comparison.setText("\u200f⚖️ وضعیت انرژی: ورزشکار انتخاب نشده")
             self.lbl_calorie_comparison.setStyleSheet(
                 "font-size: 11px; font-weight: bold; padding: 4px 10px; border-radius: 6px; background-color: #374151; color: #E5E7EB;"
             )
+
+        # Update Macronutrient Target Cards & Real-Time Balance
+        if hasattr(self, "card_protein"):
+            act_p = int(round(total_p))
+            act_c = int(round(total_c))
+            act_f = int(round(total_f))
+
+            tgt_p = self._get_target_macro("protein")
+            tgt_c = self._get_target_macro("carbs")
+            tgt_f = self._get_target_macro("fat")
+
+            p_kcal = tgt_p * 4
+            c_kcal = tgt_c * 4
+            f_kcal = tgt_f * 9
+            macro_tgt_cal = p_kcal + c_kcal + f_kcal
+
+            self.lbl_actual_p.setText(f"\u200fمصرفی: {act_p:,} گرم")
+            self.lbl_actual_c.setText(f"\u200fمصرفی: {act_c:,} گرم")
+            self.lbl_actual_f.setText(f"\u200fمصرفی: {act_f:,} گرم")
+            self.lbl_actual_energy.setText(f"\u200fمصرفی: {total_cal_int:,} کیلوکالری")
+
+            self.lbl_target_p_kcal.setText(f"\u200f({p_kcal:,} کیلوکالری)")
+            self.lbl_target_c_kcal.setText(f"\u200f({c_kcal:,} کیلوکالری)")
+            self.lbl_target_f_kcal.setText(f"\u200f({f_kcal:,} کیلوکالری)")
+            self.lbl_target_energy.setText(f"\u200f{macro_tgt_cal:,} کیلوکالری")
+
+            # Update status badges for Protein, Carbs, Fat
+            macro_labels = {
+                "protein": ("پروتئین", self.lbl_status_p, act_p, tgt_p, 4),
+                "carbs": ("کربوهیدرات", self.lbl_status_c, act_c, tgt_c, 4),
+                "fat": ("چربی مفید", self.lbl_status_f, act_f, tgt_f, 9),
+            }
+            for m_key, (m_title, lbl_status, act_v, tgt_v, factor) in macro_labels.items():
+                if tgt_v <= 0:
+                    lbl_status.setText("\u200f—")
+                    lbl_status.setToolTip(f"هدف {m_title} روزانه تعیین نشده است.")
+                    lbl_status.setStyleSheet("font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 4px; background-color: #1E293B; color: #94A3B8; border: none;")
+                else:
+                    diff = act_v - tgt_v
+                    if diff < -2:
+                        deficit = abs(diff)
+                        lbl_status.setText(f"\u200f📉 {deficit:,} گرم کسری")
+                        lbl_status.setToolTip(f"کسری {m_title}: {deficit:,} گرم (معادل {deficit * factor:,} کیلوکالری)")
+                        lbl_status.setStyleSheet("font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 4px; background-color: #1E3A8A; color: #93C5FD; border: none;")
+                    elif abs(diff) <= 2:
+                        lbl_status.setText("\u200f✅ تکمیل شد")
+                        lbl_status.setToolTip(f"سهمیه {m_title} روزانه تکمیل و منطبق با هدف است.")
+                        lbl_status.setStyleSheet("font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 4px; background-color: #065F46; color: #A7F3D0; border: none;")
+                    else:
+                        surplus = diff
+                        lbl_status.setText(f"\u200f📈 +{surplus:,} گرم مازاد")
+                        lbl_status.setToolTip(f"مازاد {m_title}: {surplus:,} گرم (معادل {surplus * factor:,} کیلوکالری)")
+                        lbl_status.setStyleSheet("font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 4px; background-color: #78350F; color: #FDE68A; border: none;")
+
+            # Update Energy Summary Status Badge
+            if macro_tgt_cal <= 0:
+                self.lbl_status_energy.setText("\u200f⚖️ هدف نامشخص")
+                self.lbl_status_energy.setToolTip("مجموع کیلوکالری از درشت‌مغذی‌ها نامشخص است.")
+                self.lbl_status_energy.setStyleSheet("font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 4px; background-color: #1E293B; color: #94A3B8; border: none;")
+            else:
+                cal_diff = total_cal_int - macro_tgt_cal
+                if cal_diff < -50:
+                    self.lbl_status_energy.setText(f"\u200f📉 {abs(cal_diff):,} کیلوکالری کسری")
+                    self.lbl_status_energy.setToolTip(f"کسری کل انرژی نسبت به هدف ماکروها: {abs(cal_diff):,} کیلوکالری")
+                    self.lbl_status_energy.setStyleSheet("font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 4px; background-color: #1E3A8A; color: #93C5FD; border: none;")
+                elif abs(cal_diff) <= 50:
+                    self.lbl_status_energy.setText("\u200f✅ بالانس کامل انرژی")
+                    self.lbl_status_energy.setToolTip("کل کیلوکالری دریافتی روزانه با مجموع کیلوکالری ماکروها منطبق است.")
+                    self.lbl_status_energy.setStyleSheet("font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 4px; background-color: #065F46; color: #A7F3D0; border: none;")
+                else:
+                    self.lbl_status_energy.setText(f"\u200f📈 +{cal_diff:,} کیلوکالری مازاد")
+                    self.lbl_status_energy.setToolTip(f"مازاد کل انرژی نسبت به هدف ماکروها: {cal_diff:,} کیلوکالری")
+                    self.lbl_status_energy.setStyleSheet("font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 4px; background-color: #78350F; color: #FDE68A; border: none;")
+
+    # =========================================================================
+    # MACRONUTRIENT TARGET & GAP-FILLING SUGGESTION ENGINE
+    # =========================================================================
+
+    GOAL_MACRO_FACTORS = {
+        "maintenance": {"protein": 2.0, "carbs": 4.0, "fat": 1.0},
+        "weight_loss": {"protein": 2.2, "carbs": 2.5, "fat": 0.8},
+        "muscle_gain": {"protein": 2.2, "carbs": 5.0, "fat": 1.0},
+        "weight_gain": {"protein": 2.0, "carbs": 6.0, "fat": 1.2},
+    }
+
+    def _setup_macro_cards(self, layout_form: QVBoxLayout):
+        self.row_macros = QHBoxLayout()
+        self.row_macros.setSpacing(8)
+
+        # Card 1: Protein (🥩 پروتئین)
+        self.card_protein = QFrame()
+        self.card_protein.setObjectName("card_macro_protein")
+        layout_p = QVBoxLayout(self.card_protein)
+        layout_p.setContentsMargins(10, 6, 10, 6)
+        layout_p.setSpacing(4)
+
+        p_top = QHBoxLayout()
+        p_top.setSpacing(4)
+        lbl_p_title = QLabel("🥩 پروتئین هدف:")
+        lbl_p_title.setStyleSheet("font-weight: bold; font-size: 11px; color: #60A5FA; border: none; background: transparent;")
+        self.txt_target_p = QLineEdit("0")
+        self.txt_target_p.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.txt_target_p.setFixedWidth(54)
+        self.txt_target_p.setFixedHeight(26)
+        self.txt_target_p.setStyleSheet("font-weight: bold; font-size: 11px; color: #60A5FA; background-color: #0F172A; border: 1px solid #3B82F6; border-radius: 4px; padding: 1px 2px;")
+        self.txt_target_p.setToolTip("هدف پروتئین روزانه (گرم) — قابل ویرایش دستی (فرمول: وزن × ضریب)")
+        self.txt_target_p.textEdited.connect(lambda: (self.update_dynamic_calories(), self._snapshot_change()))
+        lbl_p_unit = QLabel("گرم")
+        lbl_p_unit.setStyleSheet("font-size: 10px; color: #94A3B8; border: none; background: transparent;")
+        self.lbl_target_p_kcal = QLabel("(۰ کیلوکالری)")
+        self.lbl_target_p_kcal.setStyleSheet("font-size: 10px; color: #94A3B8; border: none; background: transparent;")
+        p_top.addWidget(lbl_p_title)
+        p_top.addWidget(self.txt_target_p)
+        p_top.addWidget(lbl_p_unit)
+        p_top.addWidget(self.lbl_target_p_kcal)
+        p_top.addStretch()
+        layout_p.addLayout(p_top)
+
+        p_bot = QHBoxLayout()
+        p_bot.setSpacing(6)
+        self.lbl_actual_p = QLabel("مصرفی: ۰ گرم")
+        self.lbl_actual_p.setStyleSheet("font-size: 11px; font-weight: bold; color: #E2E8F0; border: none; background: transparent;")
+        self.lbl_status_p = QLabel("۰ گرم باقیمانده")
+        self.lbl_status_p.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.lbl_status_p.setFixedHeight(22)
+        self.lbl_status_p.setStyleSheet("font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 4px; background-color: #1E293B; color: #94A3B8; border: none;")
+        self.btn_suggest_p = QPushButton("💡 پیشنهاد")
+        self.btn_suggest_p.setFixedHeight(22)
+        self.btn_suggest_p.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_suggest_p.setStyleSheet("""
+            QPushButton {
+                background-color: #172554;
+                color: #93C5FD;
+                border: 1px solid #2563EB;
+                border-radius: 4px;
+                font-weight: bold;
+                font-size: 10px;
+                padding: 0 6px;
+            }
+            QPushButton:hover {
+                background-color: #2563EB;
+                color: #FFFFFF;
+            }
+        """)
+        self.btn_suggest_p.setToolTip("پیشنهاد مواد غذایی غنی از پروتئین خالص برای جبران کسری")
+        self.btn_suggest_p.clicked.connect(lambda: self.show_macro_suggestions("protein", self.btn_suggest_p))
+        p_bot.addWidget(self.lbl_actual_p)
+        p_bot.addWidget(self.lbl_status_p, 1)
+        p_bot.addWidget(self.btn_suggest_p)
+        layout_p.addLayout(p_bot)
+
+        # Card 2: Carbs (🍞 کربوهیدرات)
+        self.card_carbs = QFrame()
+        self.card_carbs.setObjectName("card_macro_carbs")
+        layout_c = QVBoxLayout(self.card_carbs)
+        layout_c.setContentsMargins(10, 6, 10, 6)
+        layout_c.setSpacing(4)
+
+        c_top = QHBoxLayout()
+        c_top.setSpacing(4)
+        lbl_c_title = QLabel("🍞 کربوهیدرات هدف:")
+        lbl_c_title.setStyleSheet("font-weight: bold; font-size: 11px; color: #FBBF24; border: none; background: transparent;")
+        self.txt_target_c = QLineEdit("0")
+        self.txt_target_c.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.txt_target_c.setFixedWidth(54)
+        self.txt_target_c.setFixedHeight(26)
+        self.txt_target_c.setStyleSheet("font-weight: bold; font-size: 11px; color: #FBBF24; background-color: #0F172A; border: 1px solid #F59E0B; border-radius: 4px; padding: 1px 2px;")
+        self.txt_target_c.setToolTip("هدف کربوهیدرات روزانه (گرم) — قابل ویرایش دستی (فرمول: وزن × ضریب)")
+        self.txt_target_c.textEdited.connect(lambda: (self.update_dynamic_calories(), self._snapshot_change()))
+        lbl_c_unit = QLabel("گرم")
+        lbl_c_unit.setStyleSheet("font-size: 10px; color: #94A3B8; border: none; background: transparent;")
+        self.lbl_target_c_kcal = QLabel("(۰ کیلوکالری)")
+        self.lbl_target_c_kcal.setStyleSheet("font-size: 10px; color: #94A3B8; border: none; background: transparent;")
+        c_top.addWidget(lbl_c_title)
+        c_top.addWidget(self.txt_target_c)
+        c_top.addWidget(lbl_c_unit)
+        c_top.addWidget(self.lbl_target_c_kcal)
+        c_top.addStretch()
+        layout_c.addLayout(c_top)
+
+        c_bot = QHBoxLayout()
+        c_bot.setSpacing(6)
+        self.lbl_actual_c = QLabel("مصرفی: ۰ گرم")
+        self.lbl_actual_c.setStyleSheet("font-size: 11px; font-weight: bold; color: #E2E8F0; border: none; background: transparent;")
+        self.lbl_status_c = QLabel("۰ گرم باقیمانده")
+        self.lbl_status_c.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.lbl_status_c.setFixedHeight(22)
+        self.lbl_status_c.setStyleSheet("font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 4px; background-color: #1E293B; color: #94A3B8; border: none;")
+        self.btn_suggest_c = QPushButton("💡 پیشنهاد")
+        self.btn_suggest_c.setFixedHeight(22)
+        self.btn_suggest_c.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_suggest_c.setStyleSheet("""
+            QPushButton {
+                background-color: #3B2806;
+                color: #FDE68A;
+                border: 1px solid #D97706;
+                border-radius: 4px;
+                font-weight: bold;
+                font-size: 10px;
+                padding: 0 6px;
+            }
+            QPushButton:hover {
+                background-color: #D97706;
+                color: #FFFFFF;
+            }
+        """)
+        self.btn_suggest_c.setToolTip("پیشنهاد مواد غذایی با کربوهیدرات پاک برای جبران کسری")
+        self.btn_suggest_c.clicked.connect(lambda: self.show_macro_suggestions("carbs", self.btn_suggest_c))
+        c_bot.addWidget(self.lbl_actual_c)
+        c_bot.addWidget(self.lbl_status_c, 1)
+        c_bot.addWidget(self.btn_suggest_c)
+        layout_c.addLayout(c_bot)
+
+        # Card 3: Fat (🥑 چربی مفید)
+        self.card_fat = QFrame()
+        self.card_fat.setObjectName("card_macro_fat")
+        layout_f = QVBoxLayout(self.card_fat)
+        layout_f.setContentsMargins(10, 6, 10, 6)
+        layout_f.setSpacing(4)
+
+        f_top = QHBoxLayout()
+        f_top.setSpacing(4)
+        lbl_f_title = QLabel("🥑 چربی مفید هدف:")
+        lbl_f_title.setStyleSheet("font-weight: bold; font-size: 11px; color: #34D399; border: none; background: transparent;")
+        self.txt_target_f = QLineEdit("0")
+        self.txt_target_f.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.txt_target_f.setFixedWidth(54)
+        self.txt_target_f.setFixedHeight(26)
+        self.txt_target_f.setStyleSheet("font-weight: bold; font-size: 11px; color: #34D399; background-color: #0F172A; border: 1px solid #10B981; border-radius: 4px; padding: 1px 2px;")
+        self.txt_target_f.setToolTip("هدف چربی مفید روزانه (گرم) — قابل ویرایش دستی (فرمول: وزن × ضریب)")
+        self.txt_target_f.textEdited.connect(lambda: (self.update_dynamic_calories(), self._snapshot_change()))
+        lbl_f_unit = QLabel("گرم")
+        lbl_f_unit.setStyleSheet("font-size: 10px; color: #94A3B8; border: none; background: transparent;")
+        self.lbl_target_f_kcal = QLabel("(۰ کیلوکالری)")
+        self.lbl_target_f_kcal.setStyleSheet("font-size: 10px; color: #94A3B8; border: none; background: transparent;")
+        f_top.addWidget(lbl_f_title)
+        f_top.addWidget(self.txt_target_f)
+        f_top.addWidget(lbl_f_unit)
+        f_top.addWidget(self.lbl_target_f_kcal)
+        f_top.addStretch()
+        layout_f.addLayout(f_top)
+
+        f_bot = QHBoxLayout()
+        f_bot.setSpacing(6)
+        self.lbl_actual_f = QLabel("مصرفی: ۰ گرم")
+        self.lbl_actual_f.setStyleSheet("font-size: 11px; font-weight: bold; color: #E2E8F0; border: none; background: transparent;")
+        self.lbl_status_f = QLabel("۰ گرم باقیمانده")
+        self.lbl_status_f.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.lbl_status_f.setFixedHeight(22)
+        self.lbl_status_f.setStyleSheet("font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 4px; background-color: #1E293B; color: #94A3B8; border: none;")
+        self.btn_suggest_f = QPushButton("💡 پیشنهاد")
+        self.btn_suggest_f.setFixedHeight(22)
+        self.btn_suggest_f.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_suggest_f.setStyleSheet("""
+            QPushButton {
+                background-color: #064E3B;
+                color: #A7F3D0;
+                border: 1px solid #059669;
+                border-radius: 4px;
+                font-weight: bold;
+                font-size: 10px;
+                padding: 0 6px;
+            }
+            QPushButton:hover {
+                background-color: #059669;
+                color: #FFFFFF;
+            }
+        """)
+        self.btn_suggest_f.setToolTip("پیشنهاد چربی‌های غیراشباع و دانه‌های مفید برای جبران کسری")
+        self.btn_suggest_f.clicked.connect(lambda: self.show_macro_suggestions("fat", self.btn_suggest_f))
+        f_bot.addWidget(self.lbl_actual_f)
+        f_bot.addWidget(self.lbl_status_f, 1)
+        f_bot.addWidget(self.btn_suggest_f)
+        layout_f.addLayout(f_bot)
+
+        # Card 4: Energy & Macro Summary (🔥 مجموع کالری و بالانس)
+        self.card_energy = QFrame()
+        self.card_energy.setObjectName("card_macro_energy")
+        layout_e = QVBoxLayout(self.card_energy)
+        layout_e.setContentsMargins(10, 6, 10, 6)
+        layout_e.setSpacing(4)
+
+        e_top = QHBoxLayout()
+        e_top.setSpacing(4)
+        lbl_e_title = QLabel("🔥 انرژی هدف:")
+        lbl_e_title.setStyleSheet("font-weight: bold; font-size: 11px; color: #F43F5E; border: none; background: transparent;")
+        self.lbl_target_energy = QLabel("۰ کیلوکالری")
+        self.lbl_target_energy.setStyleSheet("font-weight: bold; font-size: 11px; color: #FBBF24; border: none; background: transparent;")
+        self.btn_sync_tdee = QPushButton("🎯 اعمال به TDEE")
+        self.btn_sync_tdee.setFixedHeight(22)
+        self.btn_sync_tdee.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_sync_tdee.setStyleSheet("""
+            QPushButton {
+                background-color: #1E1B4B;
+                color: #C7D2FE;
+                border: 1px solid #6366F1;
+                border-radius: 4px;
+                font-weight: bold;
+                font-size: 10px;
+                padding: 0 6px;
+            }
+            QPushButton:hover {
+                background-color: #6366F1;
+                color: #FFFFFF;
+            }
+        """)
+        self.btn_sync_tdee.setToolTip("تنظیم فیلد TDEE بر اساس مجموع کیلوکالری محاسبه‌شده از اهداف ماکروها")
+        self.btn_sync_tdee.clicked.connect(self._sync_tdee_with_macro_target)
+        e_top.addWidget(lbl_e_title)
+        e_top.addWidget(self.lbl_target_energy)
+        e_top.addStretch()
+        e_top.addWidget(self.btn_sync_tdee)
+        layout_e.addLayout(e_top)
+
+        e_bot = QHBoxLayout()
+        e_bot.setSpacing(6)
+        self.lbl_actual_energy = QLabel("مصرفی: ۰ کیلوکالری")
+        self.lbl_actual_energy.setStyleSheet("font-size: 11px; font-weight: bold; color: #E2E8F0; border: none; background: transparent;")
+        self.lbl_status_energy = QLabel("⚖️ بدون اختلاف")
+        self.lbl_status_energy.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.lbl_status_energy.setFixedHeight(22)
+        self.lbl_status_energy.setStyleSheet("font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 4px; background-color: #1E293B; color: #94A3B8; border: none;")
+        e_bot.addWidget(self.lbl_actual_energy)
+        e_bot.addWidget(self.lbl_status_energy, 1)
+        layout_e.addLayout(e_bot)
+
+        # Style cards
+        card_qss = """
+            QFrame#card_macro_protein,
+            QFrame#card_macro_carbs,
+            QFrame#card_macro_fat,
+            QFrame#card_macro_energy {
+                background-color: #111827;
+                border: 1px solid #374151;
+                border-radius: 8px;
+            }
+            QLabel {
+                border: none;
+                background: transparent;
+            }
+        """
+        for c in (self.card_protein, self.card_carbs, self.card_fat, self.card_energy):
+            c.setStyleSheet(card_qss)
+
+        self.row_macros.addWidget(self.card_protein, 1)
+        self.row_macros.addWidget(self.card_carbs, 1)
+        self.row_macros.addWidget(self.card_fat, 1)
+        self.row_macros.addWidget(self.card_energy, 1)
+
+        layout_form.addLayout(self.row_macros)
+
+    def _on_goal_changed(self, _index: int = 0):
+        self._recalculate_target_macros_from_weight()
+        self.update_dynamic_calories()
+        self._snapshot_change()
+
+    def _recalculate_target_macros_from_weight(self):
+        w_kg = getattr(self, "_current_member_weight_kg", 0.0) or 0.0
+        if w_kg <= 0:
+            return
+        goal_key = self.combo_goal.currentData() if hasattr(self, "combo_goal") else "muscle_gain"
+        factors = self.GOAL_MACRO_FACTORS.get(goal_key, self.GOAL_MACRO_FACTORS["maintenance"])
+
+        tgt_p = int(round(w_kg * factors["protein"]))
+        tgt_c = int(round(w_kg * factors["carbs"]))
+        tgt_f = int(round(w_kg * factors["fat"]))
+
+        if hasattr(self, "txt_target_p"):
+            self.txt_target_p.blockSignals(True)
+            self.txt_target_c.blockSignals(True)
+            self.txt_target_f.blockSignals(True)
+
+            self.txt_target_p.setText(str(tgt_p))
+            self.txt_target_c.setText(str(tgt_c))
+            self.txt_target_f.setText(str(tgt_f))
+
+            self.txt_target_p.blockSignals(False)
+            self.txt_target_c.blockSignals(False)
+            self.txt_target_f.blockSignals(False)
+
+    def _get_target_macro(self, macro_key: str) -> int:
+        field_map = {
+            "protein": getattr(self, "txt_target_p", None),
+            "carbs": getattr(self, "txt_target_c", None),
+            "fat": getattr(self, "txt_target_f", None),
+        }
+        fld = field_map.get(macro_key)
+        if not fld:
+            return 0
+        raw = fld.text().strip()
+        persian_to_eng = str.maketrans("۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩", "01234567890123456789")
+        clean = "".join(ch for ch in raw.translate(persian_to_eng) if ch.isdigit())
+        try:
+            return int(clean) if clean else 0
+        except ValueError:
+            return 0
+
+    def _get_target_protein(self) -> int:
+        return self._get_target_macro("protein")
+
+    def _get_target_carbs(self) -> int:
+        return self._get_target_macro("carbs")
+
+    def _get_target_fat(self) -> int:
+        return self._get_target_macro("fat")
+
+    def _get_target_calories(self) -> int:
+        p = self._get_target_protein()
+        c = self._get_target_carbs()
+        f = self._get_target_fat()
+        macro_cals = (p * 4) + (c * 4) + (f * 9)
+        if macro_cals > 0:
+            return macro_cals
+        return getattr(self, "_current_member_tdee", 0) or 0
+
+    def _sync_tdee_with_macro_target(self):
+        macro_cals = self._get_target_calories()
+        if macro_cals > 0:
+            self._current_member_tdee = macro_cals
+            self.txt_member_tdee.setText(f"\u200f{macro_cals:,} کیلوکالری")
+            self.update_dynamic_calories()
+            self._snapshot_change()
+
+    def _get_active_meal_table(self):
+        if not self.meal_tables:
+            return None
+        days_mode = self.combo_days.currentData() if hasattr(self, "combo_days") else "all_days"
+        if days_mode == "all_days" or len(self.meal_tables) <= 6:
+            idx = max(0, self.tabs.currentIndex()) if hasattr(self, "tabs") else 0
+            if idx < len(self.meal_tables):
+                return self.meal_tables[idx][1]
+            return self.meal_tables[0][1]
+        else:
+            d_idx = max(0, self.tabs.currentIndex()) if hasattr(self, "tabs") else 0
+            day_widget = self.tabs.currentWidget()
+            m_idx = 0
+            if isinstance(day_widget, QTabWidget):
+                m_idx = max(0, day_widget.currentIndex())
+            tbl_idx = d_idx * 6 + m_idx
+            if 0 <= tbl_idx < len(self.meal_tables):
+                return self.meal_tables[tbl_idx][1]
+            return self.meal_tables[0][1]
+
+    @staticmethod
+    def _format_unit_desc(food, mult: float) -> str:
+        u = food.unit or ""
+        if "100 گرم" in u:
+            return f"{int(round(mult * 100))} گرم"
+        elif "عدد" in u:
+            return f"{round(mult, 1)} عدد"
+        elif "قاشق" in u:
+            return f"{round(mult, 1)} قاشق"
+        elif "اسکوپ" in u or "پیمانه" in u:
+            return f"{round(mult, 1)} اسکوپ"
+        elif "قوطی" in u:
+            return f"{round(mult, 1)} قوطی"
+        elif "کاسه" in u:
+            return f"{round(mult, 1)} کاسه"
+        elif "سیخ" in u:
+            return f"{round(mult, 1)} سیخ"
+        elif "لیوان" in u:
+            return f"{round(mult, 1)} لیوان"
+        return f"{mult} × ({u})"
+
+    def _find_gap_filler_candidates(self, macro_key: str, gap_grams: float) -> list:
+        if not self._foods_cache_by_id:
+            try:
+                for f in NutritionService.get_all_foods():
+                    self._foods_cache_by_id[f.id] = f
+            except Exception:
+                pass
+
+        preferred_ids = {
+            "protein": [10, 13, 84, 79, 36, 303],
+            "carbs": [7, 2, 8, 26, 3, 120, 209],
+            "fat": [287, 288, 283, 271, 293]
+        }.get(macro_key, [])
+
+        candidates = []
+        seen_ids = set()
+
+        for pid in preferred_ids:
+            f = self._foods_cache_by_id.get(pid)
+            if f:
+                val = 0.0
+                if macro_key == "protein":
+                    val = f.protein_g or 0.0
+                elif macro_key == "carbs":
+                    val = f.carbs_g or 0.0
+                elif macro_key == "fat":
+                    val = f.fat_g or 0.0
+
+                if val > 0:
+                    mult = round(gap_grams / val, 2)
+                    if mult > 0:
+                        cal_added = int(round((f.calories or 0.0) * mult))
+                        desc_unit = self._format_unit_desc(f, mult)
+                        candidates.append((f, mult, cal_added, desc_unit))
+                        seen_ids.add(f.id)
+
+        # Dynamic search from bank foods for pure sources
+        for f in self._foods_cache_by_id.values():
+            if f.id in seen_ids or (f.calories or 0.0) <= 0:
+                continue
+            cal = f.calories or 0.0
+            if macro_key == "protein":
+                m_val = f.protein_g or 0.0
+                if m_val >= 5.0 and (m_val * 4) / cal >= 0.70:
+                    mult = round(gap_grams / m_val, 2)
+                    candidates.append((f, mult, int(round(cal * mult)), self._format_unit_desc(f, mult)))
+                    seen_ids.add(f.id)
+            elif macro_key == "carbs":
+                m_val = f.carbs_g or 0.0
+                if m_val >= 15.0 and (m_val * 4) / cal >= 0.80:
+                    mult = round(gap_grams / m_val, 2)
+                    candidates.append((f, mult, int(round(cal * mult)), self._format_unit_desc(f, mult)))
+                    seen_ids.add(f.id)
+            elif macro_key == "fat":
+                m_val = f.fat_g or 0.0
+                if m_val >= 8.0 and (m_val * 9) / cal >= 0.80:
+                    mult = round(gap_grams / m_val, 2)
+                    candidates.append((f, mult, int(round(cal * mult)), self._format_unit_desc(f, mult)))
+                    seen_ids.add(f.id)
+
+        return candidates[:8]
+
+    def show_macro_suggestions(self, macro_key: str, btn: QPushButton):
+        days_mode = self.combo_days.currentData() if hasattr(self, "combo_days") else "all_days"
+        if days_mode == "all_days" or len(self.meal_tables) <= 6:
+            active_tables = [tbl for _, tbl in self.meal_tables]
+            day_title = ""
+        else:
+            d_idx = max(0, self.tabs.currentIndex()) if hasattr(self, "tabs") else 0
+            day_slice = self.meal_tables[d_idx * 6 : (d_idx + 1) * 6]
+            active_tables = [tbl for _, tbl in day_slice]
+            day_title = self.tabs.tabText(d_idx).replace("📅", "").strip() if hasattr(self, "tabs") else ""
+
+        total_macro = 0.0
+        for tbl in active_tables:
+            for r in range(tbl.rowCount()):
+                combo = tbl.cellWidget(r, 0)
+                txt_amount = tbl.cellWidget(r, 1)
+                f_id = combo.currentData() if combo else None
+                amt = self._parse_amount(txt_amount.text() if txt_amount else "0")
+                food = self._foods_cache_by_id.get(f_id) if f_id else None
+                if food and amt > 0:
+                    if macro_key == "protein":
+                        total_macro += (food.protein_g or 0.0) * amt
+                    elif macro_key == "carbs":
+                        total_macro += (food.carbs_g or 0.0) * amt
+                    elif macro_key == "fat":
+                        total_macro += (food.fat_g or 0.0) * amt
+
+        tgt_g = self._get_target_macro(macro_key)
+        gap = tgt_g - int(round(total_macro))
+
+        name_fa = {"protein": "پروتئین", "carbs": "کربوهیدرات", "fat": "چربی مفید"}.get(macro_key, "درشت‌مغذی")
+        suffix = f" در {day_title}" if day_title else ""
+
+        if gap <= 0:
+            if tgt_g <= 0:
+                msg = f"هدف مشخصی برای {name_fa} تعیین نشده است. لطفاً ابتدا هدف را در کادر مربوطه وارد نمایید."
+            elif gap == 0:
+                msg = f"سهمیه {name_fa}{suffix} دقیقاً تکمیل است (منطبق با هدف)."
+            else:
+                msg = f"سهمیه {name_fa}{suffix} تکمیل شده و {abs(gap)} گرم مازاد در برنامه وجود دارد."
+            QMessageBox.information(self, f"وضعیت سهمیه {name_fa}", msg)
+            return
+
+        candidates = self._find_gap_filler_candidates(macro_key, float(gap))
+        if not candidates:
+            QMessageBox.information(self, "عدم یافتن مورد مناسب", f"ماده غذایی با نسبت خالص برای تامین {gap} گرم {name_fa} در بانک یافت نشد.")
+            return
+
+        menu = QMenu(self)
+        menu.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
+        menu.setStyleSheet("""
+            QMenu {
+                background-color: #1F2937;
+                color: #F9FAFB;
+                border: 1px solid #374151;
+                border-radius: 8px;
+                padding: 6px;
+                font-size: 11px;
+            }
+            QMenu::item {
+                padding: 6px 14px;
+                border-radius: 4px;
+            }
+            QMenu::item:selected {
+                background-color: #374151;
+                color: #34D399;
+            }
+            QMenu::separator {
+                height: 1px;
+                background-color: #374151;
+                margin: 4px 6px;
+            }
+        """)
+
+        header_act = menu.addAction(f"💡 گزینه‌های هوشمند برای کسری {gap} گرم {name_fa}{suffix}:")
+        header_act.setEnabled(False)
+        menu.addSeparator()
+
+        for food, mult, cal_added, desc_unit in candidates:
+            text = f"➕ {food.name_fa}: {desc_unit} (تامین {gap} گرم {name_fa} | {cal_added:,} کیلوکالری)"
+            act = menu.addAction(text)
+            act.triggered.connect(
+                lambda _, f_id=food.id, m=mult, n=f"تامین سهمیه {name_fa} روزانه": self._apply_gap_suggestion(f_id, m, n)
+            )
+
+        menu.exec(btn.mapToGlobal(QPoint(0, btn.height())))
+
+    def _apply_gap_suggestion(self, food_id: int, amount: float, notes_text: str = ""):
+        target_table = self._get_active_meal_table()
+        if not target_table:
+            QMessageBox.warning(self, "خطا", "لطفاً ابتدا یک وعده غذایی را از جدول‌های برنامه انتخاب نمایید.")
+            return
+
+        empty_row = -1
+        for r in range(target_table.rowCount()):
+            combo = target_table.cellWidget(r, 0)
+            if combo and (combo.currentIndex() < 0 or not combo.currentText().strip()):
+                empty_row = r
+                break
+
+        if empty_row >= 0:
+            row = empty_row
+        else:
+            row = target_table.rowCount()
+            target_table.insertRow(row)
+            foods_list = NutritionService.get_all_foods()
+            self._create_food_row_widgets(target_table, row, foods_list)
+
+        combo_food = target_table.cellWidget(row, 0)
+        txt_amount = target_table.cellWidget(row, 1)
+        txt_notes = target_table.cellWidget(row, 3)
+
+        if combo_food:
+            idx = combo_food.findData(food_id)
+            if idx >= 0:
+                combo_food.setCurrentIndex(idx)
+        if txt_amount:
+            txt_amount.setText(str(amount))
+        if txt_notes and notes_text:
+            if not txt_notes.text().strip():
+                txt_notes.setText(notes_text)
+
+        self.update_dynamic_calories()
+        self._snapshot_change()
 
     def _create_food_row_widgets(self, table: QTableWidget, row: int, foods_list: list, data: dict = None):
         if not data:
@@ -978,7 +1678,7 @@ class NutritionEditorView(QWidget):
 
         combo_food = SearchableComboBox(placeholder="جستجو یا تایپ نام ماده غذایی...")
         for f in foods_list:
-            combo_food.addItem(f"{f.name_fa} ({f.unit} - {int(f.calories)}kcal)", f.id)
+            combo_food.addItem(f"{f.name_fa} ({f.unit} - {int(f.calories)} کیلوکالری)", f.id)
 
         f_id = data.get("food_id")
         custom_name = data.get("food_text") or data.get("custom_food_name")
@@ -1000,7 +1700,7 @@ class NutritionEditorView(QWidget):
         txt_amount = QLineEdit(str(data.get("amount", "1.0")))
         txt_amount.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        lbl_row_cal = QLabel("\u200f0 کالری")
+        lbl_row_cal = QLabel("\u200f0 کیلوکالری")
         lbl_row_cal.setAlignment(Qt.AlignmentFlag.AlignCenter)
         lbl_row_cal.setStyleSheet("color: #9CA3AF; font-size: 12px;")
 
@@ -1075,7 +1775,7 @@ class NutritionEditorView(QWidget):
         layout_meal.addLayout(row_top)
 
         table = QTableWidget(0, 5)
-        table.setHorizontalHeaderLabels(["نام ماده غذایی", "مقدار (ضریب واحد)", "کالری دریافتی", "توضیحات مربی", "حذف"])
+        table.setHorizontalHeaderLabels(["نام ماده غذایی", "مقدار (ضریب واحد)", "کیلوکالری دریافتی", "توضیحات مربی", "حذف"])
         table.verticalHeader().setDefaultSectionSize(48)
         table.verticalHeader().setMinimumSectionSize(40)
 
@@ -1297,13 +1997,18 @@ class NutritionEditorView(QWidget):
                 "items": items
             })
 
+        p_tgt = float(self._get_target_protein())
+        c_tgt = float(self._get_target_carbs())
+        f_tgt = float(self._get_target_fat())
+        cal_tgt = float(self._get_target_calories())
+
         plan_info = {
             "title": title,
             "goal": self.combo_goal.currentData(),
-            "target_calories": round(total_cal / days_count, 1) if total_cal > 0 else float(getattr(self, "_current_member_tdee", 0) or 0.0),
-            "target_protein": round(total_p / days_count, 1),
-            "target_carbs": round(total_c / days_count, 1),
-            "target_fat": round(total_f / days_count, 1)
+            "target_calories": cal_tgt if cal_tgt > 0 else (round(total_cal / days_count, 1) if total_cal > 0 else float(getattr(self, "_current_member_tdee", 0) or 0.0)),
+            "target_protein": p_tgt if p_tgt > 0 else round(total_p / days_count, 1),
+            "target_carbs": c_tgt if c_tgt > 0 else round(total_c / days_count, 1),
+            "target_fat": f_tgt if f_tgt > 0 else round(total_f / days_count, 1)
         }
         return plan_info, meals_data
 
@@ -1440,15 +2145,34 @@ class NutritionEditorView(QWidget):
 
     def _do_reset_fields(self):
         """پاکسازی فیلدهای مشخصات کلی رژیم"""
-        for w in [self.txt_title, self.combo_goal, self.combo_days, self.combo_templates]:
+        widgets_to_block = [self.txt_title, self.combo_goal, self.combo_days, self.combo_templates]
+        if hasattr(self, "txt_target_p"):
+            widgets_to_block.extend([self.txt_target_p, self.txt_target_c, self.txt_target_f])
+        for w in widgets_to_block:
             w.blockSignals(True)
 
         self.txt_title.setText("")
         self.combo_goal.setCurrentIndex(0)
         self.combo_days.setCurrentIndex(0)
 
-        for w in [self.txt_title, self.combo_goal, self.combo_days, self.combo_templates]:
+        if hasattr(self, "txt_target_p"):
+            self.txt_target_p.setText("0")
+            self.txt_target_c.setText("0")
+            self.txt_target_f.setText("0")
+
+        for w in widgets_to_block:
             w.blockSignals(False)
+
+        # Clear athlete selection completely
+        self._sync_member_combos(None)
+
+        # Reset TDEE, weight and calorie calculations to 0
+        self._current_member_tdee = 0
+        self._current_member_weight_kg = 0.0
+        if hasattr(self, "txt_member_tdee"):
+            self.txt_member_tdee.setText("0")
+            self.txt_member_tdee.setToolTip("با انتخاب ورزشکار، مقدار TDEE ایشان به صورت خودکار محاسبه و درج می‌شود.")
+        self.update_dynamic_calories()
 
     def revert_changes(self):
         if self.editing_plan_id:

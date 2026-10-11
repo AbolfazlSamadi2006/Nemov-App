@@ -145,3 +145,133 @@ def extract_video_thumbnail(video_path: str, output_thumb_path: str = None) -> s
         pass
 
     return None
+
+
+def get_app_icon_path() -> str:
+    """Finds the absolute path to nemov.ico across all runtime and frozen environments."""
+    import sys
+    from pathlib import Path
+    import config
+
+    candidates = []
+
+    # 1. sys._MEIPASS (PyInstaller frozen bundle internal)
+    if getattr(sys, 'frozen', False):
+        if hasattr(sys, '_MEIPASS'):
+            candidates.append(Path(sys._MEIPASS) / "resources" / "icons" / "nemov.ico")
+            candidates.append(Path(sys._MEIPASS) / "nemov.ico")
+        exe_dir = Path(sys.executable).resolve().parent
+        candidates.append(exe_dir / "_internal" / "resources" / "icons" / "nemov.ico")
+        candidates.append(exe_dir / "resources" / "icons" / "nemov.ico")
+        candidates.append(exe_dir / "nemov.ico")
+
+    # 2. config.BASE_DIR
+    if hasattr(config, "BASE_DIR"):
+        candidates.append(config.BASE_DIR / "resources" / "icons" / "nemov.ico")
+        candidates.append(config.BASE_DIR / "_internal" / "resources" / "icons" / "nemov.ico")
+        candidates.append(config.BASE_DIR / "nemov.ico")
+
+    # 3. Current source directory
+    source_dir = Path(__file__).resolve().parent.parent.parent
+    candidates.append(source_dir / "resources" / "icons" / "nemov.ico")
+    candidates.append(Path.cwd() / "resources" / "icons" / "nemov.ico")
+    candidates.append(Path.cwd() / "nemov.ico")
+
+    for c in candidates:
+        try:
+            if c and c.exists() and c.is_file():
+                return str(c.resolve())
+        except Exception:
+            pass
+    return None
+
+
+def get_app_icon():
+    """Returns a high-resolution QIcon for Nemov, populated with multi-resolution .ico and fallback .png."""
+    import sys
+    from pathlib import Path
+    from PyQt6.QtGui import QIcon
+    import config
+
+    icon = QIcon()
+    ico_path = get_app_icon_path()
+    if ico_path:
+        icon.addFile(ico_path)
+
+    # Also add PNG candidates for crisp multi-resolution rendering
+    png_candidates = []
+    if getattr(sys, 'frozen', False):
+        if hasattr(sys, '_MEIPASS'):
+            png_candidates.append(Path(sys._MEIPASS) / "resources" / "images" / "nemov_logo.png")
+        exe_dir = Path(sys.executable).resolve().parent
+        png_candidates.append(exe_dir / "_internal" / "resources" / "images" / "nemov_logo.png")
+        png_candidates.append(exe_dir / "resources" / "images" / "nemov_logo.png")
+
+    if hasattr(config, "BASE_DIR"):
+        png_candidates.append(config.BASE_DIR / "resources" / "images" / "nemov_logo.png")
+
+    source_dir = Path(__file__).resolve().parent.parent.parent
+    png_candidates.append(source_dir / "resources" / "images" / "nemov_logo.png")
+
+    for png in png_candidates:
+        try:
+            if png and png.exists() and png.is_file():
+                icon.addFile(str(png.resolve()))
+                break
+        except Exception:
+            pass
+
+    return icon
+
+
+def apply_windows_taskbar_icon(window):
+    """
+    Applies the native Win32 window icon (WM_SETICON for ICON_BIG & ICON_SMALL, and SetClassLongPtr)
+    directly to the HWND. This guarantees that regardless of whether the process was launched directly,
+    via desktop shortcut, or from the NSIS installer finish page ("Run Nemov"), the Windows Taskbar,
+    Alt-Tab switcher, and window titlebar reliably display the custom Nemov icon.
+    """
+    import sys
+    if not sys.platform.startswith("win"):
+        return
+
+    try:
+        ico_path = get_app_icon_path()
+        if not ico_path:
+            return
+
+        hwnd = int(window.winId()) if hasattr(window, "winId") else None
+        if not hwnd:
+            return
+
+        import ctypes
+        user32 = ctypes.windll.user32
+        WM_SETICON = 0x0080
+        ICON_SMALL = 0
+        ICON_BIG = 1
+        IMAGE_ICON = 1
+        LR_LOADFROMFILE = 0x0010
+
+        # Load standard 32x32 icon for Taskbar / Alt-Tab and 16x16 icon for Titlebar
+        h_icon_big = user32.LoadImageW(None, str(ico_path), IMAGE_ICON, 32, 32, LR_LOADFROMFILE)
+        h_icon_small = user32.LoadImageW(None, str(ico_path), IMAGE_ICON, 16, 16, LR_LOADFROMFILE)
+
+        if h_icon_big:
+            user32.SendMessageW(hwnd, WM_SETICON, ICON_BIG, h_icon_big)
+        if h_icon_small:
+            user32.SendMessageW(hwnd, WM_SETICON, ICON_SMALL, h_icon_small)
+
+        GCLP_HICON = -14
+        GCLP_HICONSM = -34
+        if hasattr(user32, "SetClassLongPtrW"):
+            if h_icon_big:
+                user32.SetClassLongPtrW(hwnd, GCLP_HICON, h_icon_big)
+            if h_icon_small:
+                user32.SetClassLongPtrW(hwnd, GCLP_HICONSM, h_icon_small)
+        elif hasattr(user32, "SetClassLongA"):
+            if h_icon_big:
+                user32.SetClassLongA(hwnd, GCLP_HICON, h_icon_big)
+            if h_icon_small:
+                user32.SetClassLongA(hwnd, GCLP_HICONSM, h_icon_small)
+    except Exception:
+        pass

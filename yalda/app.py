@@ -26,22 +26,8 @@ class YaldaApplication:
         self.app.setApplicationName(config.APP_NAME)
 
         # Set Global Application & Taskbar Icon with multi-resolution .ico support
-        ico_path = config.BASE_DIR / "resources" / "icons" / "nemov.ico"
-        png_path = config.BASE_DIR / "resources" / "images" / "nemov_logo.png"
-        legacy_ico = config.BASE_DIR / "resources" / "images" / "app_icon.ico"
-        legacy_png = config.BASE_DIR / "resources" / "images" / "app_icon.png"
-
-        self.app_icon = QIcon()
-        if ico_path.exists():
-            self.app_icon.addFile(str(ico_path))
-        elif legacy_ico.exists():
-            self.app_icon.addFile(str(legacy_ico))
-
-        if png_path.exists():
-            self.app_icon.addFile(str(png_path))
-        elif legacy_png.exists():
-            self.app_icon.addFile(str(legacy_png))
-
+        from yalda.utils.image_utils import get_app_icon, apply_windows_taskbar_icon
+        self.app_icon = get_app_icon()
         if not self.app_icon.isNull():
             self.app.setWindowIcon(self.app_icon)
 
@@ -62,6 +48,7 @@ class YaldaApplication:
         self.login_view = LoginView()
         if not self.app_icon.isNull():
             self.login_view.setWindowIcon(self.app_icon)
+        apply_windows_taskbar_icon(self.login_view)
         self.main_window = None
 
         self.login_view.login_success.connect(self.on_login_success)
@@ -82,6 +69,8 @@ class YaldaApplication:
 
     def run(self):
         self.login_view.showMaximized()
+        from yalda.utils.image_utils import apply_windows_taskbar_icon
+        apply_windows_taskbar_icon(self.login_view)
         # Pre-warm OpenCV C++ DLLs silently in background thread so camera opens instantly
         try:
             import threading
@@ -114,6 +103,8 @@ class YaldaApplication:
         # Force refresh all views and reset to Dashboard for the newly logged-in trainer
         self.main_window.refresh_on_login()
         self.main_window.showMaximized()
+        from yalda.utils.image_utils import apply_windows_taskbar_icon
+        apply_windows_taskbar_icon(self.main_window)
 
     def on_logout(self):
         from yalda.auth.authentication import CurrentUser
@@ -127,4 +118,6 @@ class YaldaApplication:
         self.login_view.txt_username.clear()
         self.login_view.txt_password.clear()
         self.login_view.showMaximized()
+        from yalda.utils.image_utils import apply_windows_taskbar_icon
+        apply_windows_taskbar_icon(self.login_view)
 

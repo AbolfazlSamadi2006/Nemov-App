@@ -16,20 +16,26 @@ if sys.stderr and hasattr(sys.stderr, 'reconfigure'):
         pass
 
 # Base directories
-BASE_DIR = Path(__file__).resolve().parent
+if getattr(sys, 'frozen', False):
+    # Running as compiled PyInstaller EXE: place data folder right next to Nemov.exe
+    EXE_DIR = Path(sys.executable).resolve().parent
+    if hasattr(sys, '_MEIPASS'):
+        BASE_DIR = Path(sys._MEIPASS).resolve()
+    elif (EXE_DIR / "_internal").exists():
+        BASE_DIR = (EXE_DIR / "_internal").resolve()
+    else:
+        BASE_DIR = EXE_DIR
+    DATA_DIR = EXE_DIR / "data"
+else:
+    # Running as source python
+    BASE_DIR = Path(__file__).resolve().parent
+    EXE_DIR = BASE_DIR
+    DATA_DIR = BASE_DIR / "data"
 
 # AppData persistent path
 APPDATA_DATA_DIR = Path(os.environ.get("APPDATA", Path.home())) / "Nemov" / "data"
 LEGACY_APPDATA_DATA_DIR = Path(os.environ.get("APPDATA", Path.home())) / "YaldaGym" / "data"
 APPDATA_DATA_DIR.mkdir(parents=True, exist_ok=True)
-
-if getattr(sys, 'frozen', False):
-    # Running as compiled PyInstaller EXE: place data folder right next to Nemov.exe
-    EXE_DIR = Path(sys.executable).resolve().parent
-    DATA_DIR = EXE_DIR / "data"
-else:
-    # Running as source python
-    DATA_DIR = BASE_DIR / "data"
 
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 BRANDING_DIR = DATA_DIR / "branding"

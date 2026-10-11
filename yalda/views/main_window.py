@@ -19,18 +19,11 @@ class MainWindow(QMainWindow):
         self.setWindowTitle(f"{config.APP_TITLE} (نسخه {config.APP_VERSION})")
 
         # Explicitly set window icon to multi-resolution nemov.ico
-        ico_path = config.BASE_DIR / "resources" / "icons" / "nemov.ico"
-        png_path = config.BASE_DIR / "resources" / "images" / "nemov_logo.png"
-        legacy_ico = config.BASE_DIR / "resources" / "images" / "app_icon.ico"
-        app_icon = QIcon()
-        if ico_path.exists():
-            app_icon.addFile(str(ico_path))
-        elif legacy_ico.exists():
-            app_icon.addFile(str(legacy_ico))
-        if png_path.exists():
-            app_icon.addFile(str(png_path))
+        from yalda.utils.image_utils import get_app_icon, apply_windows_taskbar_icon
+        app_icon = get_app_icon()
         if not app_icon.isNull():
             self.setWindowIcon(app_icon)
+        apply_windows_taskbar_icon(self)
 
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
         from PyQt6.QtWidgets import QApplication
@@ -59,6 +52,11 @@ class MainWindow(QMainWindow):
         self._view_sms = None
 
         self.init_ui()
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        from yalda.utils.image_utils import apply_windows_taskbar_icon
+        apply_windows_taskbar_icon(self)
 
     def init_ui(self):
         central_widget = QWidget()
