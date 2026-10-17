@@ -473,7 +473,7 @@ class PDFGenerator:
                         if "workers.dev" in target_url:
                             import re
                             target_url = re.sub(r"https?://[^/]+\.workers\.dev", config.DEFAULT_CLOUD_BACKUP_URL.rstrip("/"), target_url)
-                        if ("gymassistantapp.ir" in target_url or "workers.dev" in target_url) and "title=" not in target_url and ex_name and ex_name != "-":
+                        if ("nemovapp.ir" in target_url or "gymassistantapp.ir" in target_url or "workers.dev" in target_url) and "title=" not in target_url and ex_name and ex_name != "-":
                             from urllib.parse import quote
                             sep = "&" if "?" in target_url else "?"
                             target_url = f"{target_url}{sep}title={quote(ex_name)}"

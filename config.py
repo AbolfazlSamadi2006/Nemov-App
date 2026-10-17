@@ -157,7 +157,7 @@ COLOR_BORDER = "#333333"
 FONT_FAMILY = "Vazirmatn"
 
 # Cloud Backup Server Settings
-DEFAULT_CLOUD_BACKUP_URL = os.environ.get("YALDA_CLOUD_URL", "https://storage.gymassistantapp.ir")
+DEFAULT_CLOUD_BACKUP_URL = os.environ.get("YALDA_CLOUD_URL", "https://storage.nemovapp.ir")
 CLOUD_BACKUP_SECRET_KEY = "yalda_cloud_sec_2006_gym"
 
 # Support Email Settings (Gmail SMTP)

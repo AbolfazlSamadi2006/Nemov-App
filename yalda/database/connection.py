@@ -161,6 +161,14 @@ def check_and_migrate_db():
                 f"UPDATE exercises SET video_cloud_url = REPLACE(video_cloud_url, 'gymassistantbackup.a-samadi2006.workers.dev', '{target_domain}') "
                 "WHERE video_cloud_url LIKE '%workers.dev%';"
             ))
+            conn.execute(text(
+                f"UPDATE exercises SET video_url = REPLACE(video_url, 'storage.gymassistantapp.ir', '{target_domain}') "
+                "WHERE video_url LIKE '%storage.gymassistantapp.ir%';"
+            ))
+            conn.execute(text(
+                f"UPDATE exercises SET video_cloud_url = REPLACE(video_cloud_url, 'storage.gymassistantapp.ir', '{target_domain}') "
+                "WHERE video_cloud_url LIKE '%storage.gymassistantapp.ir%';"
+            ))
             conn.commit()
 
 

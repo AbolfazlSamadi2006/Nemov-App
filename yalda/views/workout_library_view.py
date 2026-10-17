@@ -227,7 +227,7 @@ class ExerciseFormDialog(QDialog):
         self.video_cloud_url = None
         # Clear previous cloud video link from txt_video_url so the old URL is not kept
         current_url = self.txt_video_url.text().strip()
-        if "workers.dev" in current_url or "gymassistantapp.ir" in current_url:
+        if "workers.dev" in current_url or "gymassistantapp.ir" in current_url or "nemovapp.ir" in current_url:
             self.txt_video_url.clear()
 
         self.lbl_media_status.setText(f"فایل: {os.path.basename(stored_path)}")
@@ -245,7 +245,7 @@ class ExerciseFormDialog(QDialog):
                 self.media_type = "image"
                 self.video_cloud_url = None
                 current_url = self.txt_video_url.text().strip()
-                if "workers.dev" in current_url or "gymassistantapp.ir" in current_url:
+                if "workers.dev" in current_url or "gymassistantapp.ir" in current_url or "nemovapp.ir" in current_url:
                     self.txt_video_url.clear()
                 self.btn_edit_media.setText("🎨 ویرایش تصویر")
                 self.btn_edit_media.show()
@@ -258,7 +258,7 @@ class ExerciseFormDialog(QDialog):
                 self.media_type = "video"
                 self.video_cloud_url = None
                 current_url = self.txt_video_url.text().strip()
-                if "workers.dev" in current_url or "gymassistantapp.ir" in current_url:
+                if "workers.dev" in current_url or "gymassistantapp.ir" in current_url or "nemovapp.ir" in current_url:
                     self.txt_video_url.clear()
                 self.btn_edit_media.setText("✂️ ویرایش ویدیو")
                 self.btn_edit_media.show()
@@ -283,7 +283,7 @@ class ExerciseFormDialog(QDialog):
                 self.thumbnail_path = dlg.result_thumbnail_path
                 self.video_cloud_url = None
                 current_url = self.txt_video_url.text().strip()
-                if "workers.dev" in current_url or "gymassistantapp.ir" in current_url:
+                if "workers.dev" in current_url or "gymassistantapp.ir" in current_url or "nemovapp.ir" in current_url:
                     self.txt_video_url.clear()
                 self.btn_remove_media.show()
                 self.lbl_media_status.setText(f"ویدیو ویرایش‌شده: {os.path.basename(self.media_path)}")
@@ -295,7 +295,7 @@ class ExerciseFormDialog(QDialog):
                 self.thumbnail_path = dlg.result_image_path
                 self.video_cloud_url = None
                 current_url = self.txt_video_url.text().strip()
-                if "workers.dev" in current_url or "gymassistantapp.ir" in current_url:
+                if "workers.dev" in current_url or "gymassistantapp.ir" in current_url or "nemovapp.ir" in current_url:
                     self.txt_video_url.clear()
                 self.btn_edit_media.setText("🎨 ویرایش تصویر")
                 self.btn_edit_media.show()
@@ -317,7 +317,7 @@ class ExerciseFormDialog(QDialog):
             self.thumbnail_path = None
             self.video_cloud_url = None
             current_url = self.txt_video_url.text().strip()
-            if "workers.dev" in current_url or "gymassistantapp.ir" in current_url:
+            if "workers.dev" in current_url or "gymassistantapp.ir" in current_url or "nemovapp.ir" in current_url:
                 self.txt_video_url.clear()
             self.lbl_media_status.setText("فایلی انتخاب نشده است")
             self.lbl_media_status.setStyleSheet("color: #888888; font-size: 11px;")
