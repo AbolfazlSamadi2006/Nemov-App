@@ -488,6 +488,16 @@ class NutritionEditorView(QWidget):
                 self.txt_target_c.setText(str(int(round(plan.target_carbs))))
             if getattr(plan, "target_fat", 0) and plan.target_fat > 0:
                 self.txt_target_f.setText(str(int(round(plan.target_fat))))
+
+            w_kg = getattr(self, "_current_member_weight_kg", 0.0) or 0.0
+            if w_kg > 0:
+                if hasattr(self, "txt_factor_p") and plan.target_protein:
+                    self.txt_factor_p.setText(f"{plan.target_protein / w_kg:.1f}")
+                if hasattr(self, "txt_factor_c") and plan.target_carbs:
+                    self.txt_factor_c.setText(f"{plan.target_carbs / w_kg:.1f}")
+                if hasattr(self, "txt_factor_f") and plan.target_fat:
+                    self.txt_factor_f.setText(f"{plan.target_fat / w_kg:.1f}")
+
             if getattr(plan, "target_calories", 0) and plan.target_calories > 0:
                 self._current_member_tdee = int(round(plan.target_calories))
                 self.txt_member_tdee.setText(f"\u200f{int(round(plan.target_calories)):,} کیلوکالری")
@@ -1108,13 +1118,18 @@ class NutritionEditorView(QWidget):
         self.row_macros = QHBoxLayout()
         self.row_macros.setSpacing(8)
 
+        # Get initial factors from goal
+        goal_key = self.combo_goal.currentData() if hasattr(self, "combo_goal") else "muscle_gain"
+        init_factors = self.GOAL_MACRO_FACTORS.get(goal_key, self.GOAL_MACRO_FACTORS["maintenance"])
+
         # Card 1: Protein (🥩 پروتئین)
         self.card_protein = QFrame()
         self.card_protein.setObjectName("card_macro_protein")
         layout_p = QVBoxLayout(self.card_protein)
-        layout_p.setContentsMargins(10, 6, 10, 6)
+        layout_p.setContentsMargins(10, 8, 10, 8)
         layout_p.setSpacing(4)
 
+        # Row 1: Target Grams & Kcal
         p_top = QHBoxLayout()
         p_top.setSpacing(4)
         lbl_p_title = QLabel("🥩 پروتئین هدف:")
@@ -1122,10 +1137,10 @@ class NutritionEditorView(QWidget):
         self.txt_target_p = QLineEdit("0")
         self.txt_target_p.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.txt_target_p.setFixedWidth(54)
-        self.txt_target_p.setFixedHeight(26)
+        self.txt_target_p.setFixedHeight(24)
         self.txt_target_p.setStyleSheet("font-weight: bold; font-size: 11px; color: #60A5FA; background-color: #0F172A; border: 1px solid #3B82F6; border-radius: 4px; padding: 1px 2px;")
-        self.txt_target_p.setToolTip("هدف پروتئین روزانه (گرم) — قابل ویرایش دستی (فرمول: وزن × ضریب)")
-        self.txt_target_p.textEdited.connect(lambda: (self.update_dynamic_calories(), self._snapshot_change()))
+        self.txt_target_p.setToolTip("هدف کل پروتئین روزانه (گرم) — قابل ویرایش دستی\nفرمول: وزن شاگرد (kg) × عدد گرم بر کیلوگرم | هر گرم پروتئین = ۴ کیلوکالری ثابت")
+        self.txt_target_p.textEdited.connect(lambda: self._on_target_macro_edited("protein"))
         lbl_p_unit = QLabel("گرم")
         lbl_p_unit.setStyleSheet("font-size: 10px; color: #94A3B8; border: none; background: transparent;")
         self.lbl_target_p_kcal = QLabel("(۰ کیلوکالری)")
@@ -1137,6 +1152,30 @@ class NutritionEditorView(QWidget):
         p_top.addStretch()
         layout_p.addLayout(p_top)
 
+        # Row 2: Grams per Kg Formula Factor & Fixed Energy Multiplier
+        p_mid = QHBoxLayout()
+        p_mid.setSpacing(4)
+        lbl_f_p_icon = QLabel("⚖️ فرمول:")
+        lbl_f_p_icon.setStyleSheet("font-size: 10px; color: #94A3B8; border: none; background: transparent;")
+        self.txt_factor_p = QLineEdit(f"{init_factors['protein']:.1f}")
+        self.txt_factor_p.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.txt_factor_p.setFixedWidth(46)
+        self.txt_factor_p.setFixedHeight(22)
+        self.txt_factor_p.setStyleSheet("font-weight: bold; font-size: 10px; color: #93C5FD; background-color: #1E293B; border: 1px solid #3B82F6; border-radius: 4px; padding: 1px 3px;")
+        self.txt_factor_p.setToolTip("گرم پروتئین به ازای هر ۱ کیلوگرم وزن بدن فرد (g/kg)\nفرمول: وزن شاگرد (kg) × عدد گرم بر کیلوگرم × ۴ کیلوکالری\nبا تغییر این عدد، هدف پروتئین روزانه بر اساس وزن شاگرد محاسبه می‌شود.")
+        self.txt_factor_p.textEdited.connect(lambda: self._on_factor_edited("protein"))
+        lbl_f_p_unit = QLabel("گرم/کیلوگرم")
+        lbl_f_p_unit.setStyleSheet("font-size: 10px; color: #CBD5E1; border: none; background: transparent;")
+        lbl_f_p_mult = QLabel("(ضریب ۴ کیلوکالری ثابت)")
+        lbl_f_p_mult.setStyleSheet("font-size: 9px; color: #64748B; border: none; background: transparent;")
+        p_mid.addWidget(lbl_f_p_icon)
+        p_mid.addWidget(self.txt_factor_p)
+        p_mid.addWidget(lbl_f_p_unit)
+        p_mid.addWidget(lbl_f_p_mult)
+        p_mid.addStretch()
+        layout_p.addLayout(p_mid)
+
+        # Row 3: Actual, Status, Suggestion
         p_bot = QHBoxLayout()
         p_bot.setSpacing(6)
         self.lbl_actual_p = QLabel("مصرفی: ۰ گرم")
@@ -1174,9 +1213,10 @@ class NutritionEditorView(QWidget):
         self.card_carbs = QFrame()
         self.card_carbs.setObjectName("card_macro_carbs")
         layout_c = QVBoxLayout(self.card_carbs)
-        layout_c.setContentsMargins(10, 6, 10, 6)
+        layout_c.setContentsMargins(10, 8, 10, 8)
         layout_c.setSpacing(4)
 
+        # Row 1: Target Grams & Kcal
         c_top = QHBoxLayout()
         c_top.setSpacing(4)
         lbl_c_title = QLabel("🍞 کربوهیدرات هدف:")
@@ -1184,10 +1224,10 @@ class NutritionEditorView(QWidget):
         self.txt_target_c = QLineEdit("0")
         self.txt_target_c.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.txt_target_c.setFixedWidth(54)
-        self.txt_target_c.setFixedHeight(26)
+        self.txt_target_c.setFixedHeight(24)
         self.txt_target_c.setStyleSheet("font-weight: bold; font-size: 11px; color: #FBBF24; background-color: #0F172A; border: 1px solid #F59E0B; border-radius: 4px; padding: 1px 2px;")
-        self.txt_target_c.setToolTip("هدف کربوهیدرات روزانه (گرم) — قابل ویرایش دستی (فرمول: وزن × ضریب)")
-        self.txt_target_c.textEdited.connect(lambda: (self.update_dynamic_calories(), self._snapshot_change()))
+        self.txt_target_c.setToolTip("هدف کل کربوهیدرات روزانه (گرم) — قابل ویرایش دستی\nفرمول: وزن شاگرد (kg) × عدد گرم بر کیلوگرم | هر گرم کربوهیدرات = ۴ کیلوکالری ثابت")
+        self.txt_target_c.textEdited.connect(lambda: self._on_target_macro_edited("carbs"))
         lbl_c_unit = QLabel("گرم")
         lbl_c_unit.setStyleSheet("font-size: 10px; color: #94A3B8; border: none; background: transparent;")
         self.lbl_target_c_kcal = QLabel("(۰ کیلوکالری)")
@@ -1199,6 +1239,30 @@ class NutritionEditorView(QWidget):
         c_top.addStretch()
         layout_c.addLayout(c_top)
 
+        # Row 2: Grams per Kg Formula Factor & Fixed Energy Multiplier
+        c_mid = QHBoxLayout()
+        c_mid.setSpacing(4)
+        lbl_f_c_icon = QLabel("⚖️ فرمول:")
+        lbl_f_c_icon.setStyleSheet("font-size: 10px; color: #94A3B8; border: none; background: transparent;")
+        self.txt_factor_c = QLineEdit(f"{init_factors['carbs']:.1f}")
+        self.txt_factor_c.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.txt_factor_c.setFixedWidth(46)
+        self.txt_factor_c.setFixedHeight(22)
+        self.txt_factor_c.setStyleSheet("font-weight: bold; font-size: 10px; color: #FDE68A; background-color: #1E293B; border: 1px solid #D97706; border-radius: 4px; padding: 1px 3px;")
+        self.txt_factor_c.setToolTip("گرم کربوهیدرات به ازای هر ۱ کیلوگرم وزن بدن فرد (g/kg)\nفرمول: وزن شاگرد (kg) × عدد گرم بر کیلوگرم × ۴ کیلوکالری\nبا تغییر این عدد، هدف کربوهیدرات روزانه بر اساس وزن شاگرد محاسبه می‌شود.")
+        self.txt_factor_c.textEdited.connect(lambda: self._on_factor_edited("carbs"))
+        lbl_f_c_unit = QLabel("گرم/کیلوگرم")
+        lbl_f_c_unit.setStyleSheet("font-size: 10px; color: #CBD5E1; border: none; background: transparent;")
+        lbl_f_c_mult = QLabel("(ضریب ۴ کیلوکالری ثابت)")
+        lbl_f_c_mult.setStyleSheet("font-size: 9px; color: #64748B; border: none; background: transparent;")
+        c_mid.addWidget(lbl_f_c_icon)
+        c_mid.addWidget(self.txt_factor_c)
+        c_mid.addWidget(lbl_f_c_unit)
+        c_mid.addWidget(lbl_f_c_mult)
+        c_mid.addStretch()
+        layout_c.addLayout(c_mid)
+
+        # Row 3: Actual, Status, Suggestion
         c_bot = QHBoxLayout()
         c_bot.setSpacing(6)
         self.lbl_actual_c = QLabel("مصرفی: ۰ گرم")
@@ -1236,9 +1300,10 @@ class NutritionEditorView(QWidget):
         self.card_fat = QFrame()
         self.card_fat.setObjectName("card_macro_fat")
         layout_f = QVBoxLayout(self.card_fat)
-        layout_f.setContentsMargins(10, 6, 10, 6)
+        layout_f.setContentsMargins(10, 8, 10, 8)
         layout_f.setSpacing(4)
 
+        # Row 1: Target Grams & Kcal
         f_top = QHBoxLayout()
         f_top.setSpacing(4)
         lbl_f_title = QLabel("🥑 چربی مفید هدف:")
@@ -1246,10 +1311,10 @@ class NutritionEditorView(QWidget):
         self.txt_target_f = QLineEdit("0")
         self.txt_target_f.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.txt_target_f.setFixedWidth(54)
-        self.txt_target_f.setFixedHeight(26)
+        self.txt_target_f.setFixedHeight(24)
         self.txt_target_f.setStyleSheet("font-weight: bold; font-size: 11px; color: #34D399; background-color: #0F172A; border: 1px solid #10B981; border-radius: 4px; padding: 1px 2px;")
-        self.txt_target_f.setToolTip("هدف چربی مفید روزانه (گرم) — قابل ویرایش دستی (فرمول: وزن × ضریب)")
-        self.txt_target_f.textEdited.connect(lambda: (self.update_dynamic_calories(), self._snapshot_change()))
+        self.txt_target_f.setToolTip("هدف کل چربی مفید روزانه (گرم) — قابل ویرایش دستی\nفرمول: وزن شاگرد (kg) × عدد گرم بر کیلوگرم | هر گرم چربی = ۹ کیلوکالری ثابت")
+        self.txt_target_f.textEdited.connect(lambda: self._on_target_macro_edited("fat"))
         lbl_f_unit = QLabel("گرم")
         lbl_f_unit.setStyleSheet("font-size: 10px; color: #94A3B8; border: none; background: transparent;")
         self.lbl_target_f_kcal = QLabel("(۰ کیلوکالری)")
@@ -1261,6 +1326,30 @@ class NutritionEditorView(QWidget):
         f_top.addStretch()
         layout_f.addLayout(f_top)
 
+        # Row 2: Grams per Kg Formula Factor & Fixed Energy Multiplier
+        f_mid = QHBoxLayout()
+        f_mid.setSpacing(4)
+        lbl_f_fat_icon = QLabel("⚖️ فرمول:")
+        lbl_f_fat_icon.setStyleSheet("font-size: 10px; color: #94A3B8; border: none; background: transparent;")
+        self.txt_factor_f = QLineEdit(f"{init_factors['fat']:.1f}")
+        self.txt_factor_f.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.txt_factor_f.setFixedWidth(46)
+        self.txt_factor_f.setFixedHeight(22)
+        self.txt_factor_f.setStyleSheet("font-weight: bold; font-size: 10px; color: #A7F3D0; background-color: #1E293B; border: 1px solid #059669; border-radius: 4px; padding: 1px 3px;")
+        self.txt_factor_f.setToolTip("گرم چربی مفید به ازای هر ۱ کیلوگرم وزن بدن فرد (g/kg)\nفرمول: وزن شاگرد (kg) × عدد گرم بر کیلوگرم × ۹ کیلوکالری\nبا تغییر این عدد، هدف چربی مفید روزانه بر اساس وزن شاگرد محاسبه می‌شود.")
+        self.txt_factor_f.textEdited.connect(lambda: self._on_factor_edited("fat"))
+        lbl_f_fat_unit = QLabel("گرم/کیلوگرم")
+        lbl_f_fat_unit.setStyleSheet("font-size: 10px; color: #CBD5E1; border: none; background: transparent;")
+        lbl_f_fat_mult = QLabel("(ضریب ۹ کیلوکالری ثابت)")
+        lbl_f_fat_mult.setStyleSheet("font-size: 9px; color: #64748B; border: none; background: transparent;")
+        f_mid.addWidget(lbl_f_fat_icon)
+        f_mid.addWidget(self.txt_factor_f)
+        f_mid.addWidget(lbl_f_fat_unit)
+        f_mid.addWidget(lbl_f_fat_mult)
+        f_mid.addStretch()
+        layout_f.addLayout(f_mid)
+
+        # Row 3: Actual, Status, Suggestion
         f_bot = QHBoxLayout()
         f_bot.setSpacing(6)
         self.lbl_actual_f = QLabel("مصرفی: ۰ گرم")
@@ -1298,15 +1387,26 @@ class NutritionEditorView(QWidget):
         self.card_energy = QFrame()
         self.card_energy.setObjectName("card_macro_energy")
         layout_e = QVBoxLayout(self.card_energy)
-        layout_e.setContentsMargins(10, 6, 10, 6)
+        layout_e.setContentsMargins(10, 8, 10, 8)
         layout_e.setSpacing(4)
 
+        # Row 1: Target Energy
         e_top = QHBoxLayout()
         e_top.setSpacing(4)
         lbl_e_title = QLabel("🔥 انرژی هدف:")
         lbl_e_title.setStyleSheet("font-weight: bold; font-size: 11px; color: #F43F5E; border: none; background: transparent;")
         self.lbl_target_energy = QLabel("۰ کیلوکالری")
         self.lbl_target_energy.setStyleSheet("font-weight: bold; font-size: 11px; color: #FBBF24; border: none; background: transparent;")
+        e_top.addWidget(lbl_e_title)
+        e_top.addWidget(self.lbl_target_energy)
+        e_top.addStretch()
+        layout_e.addLayout(e_top)
+
+        # Row 2: Sync to TDEE Button
+        e_mid = QHBoxLayout()
+        e_mid.setSpacing(4)
+        lbl_e_sub = QLabel("🎯 مجموع انرژی ۳ ماکرو")
+        lbl_e_sub.setStyleSheet("font-size: 10px; color: #94A3B8; border: none; background: transparent;")
         self.btn_sync_tdee = QPushButton("🎯 اعمال به TDEE")
         self.btn_sync_tdee.setFixedHeight(22)
         self.btn_sync_tdee.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -1327,12 +1427,12 @@ class NutritionEditorView(QWidget):
         """)
         self.btn_sync_tdee.setToolTip("تنظیم فیلد TDEE بر اساس مجموع کیلوکالری محاسبه‌شده از اهداف ماکروها")
         self.btn_sync_tdee.clicked.connect(self._sync_tdee_with_macro_target)
-        e_top.addWidget(lbl_e_title)
-        e_top.addWidget(self.lbl_target_energy)
-        e_top.addStretch()
-        e_top.addWidget(self.btn_sync_tdee)
-        layout_e.addLayout(e_top)
+        e_mid.addWidget(lbl_e_sub)
+        e_mid.addStretch()
+        e_mid.addWidget(self.btn_sync_tdee)
+        layout_e.addLayout(e_mid)
 
+        # Row 3: Actual Energy & Status
         e_bot = QHBoxLayout()
         e_bot.setSpacing(6)
         self.lbl_actual_energy = QLabel("مصرفی: ۰ کیلوکالری")
@@ -1371,20 +1471,102 @@ class NutritionEditorView(QWidget):
         layout_form.addLayout(self.row_macros)
 
     def _on_goal_changed(self, _index: int = 0):
+        goal_key = self.combo_goal.currentData() if hasattr(self, "combo_goal") else "maintenance"
+        factors = self.GOAL_MACRO_FACTORS.get(goal_key, self.GOAL_MACRO_FACTORS["maintenance"])
+        if hasattr(self, "txt_factor_p"):
+            self.txt_factor_p.blockSignals(True)
+            self.txt_factor_c.blockSignals(True)
+            self.txt_factor_f.blockSignals(True)
+            self.txt_factor_p.setText(f"{factors['protein']:.1f}")
+            self.txt_factor_c.setText(f"{factors['carbs']:.1f}")
+            self.txt_factor_f.setText(f"{factors['fat']:.1f}")
+            self.txt_factor_p.blockSignals(False)
+            self.txt_factor_c.blockSignals(False)
+            self.txt_factor_f.blockSignals(False)
+
         self._recalculate_target_macros_from_weight()
+        self.update_dynamic_calories()
+        self._snapshot_change()
+
+    def _get_factor_macro(self, macro_key: str) -> float:
+        field_map = {
+            "protein": getattr(self, "txt_factor_p", None),
+            "carbs": getattr(self, "txt_factor_c", None),
+            "fat": getattr(self, "txt_factor_f", None),
+        }
+        goal_key = self.combo_goal.currentData() if hasattr(self, "combo_goal") else "maintenance"
+        fallback = self.GOAL_MACRO_FACTORS.get(goal_key, self.GOAL_MACRO_FACTORS["maintenance"]).get(macro_key, 2.0)
+        fld = field_map.get(macro_key)
+        if not fld:
+            return float(fallback)
+        raw = fld.text().strip()
+        persian_to_eng = str.maketrans("۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩/،", "01234567890123456789..")
+        clean = raw.translate(persian_to_eng)
+        filtered = "".join(ch for ch in clean if ch.isdigit() or ch == '.')
+        try:
+            val = float(filtered)
+            return val if val > 0 else float(fallback)
+        except ValueError:
+            return float(fallback)
+
+    def _on_factor_edited(self, macro_key: str):
+        w_kg = getattr(self, "_current_member_weight_kg", 0.0) or 0.0
+        factor = self._get_factor_macro(macro_key)
+        tgt_fld = {
+            "protein": getattr(self, "txt_target_p", None),
+            "carbs": getattr(self, "txt_target_c", None),
+            "fat": getattr(self, "txt_target_f", None),
+        }.get(macro_key)
+
+        if tgt_fld and w_kg > 0:
+            tgt_val = int(round(w_kg * factor))
+            tgt_fld.blockSignals(True)
+            tgt_fld.setText(str(tgt_val))
+            tgt_fld.blockSignals(False)
+
+        self.update_dynamic_calories()
+        self._snapshot_change()
+
+    def _on_target_macro_edited(self, macro_key: str):
+        w_kg = getattr(self, "_current_member_weight_kg", 0.0) or 0.0
+        tgt_val = self._get_target_macro(macro_key)
+        factor_fld = {
+            "protein": getattr(self, "txt_factor_p", None),
+            "carbs": getattr(self, "txt_factor_c", None),
+            "fat": getattr(self, "txt_factor_f", None),
+        }.get(macro_key)
+
+        if factor_fld and w_kg > 0 and tgt_val > 0:
+            rev_factor = tgt_val / w_kg
+            factor_fld.blockSignals(True)
+            factor_fld.setText(f"{rev_factor:.2f}" if abs(rev_factor - round(rev_factor, 1)) > 0.03 else f"{rev_factor:.1f}")
+            factor_fld.blockSignals(False)
+
         self.update_dynamic_calories()
         self._snapshot_change()
 
     def _recalculate_target_macros_from_weight(self):
         w_kg = getattr(self, "_current_member_weight_kg", 0.0) or 0.0
         if w_kg <= 0:
+            if hasattr(self, "txt_target_p"):
+                self.txt_target_p.blockSignals(True)
+                self.txt_target_c.blockSignals(True)
+                self.txt_target_f.blockSignals(True)
+                self.txt_target_p.setText("0")
+                self.txt_target_c.setText("0")
+                self.txt_target_f.setText("0")
+                self.txt_target_p.blockSignals(False)
+                self.txt_target_c.blockSignals(False)
+                self.txt_target_f.blockSignals(False)
             return
-        goal_key = self.combo_goal.currentData() if hasattr(self, "combo_goal") else "muscle_gain"
-        factors = self.GOAL_MACRO_FACTORS.get(goal_key, self.GOAL_MACRO_FACTORS["maintenance"])
 
-        tgt_p = int(round(w_kg * factors["protein"]))
-        tgt_c = int(round(w_kg * factors["carbs"]))
-        tgt_f = int(round(w_kg * factors["fat"]))
+        fp = self._get_factor_macro("protein")
+        fc = self._get_factor_macro("carbs")
+        ff = self._get_factor_macro("fat")
+
+        tgt_p = int(round(w_kg * fp))
+        tgt_c = int(round(w_kg * fc))
+        tgt_f = int(round(w_kg * ff))
 
         if hasattr(self, "txt_target_p"):
             self.txt_target_p.blockSignals(True)
@@ -2148,6 +2330,8 @@ class NutritionEditorView(QWidget):
         widgets_to_block = [self.txt_title, self.combo_goal, self.combo_days, self.combo_templates]
         if hasattr(self, "txt_target_p"):
             widgets_to_block.extend([self.txt_target_p, self.txt_target_c, self.txt_target_f])
+        if hasattr(self, "txt_factor_p"):
+            widgets_to_block.extend([self.txt_factor_p, self.txt_factor_c, self.txt_factor_f])
         for w in widgets_to_block:
             w.blockSignals(True)
 
@@ -2159,6 +2343,13 @@ class NutritionEditorView(QWidget):
             self.txt_target_p.setText("0")
             self.txt_target_c.setText("0")
             self.txt_target_f.setText("0")
+
+        if hasattr(self, "txt_factor_p"):
+            init_goal = self.combo_goal.itemData(0) or "muscle_gain"
+            init_facs = self.GOAL_MACRO_FACTORS.get(init_goal, self.GOAL_MACRO_FACTORS["maintenance"])
+            self.txt_factor_p.setText(f"{init_facs['protein']:.1f}")
+            self.txt_factor_c.setText(f"{init_facs['carbs']:.1f}")
+            self.txt_factor_f.setText(f"{init_facs['fat']:.1f}")
 
         for w in widgets_to_block:
             w.blockSignals(False)
