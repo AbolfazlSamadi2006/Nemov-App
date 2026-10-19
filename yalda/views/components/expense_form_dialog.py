@@ -16,53 +16,6 @@ class ExpenseFormDialog(QDialog):
         self.setWindowTitle("ویرایش هزینه باشگاه" if self.is_edit else "ثبت هزینه جدید باشگاه")
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
         self.setFixedWidth(460)
-        self.setStyleSheet("""
-            QDialog {
-                background-color: #161616;
-            }
-            QLabel {
-                color: #FFFFFF;
-                font-size: 13px;
-                font-weight: bold;
-            }
-            QLineEdit, QComboBox, QTextEdit {
-                background-color: #222222;
-                color: #FFFFFF;
-                border: 1px solid #3A3A3A;
-                border-radius: 6px;
-                padding: 6px 10px;
-                font-size: 13px;
-            }
-            QLineEdit:focus, QComboBox:focus, QTextEdit:focus {
-                border: 1px solid #DC2626;
-                background-color: #282828;
-            }
-            QPushButton#btn_save {
-                background-color: #DC2626;
-                color: #FFFFFF;
-                font-weight: bold;
-                border: none;
-                border-radius: 6px;
-                height: 38px;
-                font-size: 13px;
-            }
-            QPushButton#btn_save:hover {
-                background-color: #B91C1C;
-            }
-            QPushButton#btn_cancel {
-                background-color: #2C2C2C;
-                color: #CCCCCC;
-                border: 1px solid #444444;
-                border-radius: 6px;
-                height: 38px;
-                font-size: 13px;
-            }
-            QPushButton#btn_cancel:hover {
-                background-color: #3A3A3A;
-                color: #FFFFFF;
-            }
-        """)
-
         self.init_ui()
 
     def init_ui(self):
@@ -72,7 +25,7 @@ class ExpenseFormDialog(QDialog):
 
         # Title
         lbl_header = QLabel("✏️ ویرایش هزینه" if self.is_edit else "➕ ثبت مخارج و هزینه جدید")
-        lbl_header.setStyleSheet("font-size: 16px; font-weight: bold; color: #FFFFFF; margin-bottom: 4px;")
+        lbl_header.setObjectName("h2")
         layout.addWidget(lbl_header)
 
         # 1. Expense Title
@@ -135,12 +88,12 @@ class ExpenseFormDialog(QDialog):
         btn_box.setSpacing(12)
 
         self.btn_save = QPushButton("💾 ذخیره هزینه" if self.is_edit else "➕ ثبت هزینه")
-        self.btn_save.setObjectName("btn_save")
+        self.btn_save.setObjectName("primary_button")
         self.btn_save.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_save.clicked.connect(self.save_expense)
 
         self.btn_cancel = QPushButton("انصراف")
-        self.btn_cancel.setObjectName("btn_cancel")
+        self.btn_cancel.setObjectName("secondary_button")
         self.btn_cancel.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_cancel.clicked.connect(self.reject)
 

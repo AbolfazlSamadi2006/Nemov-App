@@ -549,6 +549,69 @@ class NemovE2ETestSuite:
                               "PENDING", "Installer / PyInstaller spec pending update to Nemov in M1.",
                               duration, {"nsi_has_nemov": nsi_has_nemov, "spec_has_nemov": spec_has_nemov})
 
+    def test_t1_12_startup_theme_persistence(self) -> TestResult:
+        """T1.12: Startup Theme Persistence via ThemeManager.apply_saved_theme()."""
+        t0 = time.time()
+        self.ensure_qt()
+        self.backup_database_settings(["app_theme"])
+        try:
+            from yalda.utils.theme_manager import ThemeManager
+            from yalda.services.branding_service import save_club_info
+
+            # 1. Save royal_gold to DB
+            save_club_info(app_theme="royal_gold")
+
+            # 2. Simulate startup
+            applied = ThemeManager.apply_saved_theme(self._qt_app)
+            assert applied is True, "apply_saved_theme returned False"
+            assert ThemeManager.get_current_theme_key() == "royal_gold"
+
+            qss = self._qt_app.styleSheet()
+            assert "#D4AF37" in qss, "Active QApplication stylesheet missing royal_gold primary accent (#D4AF37)"
+
+            duration = (time.time() - t0) * 1000
+            return TestResult(1, "T1.12_STARTUP_THEME_PERSISTENCE", "Startup Theme Persistence Hook", "M2",
+                              "PASS", "Startup theme persistence successfully loads and applies saved theme from DB.",
+                              duration, {"theme": "royal_gold"})
+        except Exception as e:
+            return TestResult(1, "T1.12_STARTUP_THEME_PERSISTENCE", "Startup Theme Persistence Hook", "M2",
+                              "FAIL", f"Startup theme persistence failed: {e}", (time.time() - t0) * 1000)
+        finally:
+            self.restore_database_settings()
+
+    def test_t1_13_login_view_dynamic_tokens(self) -> TestResult:
+        """T1.13: LoginView Dynamic Palette Token Application (Dark & 9router Light)."""
+        t0 = time.time()
+        self.ensure_qt()
+        try:
+            from yalda.views.login_view import LoginView
+            from yalda.utils.theme_manager import ThemeManager
+
+            login = LoginView()
+
+            # Test Dark: Neon Pulse
+            neon_pal = ThemeManager.PALETTES["neon_pulse"]
+            ThemeManager.apply_theme("neon_pulse")
+            assert neon_pal.bg_base in login.styleSheet(), f"LoginView missing neon_pulse bg_base ({neon_pal.bg_base})"
+            assert neon_pal.bg_card in login.card.styleSheet(), f"Login card missing neon_pulse bg_card ({neon_pal.bg_card})"
+            assert neon_pal.primary in login.btn_login.styleSheet(), f"Login button missing neon_pulse primary ({neon_pal.primary})"
+
+            # Test 9router Light: Olympic White
+            olympic_pal = ThemeManager.PALETTES["olympic_white"]
+            ThemeManager.apply_theme("olympic_white")
+            assert olympic_pal.bg_base in login.styleSheet(), f"LoginView missing olympic_white canvas ({olympic_pal.bg_base})"
+            assert "#FFFFFF" in login.card.styleSheet(), "Login card missing pure white card surface (#FFFFFF)"
+            assert olympic_pal.primary in login.btn_login.styleSheet(), f"Login button missing olympic_white primary ({olympic_pal.primary})"
+            assert "#8B0000" not in login.btn_login.styleSheet(), "Hardcoded crimson found in Login button"
+
+            duration = (time.time() - t0) * 1000
+            return TestResult(1, "T1.13_LOGIN_VIEW_DYNAMIC_TOKENS", "LoginView Dynamic Palette Tokens", "M2",
+                              "PASS", "LoginView seamlessly switches between dark and 9router light modes without hardcoded colors.",
+                              duration)
+        except Exception as e:
+            return TestResult(1, "T1.13_LOGIN_VIEW_DYNAMIC_TOKENS", "LoginView Dynamic Palette Tokens", "M2",
+                              "FAIL", f"LoginView dynamic theming failed: {e}", (time.time() - t0) * 1000)
+
     # ==================================================================================
     # Tier 2: Boundary & Corner Cases (Boundary Value Analysis)
     # ==================================================================================
@@ -699,6 +762,41 @@ class NemovE2ETestSuite:
             return TestResult(2, "T2.4_RESOLUTIONS_GEOMETRY", "Extreme Resolutions 1024x768 vs 1920x1080", "M2",
                               "FAIL", f"Resolution geometry test failed: {e}", (time.time() - t0) * 1000)
 
+    def test_t2_5_sidebar_resize_theme_stability(self) -> TestResult:
+        """T2.5: Sidebar Resize Stability & Palette Preservation across Responsive Tiers."""
+        t0 = time.time()
+        self.ensure_qt()
+        try:
+            from yalda.views.components.sidebar import Sidebar
+            from yalda.utils.theme_manager import ThemeManager
+
+            sidebar = Sidebar()
+            ThemeManager.apply_theme("electric_cyan")
+            cyan_pal = ThemeManager.PALETTES["electric_cyan"]
+
+            # Check 3 tiers
+            tiers = [
+                (600, "compact", 32),
+                (720, "medium", 34),
+                (850, "full", 36),
+            ]
+            for h, expected_tier, exp_bot_h in tiers:
+                sidebar.resize(230, h)
+                sidebar._apply_responsive_metrics()
+                assert sidebar._responsive_tier == expected_tier, f"Expected tier {expected_tier} at height {h}"
+                assert sidebar.btn_logout.height() == exp_bot_h, f"Expected button height {exp_bot_h} at height {h}"
+                assert cyan_pal.bg_sidebar in sidebar.styleSheet(), "Sidebar background corrupted after resize"
+                assert cyan_pal.primary in sidebar.styleSheet(), "Sidebar active button accent corrupted after resize"
+                assert "#8B0000" not in sidebar.styleSheet(), "Hardcoded crimson reverted into sidebar on resize"
+
+            duration = (time.time() - t0) * 1000
+            return TestResult(2, "T2.5_SIDEBAR_RESIZE_THEME_STABILITY", "Sidebar Resize Stability & Theme Preservation", "M2",
+                              "PASS", "Sidebar transitions smoothly across all 3 tiers with 100% theme accent preservation.",
+                              duration)
+        except Exception as e:
+            return TestResult(2, "T2.5_SIDEBAR_RESIZE_THEME_STABILITY", "Sidebar Resize Stability & Theme Preservation", "M2",
+                              "FAIL", f"Sidebar resize theme stability failed: {e}", (time.time() - t0) * 1000)
+
     # ==================================================================================
     # Tier 3: Cross-Feature Combinations (Pairwise Combinations)
     # ==================================================================================
@@ -843,6 +941,36 @@ class NemovE2ETestSuite:
         finally:
             self.restore_database_settings()
 
+    def test_t3_4_shell_zero_crimson_audit(self) -> TestResult:
+        """T3.4: Shell Zero-Crimson Verification on MainWindow & Subcomponents."""
+        t0 = time.time()
+        self.ensure_qt()
+        try:
+            from yalda.views.main_window import MainWindow
+            from yalda.utils.theme_manager import ThemeManager
+
+            mw = MainWindow()
+            for theme_key in ["royal_gold", "champagne_gold", "stealth_silver"]:
+                ThemeManager.apply_theme(theme_key)
+                palette = ThemeManager.PALETTES[theme_key]
+
+                # Assert sidebar uses theme palette
+                assert palette.primary in mw.sidebar.styleSheet(), f"Primary {palette.primary} not in sidebar stylesheet for {theme_key}"
+                assert "#8B0000" not in mw.sidebar.styleSheet(), f"Residual crimson in sidebar stylesheet for {theme_key}"
+
+                # Assert MainWindow containers have no hardcoded crimson
+                assert "#8B0000" not in mw.styleSheet()
+                assert "#8B0000" not in mw.centralWidget().styleSheet()
+                assert "#8B0000" not in mw.stack.styleSheet()
+
+            duration = (time.time() - t0) * 1000
+            return TestResult(3, "T3.4_SHELL_ZERO_CRIMSON_AUDIT", "Shell Zero-Crimson Audit", "M2",
+                              "PASS", "Shell and navigation components verified free of residual #8B0000 crimson.",
+                              duration)
+        except Exception as e:
+            return TestResult(3, "T3.4_SHELL_ZERO_CRIMSON_AUDIT", "Shell Zero-Crimson Audit", "M2",
+                              "FAIL", f"Shell zero-crimson audit failed: {e}", (time.time() - t0) * 1000)
+
     # ==================================================================================
     # Tier 4: Real-World Workload Scenarios (End-to-End User Journeys)
     # ==================================================================================
@@ -947,15 +1075,19 @@ class NemovE2ETestSuite:
             self.test_t1_9_dynamic_sms_club_replacement,
             self.test_t1_10_cloudflare_worker_rebranding,
             self.test_t1_11_packaging_specs_and_installer,
+            self.test_t1_12_startup_theme_persistence,
+            self.test_t1_13_login_view_dynamic_tokens,
             # Tier 2
             self.test_t2_1_empty_club_name_fallback,
             self.test_t2_2_missing_custom_logo_fallback,
             self.test_t2_3_invalid_theme_id_fallback,
             self.test_t2_4_extreme_resolutions_geometry,
+            self.test_t2_5_sidebar_resize_theme_stability,
             # Tier 3
             self.test_t3_1_theme_switching_pdf_accent_reflection,
             self.test_t3_2_custom_logo_upload_pdf_watermark_reset_roundtrip,
             self.test_t3_3_dynamic_club_info_sms_formatting,
+            self.test_t3_4_shell_zero_crimson_audit,
             # Tier 4
             self.test_t4_1_complete_trainer_workflow_e2e
         ]
@@ -1063,17 +1195,21 @@ class NemovE2ETestSuite:
 - **T1.9**: SMS Dynamic Club Name Injection (`#GYM#` variable dynamic substitution).
 - **T1.10**: Cloudflare Worker Landing Page Rebranding (`index.js` Nemov v3.3.0 while preserving Yalda partner card).
 - **T1.11**: Packaging Spec & NSIS Script Rebranding (`Nemov_Setup_v3.3.0.exe`, desktop shortcut `Nemov`, `Nemov.exe`).
+- **T1.12**: Startup Theme Persistence Hook via `ThemeManager.apply_saved_theme()`.
+- **T1.13**: LoginView Dynamic Palette Token Application (Dark & 9router Light).
 
 ### Tier 2: Boundary & Corner Cases (Boundary Value Analysis)
 - **T2.1**: Empty & Whitespace Club Name Fallback (fallback to `"نرم‌افزار مدیریت ورزشی نِمُو"`).
 - **T2.2**: Missing Custom Logo Fallback (fallback to bundled Nemov default logo).
 - **T2.3**: Invalid Theme ID Fallback (safe fallback to `"crimson_fury"`).
 - **T2.4**: Extreme Resolutions Display & Geometry QA (1024x768 vs 1920x1080 without clipping or zero rects).
+- **T2.5**: Sidebar Resize Stability & Palette Preservation across Responsive Tiers.
 
 ### Tier 3: Cross-Feature Combinations (Pairwise & Interaction Testing)
 - **T3.1**: Theme Switching + PDF Accent Color Reflection (Royal Gold `#D4AF37` vs Neon Pulse `#10B981`).
 - **T3.2**: Custom Logo Upload + PDF Watermark + Reset Button Round-Trip.
 - **T3.3**: Dynamic Club Info + SMS Message Formatting across all 5 templates.
+- **T3.4**: Shell Zero-Crimson Verification on MainWindow & Subcomponents.
 
 ### Tier 4: Real-World Workload Scenarios (End-to-End User Story)
 - **T4.1**: Complete Trainer Workflow E2E Simulation (Launch -> Select Theme -> Set Custom Club Info -> Generate PDF -> Verify Signature & Watermark -> Reset Logo to Nemov -> State Cleanup).

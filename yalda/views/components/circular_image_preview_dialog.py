@@ -32,7 +32,12 @@ class CircularImagePreviewDialog(QDialog):
         if self.photo_path and os.path.exists(self.photo_path):
             pix = QPixmap(self.photo_path)
             if not pix.isNull():
-                circ = get_circular_pixmap(pix, SIZE, border_color="#8B0000", border_width=4)
+                try:
+                    from yalda.utils.theme_manager import ThemeManager
+                    accent = ThemeManager.get_current_palette().primary
+                except Exception:
+                    accent = "#3B82F6"
+                circ = get_circular_pixmap(pix, SIZE, border_color=accent, border_width=4)
                 self.lbl_image.setPixmap(circ)
 
         # Glowing dark shadow effect

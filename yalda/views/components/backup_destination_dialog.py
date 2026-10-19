@@ -19,13 +19,6 @@ class BackupDestinationDialog(QDialog):
         self.setFixedWidth(540)
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowType.WindowContextHelpButtonHint)
-        self.setStyleSheet("""
-            QDialog {
-                background-color: #18181B;
-                border: 1px solid #27272A;
-                border-radius: 10px;
-            }
-        """)
         self.init_ui()
 
     def init_ui(self):
@@ -35,17 +28,12 @@ class BackupDestinationDialog(QDialog):
 
         # Header Title
         lbl_title = QLabel("💾 ایجاد نسخه پشتیبان جدید")
-        lbl_title.setStyleSheet("""
-            font-size: 18px;
-            font-weight: bold;
-            color: #FFFFFF;
-            font-family: "Segoe UI Emoji", "Noto Color Emoji", "Vazirmatn", sans-serif;
-        """)
+        lbl_title.setObjectName("h1")
         layout.addWidget(lbl_title)
 
         # Subtitle
         lbl_msg = QLabel("لطفاً مقصد مورد نظر جهت ذخیره نسخه پشتیبان (پایگاه‌داده و تصاویر) را انتخاب نمایید:")
-        lbl_msg.setStyleSheet("color: #CCCCCC; font-size: 13px;")
+        lbl_msg.setObjectName("muted_text")
         lbl_msg.setWordWrap(True)
         layout.addWidget(lbl_msg)
 
@@ -128,21 +116,7 @@ class BackupDestinationDialog(QDialog):
         btn_cancel = QPushButton("انصراف و بستن")
         btn_cancel.setFixedHeight(36)
         btn_cancel.setCursor(Qt.CursorShape.PointingHandCursor)
-        btn_cancel.setStyleSheet("""
-            QPushButton {
-                background: transparent;
-                color: #9CA3AF;
-                font-size: 13px;
-                border: 1px solid #4B5563;
-                border-radius: 6px;
-                padding: 4px 16px;
-            }
-            QPushButton:hover {
-                color: #F3F4F6;
-                background-color: #374151;
-                border-color: #6B7280;
-            }
-        """)
+        btn_cancel.setObjectName("secondary_button")
         btn_cancel.clicked.connect(self.reject)
         layout.addWidget(btn_cancel, alignment=Qt.AlignmentFlag.AlignCenter)
 

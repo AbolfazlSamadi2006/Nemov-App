@@ -125,32 +125,14 @@ class Sidebar(QFrame):
         super().__init__(parent)
         self.setObjectName("sidebar")
         self.setFixedWidth(230)
-        self.setStyleSheet("""
-            QFrame#sidebar {
-                background-color: #161616;
-                border-left: 1px solid #282828;
-            }
-            QPushButton {
-                background-color: transparent;
-                color: #B0B0B0;
-                text-align: right;
-                padding: 12px 16px;
-                border: none;
-                border-radius: 6px;
-                font-size: 14px;
-            }
-            QPushButton:hover {
-                background-color: #8B0000;
-                color: #FFFFFF;
-            }
-            QPushButton[active="true"] {
-                background-color: #8B0000;
-                color: #FFFFFF;
-                font-weight: bold;
-            }
-        """)
+        self._responsive_tier = None
+        self._btn_pad = "11px 16px"
+        self._btn_font = "14px"
+        self._sub_font = "11px"
+        self._sub_mb = "6px"
 
         self.buttons = {}
+        self._current_nav_id: str = "dashboard"
         self.init_ui()
         self.refresh_notifications()
         self.refresh_branding()
@@ -159,6 +141,7 @@ class Sidebar(QFrame):
             ThemeManager.theme_changed.connect(self._on_theme_changed)
         except Exception:
             pass
+        self._apply_theme_style()
 
     def init_ui(self):
         layout = QVBoxLayout(self)
@@ -184,7 +167,6 @@ class Sidebar(QFrame):
         
         self.title_lbl = QLabel(config.APP_NAME)
         self.title_lbl.setObjectName("sidebarBrandTitle")
-        self.title_lbl.setStyleSheet("color: #B91C1C; font-size: 24px; font-weight: bold;")
 
         header.addWidget(self.logo_lbl, 0, Qt.AlignmentFlag.AlignVCenter)
         header.addWidget(self.title_lbl, 0, Qt.AlignmentFlag.AlignVCenter)
@@ -192,7 +174,6 @@ class Sidebar(QFrame):
         layout.addLayout(header)
 
         self.sub_lbl = QLabel("نرم‌افزار مدیریت ورزشی")
-        self.sub_lbl.setStyleSheet("color: #71717A; font-size: 11px; margin-bottom: 6px;")
         layout.addWidget(self.sub_lbl)
 
         # Scrollable Navigation Container (prevents bottom overlap on any screen height)
@@ -203,29 +184,6 @@ class Sidebar(QFrame):
         self.nav_scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.nav_scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         self.nav_scroll_area.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
-        self.nav_scroll_area.setStyleSheet("""
-            QScrollArea#sidebarNavScroll {
-                background: transparent;
-                border: none;
-            }
-            QScrollArea#sidebarNavScroll > QWidget > QWidget {
-                background: transparent;
-            }
-            QScrollArea#sidebarNavScroll QScrollBar:vertical {
-                background: transparent;
-                width: 4px;
-                margin: 0px;
-            }
-            QScrollArea#sidebarNavScroll QScrollBar::handle:vertical {
-                background: #3F3F46;
-                min-height: 20px;
-                border-radius: 2px;
-            }
-            QScrollArea#sidebarNavScroll QScrollBar::add-line:vertical,
-            QScrollArea#sidebarNavScroll QScrollBar::sub-line:vertical {
-                height: 0px;
-            }
-        """)
 
         self.nav_container = QWidget()
         self.nav_container.setObjectName("navContainer")
@@ -265,38 +223,17 @@ class Sidebar(QFrame):
         # Cloud Video Upload Progress Panel (Directly under Navigation)
         self.sync_progress_frame = QFrame()
         self.sync_progress_frame.setObjectName("syncProgressFrame")
-        self.sync_progress_frame.setStyleSheet("""
-            QFrame#syncProgressFrame {
-                background-color: #12161F;
-                border: 1px solid #1D4ED8;
-                border-radius: 8px;
-                margin-top: 4px;
-                margin-bottom: 4px;
-            }
-        """)
         sync_layout = QVBoxLayout(self.sync_progress_frame)
         sync_layout.setContentsMargins(10, 8, 10, 8)
         sync_layout.setSpacing(6)
 
         self.lbl_sync_title = QLabel("در حال آپلود ...")
-        self.lbl_sync_title.setStyleSheet("color: #93C5FD; font-size: 11px; font-weight: bold;")
         self.lbl_sync_title.setAlignment(Qt.AlignmentFlag.AlignRight)
         sync_layout.addWidget(self.lbl_sync_title)
 
         self.sync_progress_bar = QProgressBar()
         self.sync_progress_bar.setFixedHeight(5)
         self.sync_progress_bar.setTextVisible(False)
-        self.sync_progress_bar.setStyleSheet("""
-            QProgressBar {
-                background-color: #26262B;
-                border-radius: 2px;
-                border: none;
-            }
-            QProgressBar::chunk {
-                background-color: #3B82F6;
-                border-radius: 2px;
-            }
-        """)
         self.sync_progress_bar.setRange(0, 100)
         self.sync_progress_bar.setValue(0)
         sync_layout.addWidget(self.sync_progress_bar)
@@ -310,13 +247,6 @@ class Sidebar(QFrame):
         self.unified_notif_card = UnifiedNotifCard()
         self.unified_notif_card.setObjectName("unifiedNotifCard")
         self.unified_notif_card.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
-        self.unified_notif_card.setStyleSheet("""
-            QFrame#unifiedNotifCard {
-                background-color: #18181B;
-                border: 1px solid #3F3F46;
-                border-radius: 8px;
-            }
-        """)
         u_card_layout = QVBoxLayout(self.unified_notif_card)
         u_card_layout.setContentsMargins(8, 8, 8, 8)
         u_card_layout.setSpacing(6)
@@ -330,45 +260,13 @@ class Sidebar(QFrame):
         icon_bell.setStyleSheet("font-size: 13px; border: none; background: transparent;")
         
         self.lbl_unified_title = QLabel("یادآوری‌های روز")
-        self.lbl_unified_title.setStyleSheet("color: #FAFAFA; font-size: 11px; font-weight: bold; border: none; background: transparent;")
         
         self.lbl_notif_badge = QLabel("۰")
-        self.lbl_notif_badge.setStyleSheet("""
-            QLabel {
-                background-color: #DC2626;
-                color: #FFFFFF;
-                border-radius: 9px;
-                font-size: 10px;
-                font-weight: bold;
-                padding: 1px 6px;
-                border: none;
-            }
-        """)
 
         self.btn_mark_all_read = QPushButton("✓✓")
         self.btn_mark_all_read.setFixedSize(26, 20)
         self.btn_mark_all_read.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_mark_all_read.setToolTip("خواندن همه اعلانات (مخفی کردن از یادآوری‌های روز)")
-        self.btn_mark_all_read.setStyleSheet("""
-            QPushButton {
-                background-color: #27272A;
-                color: #10B981;
-                border: 1px solid #3F3F46;
-                border-radius: 6px;
-                font-size: 10px;
-                font-weight: bold;
-                padding: 0px;
-                text-align: center;
-            }
-            QPushButton:hover {
-                background-color: #059669;
-                color: #FFFFFF;
-                border: 1px solid #10B981;
-            }
-            QPushButton:pressed {
-                background-color: #047857;
-            }
-        """)
         self.btn_mark_all_read.clicked.connect(self.on_mark_all_notifications_read)
 
         u_header.addWidget(icon_bell)
@@ -384,33 +282,6 @@ class Sidebar(QFrame):
         self.notif_inner_scroll.setWidgetResizable(True)
         self.notif_inner_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.notif_inner_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-        self.notif_inner_scroll.setStyleSheet("""
-            QScrollArea#notifInnerScroll {
-                background: transparent;
-                border: none;
-            }
-            QScrollArea#notifInnerScroll > QWidget > QWidget {
-                background: transparent;
-            }
-            QScrollArea#notifInnerScroll QScrollBar:vertical {
-                background: #1C1C20;
-                width: 6px;
-                margin: 0px 1px 0px 1px;
-                border-radius: 3px;
-            }
-            QScrollArea#notifInnerScroll QScrollBar::handle:vertical {
-                background: #52525B;
-                min-height: 22px;
-                border-radius: 3px;
-            }
-            QScrollArea#notifInnerScroll QScrollBar::handle:vertical:hover {
-                background: #DC2626;
-            }
-            QScrollArea#notifInnerScroll QScrollBar::add-line:vertical,
-            QScrollArea#notifInnerScroll QScrollBar::sub-line:vertical {
-                height: 0px;
-            }
-        """)
 
         self.unified_notif_card.set_scroll_area(self.notif_inner_scroll)
 
@@ -440,24 +311,6 @@ class Sidebar(QFrame):
         btn_logout.setFixedHeight(36)
         btn_logout.setCursor(Qt.CursorShape.PointingHandCursor)
         btn_logout.setToolTip("خروج از حساب کاربری مربی")
-        btn_logout.setStyleSheet("""
-            QPushButton {
-                background-color: #DC2626;
-                color: #FFFFFF;
-                font-weight: bold;
-                border-radius: 6px;
-                font-size: 11px;
-                border: none;
-                padding: 6px 4px;
-                text-align: center;
-            }
-            QPushButton:hover {
-                background-color: #B91C1C;
-            }
-            QPushButton:pressed {
-                background-color: #991B1B;
-            }
-        """)
         btn_logout.clicked.connect(self.logout_requested.emit)
 
         # Developer Button (Left side in RTL)
@@ -465,31 +318,6 @@ class Sidebar(QFrame):
         btn_dev.setFixedHeight(36)
         btn_dev.setCursor(Qt.CursorShape.PointingHandCursor)
         btn_dev.setToolTip("درباره برنامه‌نویس و اطلاعات توسعه‌دهنده")
-        btn_dev.setStyleSheet("""
-            QPushButton {
-                background-color: #27272A;
-                color: #D4D4D8;
-                border-radius: 6px;
-                font-size: 11px;
-                font-weight: bold;
-                border: 1px solid #3F3F46;
-                padding: 6px 4px;
-                text-align: center;
-            }
-            QPushButton:hover {
-                background-color: #3F3F46;
-                color: #FFFFFF;
-            }
-            QPushButton:pressed {
-                background-color: #202024;
-            }
-            QPushButton[active="true"] {
-                background-color: #8B0000;
-                color: #FFFFFF;
-                border: 1px solid #DC2626;
-                font-weight: bold;
-            }
-        """)
         btn_dev.clicked.connect(lambda: self.navigate("developer"))
         self.buttons["developer"] = btn_dev
 
@@ -502,6 +330,7 @@ class Sidebar(QFrame):
         # Set default active page
         self.set_active("dashboard")
         self._apply_responsive_metrics()
+        self._apply_theme_style()
 
     def on_mark_all_notifications_read(self):
         try:
@@ -523,6 +352,12 @@ class Sidebar(QFrame):
 
         try:
             from yalda.services.notification_service import NotificationService
+            from yalda.utils.theme_manager import ThemeManager
+            try:
+                palette = ThemeManager.get_current_palette()
+            except Exception:
+                palette = None
+
             upcoming_members, upcoming_exp = NotificationService.sync_and_get_unread_sidebar_notifications()
             
             # --- 1. Birthday Notifications (Today & Tomorrow) ---
@@ -539,21 +374,34 @@ class Sidebar(QFrame):
                     btn = SidebarNotifButton(scroll_area=self.notif_inner_scroll)
                     btn.setFixedHeight(34)
                     btn.setCursor(Qt.CursorShape.PointingHandCursor)
-                    btn.setStyleSheet("""
-                        QPushButton {
-                            background-color: #241607;
-                            color: #FEF3C7;
-                            border: 1px solid #D97706;
+                    if palette and not palette.is_dark:
+                        bday_bg = "#FEF3C7"
+                        bday_text = "#78350F"
+                        bday_border = "#F59E0B"
+                        bday_hover = "#FDE68A"
+                        bday_hover_border = "#D97706"
+                    else:
+                        bday_bg = palette.bg_surface if palette else "#241607"
+                        bday_text = palette.text_primary if palette else "#FEF3C7"
+                        bday_border = "#D97706"
+                        bday_hover = palette.bg_card if palette else "#3B240B"
+                        bday_hover_border = "#F59E0B"
+
+                    btn.setStyleSheet(f"""
+                        QPushButton {{
+                            background-color: {bday_bg};
+                            color: {bday_text};
+                            border: 1px solid {bday_border};
                             border-radius: 6px;
                             padding: 4px 6px;
                             font-size: 11px;
                             text-align: right;
-                        }
-                        QPushButton:hover {
-                            background-color: #3B240B;
-                            border: 1px solid #F59E0B;
-                            color: #FFFFFF;
-                        }
+                        }}
+                        QPushButton:hover {{
+                            background-color: {bday_hover};
+                            border: 1px solid {bday_hover_border};
+                            color: {bday_text if (palette and not palette.is_dark) else "#FFFFFF"};
+                        }}
                     """)
                     btn.set_full_text(raw_text, tooltip_text)
                     btn.clicked.connect(lambda _, m_id=member.id: self.member_birthday_clicked.emit(m_id))
@@ -573,21 +421,34 @@ class Sidebar(QFrame):
                     btn = SidebarNotifButton(scroll_area=self.notif_inner_scroll)
                     btn.setFixedHeight(34)
                     btn.setCursor(Qt.CursorShape.PointingHandCursor)
-                    btn.setStyleSheet("""
-                        QPushButton {
-                            background-color: #200C0C;
-                            color: #FEE2E2;
-                            border: 1px solid #DC2626;
+                    if palette and not palette.is_dark:
+                        exp_bg = palette.btn_sec_bg
+                        exp_text = palette.text_primary
+                        exp_border = palette.primary
+                        exp_hover = palette.btn_sec_hover
+                        exp_hover_border = palette.primary_hover
+                    else:
+                        exp_bg = palette.bg_surface if palette else "#200C0C"
+                        exp_text = palette.text_primary if palette else "#FEE2E2"
+                        exp_border = palette.primary if palette else "#DC2626"
+                        exp_hover = palette.bg_card if palette else "#3B1111"
+                        exp_hover_border = palette.primary_hover if palette else "#EF4444"
+
+                    btn.setStyleSheet(f"""
+                        QPushButton {{
+                            background-color: {exp_bg};
+                            color: {exp_text};
+                            border: 1px solid {exp_border};
                             border-radius: 6px;
                             padding: 4px 6px;
                             font-size: 11px;
                             text-align: right;
-                        }
-                        QPushButton:hover {
-                            background-color: #3B1111;
-                            border: 1px solid #EF4444;
-                            color: #FFFFFF;
-                        }
+                        }}
+                        QPushButton:hover {{
+                            background-color: {exp_hover};
+                            border: 1px solid {exp_hover_border};
+                            color: {exp_text if (palette and not palette.is_dark) else "#FFFFFF"};
+                        }}
                     """)
                     btn.set_full_text(raw_text, tooltip_text)
                     btn.clicked.connect(lambda _, m_id=member.id: self.member_expiration_clicked.emit(m_id))
@@ -617,7 +478,8 @@ class Sidebar(QFrame):
             margins = (10, 8, 10, 8)
             main_spacing = 4
             nav_spacing = 2
-            sub_style = "color: #666666; font-size: 10.5px; margin-bottom: 2px;"
+            sub_font = "10.5px"
+            sub_mb = "2px"
             btn_pad = "6px 12px"
             btn_font = "12.5px"
             bot_h = 32
@@ -626,7 +488,8 @@ class Sidebar(QFrame):
             margins = (11, 10, 11, 10)
             main_spacing = 5
             nav_spacing = 4
-            sub_style = "color: #666666; font-size: 11px; margin-bottom: 4px;"
+            sub_font = "11px"
+            sub_mb = "4px"
             btn_pad = "8px 14px"
             btn_font = "13px"
             bot_h = 34
@@ -635,51 +498,29 @@ class Sidebar(QFrame):
             margins = (12, 14, 12, 14)
             main_spacing = 6
             nav_spacing = 6
-            sub_style = "color: #666666; font-size: 11px; margin-bottom: 6px;"
+            sub_font = "11px"
+            sub_mb = "6px"
             btn_pad = "11px 16px"
             btn_font = "14px"
             bot_h = 36
 
-        if getattr(self, "_responsive_tier", None) == tier:
+        if getattr(self, "_responsive_tier", None) == tier and hasattr(self, "_btn_pad"):
             return
         self._responsive_tier = tier
+        self._btn_pad = btn_pad
+        self._btn_font = btn_font
+        self._sub_font = sub_font
+        self._sub_mb = sub_mb
 
         self._main_layout.setContentsMargins(*margins)
         self._main_layout.setSpacing(main_spacing)
         self.nav_layout.setSpacing(nav_spacing)
-        self.sub_lbl.setStyleSheet(sub_style)
         if hasattr(self, "btn_logout"):
             self.btn_logout.setFixedHeight(bot_h)
             self.btn_dev.setFixedHeight(bot_h)
 
         self.nav_container.setObjectName("navContainer")
-        self.setStyleSheet(f"""
-            QFrame#sidebar {{
-                background-color: #161616;
-                border-left: 1px solid #282828;
-            }}
-            QWidget#navContainer > QPushButton {{
-                background-color: transparent;
-                color: #B0B0B0;
-                text-align: right;
-                padding: {btn_pad};
-                border: none;
-                border-radius: 6px;
-                font-size: {btn_font};
-            }}
-            QWidget#navContainer > QPushButton:hover {{
-                background-color: #8B0000;
-                color: #FFFFFF;
-            }}
-            QWidget#navContainer > QPushButton[active="true"] {{
-                background-color: #8B0000;
-                color: #FFFFFF;
-                font-weight: bold;
-            }}
-        """)
-        for btn in self.buttons.values():
-            btn.style().unpolish(btn)
-            btn.style().polish(btn)
+        self._apply_theme_style()
 
     def _update_notif_scroll_height(self):
         total = getattr(self, "_total_notifs", 0)
@@ -746,7 +587,12 @@ class Sidebar(QFrame):
                 pixmap = QPixmap(photo_path)
                 self.lbl_dev_photo.setPixmap(pixmap.scaled(42, 42, Qt.AspectRatioMode.KeepAspectRatioByExpanding, Qt.TransformationMode.SmoothTransformation))
                 self.lbl_dev_photo.setFixedSize(42, 42)
-                self.lbl_dev_photo.setStyleSheet("border-radius: 21px; border: 1px solid #8B0000;")
+                try:
+                    from yalda.utils.theme_manager import ThemeManager
+                    dev_border_color = ThemeManager.get_current_palette().primary
+                except Exception:
+                    dev_border_color = ThemeManager.PALETTES['crimson_fury'].primary
+                self.lbl_dev_photo.setStyleSheet(f"border-radius: 21px; border: 1px solid {dev_border_color};")
             else:
                 self.lbl_dev_photo.setText("👨‍💻")
                 self.lbl_dev_photo.setStyleSheet("font-size: 20px;")
@@ -786,57 +632,53 @@ class Sidebar(QFrame):
             pass
 
     def _apply_theme_style(self):
-        """Updates brand title color and sidebar buttons dynamically to match active theme."""
+        """Updates brand title color, sidebar background, navigation buttons, and sub-components to match active theme."""
         try:
             from yalda.utils.theme_manager import ThemeManager
             palette = ThemeManager.get_current_palette()
         except Exception:
             palette = None
 
-        if palette:
-            if palette.key == "crimson_fury":
-                brand_color = "#B91C1C"  # Rich slightly brighter crimson (lighter than #8B0000, harmonizing with menu)
-            else:
-                brand_color = palette.primary_hover if palette.is_dark else palette.primary
+        if not palette:
+            return
 
-            bg_sidebar = palette.bg_sidebar
-            border_col = palette.border
-            btn_hover = palette.primary
-            btn_active = palette.primary
-            text_col = palette.text_secondary
+        if palette.key == "crimson_fury":
+            brand_color = "#B91C1C"  # Rich slightly brighter crimson
         else:
-            brand_color = "#B91C1C"
-            bg_sidebar = "#161616"
-            border_col = "#282828"
-            btn_hover = "#8B0000"
-            btn_active = "#8B0000"
-            text_col = "#B0B0B0"
+            brand_color = palette.primary_hover if palette.is_dark else palette.primary
 
+        btn_pad = getattr(self, "_btn_pad", "11px 16px")
+        btn_font = getattr(self, "_btn_font", "14px")
+        sub_font = getattr(self, "_sub_font", "11px")
+        sub_mb = getattr(self, "_sub_mb", "6px")
+
+        # 1. Main sidebar frame & navigation buttons
         self.setStyleSheet(f"""
             QFrame#sidebar {{
-                background-color: {bg_sidebar};
-                border-left: 1px solid {border_col};
+                background-color: {palette.bg_sidebar};
+                border-left: 1px solid {palette.border};
             }}
-            QPushButton {{
+            QWidget#navContainer > QPushButton {{
                 background-color: transparent;
-                color: {text_col};
+                color: {palette.text_secondary};
                 text-align: right;
-                padding: 12px 16px;
+                padding: {btn_pad};
                 border: none;
                 border-radius: 6px;
-                font-size: 14px;
+                font-size: {btn_font};
             }}
-            QPushButton:hover {{
-                background-color: {btn_hover};
-                color: #FFFFFF;
+            QWidget#navContainer > QPushButton:hover {{
+                background-color: {palette.primary};
+                color: {palette.primary_text};
             }}
-            QPushButton[active="true"] {{
-                background-color: {btn_active};
-                color: #FFFFFF;
+            QWidget#navContainer > QPushButton[active="true"] {{
+                background-color: {palette.primary};
+                color: {palette.primary_text};
                 font-weight: bold;
             }}
         """)
 
+        # 2. Brand title & Subtitle
         if hasattr(self, "title_lbl"):
             from yalda.services.branding_service import BrandingService
             club_info = BrandingService.get_club_info()
@@ -847,9 +689,220 @@ class Sidebar(QFrame):
             else:
                 self.title_lbl.setStyleSheet(f"color: {brand_color}; font-size: 24px; font-weight: bold;")
 
+        if hasattr(self, "sub_lbl"):
+            self.sub_lbl.setStyleSheet(f"color: {palette.text_muted}; font-size: {sub_font}; margin-bottom: {sub_mb};")
+
+        # 3. Navigation scroll area scrollbar
+        if hasattr(self, "nav_scroll_area"):
+            self.nav_scroll_area.setStyleSheet(f"""
+                QScrollArea#sidebarNavScroll {{
+                    background: transparent;
+                    border: none;
+                }}
+                QScrollArea#sidebarNavScroll > QWidget > QWidget {{
+                    background: transparent;
+                }}
+                QScrollArea#sidebarNavScroll QScrollBar:vertical {{
+                    background: transparent;
+                    width: 4px;
+                    margin: 0px;
+                }}
+                QScrollArea#sidebarNavScroll QScrollBar::handle:vertical {{
+                    background: {palette.scrollbar_handle};
+                    min-height: 20px;
+                    border-radius: 2px;
+                }}
+                QScrollArea#sidebarNavScroll QScrollBar::handle:vertical:hover {{
+                    background: {palette.scrollbar_handle_hover};
+                }}
+                QScrollArea#sidebarNavScroll QScrollBar::add-line:vertical,
+                QScrollArea#sidebarNavScroll QScrollBar::sub-line:vertical {{
+                    height: 0px;
+                    background: none;
+                }}
+            """)
+
+        # 4. Sync progress frame & bar
+        if hasattr(self, "sync_progress_frame"):
+            sync_bg = palette.bg_surface if palette.is_dark else palette.bg_card
+            self.sync_progress_frame.setStyleSheet(f"""
+                QFrame#syncProgressFrame {{
+                    background-color: {sync_bg};
+                    border: 1px solid {palette.border};
+                    border-radius: 8px;
+                    margin-top: 4px;
+                    margin-bottom: 4px;
+                }}
+            """)
+        if hasattr(self, "lbl_sync_title"):
+            sync_title_color = palette.primary_hover if palette.is_dark else palette.primary
+            self.lbl_sync_title.setStyleSheet(f"color: {sync_title_color}; font-size: 11px; font-weight: bold;")
+        if hasattr(self, "sync_progress_bar"):
+            track_bg = palette.bg_base if palette.is_dark else "#E2E8F0"
+            self.sync_progress_bar.setStyleSheet(f"""
+                QProgressBar {{
+                    background-color: {track_bg};
+                    border-radius: 2px;
+                    border: none;
+                }}
+                QProgressBar::chunk {{
+                    background-color: {palette.primary};
+                    border-radius: 2px;
+                }}
+            """)
+
+        # 5. Unified notification card and controls
+        if hasattr(self, "unified_notif_card"):
+            self.unified_notif_card.setStyleSheet(f"""
+                QFrame#unifiedNotifCard {{
+                    background-color: {palette.bg_card};
+                    border: 1px solid {palette.border};
+                    border-radius: 8px;
+                }}
+            """)
+        if hasattr(self, "lbl_unified_title"):
+            self.lbl_unified_title.setStyleSheet(f"color: {palette.text_primary}; font-size: 11px; font-weight: bold; border: none; background: transparent;")
+
+        if hasattr(self, "lbl_notif_badge"):
+            self.lbl_notif_badge.setStyleSheet(f"""
+                QLabel {{
+                    background-color: {palette.primary};
+                    color: {palette.primary_text};
+                    border-radius: 9px;
+                    font-size: 10px;
+                    font-weight: bold;
+                    padding: 1px 6px;
+                    border: none;
+                }}
+            """)
+
+        if hasattr(self, "btn_mark_all_read"):
+            mark_bg = palette.btn_sec_bg
+            mark_border = palette.btn_sec_border
+            mark_text = palette.primary_hover if palette.is_dark else palette.primary
+            self.btn_mark_all_read.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: {mark_bg};
+                    color: {mark_text};
+                    border: 1px solid {mark_border};
+                    border-radius: 6px;
+                    font-size: 10px;
+                    font-weight: bold;
+                    padding: 0px;
+                    text-align: center;
+                }}
+                QPushButton:hover {{
+                    background-color: {palette.btn_sec_hover};
+                    border: 1px solid {palette.primary};
+                }}
+                QPushButton:pressed {{
+                    background-color: {mark_bg};
+                }}
+            """)
+
+        if hasattr(self, "notif_inner_scroll"):
+            self.notif_inner_scroll.setStyleSheet(f"""
+                QScrollArea#notifInnerScroll {{
+                    background: transparent;
+                    border: none;
+                }}
+                QScrollArea#notifInnerScroll > QWidget > QWidget {{
+                    background: transparent;
+                }}
+                QScrollArea#notifInnerScroll QScrollBar:vertical {{
+                    background-color: {palette.scrollbar_bg};
+                    width: 4px;
+                    margin: 0px;
+                    border-radius: 2px;
+                }}
+                QScrollArea#notifInnerScroll QScrollBar::handle:vertical {{
+                    background-color: {palette.scrollbar_handle};
+                    min-height: 16px;
+                    border-radius: 2px;
+                }}
+                QScrollArea#notifInnerScroll QScrollBar::handle:vertical:hover {{
+                    background-color: {palette.scrollbar_handle_hover};
+                }}
+                QScrollArea#notifInnerScroll QScrollBar::add-line:vertical,
+                QScrollArea#notifInnerScroll QScrollBar::sub-line:vertical {{
+                    height: 0px;
+                    background: none;
+                }}
+            """)
+
+        # 6. Bottom action buttons (Logout & Developer)
+        sec_bg = palette.btn_sec_bg
+        sec_text = palette.btn_sec_text
+        sec_border = palette.btn_sec_border
+        sec_hover = palette.btn_sec_hover
+
+        if hasattr(self, "btn_logout"):
+            logout_hover = palette.primary_hover if palette.is_dark else palette.primary
+            logout_pressed = palette.primary_pressed
+            self.btn_logout.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: {sec_bg};
+                    color: {sec_text};
+                    border-radius: 6px;
+                    font-size: 11px;
+                    font-weight: bold;
+                    border: 1px solid {sec_border};
+                    padding: 6px 4px;
+                    text-align: center;
+                }}
+                QPushButton:hover {{
+                    background-color: {logout_hover};
+                    color: {palette.primary_text};
+                    border: 1px solid {logout_hover};
+                }}
+                QPushButton:pressed {{
+                    background-color: {logout_pressed};
+                    color: {palette.primary_text};
+                }}
+            """)
+
+        if hasattr(self, "btn_dev"):
+            self.btn_dev.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: {sec_bg};
+                    color: {sec_text};
+                    border-radius: 6px;
+                    font-size: 11px;
+                    font-weight: bold;
+                    border: 1px solid {sec_border};
+                    padding: 6px 4px;
+                    text-align: center;
+                }}
+                QPushButton:hover {{
+                    background-color: {sec_hover};
+                    color: {palette.text_primary};
+                }}
+                QPushButton:pressed {{
+                    background-color: {sec_bg};
+                }}
+                QPushButton[active="true"] {{
+                    background-color: {palette.primary};
+                    color: {palette.primary_text};
+                    border: 1px solid {palette.primary_hover};
+                    font-weight: bold;
+                }}
+            """)
+
+        # 7. Developer avatar border if loaded
+        if hasattr(self, "lbl_dev_photo") and self.lbl_dev_photo.pixmap() and not self.lbl_dev_photo.pixmap().isNull():
+            self.lbl_dev_photo.setStyleSheet(f"border-radius: 21px; border: 1px solid {palette.primary};")
+
+        # 8. Unpolish and polish buttons to refresh property styling
+        current_nav = getattr(self, "_current_nav_id", "dashboard")
+        for key, btn in self.buttons.items():
+            btn.setProperty("active", (key == current_nav))
+            btn.style().unpolish(btn)
+            btn.style().polish(btn)
+
     def _on_theme_changed(self, theme_key: str):
-        """Immediately re-applies brand title color when theme changes."""
+        """Immediately re-applies brand title color, sidebar styles, and notification cards when theme changes."""
         self._apply_theme_style()
+        self.refresh_notifications()
 
     def navigate(self, nav_id: str):
 
@@ -857,6 +910,7 @@ class Sidebar(QFrame):
         self.page_changed.emit(nav_id)
 
     def set_active(self, nav_id: str):
+        self._current_nav_id = nav_id
         for key, btn in self.buttons.items():
             is_active = (key == nav_id)
             btn.setProperty("active", is_active)
@@ -868,7 +922,13 @@ class Sidebar(QFrame):
         self.sync_progress_frame.setVisible(True)
         fa_rem = str(remaining).translate(str.maketrans('0123456789', '۰۱۲۳۴۵۶۷۸۹'))
         fa_tot = str(total).translate(str.maketrans('0123456789', '۰۱۲۳۴۵۶۷۸۹'))
-        self.lbl_sync_title.setStyleSheet("color: #93C5FD; font-size: 11px; font-weight: bold;")
+        try:
+            from yalda.utils.theme_manager import ThemeManager
+            pal = ThemeManager.get_current_palette()
+            color = pal.primary_hover if pal.is_dark else pal.primary
+        except Exception:
+            color = "#93C5FD"
+        self.lbl_sync_title.setStyleSheet(f"color: {color}; font-size: 11px; font-weight: bold;")
         self.lbl_sync_title.setText(f"در حال آپلود ... ( {fa_rem} از {fa_tot} )")
         done = max(0, total - remaining)
         pct = int((done / total) * 100) if total > 0 else 0

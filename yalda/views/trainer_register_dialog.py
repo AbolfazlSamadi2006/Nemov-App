@@ -9,6 +9,7 @@ import config
 from yalda.auth.authentication import register_trainer, CurrentUser
 from yalda.views.components.jalali_calendar_widget import JalaliDatePicker
 from yalda.utils.image_utils import get_circular_pixmap
+from yalda.utils.theme_manager import ThemeManager
 
 
 
@@ -29,46 +30,19 @@ class TrainerRegisterDialog(QDialog):
         self.init_ui()
 
     def init_ui(self):
-        self.setStyleSheet("""
-            QDialog {
-                background-color: #121212;
-                color: #FFFFFF;
-                font-family: 'Vazirmatn', 'Segoe UI', sans-serif;
-            }
-            QFrame#cardFrame {
-                background-color: #000000;
-                border: 1px solid #333333;
-                border-radius: 12px;
-                padding: 15px;
-            }
-            QLabel {
-                color: #E5E7EB;
-                background: transparent;
-            }
-            QLineEdit {
-                background-color: #1E1E1E;
-                color: #FFFFFF;
-                border: 1px solid #333333;
-                border-radius: 6px;
-                padding: 6px 10px;
-                font-size: 13px;
-            }
-            QLineEdit:focus {
-                border: 1px solid #8B0000;
-            }
-        """)
+        palette = ThemeManager.get_current_palette()
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(15, 15, 15, 15)
 
         card = QFrame()
-        card.setObjectName("cardFrame")
+        card.setObjectName("card")
         card_layout = QVBoxLayout(card)
         card_layout.setSpacing(10)
 
         # Header Title
         title_lbl = QLabel("📝 ثبت‌نام مربی جدید در سیستم")
-        title_lbl.setStyleSheet("background: transparent; color: #DC2626; font-size: 20px; font-weight: bold; font-family: 'Segoe UI Emoji', 'Noto Color Emoji', 'Vazirmatn', sans-serif;")
+        title_lbl.setObjectName("h1")
         title_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
         card_layout.addWidget(title_lbl)
 
@@ -140,18 +114,12 @@ class TrainerRegisterDialog(QDialog):
         self.lbl_photo_preview = QLabel("📷 بدون عکس")
         self.lbl_photo_preview.setFixedSize(60, 60)
         self.lbl_photo_preview.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.lbl_photo_preview.setStyleSheet("border: 1px dashed #555; border-radius: 30px; color: #888; font-size: 11px;")
-
+        self.lbl_photo_preview.setStyleSheet(f"border: 1px dashed {palette.border}; border-radius: 30px; color: {palette.text_secondary}; font-size: 11px;")
 
         btn_select_photo = QPushButton("📷 انتخاب / ثبت عکس مربی (اختیاری)")
         btn_select_photo.setFixedHeight(38)
         btn_select_photo.setCursor(Qt.CursorShape.PointingHandCursor)
-        btn_select_photo.setStyleSheet("""
-            QPushButton {
-                background-color: #2D2D2D; color: #EEE; border: 1px solid #444; border-radius: 6px; font-size: 12px;
-            }
-            QPushButton:hover { background-color: #3D3D3D; }
-        """)
+        btn_select_photo.setObjectName("secondary_button")
         btn_select_photo.clicked.connect(self.choose_photo)
 
         photo_box.addWidget(self.lbl_photo_preview)
@@ -174,25 +142,10 @@ class TrainerRegisterDialog(QDialog):
         self.txt_password.setEchoMode(QLineEdit.EchoMode.Password)
         self.txt_password.setPlaceholderText("کلمه عبور جدید")
 
-        EYE_STYLE = """
-            QPushButton {
-                background-color: #8B0000;
-                color: #FFFFFF;
-                border: 1px solid #A91D22;
-                border-radius: 6px;
-                font-size: 16px;
-                font-family: "Segoe UI Emoji", "Noto Color Emoji", "Apple Color Emoji", sans-serif;
-                padding: 0px;
-            }
-            QPushButton:hover {
-                background-color: #A91D22;
-            }
-        """
-
         btn_eye1 = QPushButton("👁️")
         btn_eye1.setFixedSize(42, 38)
         btn_eye1.setCursor(Qt.CursorShape.PointingHandCursor)
-        btn_eye1.setStyleSheet(EYE_STYLE)
+        btn_eye1.setObjectName("secondary_button")
         btn_eye1.clicked.connect(lambda: self.toggle_eye(self.txt_password, btn_eye1))
 
         pass1_box.addWidget(self.txt_password)
@@ -210,7 +163,7 @@ class TrainerRegisterDialog(QDialog):
         btn_eye2 = QPushButton("👁️")
         btn_eye2.setFixedSize(42, 38)
         btn_eye2.setCursor(Qt.CursorShape.PointingHandCursor)
-        btn_eye2.setStyleSheet(EYE_STYLE)
+        btn_eye2.setObjectName("secondary_button")
         btn_eye2.clicked.connect(lambda: self.toggle_eye(self.txt_password_confirm, btn_eye2))
 
         pass2_box.addWidget(self.txt_password_confirm)
@@ -236,7 +189,7 @@ class TrainerRegisterDialog(QDialog):
         btn_eye3 = QPushButton("👁️")
         btn_eye3.setFixedSize(42, 38)
         btn_eye3.setCursor(Qt.CursorShape.PointingHandCursor)
-        btn_eye3.setStyleSheet(EYE_STYLE)
+        btn_eye3.setObjectName("secondary_button")
         btn_eye3.clicked.connect(lambda: self.toggle_eye(self.txt_recovery_code, btn_eye3))
 
         rec1_box.addWidget(self.txt_recovery_code)
@@ -254,7 +207,7 @@ class TrainerRegisterDialog(QDialog):
         btn_eye4 = QPushButton("👁️")
         btn_eye4.setFixedSize(42, 38)
         btn_eye4.setCursor(Qt.CursorShape.PointingHandCursor)
-        btn_eye4.setStyleSheet(EYE_STYLE)
+        btn_eye4.setObjectName("secondary_button")
         btn_eye4.clicked.connect(lambda: self.toggle_eye(self.txt_recovery_confirm, btn_eye4))
 
         rec2_box.addWidget(self.txt_recovery_confirm)
@@ -276,20 +229,7 @@ class TrainerRegisterDialog(QDialog):
         btn_cloud_help = QPushButton("☁️ اگر در سیستم دیگری حساب دارید: بازیابی با شماره موبایل")
         btn_cloud_help.setFixedHeight(34)
         btn_cloud_help.setCursor(Qt.CursorShape.PointingHandCursor)
-        btn_cloud_help.setStyleSheet("""
-            QPushButton {
-                background-color: #1E3A8A;
-                color: #93C5FD;
-                border: 1px solid #2563EB;
-                border-radius: 6px;
-                font-size: 11px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: #2563EB;
-                color: #FFFFFF;
-            }
-        """)
+        btn_cloud_help.setObjectName("secondary_button")
         btn_cloud_help.clicked.connect(self.restore_from_cloud_dialog)
         card_layout.addWidget(btn_cloud_help)
 
@@ -297,12 +237,7 @@ class TrainerRegisterDialog(QDialog):
         btn_submit = QPushButton("🚀 تکمیل و ثبت‌نام مربی")
         btn_submit.setFixedHeight(44)
         btn_submit.setCursor(Qt.CursorShape.PointingHandCursor)
-        btn_submit.setStyleSheet("""
-            QPushButton {
-                background-color: #8B0000; color: #FFFFFF; font-size: 15px; font-weight: bold; border-radius: 6px; border: none;
-            }
-            QPushButton:hover { background-color: #A00000; }
-        """)
+        btn_submit.setObjectName("primary_button")
         btn_submit.clicked.connect(self.do_register)
         card_layout.addWidget(btn_submit)
 
@@ -350,36 +285,12 @@ class TrainerRegisterDialog(QDialog):
             self.lbl_photo_preview.setStyleSheet("border: none; background: transparent;")
 
     def clear_pass_confirm_error(self):
-        self.txt_password_confirm.setStyleSheet("""
-            QLineEdit {
-                background-color: #1E1E1E;
-                color: #FFFFFF;
-                border: 1px solid #333333;
-                border-radius: 6px;
-                padding: 6px 10px;
-                font-size: 13px;
-            }
-            QLineEdit:focus {
-                border: 1px solid #8B0000;
-            }
-        """)
+        self.txt_password_confirm.setStyleSheet("")
         self.lbl_pass_confirm_error.setText("")
         self.lbl_pass_confirm_error.setVisible(False)
 
     def clear_rec_confirm_error(self):
-        self.txt_recovery_confirm.setStyleSheet("""
-            QLineEdit {
-                background-color: #1E1E1E;
-                color: #FFFFFF;
-                border: 1px solid #333333;
-                border-radius: 6px;
-                padding: 6px 10px;
-                font-size: 13px;
-            }
-            QLineEdit:focus {
-                border: 1px solid #8B0000;
-            }
-        """)
+        self.txt_recovery_confirm.setStyleSheet("")
         self.lbl_rec_confirm_error.setText("")
         self.lbl_rec_confirm_error.setVisible(False)
 

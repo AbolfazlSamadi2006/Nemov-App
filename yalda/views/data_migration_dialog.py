@@ -24,50 +24,11 @@ class DataMigrationDialog(QDialog):
         self._setup_ui()
 
     def _setup_ui(self):
-        self.setStyleSheet(f"""
-            QDialog {{
-                background-color: {config.COLOR_BACKGROUND};
-                color: #FFFFFF;
-                font-family: 'Vazirmatn', 'Segoe UI', sans-serif;
-            }}
-            QFrame#cardFrame {{
-                background-color: #1E1E1E;
-                border: 1px solid #333333;
-                border-radius: 12px;
-            }}
-            QLabel {{
-                color: #E5E7EB;
-            }}
-            QPushButton#btnImport {{
-                background-color: #DC2626;
-                color: white;
-                font-weight: bold;
-                font-size: 14px;
-                padding: 12px 20px;
-                border-radius: 8px;
-                border: none;
-            }}
-            QPushButton#btnImport:hover {{
-                background-color: #EF4444;
-            }}
-            QPushButton#btnFresh {{
-                background-color: #374151;
-                color: white;
-                font-size: 13px;
-                padding: 10px 18px;
-                border-radius: 8px;
-                border: 1px solid #4B5563;
-            }}
-            QPushButton#btnFresh:hover {{
-                background-color: #4B5563;
-            }}
-        """)
-
         layout = QVBoxLayout(self)
         layout.setContentsMargins(24, 24, 24, 24)
 
         card = QFrame()
-        card.setObjectName("cardFrame")
+        card.setObjectName("card")
         card_layout = QVBoxLayout(card)
         card_layout.setContentsMargins(20, 20, 20, 20)
         card_layout.setSpacing(14)
@@ -79,7 +40,7 @@ class DataMigrationDialog(QDialog):
         header_layout.addWidget(icon_label)
 
         title_label = QLabel("فراخوانی اطلاعات نسخه قبلی")
-        title_label.setStyleSheet("font-size: 18px; font-weight: bold; color: #FFFFFF;")
+        title_label.setObjectName("h1")
         header_layout.addWidget(title_label)
         header_layout.addStretch()
 
@@ -92,19 +53,19 @@ class DataMigrationDialog(QDialog):
             "می‌توانید اطلاعات قبلی خود را فراخوانی کنید تا تمامی داده‌ها و پرونده‌های شاگردان به این نسخه منتقل شوند."
         )
         desc_label.setWordWrap(True)
-        desc_label.setStyleSheet("font-size: 13px; color: #9CA3AF; line-height: 1.5;")
+        desc_label.setObjectName("muted_text")
         card_layout.addWidget(desc_label)
 
         card_layout.addStretch()
 
         # Action Buttons
         self.btn_import = QPushButton("📁 فراخوانی پوشه data یا فایل yalda.db نسخه قبل")
-        self.btn_import.setObjectName("btnImport")
+        self.btn_import.setObjectName("primary_button")
         self.btn_import.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_import.clicked.connect(self._on_import_clicked)
 
         self.btn_fresh = QPushButton("✨ شروع با نرم‌افزار خام (ایجاد دیتابیس جدید)")
-        self.btn_fresh.setObjectName("btnFresh")
+        self.btn_fresh.setObjectName("secondary_button")
         self.btn_fresh.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_fresh.clicked.connect(self._on_fresh_clicked)
 

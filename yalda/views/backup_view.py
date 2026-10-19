@@ -158,14 +158,6 @@ class BackupView(QWidget):
         # Header Title and Actions
         header_frame = QFrame()
         header_frame.setObjectName("backupHeaderCard")
-        header_frame.setStyleSheet("""
-            QFrame#backupHeaderCard {
-                background-color: #1A1A1A;
-                border: 1px solid #282828;
-                border-radius: 12px;
-                padding: 10px 16px;
-            }
-        """)
         header_layout = QHBoxLayout(header_frame)
         header_layout.setContentsMargins(10, 6, 10, 6)
         header_layout.setSpacing(14)
@@ -178,9 +170,11 @@ class BackupView(QWidget):
         title_box = QVBoxLayout()
         title_box.setSpacing(2)
         title = QLabel("⚙️ تنظیمات سیستم، برندینگ و پشتیبان‌گیری")
-        title.setStyleSheet("font-size: 17px; font-weight: bold; color: #FFFFFF;")
+        title.setObjectName("h1")
+        title.setStyleSheet("font-size: 17px; font-weight: bold;")
         subtitle = QLabel("مدیریت مشخصات و امنیت مربی، تنظیمات ظاهری و برندینگ باشگاه، مرکز آرشیو و بازگردانی پشتیبان، تاریخچه اعلانات")
-        subtitle.setStyleSheet("font-size: 11px; color: #888888;")
+        subtitle.setObjectName("muted_text")
+        subtitle.setStyleSheet("font-size: 11px;")
         title_box.addWidget(title)
         title_box.addWidget(subtitle)
 
@@ -191,33 +185,6 @@ class BackupView(QWidget):
 
         # Tabs
         self.tabs = QTabWidget()
-        self.tabs.setStyleSheet("""
-            QTabWidget::pane {
-                background-color: #1A1A1A;
-                border: 1px solid #282828;
-                border-radius: 10px;
-                padding: 10px;
-            }
-            QTabBar::tab {
-                background-color: #141414;
-                color: #A0A0A0;
-                padding: 10px 22px;
-                font-size: 13px;
-                font-weight: bold;
-                border-top-left-radius: 8px;
-                border-top-right-radius: 8px;
-                margin-left: 4px;
-            }
-            QTabBar::tab:selected {
-                background-color: #1A1A1A;
-                color: #FFFFFF;
-                border-bottom: 2px solid #8B0000;
-            }
-            QTabBar::tab:hover:!selected {
-                background-color: #222222;
-                color: #E0E0E0;
-            }
-        """)
 
         self.tab_profile = self._create_profile_tab()
         self.tab_backup = self._create_backup_tab()
@@ -249,23 +216,6 @@ class BackupView(QWidget):
         # GROUP 1: مشخصات باشگاه و مجموعه ورزشی
         # -------------------------------------------------------------
         club_box = QGroupBox("🏢 مشخصات باشگاه و مجموعه ورزشی")
-        club_box.setStyleSheet("""
-            QGroupBox {
-                background-color: #141414;
-                border: 1px solid #282828;
-                border-radius: 10px;
-                margin-top: 14px;
-                padding-top: 18px;
-                font-weight: bold;
-                color: #FFFFFF;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                subcontrol-position: top right;
-                padding: 0 10px;
-                color: #FFFFFF;
-            }
-        """)
         layout_club = QVBoxLayout(club_box)
         layout_club.setContentsMargins(16, 14, 16, 14)
         layout_club.setSpacing(10)
@@ -279,57 +229,18 @@ class BackupView(QWidget):
         self.txt_club_name = QLineEdit()
         self.txt_club_name.setPlaceholderText("مثال: باشگاه بدنسازی یلدا (پیش‌فرض: نرم‌افزار مدیریت ورزشی نِمُو)")
         self.txt_club_name.setFixedHeight(34)
-        self.txt_club_name.setStyleSheet("""
-            QLineEdit {
-                background-color: #1E1E1E;
-                color: #FFFFFF;
-                border: 1px solid #333333;
-                border-radius: 6px;
-                padding: 6px 10px;
-                font-size: 12px;
-            }
-            QLineEdit:focus {
-                border: 1px solid #8B0000;
-            }
-        """)
 
         lbl_club_phone = QLabel("شماره تماس باشگاه:")
         lbl_club_phone.setStyleSheet("color: #CCCCCC; font-size: 12px; font-weight: bold;")
         self.txt_club_phone = QLineEdit()
         self.txt_club_phone.setPlaceholderText("مثال: 0911... یا 011...")
         self.txt_club_phone.setFixedHeight(34)
-        self.txt_club_phone.setStyleSheet("""
-            QLineEdit {
-                background-color: #1E1E1E;
-                color: #FFFFFF;
-                border: 1px solid #333333;
-                border-radius: 6px;
-                padding: 6px 10px;
-                font-size: 12px;
-            }
-            QLineEdit:focus {
-                border: 1px solid #8B0000;
-            }
-        """)
 
         lbl_club_address = QLabel("آدرس کامل مجموعه:")
         lbl_club_address.setStyleSheet("color: #CCCCCC; font-size: 12px; font-weight: bold;")
         self.txt_club_address = QLineEdit()
         self.txt_club_address.setPlaceholderText("مثال: مازندران، قائمشهر، خیابان کوچکسرا، نبش شقایق ۳")
         self.txt_club_address.setFixedHeight(34)
-        self.txt_club_address.setStyleSheet("""
-            QLineEdit {
-                background-color: #1E1E1E;
-                color: #FFFFFF;
-                border: 1px solid #333333;
-                border-radius: 6px;
-                padding: 6px 10px;
-                font-size: 12px;
-            }
-            QLineEdit:focus {
-                border: 1px solid #8B0000;
-            }
-        """)
 
         grid_club.addWidget(lbl_club_name, 0, 0)
         grid_club.addWidget(self.txt_club_name, 0, 1)
@@ -345,24 +256,9 @@ class BackupView(QWidget):
         row_club_actions.setSpacing(12)
 
         self.btn_save_club_info = QPushButton("💾 ذخیره مشخصات باشگاه")
+        self.btn_save_club_info.setObjectName("primary_button")
         self.btn_save_club_info.setFixedHeight(36)
         self.btn_save_club_info.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_save_club_info.setStyleSheet("""
-            QPushButton {
-                background-color: #8B0000;
-                color: #FFFFFF;
-                font-weight: bold;
-                font-size: 12px;
-                border-radius: 6px;
-                padding: 6px 18px;
-            }
-            QPushButton:hover {
-                background-color: #A91D22;
-            }
-            QPushButton:pressed {
-                background-color: #6B0000;
-            }
-        """)
         self.btn_save_club_info.clicked.connect(self.save_club_info_action)
 
         self.lbl_club_save_status = QLabel("")
@@ -379,39 +275,25 @@ class BackupView(QWidget):
         # GROUP 2: لوگوی اختصاصی باشگاه (Custom Club Logo)
         # -------------------------------------------------------------
         logo_box = QGroupBox("🖼️ لوگوی اختصاصی باشگاه و نشان تجاری")
-        logo_box.setStyleSheet("""
-            QGroupBox {
-                background-color: #141414;
-                border: 1px solid #282828;
-                border-radius: 10px;
-                margin-top: 14px;
-                padding-top: 18px;
-                font-weight: bold;
-                color: #FFFFFF;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                subcontrol-position: top right;
-                padding: 0 10px;
-                color: #FFFFFF;
-            }
-        """)
         layout_logo = QHBoxLayout(logo_box)
         layout_logo.setContentsMargins(16, 14, 16, 14)
         layout_logo.setSpacing(20)
 
         # Logo Preview Box
         self.lbl_logo_preview = QLabel("🖼️")
+        self.lbl_logo_preview.setObjectName("logo_preview_box")
         self.lbl_logo_preview.setFixedSize(92, 92)
         self.lbl_logo_preview.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.lbl_logo_preview.setStyleSheet("""
-            QLabel {
-                background-color: #1E1E1E;
-                border: 2px dashed #444444;
+        from yalda.utils.theme_manager import ThemeManager
+        palette = ThemeManager.get_current_palette()
+        self.lbl_logo_preview.setStyleSheet(f"""
+            QLabel#logo_preview_box {{
+                background-color: {palette.bg_surface};
+                border: 2px dashed {palette.border_light};
                 border-radius: 12px;
-                color: #888888;
+                color: {palette.text_muted};
                 font-size: 26px;
-            }
+            }}
         """)
         layout_logo.addWidget(self.lbl_logo_preview)
 
@@ -488,23 +370,6 @@ class BackupView(QWidget):
         from yalda.views.components.theme_card import ThemePaletteCard, PALETTES_METADATA
 
         theme_box = QGroupBox("🎨 انتخاب تم و پالت رنگی نرم‌افزار")
-        theme_box.setStyleSheet("""
-            QGroupBox {
-                background-color: #141414;
-                border: 1px solid #282828;
-                border-radius: 10px;
-                margin-top: 14px;
-                padding-top: 18px;
-                font-weight: bold;
-                color: #FFFFFF;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                subcontrol-position: top right;
-                padding: 0 10px;
-                color: #FFFFFF;
-            }
-        """)
         layout_theme = QVBoxLayout(theme_box)
         layout_theme.setContentsMargins(16, 14, 16, 14)
         layout_theme.setSpacing(14)
@@ -517,7 +382,7 @@ class BackupView(QWidget):
 
         # Sub-section: 🌙 تم‌های دارک مدرن (۱۲ پالت)
         lbl_dark_section = QLabel("🌙 تم‌های دارک مدرن (۱۲ پالت)")
-        lbl_dark_section.setStyleSheet("color: #FFFFFF; font-size: 13px; font-weight: bold; margin-top: 6px;")
+        lbl_dark_section.setStyleSheet("font-size: 13px; font-weight: bold; margin-top: 6px;")
         layout_theme.addWidget(lbl_dark_section)
 
         grid_dark = QGridLayout()
@@ -537,7 +402,7 @@ class BackupView(QWidget):
 
         # Sub-section: ☀️ تم‌های لایت اختصاصی (۵ پالت)
         lbl_light_section = QLabel("☀️ تم‌های لایت اختصاصی (۵ پالت)")
-        lbl_light_section.setStyleSheet("color: #FFFFFF; font-size: 13px; font-weight: bold; margin-top: 12px;")
+        lbl_light_section.setStyleSheet("font-size: 13px; font-weight: bold; margin-top: 12px;")
         layout_theme.addWidget(lbl_light_section)
 
         grid_light = QGridLayout()
@@ -660,20 +525,14 @@ class BackupView(QWidget):
 
         EYE_STYLE = """
             QPushButton {
-                background-color: #8B0000;
-                color: #FFFFFF;
-                border: 1px solid #A91D22;
-                border-radius: 6px;
                 font-size: 16px;
                 font-family: "Segoe UI Emoji", "Noto Color Emoji", "Apple Color Emoji", sans-serif;
                 padding: 0px;
             }
-            QPushButton:hover {
-                background-color: #A91D22;
-            }
         """
 
         btn_eye_pass = QPushButton("👁️")
+        btn_eye_pass.setObjectName("secondary_button")
         btn_eye_pass.setFixedSize(42, 36)
         btn_eye_pass.setCursor(Qt.CursorShape.PointingHandCursor)
         btn_eye_pass.setStyleSheet(EYE_STYLE)
@@ -689,6 +548,7 @@ class BackupView(QWidget):
         self.txt_recovery_code.setPlaceholderText("رمز ریکاوری مخفی مربی")
 
         btn_eye_rec = QPushButton("👁️")
+        btn_eye_rec.setObjectName("secondary_button")
         btn_eye_rec.setFixedSize(42, 36)
         btn_eye_rec.setCursor(Qt.CursorShape.PointingHandCursor)
         btn_eye_rec.setStyleSheet(EYE_STYLE)
@@ -749,27 +609,10 @@ class BackupView(QWidget):
         row_prof_actions.setSpacing(12)
 
         self.btn_save_prof = QPushButton("💾 ذخیره مشخصات مربی")
+        self.btn_save_prof.setObjectName("primary_button")
         self.btn_save_prof.setFixedHeight(40)
         self.btn_save_prof.setFixedWidth(200)
         self.btn_save_prof.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_save_prof.setStyleSheet("""
-            QPushButton {
-                background-color: #8B0000;
-                color: #FFFFFF;
-                border: 1px solid #A91D22;
-                border-radius: 6px;
-                font-weight: bold;
-                font-size: 13px;
-            }
-            QPushButton:hover {
-                background-color: #A00000;
-            }
-            QPushButton:disabled {
-                background-color: #2D2D2D;
-                color: #777777;
-                border: 1px solid #444444;
-            }
-        """)
         self.btn_save_prof.setEnabled(False)
         self.btn_save_prof.clicked.connect(self.save_trainer_profile)
         row_prof_actions.addWidget(self.btn_save_prof)
@@ -873,27 +716,10 @@ class BackupView(QWidget):
         toolbar_layout.setSpacing(10)
 
         btn_create = QPushButton("⚡ ایجاد فایل پشتیبان جدید")
+        btn_create.setObjectName("primary_button")
         btn_create.setFixedHeight(36)
         btn_create.setCursor(Qt.CursorShape.PointingHandCursor)
         btn_create.setToolTip("ایجاد نسخه پشتیبان جدید از پایگاه داده و تصاویر")
-        btn_create.setStyleSheet("""
-            QPushButton {
-                background-color: #8B0000;
-                color: #FFFFFF;
-                border: 1px solid #A91D22;
-                border-radius: 6px;
-                font-weight: bold;
-                font-size: 12px;
-                padding: 0 14px;
-            }
-            QPushButton:hover {
-                background-color: #A00000;
-                border: 1px solid #DC2626;
-            }
-            QPushButton:pressed {
-                background-color: #700000;
-            }
-        """)
         btn_create.clicked.connect(self.create_backup)
         toolbar_layout.addWidget(btn_create)
 
@@ -1687,6 +1513,17 @@ class BackupView(QWidget):
             try:
                 from yalda.utils.theme_manager import ThemeManager
                 ThemeManager.apply_theme(theme_id)
+                if hasattr(self, "lbl_logo_preview"):
+                    p = ThemeManager.get_current_palette()
+                    self.lbl_logo_preview.setStyleSheet(f"""
+                        QLabel#logo_preview_box {{
+                            background-color: {p.bg_surface};
+                            border: 2px dashed {p.border_light};
+                            border-radius: 12px;
+                            color: {p.text_muted};
+                            font-size: 26px;
+                        }}
+                    """)
             except Exception:
                 pass
 

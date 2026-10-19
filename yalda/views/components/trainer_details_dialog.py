@@ -7,6 +7,7 @@ from PyQt6.QtGui import QPixmap
 
 from yalda.utils.image_utils import get_circular_pixmap, resolve_image_path
 from yalda.auth.authentication import update_trainer_profile
+from yalda.utils.theme_manager import ThemeManager
 
 
 class TrainerDetailsDialog(QDialog):
@@ -22,41 +23,14 @@ class TrainerDetailsDialog(QDialog):
         self.init_ui()
 
     def init_ui(self):
-        self.setStyleSheet("""
-            QDialog {
-                background-color: #121212;
-                color: #FFFFFF;
-                font-family: 'Vazirmatn', 'Segoe UI', sans-serif;
-            }
-            QFrame#cardFrame {
-                background-color: #18181B;
-                border: 1px solid #27272A;
-                border-radius: 12px;
-                padding: 18px;
-            }
-            QLabel {
-                color: #E5E7EB;
-                background: transparent;
-            }
-            QLineEdit {
-                background-color: #27272A;
-                color: #FFFFFF;
-                border: 1px solid #3F3F46;
-                border-radius: 6px;
-                padding: 6px 12px;
-                font-size: 13px;
-            }
-            QLineEdit:focus {
-                border: 1px solid #DC2626;
-            }
-        """)
+        palette = ThemeManager.get_current_palette()
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(16, 16, 16, 16)
         layout.setSpacing(12)
 
         card = QFrame()
-        card.setObjectName("cardFrame")
+        card.setObjectName("card")
         card_layout = QVBoxLayout(card)
         card_layout.setSpacing(14)
 
@@ -79,23 +53,23 @@ class TrainerDetailsDialog(QDialog):
             lbl_avatar.setStyleSheet("border: none; background: transparent;")
         else:
             lbl_avatar.setText("👤")
-            lbl_avatar.setStyleSheet("""
-                background-color: #27272A;
-                border: 2px solid #3F3F46;
+            lbl_avatar.setStyleSheet(f"""
+                background-color: {palette.bg_surface};
+                border: 2px solid {palette.border};
                 border-radius: 35px;
                 font-size: 32px;
-                color: #9CA3AF;
+                color: {palette.text_secondary};
             """)
         header_box.addWidget(lbl_avatar)
 
         name_box = QVBoxLayout()
         name_box.setSpacing(4)
         lbl_name = QLabel(self.trainer_data.get("full_name", "-"))
-        lbl_name.setStyleSheet("font-size: 18px; font-weight: bold; color: #FFFFFF;")
+        lbl_name.setStyleSheet(f"font-size: 18px; font-weight: bold; color: {palette.text_primary};")
         name_box.addWidget(lbl_name)
 
         lbl_role = QLabel("🏋️ مربی رسمی باشگاه ورزشی یلدا")
-        lbl_role.setStyleSheet("font-size: 12px; color: #10B981; font-weight: bold;")
+        lbl_role.setStyleSheet(f"font-size: 12px; color: {palette.primary}; font-weight: bold;")
         name_box.addWidget(lbl_role)
 
         header_box.addLayout(name_box)
@@ -105,7 +79,7 @@ class TrainerDetailsDialog(QDialog):
         # Separator line
         sep1 = QFrame()
         sep1.setFrameShape(QFrame.Shape.HLine)
-        sep1.setStyleSheet("background-color: #27272A; max-height: 1px;")
+        sep1.setStyleSheet(f"background-color: {palette.border}; max-height: 1px;")
         card_layout.addWidget(sep1)
 
         # ----------------------------------------------------
@@ -115,8 +89,8 @@ class TrainerDetailsDialog(QDialog):
         grid.setHorizontalSpacing(14)
         grid.setVerticalSpacing(10)
 
-        LABEL_STYLE = "color: #9CA3AF; font-size: 13px; font-weight: bold;"
-        VALUE_STYLE = "color: #F3F4F6; font-size: 13px;"
+        LABEL_STYLE = f"color: {palette.text_secondary}; font-size: 13px; font-weight: bold;"
+        VALUE_STYLE = f"color: {palette.text_primary}; font-size: 13px;"
 
         def add_row(r: int, title: str, val_widget):
             lbl_t = QLabel(title)
@@ -144,25 +118,20 @@ class TrainerDetailsDialog(QDialog):
 
         if pass_code != "-":
             self.txt_display_pass.setEchoMode(QLineEdit.EchoMode.Password)
-            self.txt_display_pass.setStyleSheet("""
-                QLineEdit {
-                    background-color: #202023; border: 1px solid #3F3F46; border-radius: 6px; padding: 4px 10px; font-weight: bold; color: #10B981;
-                }
+            self.txt_display_pass.setStyleSheet(f"""
+                QLineEdit {{
+                    background-color: {palette.bg_input}; border: 1px solid {palette.border}; border-radius: 6px; padding: 4px 10px; font-weight: bold; color: {palette.primary};
+                }}
             """)
             btn_eye_pass = QPushButton("👁️")
             btn_eye_pass.setFixedSize(38, 34)
             btn_eye_pass.setCursor(Qt.CursorShape.PointingHandCursor)
-            btn_eye_pass.setStyleSheet("""
-                QPushButton {
-                    background-color: #27272A; color: white; border: 1px solid #3F3F46; border-radius: 6px; font-size: 15px;
-                }
-                QPushButton:hover { background-color: #3F3F46; }
-            """)
+            btn_eye_pass.setObjectName("secondary_button")
             btn_eye_pass.clicked.connect(lambda: self._toggle_eye(self.txt_display_pass, btn_eye_pass))
             pass_box.addWidget(self.txt_display_pass)
             pass_box.addWidget(btn_eye_pass)
         else:
-            self.txt_display_pass.setStyleSheet("background-color: #202023; border: 1px solid #3F3F46; border-radius: 6px; padding: 4px 10px; color: #9CA3AF;")
+            self.txt_display_pass.setStyleSheet(f"background-color: {palette.bg_input}; border: 1px solid {palette.border}; border-radius: 6px; padding: 4px 10px; color: {palette.text_secondary};")
             pass_box.addWidget(self.txt_display_pass)
 
         pass_widget = QFrame()
@@ -176,7 +145,7 @@ class TrainerDetailsDialog(QDialog):
         # Row 3: Email
         email_val = self.trainer_data.get("email", "-")
         lbl_email = QLabel(email_val)
-        lbl_email.setStyleSheet(VALUE_STYLE if email_val != "-" else "color: #6B7280; font-size: 13px;")
+        lbl_email.setStyleSheet(VALUE_STYLE if email_val != "-" else f"color: {palette.text_secondary}; font-size: 13px;")
         add_row(3, "آدرس ایمیل مربی:", lbl_email)
 
         # Row 4: Birth Date
@@ -185,7 +154,7 @@ class TrainerDetailsDialog(QDialog):
         # Row 5: Member Count
         member_cnt = self.trainer_data.get("member_count", 0)
         lbl_mem = QLabel(f"{member_cnt} نفر ورزشکار تحت پوشش")
-        lbl_mem.setStyleSheet("color: #60A5FA; font-weight: bold; font-size: 13px;")
+        lbl_mem.setStyleSheet(f"color: {palette.primary}; font-weight: bold; font-size: 13px;")
         add_row(5, "تعداد شاگردان:", lbl_mem)
 
         # Row 6: Secret Recovery Code with Eye Button
@@ -197,21 +166,16 @@ class TrainerDetailsDialog(QDialog):
         self.txt_display_rec.setReadOnly(True)
         self.txt_display_rec.setEchoMode(QLineEdit.EchoMode.Password)
         self.txt_display_rec.setFixedHeight(34)
-        self.txt_display_rec.setStyleSheet("""
-            QLineEdit {
-                background-color: #202023; border: 1px solid #3F3F46; border-radius: 6px; padding: 4px 10px; font-weight: bold; color: #F59E0B;
-            }
+        self.txt_display_rec.setStyleSheet(f"""
+            QLineEdit {{
+                background-color: {palette.bg_input}; border: 1px solid {palette.border}; border-radius: 6px; padding: 4px 10px; font-weight: bold; color: {palette.primary};
+            }}
         """)
 
         btn_eye_rec = QPushButton("👁️")
         btn_eye_rec.setFixedSize(38, 34)
         btn_eye_rec.setCursor(Qt.CursorShape.PointingHandCursor)
-        btn_eye_rec.setStyleSheet("""
-            QPushButton {
-                background-color: #27272A; color: white; border: 1px solid #3F3F46; border-radius: 6px; font-size: 15px;
-            }
-            QPushButton:hover { background-color: #3F3F46; }
-        """)
+        btn_eye_rec.setObjectName("secondary_button")
         btn_eye_rec.clicked.connect(lambda: self._toggle_eye(self.txt_display_rec, btn_eye_rec))
 
         rec_box.addWidget(self.txt_display_rec)
@@ -226,33 +190,26 @@ class TrainerDetailsDialog(QDialog):
         # Separator line
         sep2 = QFrame()
         sep2.setFrameShape(QFrame.Shape.HLine)
-        sep2.setStyleSheet("background-color: #27272A; max-height: 1px;")
+        sep2.setStyleSheet(f"background-color: {palette.border}; max-height: 1px;")
         card_layout.addWidget(sep2)
 
         # ----------------------------------------------------
         # 3. Password Security & Admin Password Reset
         # ----------------------------------------------------
         pass_card = QFrame()
-        pass_card.setStyleSheet("background-color: #202023; border: 1px solid #27272A; border-radius: 8px; padding: 10px;")
+        pass_card.setStyleSheet(f"background-color: {palette.bg_surface}; border: 1px solid {palette.border}; border-radius: 8px; padding: 10px;")
         pass_layout = QVBoxLayout(pass_card)
         pass_layout.setSpacing(8)
 
         lbl_pass_info = QLabel("🔐 وضعیت کلمه عبور: رمزنگاری‌شده با هش یک‌طرفه امن SHA-256 (غیرقابل دسترسی مستقیم جهت امنیت)")
-        lbl_pass_info.setStyleSheet("color: #9CA3AF; font-size: 11px;")
+        lbl_pass_info.setStyleSheet(f"color: {palette.text_secondary}; font-size: 11px;")
         lbl_pass_info.setWordWrap(True)
         pass_layout.addWidget(lbl_pass_info)
 
         self.btn_toggle_reset_pass = QPushButton("🔑 تعیین / تغییر کلمه عبور این مربی توسط مدیر")
         self.btn_toggle_reset_pass.setFixedHeight(36)
         self.btn_toggle_reset_pass.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_toggle_reset_pass.setStyleSheet("""
-            QPushButton {
-                background-color: #1E3A8A; color: #93C5FD; border: 1px solid #2563EB; border-radius: 6px; font-weight: bold; font-size: 12px;
-            }
-            QPushButton:hover {
-                background-color: #2563EB; color: #FFFFFF;
-            }
-        """)
+        self.btn_toggle_reset_pass.setObjectName("secondary_button")
         self.btn_toggle_reset_pass.clicked.connect(self._toggle_reset_password_box)
         pass_layout.addWidget(self.btn_toggle_reset_pass)
 
@@ -275,12 +232,7 @@ class TrainerDetailsDialog(QDialog):
         btn_eye_new = QPushButton("👁️")
         btn_eye_new.setFixedSize(38, 36)
         btn_eye_new.setCursor(Qt.CursorShape.PointingHandCursor)
-        btn_eye_new.setStyleSheet("""
-            QPushButton {
-                background-color: #27272A; color: white; border: 1px solid #3F3F46; border-radius: 6px; font-size: 15px;
-            }
-            QPushButton:hover { background-color: #3F3F46; }
-        """)
+        btn_eye_new.setObjectName("secondary_button")
         btn_eye_new.clicked.connect(lambda: self._toggle_eye(self.txt_admin_new_pass, btn_eye_new))
 
         row_new_pass.addWidget(self.txt_admin_new_pass)
@@ -290,12 +242,7 @@ class TrainerDetailsDialog(QDialog):
         self.btn_save_new_pass = QPushButton("💾 ذخیره کلمه عبور جدید")
         self.btn_save_new_pass.setFixedHeight(36)
         self.btn_save_new_pass.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_save_new_pass.setStyleSheet("""
-            QPushButton {
-                background-color: #059669; color: white; border-radius: 6px; font-weight: bold; font-size: 12px; border: none;
-            }
-            QPushButton:hover { background-color: #047857; }
-        """)
+        self.btn_save_new_pass.setObjectName("primary_button")
         self.btn_save_new_pass.clicked.connect(self._save_new_password)
         reset_layout.addWidget(self.btn_save_new_pass)
 
@@ -311,14 +258,7 @@ class TrainerDetailsDialog(QDialog):
         btn_close = QPushButton("بستن")
         btn_close.setFixedHeight(36)
         btn_close.setCursor(Qt.CursorShape.PointingHandCursor)
-        btn_close.setStyleSheet("""
-            QPushButton {
-                background-color: #27272A; color: #D1D5DB; border: 1px solid #3F3F46; border-radius: 6px; font-size: 13px; padding: 4px 20px;
-            }
-            QPushButton:hover {
-                background-color: #3F3F46; color: #FFFFFF;
-            }
-        """)
+        btn_close.setObjectName("secondary_button")
         btn_close.clicked.connect(self.accept)
         layout.addWidget(btn_close, alignment=Qt.AlignmentFlag.AlignCenter)
 
@@ -368,10 +308,11 @@ class TrainerDetailsDialog(QDialog):
             self.trainer_data["password"] = new_pass
             self.txt_display_pass.setText(new_pass)
             self.txt_display_pass.setEchoMode(QLineEdit.EchoMode.Normal)
-            self.txt_display_pass.setStyleSheet("""
-                QLineEdit {
-                    background-color: #202023; border: 1px solid #3F3F46; border-radius: 6px; padding: 4px 10px; font-weight: bold; color: #10B981;
-                }
+            palette = ThemeManager.get_current_palette()
+            self.txt_display_pass.setStyleSheet(f"""
+                QLineEdit {{
+                    background-color: {palette.bg_input}; border: 1px solid {palette.border}; border-radius: 6px; padding: 4px 10px; font-weight: bold; color: {palette.primary};
+                }}
             """)
             self.txt_admin_new_pass.clear()
             self.reset_pass_box.setVisible(False)

@@ -8,6 +8,7 @@ from yalda.services.member_service import MemberService
 from yalda.views.components.searchable_combo_box import SearchableComboBox
 from yalda.views.components.day_management_dialogs import DaySelectionReductionDialog, DayIncreaseChoiceDialog
 from yalda.views.components.unregistered_items_dialog import UnregisteredItemsDialog
+from yalda.utils.theme_manager import ThemeManager
 
 class ExerciseNotesDialog(QDialog):
     def __init__(self, exercise_name: str, current_notes: str, default_bank_notes: str = "", parent=None):
@@ -23,14 +24,14 @@ class ExerciseNotesDialog(QDialog):
         layout.setContentsMargins(20, 20, 20, 20)
 
         lbl_title = QLabel(f"📝 توضیحات حرکت: <b>{exercise_name}</b>")
-        lbl_title.setStyleSheet("font-size: 14px; color: #FFFFFF;")
+        lbl_title.setObjectName("h2")
         layout.addWidget(lbl_title)
 
         lbl_hint = QLabel(
             "📌 این توضیحات ویژه این برنامه تمرینی است. ویرایش آن تغییری در توضیحات پایه در «بانک حرکات ورزشی» ایجاد نمی‌کند."
         )
         lbl_hint.setWordWrap(True)
-        lbl_hint.setStyleSheet("font-size: 11px; color: #9CA3AF; line-height: 16px;")
+        lbl_hint.setObjectName("muted_text")
         layout.addWidget(lbl_hint)
 
         self.txt_notes = QTextEdit()
@@ -53,6 +54,7 @@ class ExerciseNotesDialog(QDialog):
 
         btn_box = QHBoxLayout()
         btn_save = QPushButton("💾 ثبت توضیحات")
+        btn_save.setObjectName("primary_button")
         btn_save.setFixedHeight(36)
         btn_save.clicked.connect(self._on_save)
 
@@ -81,17 +83,7 @@ class IncompletePlanWarningDialog(QDialog):
         self.setWindowTitle("هشدار تکمیل نبودن روزهای برنامه")
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
         self.setFixedSize(520, 290)
-        self.setStyleSheet("""
-            QDialog {
-                background-color: #181818;
-                border: 1px solid #333333;
-                border-radius: 8px;
-            }
-            QLabel {
-                color: #FFFFFF;
-                font-size: 13px;
-            }
-        """)
+        palette = ThemeManager.get_current_palette()
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(22, 20, 22, 20)
@@ -103,7 +95,7 @@ class IncompletePlanWarningDialog(QDialog):
         lbl_icon.setStyleSheet("font-size: 28px;")
 
         lbl_header = QLabel("برخی از روزهای برنامه تمرینی فاقد حرکت هستند!")
-        lbl_header.setStyleSheet("font-size: 14px; font-weight: bold; color: #FBBF24;")
+        lbl_header.setStyleSheet(f"font-size: 14px; font-weight: bold; color: {palette.primary};")
         lbl_header.setWordWrap(True)
         header_layout.addWidget(lbl_icon)
         header_layout.addWidget(lbl_header, 1)
@@ -111,18 +103,18 @@ class IncompletePlanWarningDialog(QDialog):
 
         lbl_desc_top = QLabel("روزهای زیر هنوز تکمیل نشده‌اند و هیچ حرکتی در آن‌ها تعریف نشده است:")
         lbl_desc_top.setWordWrap(True)
-        lbl_desc_top.setStyleSheet("color: #D1D5DB; font-size: 13px;")
+        lbl_desc_top.setObjectName("muted_text")
         layout.addWidget(lbl_desc_top)
 
         days_names = " ، ".join([title for _, title in empty_days])
         lbl_days_badge = QLabel(f"◀  {days_names}")
         lbl_days_badge.setWordWrap(True)
-        lbl_days_badge.setStyleSheet("""
-            color: #F87171;
+        lbl_days_badge.setStyleSheet(f"""
+            color: {palette.primary};
             font-size: 13px;
             font-weight: bold;
-            background-color: #2D1515;
-            border: 1px solid #7F1D1D;
+            background-color: {palette.bg_surface};
+            border: 1px solid {palette.border};
             border-radius: 6px;
             padding: 8px 12px;
         """)
@@ -130,7 +122,7 @@ class IncompletePlanWarningDialog(QDialog):
 
         lbl_desc_bottom = QLabel("آیا مایلید عملیات را لغو کرده و برنامه را تکمیل کنید، یا برنامه به همین صورت ناقص ثبت شود؟")
         lbl_desc_bottom.setWordWrap(True)
-        lbl_desc_bottom.setStyleSheet("color: #E5E7EB; font-size: 12px; font-weight: 500;")
+        lbl_desc_bottom.setObjectName("muted_text")
         layout.addWidget(lbl_desc_bottom)
 
         layout.addStretch()
@@ -143,49 +135,14 @@ class IncompletePlanWarningDialog(QDialog):
         self.btn_cancel_and_complete.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_cancel_and_complete.setFixedHeight(40)
         self.btn_cancel_and_complete.setDefault(True)
-        self.btn_cancel_and_complete.setStyleSheet("""
-            QPushButton {
-                background-color: #DC2626;
-                color: #FFFFFF;
-                border: 1px solid #EF4444;
-                border-radius: 6px;
-                font-size: 13px;
-                font-weight: bold;
-                padding: 0 16px;
-            }
-            QPushButton:hover {
-                background-color: #B91C1C;
-                border: 1px solid #DC2626;
-            }
-            QPushButton:pressed {
-                background-color: #991B1B;
-            }
-        """)
+        self.btn_cancel_and_complete.setObjectName("danger_button")
         self.btn_cancel_and_complete.clicked.connect(self.reject)
 
         # Secondary button: Proceed Incomplete
         self.btn_proceed_incomplete = QPushButton("⚠️ ادامه و ثبت ناقص")
         self.btn_proceed_incomplete.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_proceed_incomplete.setFixedHeight(40)
-        self.btn_proceed_incomplete.setStyleSheet("""
-            QPushButton {
-                background-color: #262626;
-                color: #D1D5DB;
-                border: 1px solid #4B5563;
-                border-radius: 6px;
-                font-size: 12px;
-                font-weight: bold;
-                padding: 0 14px;
-            }
-            QPushButton:hover {
-                background-color: #374151;
-                color: #FFFFFF;
-                border: 1px solid #6B7280;
-            }
-            QPushButton:pressed {
-                background-color: #1F2937;
-            }
-        """)
+        self.btn_proceed_incomplete.setObjectName("secondary_button")
         self.btn_proceed_incomplete.clicked.connect(self.accept)
 
         btn_box.addWidget(self.btn_cancel_and_complete, 2)

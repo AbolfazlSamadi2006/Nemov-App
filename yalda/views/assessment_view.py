@@ -267,7 +267,8 @@ class CompareDialog(QDialog):
         diff = comparison_data["diff"]
 
         title = QLabel(f"مقایسه ارزیابی {a1.assessment_date_shamsi} با {a2.assessment_date_shamsi}")
-        title.setStyleSheet("font-size: 16px; font-weight: bold; color: #8B0000;")
+        title.setObjectName("h2")
+        title.setStyleSheet("font-size: 16px; font-weight: bold;")
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(title)
 

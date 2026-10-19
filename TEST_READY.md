@@ -1,6 +1,6 @@
 # Test Readiness & E2E Verification Report (`TEST_READY.md`)
 
-- **Timestamp**: 2026-10-17 19:51:54 UTC
+- **Timestamp**: 2026-10-19 01:10:37 UTC
 - **Project**: Nemov Rebranding, Multi-Theme Engine & Appearance Settings (v3.3.0)
 - **Suite Path**: `scripts/qa_nemov_e2e_test.py`
 - **Execution Command**: `.\venv\Scripts\python.exe scripts/qa_nemov_e2e_test.py`
@@ -12,8 +12,8 @@
 
 | Metric | Count | Percentage | Assessment |
 |---|---|---|---|
-| **Total Test Cases** | 19 | 100.0% | Complete 4-tier coverage |
-| **Passing Tests** | 19 | 100.0% | Verified compliant features |
+| **Total Test Cases** | 23 | 100.0% | Complete 4-tier coverage |
+| **Passing Tests** | 23 | 100.0% | Verified compliant features |
 | **Pending Milestones** | 0 | 0.0% | Tests awaiting concurrent milestone landing |
 | **Failed Tests** | 0 | 0.0% | Implementation bugs to escalate |
 
@@ -25,25 +25,29 @@
 
 | Tier | Test ID | Feature / Contract | Milestone | Status | Duration | Details / Diagnostics |
 |---|---|---|---|---|---|---|
-| Tier 1 | `T1.1_CONFIG_CONSTANTS` | Branding Constants in config.py | M1 | **✅ PASS** | 171.0ms | All core branding constants match official specifications. |
-| Tier 1 | `T1.2_WINDOW_TITLES` | Window & Sidebar Titles Rebranding | M1 | **✅ PASS** | 0.8ms | Window titles in MainWindow, LoginView, and Sidebar properly rebranded. |
-| Tier 1 | `T1.3_LOGO_FILES_LAYERS` | Multi-Resolution Logo & ICO Files | M1 | **✅ PASS** | 0.1ms | nemov.ico contains all 7 required layers [(16, 16), (24, 24), (32, 32), (48, 48), (64, 64), (128, 128), (256, 256)] and 512x512 display PNG. |
+| Tier 1 | `T1.1_CONFIG_CONSTANTS` | Branding Constants in config.py | M1 | **✅ PASS** | 176.0ms | All core branding constants match official specifications. |
+| Tier 1 | `T1.2_WINDOW_TITLES` | Window & Sidebar Titles Rebranding | M1 | **✅ PASS** | 0.6ms | Window titles in MainWindow, LoginView, and Sidebar properly rebranded. |
+| Tier 1 | `T1.3_LOGO_FILES_LAYERS` | Multi-Resolution Logo & ICO Files | M1 | **✅ PASS** | 0.0ms | nemov.ico contains all 7 required layers [(16, 16), (24, 24), (32, 32), (48, 48), (64, 64), (128, 128), (256, 256)] and 512x512 display PNG. |
 | Tier 1 | `T1.4_APP_USER_MODEL_ID` | Windows AppUserModelID Registration | M1 | **✅ PASS** | 0.3ms | AppUserModelID registered with 'nemov.sports.management.desktop.v3' for crisp Windows taskbar pinning. |
-| Tier 1 | `T1.5_SETTINGS_TABLE_KEYS` | Database SystemSetting Keys Support | M2 | **✅ PASS** | 394.6ms | SystemSetting key-value table successfully supports all keys: ['club_name', 'club_phone', 'club_address', 'club_logo_path', 'app_theme'] |
-| Tier 1 | `T1.6_BRANDING_SERVICE` | BrandingService Interface Contract | M2 | **✅ PASS** | 15.0ms | BrandingService implements all required interface contracts. |
-| Tier 1 | `T1.7_THEME_MANAGER_PALETTES` | ThemeManager 17-Palette Engine | M3 | **✅ PASS** | 5.7ms | ThemeManager contains all 17 palettes (12 dark, 5 light) with full token mappings. |
-| Tier 1 | `T1.8_PDF_SIGNATURE_HEADER` | Official Nemov PDF Footer Signature | M3 | **✅ PASS** | 89.2ms | Official Nemov footer signature verified on PDF canvas at y=7. |
+| Tier 1 | `T1.5_SETTINGS_TABLE_KEYS` | Database SystemSetting Keys Support | M2 | **✅ PASS** | 461.2ms | SystemSetting key-value table successfully supports all keys: ['club_name', 'club_phone', 'club_address', 'club_logo_path', 'app_theme'] |
+| Tier 1 | `T1.6_BRANDING_SERVICE` | BrandingService Interface Contract | M2 | **✅ PASS** | 15.4ms | BrandingService implements all required interface contracts. |
+| Tier 1 | `T1.7_THEME_MANAGER_PALETTES` | ThemeManager 17-Palette Engine | M3 | **✅ PASS** | 7.1ms | ThemeManager contains all 17 palettes (12 dark, 5 light) with full token mappings. |
+| Tier 1 | `T1.8_PDF_SIGNATURE_HEADER` | Official Nemov PDF Footer Signature | M3 | **✅ PASS** | 90.8ms | Official Nemov footer signature verified on PDF canvas at y=7. |
 | Tier 1 | `T1.9_SMS_DYNAMIC_CLUB` | Dynamic SMS #GYM# Club Name Injection | M3 | **✅ PASS** | 0.2ms | SMS service contains dynamic club name resolution for #GYM# tag. |
-| Tier 1 | `T1.10_CLOUDFLARE_WORKER` | Cloudflare Landing Page Rebranding | M4 | **✅ PASS** | 4.2ms | Cloudflare Worker landing page rebranded to Nemov v3.3.0 with Yalda partner card fully preserved. |
+| Tier 1 | `T1.10_CLOUDFLARE_WORKER` | Cloudflare Landing Page Rebranding | M4 | **✅ PASS** | 4.0ms | Cloudflare Worker landing page rebranded to Nemov v3.3.0 with Yalda partner card fully preserved. |
 | Tier 1 | `T1.11_PACKAGING_SPECS` | NSIS Installer & PyInstaller Spec | M1 | **✅ PASS** | 0.3ms | NSIS installer and PyInstaller spec properly configured for Nemov v3.3.0. |
-| Tier 2 | `T2.1_EMPTY_CLUB_NAME_FALLBACK` | Empty Club Name Fallback | M2 | **✅ PASS** | 10.7ms | All empty/whitespace inputs correctly fallback to 'نرم‌افزار مدیریت ورزشی نِمُو'. |
-| Tier 2 | `T2.2_MISSING_LOGO_FALLBACK` | Missing Custom Logo Fallback | M2 | **✅ PASS** | 5.9ms | Non-existent custom logo safely fell back to existing default logo: C:\Users\user\.gemini\antigravity\scratch\yalda_gym_app\resources\images\nemov_logo.png |
-| Tier 2 | `T2.3_INVALID_THEME_FALLBACK` | Invalid Theme ID Fallback | M3 | **✅ PASS** | 5.5ms | Invalid theme ID handled safely without crashing. Active theme: crimson_fury |
-| Tier 2 | `T2.4_RESOLUTIONS_GEOMETRY` | Extreme Resolutions 1024x768 vs 1920x1080 | M2 | **✅ PASS** | 200.4ms | UI layouts successfully evaluated at 1024x768 and 1920x1080 without clipping or zero-rects. |
-| Tier 3 | `T3.1_THEME_PDF_ACCENT` | Theme Switching -> PDF Top Bar Accent Reflection | M3 | **✅ PASS** | 231.8ms | PDF generator top bar dynamically reflected theme accent: Royal Gold -> Color(.831373,.686275,.215686,1), Neon -> Color(.062745,.72549,.505882,1) |
-| Tier 3 | `T3.2_LOGO_UPLOAD_RESET_ROUNDTRIP` | Logo Upload -> PDF Watermark -> Reset Round-Trip | M2/M3 | **✅ PASS** | 22.3ms | Upload -> Active -> PDF Reflection -> Reset to Nemov logo completed full round-trip. |
-| Tier 3 | `T3.3_CLUB_INFO_SMS_FORMATTING` | Club Info -> SMS #GYM# Replacement | M3 | **✅ PASS** | 5.7ms | Dynamic club name 'باشگاه بدنسازی یلدا' verified across all 5 SMS templates. |
-| Tier 4 | `T4.1_TRAINER_WORKFLOW_E2E` | Complete Trainer Workflow E2E | M1-M4 | **✅ PASS** | 128.2ms | Complete real-world trainer workflow successfully executed end-to-end with 100% contract compliance. |
+| Tier 1 | `T1.12_STARTUP_THEME_PERSISTENCE` | Startup Theme Persistence Hook | M2 | **✅ PASS** | 12.4ms | Startup theme persistence successfully loads and applies saved theme from DB. |
+| Tier 1 | `T1.13_LOGIN_VIEW_DYNAMIC_TOKENS` | LoginView Dynamic Palette Tokens | M2 | **✅ PASS** | 2707.8ms | LoginView seamlessly switches between dark and 9router light modes without hardcoded colors. |
+| Tier 2 | `T2.1_EMPTY_CLUB_NAME_FALLBACK` | Empty Club Name Fallback | M2 | **✅ PASS** | 17.1ms | All empty/whitespace inputs correctly fallback to 'نرم‌افزار مدیریت ورزشی نِمُو'. |
+| Tier 2 | `T2.2_MISSING_LOGO_FALLBACK` | Missing Custom Logo Fallback | M2 | **✅ PASS** | 11.2ms | Non-existent custom logo safely fell back to existing default logo: C:\Users\user\.gemini\antigravity\scratch\yalda_gym_app\resources\images\nemov_logo.png |
+| Tier 2 | `T2.3_INVALID_THEME_FALLBACK` | Invalid Theme ID Fallback | M3 | **✅ PASS** | 10.1ms | Invalid theme ID handled safely without crashing. Active theme: crimson_fury |
+| Tier 2 | `T2.4_RESOLUTIONS_GEOMETRY` | Extreme Resolutions 1024x768 vs 1920x1080 | M2 | **✅ PASS** | 406.8ms | UI layouts successfully evaluated at 1024x768 and 1920x1080 without clipping or zero-rects. |
+| Tier 2 | `T2.5_SIDEBAR_RESIZE_THEME_STABILITY` | Sidebar Resize Stability & Theme Preservation | M2 | **✅ PASS** | 598.5ms | Sidebar transitions smoothly across all 3 tiers with 100% theme accent preservation. |
+| Tier 3 | `T3.1_THEME_PDF_ACCENT` | Theme Switching -> PDF Top Bar Accent Reflection | M3 | **✅ PASS** | 988.2ms | PDF generator top bar dynamically reflected theme accent: Royal Gold -> Color(.831373,.686275,.215686,1), Neon -> Color(.062745,.72549,.505882,1) |
+| Tier 3 | `T3.2_LOGO_UPLOAD_RESET_ROUNDTRIP` | Logo Upload -> PDF Watermark -> Reset Round-Trip | M2/M3 | **✅ PASS** | 52.7ms | Upload -> Active -> PDF Reflection -> Reset to Nemov logo completed full round-trip. |
+| Tier 3 | `T3.3_CLUB_INFO_SMS_FORMATTING` | Club Info -> SMS #GYM# Replacement | M3 | **✅ PASS** | 13.4ms | Dynamic club name 'باشگاه بدنسازی یلدا' verified across all 5 SMS templates. |
+| Tier 3 | `T3.4_SHELL_ZERO_CRIMSON_AUDIT` | Shell Zero-Crimson Audit | M2 | **✅ PASS** | 6434.0ms | Shell and navigation components verified free of residual #8B0000 crimson. |
+| Tier 4 | `T4.1_TRAINER_WORKFLOW_E2E` | Complete Trainer Workflow E2E | M1-M4 | **✅ PASS** | 461.7ms | Complete real-world trainer workflow successfully executed end-to-end with 100% contract compliance. |
 
 ---
 
@@ -61,17 +65,21 @@
 - **T1.9**: SMS Dynamic Club Name Injection (`#GYM#` variable dynamic substitution).
 - **T1.10**: Cloudflare Worker Landing Page Rebranding (`index.js` Nemov v3.3.0 while preserving Yalda partner card).
 - **T1.11**: Packaging Spec & NSIS Script Rebranding (`Nemov_Setup_v3.3.0.exe`, desktop shortcut `Nemov`, `Nemov.exe`).
+- **T1.12**: Startup Theme Persistence Hook via `ThemeManager.apply_saved_theme()`.
+- **T1.13**: LoginView Dynamic Palette Token Application (Dark & 9router Light).
 
 ### Tier 2: Boundary & Corner Cases (Boundary Value Analysis)
 - **T2.1**: Empty & Whitespace Club Name Fallback (fallback to `"نرم‌افزار مدیریت ورزشی نِمُو"`).
 - **T2.2**: Missing Custom Logo Fallback (fallback to bundled Nemov default logo).
 - **T2.3**: Invalid Theme ID Fallback (safe fallback to `"crimson_fury"`).
 - **T2.4**: Extreme Resolutions Display & Geometry QA (1024x768 vs 1920x1080 without clipping or zero rects).
+- **T2.5**: Sidebar Resize Stability & Palette Preservation across Responsive Tiers.
 
 ### Tier 3: Cross-Feature Combinations (Pairwise & Interaction Testing)
 - **T3.1**: Theme Switching + PDF Accent Color Reflection (Royal Gold `#D4AF37` vs Neon Pulse `#10B981`).
 - **T3.2**: Custom Logo Upload + PDF Watermark + Reset Button Round-Trip.
 - **T3.3**: Dynamic Club Info + SMS Message Formatting across all 5 templates.
+- **T3.4**: Shell Zero-Crimson Verification on MainWindow & Subcomponents.
 
 ### Tier 4: Real-World Workload Scenarios (End-to-End User Story)
 - **T4.1**: Complete Trainer Workflow E2E Simulation (Launch -> Select Theme -> Set Custom Club Info -> Generate PDF -> Verify Signature & Watermark -> Reset Logo to Nemov -> State Cleanup).

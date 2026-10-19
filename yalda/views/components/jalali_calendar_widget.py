@@ -5,49 +5,51 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import pyqtSignal, Qt
 import jdatetime
 from yalda.utils.jalali_date import get_today_shamsi, format_shamsi
+from yalda.utils.theme_manager import ThemeManager
 
 class JalaliCalendarDialog(QDialog):
     date_selected = pyqtSignal(str)
 
     def __init__(self, parent=None, initial_date=None):
         super().__init__(parent)
+        palette = ThemeManager.get_current_palette()
         self.setWindowTitle("انتخاب تاریخ شمسی")
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
         self.setFixedSize(360, 380)
-        self.setStyleSheet("""
-            QDialog {
-                background-color: #121212;
-            }
-            QLabel {
-                color: #FFFFFF;
+        self.setStyleSheet(f"""
+            QDialog {{
+                background-color: {palette.bg_card};
+            }}
+            QLabel {{
+                color: {palette.text_primary};
                 font-size: 13px;
-            }
-            QComboBox {
-                background-color: #1E1E1E;
-                color: #FFFFFF;
-                border: 1px solid #333333;
+            }}
+            QComboBox {{
+                background-color: {palette.bg_input};
+                color: {palette.text_primary};
+                border: 1px solid {palette.border};
                 border-radius: 6px;
                 padding: 4px 8px;
                 min-width: 90px;
-            }
-            QPushButton#cal_day_btn {
-                background-color: #262626;
-                color: #FFFFFF;
-                border: 1px solid #3A3A3A;
+            }}
+            QPushButton#cal_day_btn {{
+                background-color: {palette.bg_surface};
+                color: {palette.text_primary};
+                border: 1px solid {palette.border};
                 border-radius: 6px;
                 padding: 0px;
                 font-size: 13px;
                 font-weight: bold;
-            }
-            QPushButton#cal_day_btn:hover {
-                background-color: #8B0000;
-                border: 1px solid #A91D22;
-                color: #FFFFFF;
-            }
-            QPushButton#cal_day_btn[today="true"] {
-                border: 2px solid #A91D22;
-                background-color: #331010;
-            }
+            }}
+            QPushButton#cal_day_btn:hover {{
+                background-color: {palette.primary};
+                border: 1px solid {palette.primary};
+                color: {palette.text_primary};
+            }}
+            QPushButton#cal_day_btn[today="true"] {{
+                border: 2px solid {palette.primary};
+                background-color: {palette.bg_card};
+            }}
         """)
 
         if initial_date:
@@ -122,20 +124,21 @@ class JalaliCalendarDialog(QDialog):
             if widget:
                 widget.deleteLater()
 
+        palette = ThemeManager.get_current_palette()
         headers = ["ش", "ی", "د", "س", "چ", "پ", "ج"]
         for col, h in enumerate(headers):
             lbl = QLabel(h)
             lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
             lbl.setFixedHeight(28)
-            lbl.setStyleSheet("""
-                QLabel {
-                    background-color: #8B0000;
-                    color: #FFFFFF;
+            lbl.setStyleSheet(f"""
+                QLabel {{
+                    background-color: {palette.primary};
+                    color: {palette.text_primary};
                     font-size: 13px;
                     font-weight: bold;
                     border-radius: 6px;
                     margin-bottom: 4px;
-                }
+                }}
             """)
             self.grid_layout.addWidget(lbl, 0, col)
 
@@ -201,21 +204,7 @@ class JalaliDatePicker(QWidget):
         self.btn_calendar = QPushButton("📅")
         self.btn_calendar.setFixedWidth(42)
         self.btn_calendar.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_calendar.setStyleSheet("""
-            QPushButton {
-                background-color: #8B0000;
-                color: #FFFFFF;
-                border: 1px solid #A91D22;
-                border-radius: 6px;
-                font-size: 16px;
-                font-family: "Segoe UI Emoji", "Noto Color Emoji", "Apple Color Emoji", sans-serif;
-                padding: 0px;
-                margin: 0px;
-            }
-            QPushButton:hover {
-                background-color: #A91D22;
-            }
-        """)
+        self.btn_calendar.setObjectName("secondary_button")
         self.btn_calendar.clicked.connect(self.open_calendar)
 
         layout.addWidget(self.line_edit)

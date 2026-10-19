@@ -19,45 +19,16 @@ class CloudRestoreDialog(QDialog):
         self.init_ui()
 
     def init_ui(self):
-        self.setStyleSheet("""
-            QDialog {
-                background-color: #121212;
-                color: #FFFFFF;
-                font-family: 'Vazirmatn', 'Segoe UI', sans-serif;
-            }
-            QFrame#cardFrame {
-                background-color: #000000;
-                border: 1px solid #333333;
-                border-radius: 12px;
-                padding: 15px;
-            }
-            QLabel {
-                color: #E5E7EB;
-                background: transparent;
-            }
-            QLineEdit {
-                background-color: #1E1E1E;
-                color: #FFFFFF;
-                border: 1px solid #333333;
-                border-radius: 6px;
-                padding: 8px 12px;
-                font-size: 14px;
-            }
-            QLineEdit:focus {
-                border: 1px solid #2563EB;
-            }
-        """)
-
         layout = QVBoxLayout(self)
         layout.setContentsMargins(15, 15, 15, 15)
 
         card = QFrame()
-        card.setObjectName("cardFrame")
+        card.setObjectName("card")
         card_l = QVBoxLayout(card)
         card_l.setSpacing(12)
 
         title = QLabel("☁️ بازیابی خودکار اطلاعات از سرور ابری")
-        title.setStyleSheet("font-size: 17px; font-weight: bold; color: #3B82F6;")
+        title.setObjectName("h2")
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         card_l.addWidget(title)
 
@@ -65,7 +36,7 @@ class CloudRestoreDialog(QDialog):
             "اگر برنامه را در سیستم جدید نصب کرده‌اید یا قصد بازگردانی اطلاعات را دارید، "
             "شماره موبایل ثبت‌شده خود را وارد کنید تا آخرین نسخه پشتیبان از سرور ابری دریافت و بارگذاری شود:"
         )
-        desc.setStyleSheet("color: #9CA3AF; font-size: 12px; line-height: 1.5;")
+        desc.setObjectName("muted_text")
         desc.setWordWrap(True)
         card_l.addWidget(desc)
 
@@ -87,34 +58,12 @@ class CloudRestoreDialog(QDialog):
         btn_box = QHBoxLayout()
         self.btn_submit = QPushButton("📥 دریافت و بارگذاری از سرور")
         self.btn_submit.setFixedHeight(42)
-        self.btn_submit.setStyleSheet("""
-            QPushButton {
-                background-color: #2563EB;
-                color: #FFFFFF;
-                font-weight: bold;
-                font-size: 13px;
-                border-radius: 6px;
-            }
-            QPushButton:hover {
-                background-color: #1D4ED8;
-            }
-        """)
+        self.btn_submit.setObjectName("primary_button")
         self.btn_submit.clicked.connect(self.do_restore)
 
         btn_cancel = QPushButton("انصراف")
         btn_cancel.setObjectName("secondary_button")
         btn_cancel.setFixedHeight(42)
-        btn_cancel.setStyleSheet("""
-            QPushButton {
-                background-color: #374151;
-                color: #D1D5DB;
-                border-radius: 6px;
-                font-size: 13px;
-            }
-            QPushButton:hover {
-                background-color: #4B5563;
-            }
-        """)
         btn_cancel.clicked.connect(self.reject)
 
         btn_box.addWidget(self.btn_submit)

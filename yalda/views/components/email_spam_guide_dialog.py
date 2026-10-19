@@ -3,6 +3,7 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import Qt, QTimer
 import config
+from yalda.utils.theme_manager import ThemeManager
 
 
 class EmailSpamGuideDialog(QDialog):
@@ -22,37 +23,7 @@ class EmailSpamGuideDialog(QDialog):
         self.init_ui()
 
     def init_ui(self):
-        self.setStyleSheet("""
-            QDialog {
-                background-color: #121212;
-                color: #FFFFFF;
-                font-family: 'Vazirmatn', 'Segoe UI', sans-serif;
-            }
-            QLabel {
-                color: #E5E7EB;
-                background: transparent;
-            }
-            QScrollArea {
-                border: none;
-                background: transparent;
-            }
-            QScrollBar:vertical {
-                background: #18181B;
-                width: 8px;
-                border-radius: 4px;
-            }
-            QScrollBar::handle:vertical {
-                background: #3F3F46;
-                border-radius: 4px;
-                min-height: 20px;
-            }
-            QScrollBar::handle:vertical:hover {
-                background: #52525B;
-            }
-            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
-                height: 0px;
-            }
-        """)
+        palette = ThemeManager.get_current_palette()
 
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(18, 18, 18, 18)
@@ -61,6 +32,7 @@ class EmailSpamGuideDialog(QDialog):
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll.setStyleSheet("QScrollArea { border: none; background: transparent; }")
 
         content_widget = QFrame()
         content_widget.setFixedWidth(570)
@@ -72,19 +44,19 @@ class EmailSpamGuideDialog(QDialog):
         # Header
         # ----------------------------------------------------
         header_card = QFrame()
-        header_card.setStyleSheet("""
-            QFrame {
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #1E1B4B, stop:1 #18181B);
-                border: 1px solid #3730A3;
+        header_card.setStyleSheet(f"""
+            QFrame {{
+                background-color: {palette.bg_surface};
+                border: 1px solid {palette.border};
                 border-radius: 10px;
                 padding: 14px;
-            }
+            }}
         """)
         h_layout = QVBoxLayout(header_card)
         h_layout.setSpacing(6)
 
         title_lbl = QLabel("🛡️ راهنمای دریافت ایمیل‌ها در صندوق اصلی (Inbox)")
-        title_lbl.setStyleSheet("color: #818CF8; font-size: 16px; font-weight: bold;")
+        title_lbl.setStyleSheet(f"color: {palette.primary}; font-size: 16px; font-weight: bold;")
         h_layout.addWidget(title_lbl)
 
         desc_lbl = QLabel(
@@ -93,7 +65,7 @@ class EmailSpamGuideDialog(QDialog):
             "با انجام یکی از دو راهکار ساده زیر (فقط برای <b>یک‌بار</b>)، تمام ایمیل‌های بعدی مستقیماً به <b>Inbox (صندوق اصلی)</b> شما خواهند آمد:"
         )
         desc_lbl.setWordWrap(True)
-        desc_lbl.setStyleSheet("color: #CBD5E1; font-size: 12px; line-height: 1.7;")
+        desc_lbl.setStyleSheet(f"color: {palette.text_secondary}; font-size: 12px; line-height: 1.7;")
         h_layout.addWidget(desc_lbl)
 
         content_layout.addWidget(header_card)
@@ -102,14 +74,7 @@ class EmailSpamGuideDialog(QDialog):
         # Method 1: Report Not Spam (Web & Mobile)
         # ----------------------------------------------------
         method1_card = QFrame()
-        method1_card.setStyleSheet("""
-            QFrame {
-                background-color: #18181B;
-                border: 1px solid #27272A;
-                border-radius: 10px;
-                padding: 14px;
-            }
-        """)
+        method1_card.setObjectName("card")
         m1_layout = QVBoxLayout(method1_card)
         m1_layout.setSpacing(10)
 
@@ -162,14 +127,7 @@ class EmailSpamGuideDialog(QDialog):
         # Method 2: Add to Google Contacts (Guaranteed)
         # ----------------------------------------------------
         method2_card = QFrame()
-        method2_card.setStyleSheet("""
-            QFrame {
-                background-color: #18181B;
-                border: 1px solid #27272A;
-                border-radius: 10px;
-                padding: 14px;
-            }
-        """)
+        method2_card.setObjectName("card")
         m2_layout = QVBoxLayout(method2_card)
         m2_layout.setSpacing(10)
 
@@ -182,7 +140,7 @@ class EmailSpamGuideDialog(QDialog):
             "<b>۱۰۰٪ و بدون استثنا</b> مستقیماً به صندوق اصلی (Inbox) تحویل داده می‌شوند."
         )
         lbl_m2_desc.setWordWrap(True)
-        lbl_m2_desc.setStyleSheet("color: #D1D5DB; font-size: 12px; line-height: 1.7;")
+        lbl_m2_desc.setStyleSheet(f"color: {palette.text_secondary}; font-size: 12px; line-height: 1.7;")
         m2_layout.addWidget(lbl_m2_desc)
 
         # Support email display and Copy button
@@ -193,10 +151,10 @@ class EmailSpamGuideDialog(QDialog):
         lbl_email_box = QLabel(email_addr)
         lbl_email_box.setFixedHeight(36)
         lbl_email_box.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        lbl_email_box.setStyleSheet("""
-            background-color: #09090B;
-            color: #38BDF8;
-            border: 1px dashed #0284C7;
+        lbl_email_box.setStyleSheet(f"""
+            background-color: {palette.bg_input};
+            color: {palette.primary};
+            border: 1px dashed {palette.primary};
             border-radius: 6px;
             font-family: Consolas, monospace;
             font-size: 13px;
@@ -228,7 +186,7 @@ class EmailSpamGuideDialog(QDialog):
         m2_layout.addLayout(email_row)
 
         lbl_m2_tip = QLabel("کافیست نشانی بالا را در مخاطبین گوشی خود با عنوان «پشتیبانی باشگاه یلدا» ذخیره فرمایید.")
-        lbl_m2_tip.setStyleSheet("color: #9CA3AF; font-size: 11px;")
+        lbl_m2_tip.setStyleSheet(f"color: {palette.text_muted}; font-size: 11px;")
         m2_layout.addWidget(lbl_m2_tip)
 
         content_layout.addWidget(method2_card)
@@ -242,20 +200,7 @@ class EmailSpamGuideDialog(QDialog):
         btn_close = QPushButton("متوجه شدم و بستن")
         btn_close.setFixedHeight(40)
         btn_close.setCursor(Qt.CursorShape.PointingHandCursor)
-        btn_close.setStyleSheet("""
-            QPushButton {
-                background-color: #8B0000;
-                color: #FFFFFF;
-                border: 1px solid #A91D22;
-                border-radius: 8px;
-                font-weight: bold;
-                font-size: 13px;
-            }
-            QPushButton:hover {
-                background-color: #A00000;
-                border: 1px solid #DC2626;
-            }
-        """)
+        btn_close.setObjectName("primary_button")
         btn_close.clicked.connect(self.accept)
         main_layout.addWidget(btn_close)
 

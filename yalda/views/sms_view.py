@@ -83,25 +83,13 @@ class RechargeInfoDialog(QDialog):
         self.setWindowTitle("⚡ راهنمای خرید و شارژ بسته پیامک")
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
         self.setFixedSize(580, 570)
-        self.setStyleSheet("""
-            QDialog {
-                background-color: #18181B;
-                color: #FFFFFF;
-                border: 1px solid #27272A;
-                border-radius: 12px;
-            }
-            QLabel {
-                color: #FFFFFF;
-                font-family: 'Vazirmatn';
-            }
-        """)
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(24, 20, 24, 20)
         layout.setSpacing(12)
 
         title = QLabel("💳 تعرفه بسته‌ها و اطلاعات واریز کارت‌به‌کارت")
-        title.setStyleSheet("font-size: 16px; font-weight: bold; color: #10B981;")
+        title.setObjectName("h2")
         layout.addWidget(title)
 
         desc = QLabel(
@@ -109,19 +97,12 @@ class RechargeInfoDialog(QDialog):
             "مشخصات شما با اتصال اینترنت به صورت خودکار در سامانه ثبت می‌شود و پس از واریز فعال خواهد شد:"
         )
         desc.setWordWrap(True)
-        desc.setStyleSheet("font-size: 12px; color: #9CA3AF; line-height: 1.5;")
+        desc.setObjectName("muted_text")
         layout.addWidget(desc)
 
         # Packages Card
         pkg_card = QFrame()
-        pkg_card.setObjectName("pkgCard")
-        pkg_card.setStyleSheet("""
-            QFrame#pkgCard {
-                background-color: #202024;
-                border: 1px solid #323238;
-                border-radius: 8px;
-            }
-        """)
+        pkg_card.setObjectName("card")
         pkg_layout = QVBoxLayout(pkg_card)
         pkg_layout.setContentsMargins(16, 12, 16, 12)
         pkg_layout.setSpacing(8)
@@ -248,21 +229,8 @@ class RechargeInfoDialog(QDialog):
         layout.addStretch()
 
         btn_close = QPushButton("متوجه شدم")
+        btn_close.setObjectName("primary_button")
         btn_close.setCursor(Qt.CursorShape.PointingHandCursor)
-        btn_close.setStyleSheet("""
-            QPushButton {
-                background-color: #8B0000;
-                color: #FFFFFF;
-                border: none;
-                border-radius: 6px;
-                padding: 10px 28px;
-                font-size: 13px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: #A91D22;
-            }
-        """)
         btn_close.clicked.connect(self.accept)
         layout.addWidget(btn_close, alignment=Qt.AlignmentFlag.AlignCenter)
 
@@ -319,15 +287,7 @@ class SmsView(QWidget):
         # 1. Header & Wallet Status Card
         # =====================================================================
         header_frame = QFrame()
-        header_frame.setObjectName("smsHeaderCard")
-        header_frame.setStyleSheet("""
-            QFrame#smsHeaderCard {
-                background-color: #1A1A1A;
-                border: 1px solid #282828;
-                border-radius: 12px;
-                padding: 16px;
-            }
-        """)
+        header_frame.setObjectName("card")
         header_layout = QHBoxLayout(header_frame)
         header_layout.setContentsMargins(12, 8, 12, 8)
         header_layout.setSpacing(16)
@@ -336,9 +296,9 @@ class SmsView(QWidget):
         title_box = QVBoxLayout()
         title_box.setSpacing(4)
         lbl_title = QLabel("📱 سامانه هوشمند پیامک و اطلاع‌رسانی باشگاه")
-        lbl_title.setStyleSheet("font-size: 18px; font-weight: bold; color: #FFFFFF;")
+        lbl_title.setObjectName("h1")
         lbl_sub = QLabel("ارسال پیام‌های گروهی، اعلام تعطیلی باشگاه و ارسال خودکار پیام‌های تبریک تولد و شهریه")
-        lbl_sub.setStyleSheet("font-size: 12px; color: #888888;")
+        lbl_sub.setObjectName("muted_text")
         title_box.addWidget(lbl_title)
         title_box.addWidget(lbl_sub)
         header_layout.addLayout(title_box, 1)
@@ -349,12 +309,14 @@ class SmsView(QWidget):
 
         self.card_balance = QFrame()
         self.card_balance.setObjectName("cardBalance")
-        self.card_balance.setStyleSheet("""
-            QFrame#cardBalance {
-                background-color: #12161F;
-                border: 1px solid #1D4ED8;
+        from yalda.utils.theme_manager import ThemeManager
+        palette = ThemeManager.get_current_palette()
+        self.card_balance.setStyleSheet(f"""
+            QFrame#cardBalance {{
+                background-color: {palette.bg_surface};
+                border: 1px solid {palette.border_light};
                 border-radius: 8px;
-            }
+            }}
         """)
         cb_layout = QVBoxLayout(self.card_balance)
         cb_layout.setContentsMargins(16, 8, 16, 8)
@@ -418,74 +380,14 @@ class SmsView(QWidget):
         # 2. Main Tab Widget
         # =====================================================================
         self.tabs = QTabWidget()
-        self.tabs.setStyleSheet("""
-            QTabWidget::pane {
-                background-color: #1A1A1A;
-                border: 1px solid #282828;
-                border-radius: 10px;
-                padding: 10px;
-            }
-            QTabBar::tab {
-                background-color: #141414;
-                color: #A0A0A0;
-                padding: 10px 22px;
-                font-size: 13px;
-                font-weight: bold;
-                border-top-left-radius: 8px;
-                border-top-right-radius: 8px;
-                margin-left: 4px;
-            }
-            QTabBar::tab:selected {
-                background-color: #1A1A1A;
-                color: #FFFFFF;
-                border-bottom: 2px solid #8B0000;
-            }
-            QTabBar::tab:hover:!selected {
-                background-color: #222222;
-                color: #E0E0E0;
-            }
-        """)
 
         self.tab_broadcast = QScrollArea()
         self.tab_broadcast.setWidgetResizable(True)
-        self.tab_broadcast.setStyleSheet("""
-            QScrollArea {
-                background: transparent;
-                border: none;
-            }
-            QScrollBar:vertical {
-                background: #141414;
-                width: 8px;
-                border-radius: 4px;
-            }
-            QScrollBar::handle:vertical {
-                background: #333333;
-                border-radius: 4px;
-            }
-            QScrollBar::handle:vertical:hover {
-                background: #8B0000;
-            }
-        """)
+        self.tab_broadcast.setStyleSheet("QScrollArea { background: transparent; border: none; }")
+
         self.tab_automated = QScrollArea()
         self.tab_automated.setWidgetResizable(True)
-        self.tab_automated.setStyleSheet("""
-            QScrollArea {
-                background: transparent;
-                border: none;
-            }
-            QScrollBar:vertical {
-                background: #141414;
-                width: 8px;
-                border-radius: 4px;
-            }
-            QScrollBar::handle:vertical {
-                background: #333333;
-                border-radius: 4px;
-            }
-            QScrollBar::handle:vertical:hover {
-                background: #8B0000;
-            }
-        """)
+        self.tab_automated.setStyleSheet("QScrollArea { background: transparent; border: none; }")
         self.tab_history = QWidget()
 
         self.setup_broadcast_tab()
@@ -538,32 +440,32 @@ class SmsView(QWidget):
 
         # 2. Dynamic Input Fields for template
         self.dynamic_frame = QFrame()
-        self.dynamic_frame.setObjectName("dynamicFrame")
-        self.dynamic_frame.setStyleSheet("""
-            QFrame#dynamicFrame {
-                background-color: #202024;
-                border: 1px solid #27272A;
-                border-radius: 8px;
-            }
-        """)
+        self.dynamic_frame.setObjectName("card")
         self.dyn_layout = QVBoxLayout(self.dynamic_frame)
         self.dyn_layout.setContentsMargins(12, 8, 12, 8)
         self.dyn_layout.setSpacing(8)
 
-        chip_btn_style = """
-            QPushButton {
+        try:
+            from yalda.utils.theme_manager import ThemeManager
+            _pal = ThemeManager.get_current_palette()
+        except Exception:
+            _pal = None
+        _chip_hover_border = _pal.primary if _pal else "#DC2626"
+
+        chip_btn_style = f"""
+            QPushButton {{
                 background-color: #27272A;
                 color: #D1D5DB;
                 border: 1px solid #3F3F46;
                 border-radius: 11px;
                 padding: 3px 9px;
                 font-size: 11px;
-            }
-            QPushButton:hover {
+            }}
+            QPushButton:hover {{
                 background-color: #3F3F46;
                 color: #FFFFFF;
-                border-color: #8B0000;
-            }
+                border-color: {_chip_hover_border};
+            }}
         """
 
         # ---------------------------------------------------------------------
@@ -582,7 +484,6 @@ class SmsView(QWidget):
         lbl_dyn_date = QLabel("📅 تاریخ تعطیلی:")
         lbl_dyn_date.setStyleSheet("font-size: 11px; font-weight: bold; color: #D1D5DB;")
         self.input_dyn_date = QLineEdit()
-        self.input_dyn_date.setStyleSheet("background-color: #27272A; border: 1px solid #3F3F46; border-radius: 6px; color: #FFFFFF; padding: 6px 10px; font-size: 12px;")
         self.input_dyn_date.setPlaceholderText("مثال: فردا چهارشنبه ۲ مهر یا ۲ الی ۴ مهر")
         self.input_dyn_date.setText(f"امروز ({get_today_shamsi()})")
         self.input_dyn_date.textChanged.connect(self.update_preview)
@@ -594,7 +495,6 @@ class SmsView(QWidget):
         lbl_dyn_reason = QLabel("🛑 علت تعطیلی باشگاه:")
         lbl_dyn_reason.setStyleSheet("font-size: 11px; font-weight: bold; color: #D1D5DB;")
         self.input_dyn_reason = QLineEdit()
-        self.input_dyn_reason.setStyleSheet("background-color: #27272A; border: 1px solid #3F3F46; border-radius: 6px; color: #FFFFFF; padding: 6px 10px; font-size: 12px;")
         self.input_dyn_reason.setPlaceholderText("مثال: تعطیلات رسمی / تعمیرات سالن و سرویس تجهیزات")
         self.input_dyn_reason.setText("تعطیلات رسمی")
         self.input_dyn_reason.textChanged.connect(self.update_preview)
@@ -709,7 +609,6 @@ class SmsView(QWidget):
         lbl_h_note = QLabel("توضیحات تکمیلی (اختیاری):")
         lbl_h_note.setStyleSheet("font-size: 11px; color: #D1D5DB;")
         self.input_hours_note = QLineEdit()
-        self.input_hours_note.setStyleSheet("background-color: #27272A; border: 1px solid #3F3F46; border-radius: 6px; color: #FFFFFF; padding: 5px 8px; font-size: 12px;")
         self.input_hours_note.setPlaceholderText("مثال: جمعه‌ها سالن تعطیل است / پذیرش تا ۲۱:۳۰")
         self.input_hours_note.setText("جمعه‌ها سالن تعطیل است")
         self.input_hours_note.textChanged.connect(self.update_preview)
@@ -830,22 +729,6 @@ class SmsView(QWidget):
         self.table_members.verticalHeader().setVisible(False)
         self.table_members.verticalHeader().setDefaultSectionSize(32)
         self.table_members.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
-        self.table_members.setStyleSheet("""
-            QTableWidget {
-                background-color: #18181B;
-                border: 1px solid #27272A;
-                border-radius: 6px;
-                color: #FFFFFF;
-                font-size: 12px;
-            }
-            QHeaderView::section {
-                background-color: #202024;
-                color: #A1A1AA;
-                font-weight: bold;
-                border: none;
-                padding: 6px;
-            }
-        """)
         self.table_members.setMinimumHeight(185)
         self.table_members.setMaximumHeight(205)
         right_panel.addWidget(self.table_members, 1)
@@ -860,25 +743,9 @@ class SmsView(QWidget):
         action_bar.addStretch()
 
         self.btn_send_broadcast = QPushButton("🚀  ارسال پیامک به دریافت‌کنندگان")
+        self.btn_send_broadcast.setObjectName("primary_button")
         self.btn_send_broadcast.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_send_broadcast.setStyleSheet("""
-            QPushButton {
-                background-color: #8B0000;
-                color: #FFFFFF;
-                border: none;
-                border-radius: 8px;
-                padding: 10px 24px;
-                font-size: 14px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: #A91D22;
-            }
-            QPushButton:disabled {
-                background-color: #3F3F46;
-                color: #71717A;
-            }
-        """)
+        self.btn_send_broadcast.setStyleSheet("padding: 10px 24px; font-size: 14px;")
         self.btn_send_broadcast.clicked.connect(self.execute_broadcast_send)
         action_bar.addWidget(self.btn_send_broadcast)
         right_panel.addLayout(action_bar)
@@ -1247,22 +1114,6 @@ class SmsView(QWidget):
         self.table_history.horizontalHeader().setSectionResizeMode(4, QHeaderView.ResizeMode.ResizeToContents)
         self.table_history.horizontalHeader().setSectionResizeMode(5, QHeaderView.ResizeMode.ResizeToContents)
         self.table_history.verticalHeader().setVisible(False)
-        self.table_history.setStyleSheet("""
-            QTableWidget {
-                background-color: #18181B;
-                border: 1px solid #27272A;
-                border-radius: 6px;
-                color: #FFFFFF;
-                font-size: 12px;
-            }
-            QHeaderView::section {
-                background-color: #202024;
-                color: #A1A1AA;
-                font-weight: bold;
-                border: none;
-                padding: 6px;
-            }
-        """)
         layout.addWidget(self.table_history, 1)
 
     # =========================================================================
@@ -1271,7 +1122,9 @@ class SmsView(QWidget):
 
     def refresh_balance(self):
         self.lbl_balance_val.setText("در حال استعلام...")
-        self.card_balance.setStyleSheet("QFrame#cardBalance { background-color: #1A1A1A; border: 1px solid #3F3F46; border-radius: 8px; }")
+        from yalda.utils.theme_manager import ThemeManager
+        palette = ThemeManager.get_current_palette()
+        self.card_balance.setStyleSheet(f"QFrame#cardBalance {{ background-color: {palette.bg_surface}; border: 1px solid {palette.border_light}; border-radius: 8px; }}")
         self.btn_refresh_bal.setEnabled(False)
 
         self.bal_thread = SmsBalanceThread()
@@ -1298,9 +1151,11 @@ class SmsView(QWidget):
                 self.card_balance.setStyleSheet("QFrame#cardBalance { background-color: #450A0A; border: 1px solid #DC2626; border-radius: 8px; }")
                 self.lbl_balance_val.setStyleSheet("font-size: 14px; font-weight: bold; color: #FCA5A5; background: transparent; border: none;")
         else:
+            from yalda.utils.theme_manager import ThemeManager
+            palette = ThemeManager.get_current_palette()
             self.lbl_balance_val.setText("عدم اتصال به اینترنت")
-            self.card_balance.setStyleSheet("QFrame#cardBalance { background-color: #27272A; border: 1px solid #3F3F46; border-radius: 8px; }")
-            self.lbl_balance_val.setStyleSheet("font-size: 13px; color: #9CA3AF; background: transparent; border: none;")
+            self.card_balance.setStyleSheet(f"QFrame#cardBalance {{ background-color: {palette.bg_surface}; border: 1px solid {palette.border_light}; border-radius: 8px; }}")
+            self.lbl_balance_val.setStyleSheet(f"font-size: 13px; color: {palette.text_muted}; background: transparent; border: none;")
 
     def show_recharge_dialog(self):
         dlg = RechargeInfoDialog(self)

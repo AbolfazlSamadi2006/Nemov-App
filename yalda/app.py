@@ -41,7 +41,7 @@ class YaldaApplication:
         # Initialize Database
         init_db()
 
-        # Load Dark Red & Black QSS Theme
+        # Load Saved Theme dynamically via ThemeManager with safe fallback
         self.load_stylesheet()
 
         # Windows setup
@@ -55,17 +55,19 @@ class YaldaApplication:
         self.app.aboutToQuit.connect(config.sync_data_directories)
 
     def load_stylesheet(self):
-        qss_path = config.BASE_DIR / "resources" / "qss" / "dark_theme.qss"
-        if qss_path.exists():
-            with open(qss_path, "r", encoding="utf-8") as f:
-                content = f.read()
-                arrow_down_path = (config.BASE_DIR / "resources" / "images" / "arrow_down.svg").as_posix()
-                arrow_up_path = (config.BASE_DIR / "resources" / "images" / "arrow_up.svg").as_posix()
-                check_path = (config.BASE_DIR / "resources" / "images" / "check.svg").as_posix()
-                content = content.replace("resources/images/arrow_down.svg", arrow_down_path)
-                content = content.replace("resources/images/arrow_up.svg", arrow_up_path)
-                content = content.replace("resources/images/check.svg", check_path)
-                self.app.setStyleSheet(content)
+        """
+        Loads and applies the saved theme dynamically via ThemeManager with safe fallback.
+        Ensures application startup is 100% resilient against database or theme errors.
+        """
+        try:
+            from yalda.utils.theme_manager import ThemeManager
+            ThemeManager.apply_saved_theme(self.app)
+        except Exception:
+            try:
+                from yalda.utils.theme_manager import ThemeManager
+                ThemeManager.apply_theme("crimson_fury", self.app)
+            except Exception:
+                pass
 
     def run(self):
         self.login_view.showMaximized()

@@ -256,7 +256,9 @@ class LogViewerDialog(QDialog):
 
         # Filter & Search Card
         filter_card = QFrame()
-        filter_card.setStyleSheet("background-color: #1A1A1A; border: 1px solid #2D2D2D; border-radius: 8px; padding: 4px;")
+        from yalda.utils.theme_manager import ThemeManager
+        palette = ThemeManager.get_current_palette()
+        filter_card.setStyleSheet(f"background-color: {palette.bg_surface}; border: 1px solid {palette.border_light}; border-radius: 8px; padding: 4px;")
         filter_layout = QHBoxLayout(filter_card)
         filter_layout.setContentsMargins(10, 6, 10, 6)
         filter_layout.setSpacing(10)

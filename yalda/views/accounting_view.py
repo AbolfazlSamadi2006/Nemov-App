@@ -30,6 +30,14 @@ class AccountingView(QWidget):
 
         self.init_ui()
         self.load_data()
+        try:
+            from yalda.utils.theme_manager import ThemeManager
+            ThemeManager.theme_changed.connect(self._on_theme_changed)
+        except Exception:
+            pass
+
+    def _on_theme_changed(self, theme_key: str = ""):
+        self.update()
 
     def init_ui(self):
         main_layout = QVBoxLayout(self)
@@ -51,9 +59,9 @@ class AccountingView(QWidget):
         title_box = QVBoxLayout()
         title_box.setSpacing(4)
         lbl_title = QLabel("💰 مدیریت امور مالی، درآمدها و هزینه‌های باشگاه")
-        lbl_title.setStyleSheet("font-size: 18px; font-weight: bold; color: #FFFFFF;")
+        lbl_title.setObjectName("h1")
         lbl_sub = QLabel("محاسبه و نمایش دقیق درآمدها، هزینه‌ها، سود خالص و تفکیک عملکرد مربیان")
-        lbl_sub.setStyleSheet("font-size: 12px; color: #888888;")
+        lbl_sub.setObjectName("muted_text")
         title_box.addWidget(lbl_title)
         title_box.addWidget(lbl_sub)
         overview_grid.addLayout(title_box, 0, 0, 1, 2)
@@ -161,31 +169,7 @@ class AccountingView(QWidget):
         # 3. Filters Panel
         # ==========================================
         filter_frame = QFrame()
-        filter_frame.setStyleSheet("""
-            QFrame {
-                background-color: #1A1A1A;
-                border: 1px solid #2C2C2C;
-                border-radius: 10px;
-                padding: 12px;
-            }
-            QLabel {
-                color: #B0B0B0;
-                font-size: 12.5px;
-                font-weight: bold;
-                padding: 0px;
-            }
-            QComboBox, QLineEdit {
-                background-color: #242424;
-                color: #FFFFFF;
-                border: 1px solid #3E3E3E;
-                border-radius: 6px;
-                padding: 5px 10px;
-                font-size: 12.5px;
-            }
-            QComboBox:focus, QLineEdit:focus {
-                border: 1px solid #DC2626;
-            }
-        """)
+        filter_frame.setObjectName("card")
         filter_grid = QGridLayout(filter_frame)
         filter_grid.setContentsMargins(10, 10, 10, 10)
         filter_grid.setHorizontalSpacing(14)
@@ -306,20 +290,10 @@ class AccountingView(QWidget):
         r2_left.addWidget(self.date_to)
 
         self.btn_apply_custom_date = QPushButton("اعمال بازه")
+        self.btn_apply_custom_date.setObjectName("primary_button")
         self.btn_apply_custom_date.setFixedHeight(38)
         self.btn_apply_custom_date.setFixedWidth(85)
         self.btn_apply_custom_date.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_apply_custom_date.setStyleSheet("""
-            QPushButton {
-                background-color: #8B0000;
-                color: #FFFFFF;
-                font-weight: bold;
-                border-radius: 6px;
-                padding: 5px 12px;
-                font-size: 12px;
-            }
-            QPushButton:hover { background-color: #A91D22; }
-        """)
         self.btn_apply_custom_date.clicked.connect(self.apply_custom_date_range)
         r2_left.addWidget(self.btn_apply_custom_date)
         filter_grid.addLayout(r2_left, 1, 1)
@@ -365,49 +339,14 @@ class AccountingView(QWidget):
         self.table.setAlternatingRowColors(True)
         self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
-        self.table.setStyleSheet("""
-            QTableWidget {
-                background-color: #141414;
-                border: 1px solid #282828;
-                border-radius: 8px;
-                gridline-color: #222222;
-                font-size: 12.5px;
-            }
-            QTableWidget::item {
-                padding: 6px;
-            }
-            QTableWidget::item:alternate {
-                background-color: #1A1A1A;
-            }
-            QTableWidget::item:selected, QTableWidget::item:alternate:selected {
-                background-color: #4A1113;
-            }
-            QHeaderView::section {
-                background-color: #1F1F1F;
-                color: #FFFFFF;
-                font-weight: bold;
-                padding: 8px 4px;
-                border: 1px solid #2E2E2E;
-                font-size: 12.5px;
-            }
-        """)
-
         main_layout.addWidget(self.table, 1)
 
         # Empty Label (with Expanding vertical size policy so top cards NEVER stretch when table is hidden)
         self.lbl_empty = QLabel("هیچ تراکنشی منطبق بر فیلترهای انتخابی یافت نشد.")
+        self.lbl_empty.setObjectName("card")
         self.lbl_empty.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.lbl_empty.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        self.lbl_empty.setStyleSheet("""
-            QLabel {
-                color: #777777;
-                font-size: 14px;
-                padding: 40px;
-                background-color: #141414;
-                border: 1px solid #282828;
-                border-radius: 8px;
-            }
-        """)
+        self.lbl_empty.setStyleSheet("font-size: 14px; padding: 40px;")
         self.lbl_empty.setVisible(False)
         main_layout.addWidget(self.lbl_empty, 1)
 
@@ -419,14 +358,26 @@ class AccountingView(QWidget):
             self.date_to.setText(init_end)
 
     def _create_stat_card(self, title: str, default_val: str, accent_color: str):
+        try:
+            from yalda.utils.theme_manager import ThemeManager
+            palette = ThemeManager.get_current_palette()
+        except Exception:
+            palette = None
+
+        bg_card = palette.bg_card if palette else "#181818"
+        border_col = palette.border if palette else "#2E2E2E"
+        text_muted = palette.text_muted if palette else "#888888"
+        text_primary = palette.text_primary if palette else "#FFFFFF"
+
         card = QFrame()
         card.setObjectName("statCard")
+        card.setProperty("accent_color", accent_color)
         card.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         card.setFixedHeight(78)
         card.setStyleSheet(f"""
             QFrame#statCard {{
-                background-color: #181818;
-                border: 1px solid #2E2E2E;
+                background-color: {bg_card};
+                border: 1px solid {border_col};
                 border-right: 4px solid {accent_color};
                 border-radius: 8px;
                 padding: 10px 14px;
@@ -437,23 +388,31 @@ class AccountingView(QWidget):
         vbox.setContentsMargins(0, 0, 0, 0)
 
         lbl_t = QLabel(title)
-        lbl_t.setStyleSheet("color: #888888; font-size: 12px; font-weight: normal;")
+        lbl_t.setObjectName("titleLabel")
+        lbl_t.setStyleSheet(f"color: {text_muted}; font-size: 12px; font-weight: normal; background: transparent;")
         lbl_v = QLabel(default_val)
         lbl_v.setObjectName("valLabel")
-        lbl_v.setStyleSheet(f"color: #FFFFFF; font-size: 18px; font-weight: bold;")
+        lbl_v.setStyleSheet(f"color: {text_primary}; font-size: 18px; font-weight: bold; background: transparent;")
 
         vbox.addWidget(lbl_t)
         vbox.addWidget(lbl_v)
         return card
 
     def _update_stat_card_value(self, card: QFrame, val_str: str, color_override: str = None):
+        try:
+            from yalda.utils.theme_manager import ThemeManager
+            palette = ThemeManager.get_current_palette()
+        except Exception:
+            palette = None
+        default_color = palette.text_primary if palette else "#FFFFFF"
+
         lbl = card.findChild(QLabel, "valLabel")
         if lbl:
             lbl.setText(val_str)
             if color_override:
-                lbl.setStyleSheet(f"color: {color_override}; font-size: 18px; font-weight: bold;")
+                lbl.setStyleSheet(f"color: {color_override}; font-size: 18px; font-weight: bold; background: transparent;")
             else:
-                lbl.setStyleSheet("color: #FFFFFF; font-size: 18px; font-weight: bold;")
+                lbl.setStyleSheet(f"color: {default_color}; font-size: 18px; font-weight: bold; background: transparent;")
 
     def _create_quick_btn(self, text: str, key: str, width: int = None):
         btn = QPushButton(text)
@@ -465,34 +424,89 @@ class AccountingView(QWidget):
         return btn
 
     def _highlight_quick_btn(self, active_key: str):
+        try:
+            from yalda.utils.theme_manager import ThemeManager
+            palette = ThemeManager.get_current_palette()
+        except Exception:
+            palette = None
+
+        if palette:
+            active_bg = palette.primary
+            active_text = palette.primary_text
+            active_hover = palette.primary_hover
+            sec_bg = palette.btn_sec_bg
+            sec_text = palette.btn_sec_text
+            sec_border = palette.btn_sec_border
+            sec_hover = palette.btn_sec_hover
+        else:
+            active_bg = "#DC2626"
+            active_text = "#FFFFFF"
+            active_hover = "#B91C1C"
+            sec_bg = "#262626"
+            sec_text = "#A0A0A0"
+            sec_border = "#3A3A3A"
+            sec_hover = "#333333"
+
         for k, btn in self.quick_buttons.items():
             if k == active_key:
-                btn.setStyleSheet("""
-                    QPushButton {
-                        background-color: #8B0000;
-                        color: #FFFFFF;
+                btn.setStyleSheet(f"""
+                    QPushButton {{
+                        background-color: {active_bg};
+                        color: {active_text};
                         font-weight: bold;
                         border: none;
                         border-radius: 6px;
                         padding: 4px 12px;
                         font-size: 12px;
-                    }
+                    }}
+                    QPushButton:hover {{
+                        background-color: {active_hover};
+                    }}
                 """)
             else:
-                btn.setStyleSheet("""
-                    QPushButton {
-                        background-color: #262626;
-                        color: #A0A0A0;
-                        border: 1px solid #3A3A3A;
+                btn.setStyleSheet(f"""
+                    QPushButton {{
+                        background-color: {sec_bg};
+                        color: {sec_text};
+                        border: 1px solid {sec_border};
                         border-radius: 6px;
                         padding: 4px 12px;
                         font-size: 12px;
-                    }
-                    QPushButton:hover {
-                        background-color: #333333;
-                        color: #FFFFFF;
-                    }
+                    }}
+                    QPushButton:hover {{
+                        background-color: {sec_hover};
+                    }}
                 """)
+
+    def _on_theme_changed(self, theme_key: str):
+        self._highlight_quick_btn(self.current_filter_key)
+        self._refresh_stat_cards_theming()
+        self.load_data()
+
+    def _refresh_stat_cards_theming(self):
+        try:
+            from yalda.utils.theme_manager import ThemeManager
+            palette = ThemeManager.get_current_palette()
+        except Exception:
+            return
+        for card in [getattr(self, 'card_income', None), getattr(self, 'card_expense', None), getattr(self, 'card_profit', None), getattr(self, 'card_count', None)]:
+            if card:
+                accent = card.property("accent_color") or palette.primary
+                card.setStyleSheet(f"""
+                    QFrame#statCard {{
+                        background-color: {palette.bg_card};
+                        border: 1px solid {palette.border};
+                        border-right: 4px solid {accent};
+                        border-radius: 8px;
+                        padding: 10px 14px;
+                    }}
+                """)
+                lbl_t = card.findChild(QLabel, "titleLabel")
+                if lbl_t:
+                    lbl_t.setStyleSheet(f"color: {palette.text_muted}; font-size: 12px; font-weight: normal; background: transparent;")
+                lbl_v = card.findChild(QLabel, "valLabel")
+                if lbl_v:
+                    lbl_v.setStyleSheet(f"color: {palette.text_primary}; font-size: 18px; font-weight: bold; background: transparent;")
 
     def on_quick_period_clicked(self, key: str):
         self.current_filter_key = key

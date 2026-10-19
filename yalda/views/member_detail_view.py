@@ -522,7 +522,7 @@ class MemberDetailView(QWidget):
             w_text = f"{int(member.initial_weight_kg)}kg" if member.initial_weight_kg else "-"
             hw_display = "-" if (not member.height_cm and not member.initial_weight_kg) else f"{h_text} / {w_text}"
 
-            info_str = f"<b>کد عضویت:</b> {member.id}  |  <b>تلفن:</b> {member.phone}  |  <b>ثبت نام:</b> {reg_str}  |  <b>بیمه:</b> {ins_str}  |  <b>شهریه:</b> {fee_str}<br><b>قد/وزن:</b> {hw_display}  |  <b>متابولیسم و کالری:</b> {bmr_tdee_str}  |  <b>تاریخ انقضا:</b> <font color='#8B0000'><b>{member.membership_expire_shamsi or '-'}</b></font>"
+            info_str = f"<b>کد عضویت:</b> {member.id}  |  <b>تلفن:</b> {member.phone}  |  <b>ثبت نام:</b> {reg_str}  |  <b>بیمه:</b> {ins_str}  |  <b>شهریه:</b> {fee_str}<br><b>قد/وزن:</b> {hw_display}  |  <b>متابولیسم و کالری:</b> {bmr_tdee_str}  |  <b>تاریخ انقضا:</b> <font color='#EF4444'><b>{member.membership_expire_shamsi or '-'}</b></font>"
             self.lbl_member_details.setText(info_str)
 
             if member.photo_path and os.path.exists(member.photo_path):

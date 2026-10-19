@@ -457,11 +457,14 @@ class DeveloperView(QWidget):
         self.btn_save_license.setEnabled(is_admin)
         self.dev_edit_box.setVisible(is_admin)
 
+        from yalda.utils.theme_manager import ThemeManager
+        palette = ThemeManager.get_current_palette()
+
         if is_admin:
-            self.combo_license.setStyleSheet("""
-                QComboBox {
-                    background-color: #1E1E1E; color: #FFFFFF; border: 1px solid #333333; border-radius: 6px; padding: 4px 8px;
-                }
+            self.combo_license.setStyleSheet(f"""
+                QComboBox {{
+                    background-color: {palette.input_bg}; color: {palette.text_primary}; border: 1px solid {palette.input_border}; border-radius: 6px; padding: 4px 8px;
+                }}
             """)
             self.btn_save_license.setStyleSheet("""
                 QPushButton {
@@ -499,15 +502,15 @@ class DeveloperView(QWidget):
                 self.btn_reset_dev.setEnabled(False)
         else:
             # Dimmed/disabled styling for non-admin trainers
-            self.combo_license.setStyleSheet("""
-                QComboBox {
-                    background-color: #181818; color: #555555; border: 1px solid #282828; border-radius: 6px; padding: 4px 8px;
-                }
+            self.combo_license.setStyleSheet(f"""
+                QComboBox {{
+                    background-color: {palette.bg_surface}; color: {palette.text_muted}; border: 1px solid {palette.border}; border-radius: 6px; padding: 4px 8px;
+                }}
             """)
-            self.btn_save_license.setStyleSheet("""
-                QPushButton {
-                    background-color: #222222; color: #555555; border-radius: 6px; font-weight: bold; padding: 0 15px; font-size: 13px; border: 1px solid #2A2A2A;
-                }
+            self.btn_save_license.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: {palette.btn_sec_bg}; color: {palette.text_muted}; border-radius: 6px; font-weight: bold; padding: 0 15px; font-size: 13px; border: 1px solid {palette.btn_sec_border};
+                }}
             """)
 
 

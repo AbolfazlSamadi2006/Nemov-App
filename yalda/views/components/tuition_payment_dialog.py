@@ -24,100 +24,6 @@ class TuitionPaymentDialog(QDialog):
         self.setWindowTitle("ویرایش پرداخت شهریه" if self.is_edit else "ثبت پرداخت و تمدید شهریه")
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
         self.setFixedWidth(500)
-        self.setStyleSheet("""
-            QDialog {
-                background-color: #161616;
-            }
-            QLabel {
-                color: #FFFFFF;
-                font-size: 13px;
-                font-weight: bold;
-            }
-            QLineEdit, QComboBox, QTextEdit {
-                background-color: #222222;
-                color: #FFFFFF;
-                border: 1px solid #3A3A3A;
-                border-radius: 6px;
-                padding: 6px 10px;
-                font-size: 13px;
-            }
-            QLineEdit:focus, QComboBox:focus, QTextEdit:focus {
-                border: 1px solid #10B981;
-                background-color: #282828;
-            }
-            QComboBox#combo_member {
-                background-color: #1E1E1E;
-                color: #FFFFFF;
-                border: 1.5px solid #3F3F3F;
-                border-radius: 8px;
-                padding: 6px 12px;
-                font-size: 13px;
-                font-weight: bold;
-            }
-            QComboBox#combo_member:hover {
-                border: 1.5px solid #10B981;
-                background-color: #242424;
-            }
-            QComboBox#combo_member:focus {
-                border: 1.5px solid #10B981;
-                background-color: #282828;
-            }
-            QComboBox#combo_member QAbstractItemView {
-                background-color: #181818;
-                color: #FFFFFF;
-                border: 1.5px solid #10B981;
-                border-radius: 8px;
-                padding: 6px;
-                selection-background-color: #065F46;
-                selection-color: #FFFFFF;
-                outline: none;
-            }
-            QComboBox#combo_member QAbstractItemView::item {
-                min-height: 36px;
-                padding: 6px 12px;
-                margin: 2px 0px;
-                border-radius: 6px;
-                font-size: 12.5px;
-            }
-            QComboBox#combo_member QAbstractItemView::item:hover {
-                background-color: #282828;
-                color: #10B981;
-            }
-            QComboBox#combo_member QAbstractItemView::item:selected {
-                background-color: #059669;
-                color: #FFFFFF;
-                font-weight: bold;
-            }
-            QPushButton#btn_save {
-                background-color: #10B981;
-                color: #FFFFFF;
-                font-weight: bold;
-                border: none;
-                border-radius: 6px;
-                height: 38px;
-                font-size: 13px;
-            }
-            QPushButton#btn_save:hover {
-                background-color: #059669;
-            }
-            QPushButton#btn_cancel {
-                background-color: #2C2C2C;
-                color: #CCCCCC;
-                border: 1px solid #444444;
-                border-radius: 6px;
-                height: 38px;
-                font-size: 13px;
-            }
-            QPushButton#btn_cancel:hover {
-                background-color: #3A3A3A;
-                color: #FFFFFF;
-            }
-            QCheckBox {
-                color: #E0E0E0;
-                font-size: 12.5px;
-            }
-        """)
-
         self.init_ui()
 
     def init_ui(self):
@@ -128,7 +34,7 @@ class TuitionPaymentDialog(QDialog):
         # Title
         header_title = "✏️ ویرایش پرداخت شهریه" if self.is_edit else "💰 ثبت دریافتی و شهریه ورزشکار"
         lbl_header = QLabel(header_title)
-        lbl_header.setStyleSheet("font-size: 16px; font-weight: bold; color: #10B981; margin-bottom: 4px;")
+        lbl_header.setObjectName("h2")
         layout.addWidget(lbl_header)
 
         # 1. Member Selector
@@ -158,7 +64,7 @@ class TuitionPaymentDialog(QDialog):
 
         # Member Info Card
         self.lbl_member_info = QLabel()
-        self.lbl_member_info.setStyleSheet("background-color: #202020; border: 1px solid #333; border-radius: 6px; padding: 8px; color: #BBB; font-size: 12px; font-weight: normal;")
+        self.lbl_member_info.setObjectName("card")
         layout.addWidget(self.lbl_member_info)
 
         # 2. Payment Amount
@@ -199,12 +105,12 @@ class TuitionPaymentDialog(QDialog):
         btn_box.setSpacing(12)
 
         self.btn_save = QPushButton("💾 ذخیره تغییرات پرداخت" if self.is_edit else "💰 ثبت نهایی پرداخت")
-        self.btn_save.setObjectName("btn_save")
+        self.btn_save.setObjectName("primary_button")
         self.btn_save.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_save.clicked.connect(self.save_payment)
 
         self.btn_cancel = QPushButton("انصراف")
-        self.btn_cancel.setObjectName("btn_cancel")
+        self.btn_cancel.setObjectName("secondary_button")
         self.btn_cancel.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_cancel.clicked.connect(self.reject)
 

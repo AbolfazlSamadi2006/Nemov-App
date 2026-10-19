@@ -17,6 +17,11 @@ class MemberListView(QWidget):
         super().__init__(parent)
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
         self.init_ui()
+        try:
+            from yalda.utils.theme_manager import ThemeManager
+            ThemeManager.theme_changed.connect(self._on_theme_changed)
+        except Exception:
+            pass
 
     def init_ui(self):
         layout = QVBoxLayout(self)
@@ -219,6 +224,15 @@ class MemberListView(QWidget):
         self.btn_bulk_delete.setText("🗑️ حذف انتخاب‌شده‌ها")
         self.btn_bulk_delete.setEnabled(False)
 
+        try:
+            from yalda.utils.theme_manager import ThemeManager
+            palette = ThemeManager.get_current_palette()
+        except Exception:
+            palette = None
+
+        border_col = palette.primary if palette else "#DC2626"
+        name_col = palette.text_primary if palette else "#FFFFFF"
+
         self.table.setRowCount(0)
         self.table.setRowCount(len(members))
         for row, m in enumerate(members):
@@ -252,7 +266,7 @@ class MemberListView(QWidget):
             if resolved_photo:
                 pix = QPixmap(resolved_photo)
                 if not pix.isNull():
-                    circ_pix = get_circular_pixmap(pix, 34, border_color="#8B0000", border_width=2)
+                    circ_pix = get_circular_pixmap(pix, 34, border_color=border_col, border_width=2)
                     lbl_avatar.setPixmap(circ_pix)
                     lbl_avatar.setCursor(Qt.CursorShape.PointingHandCursor)
                     lbl_avatar.setToolTip(f"برای مشاهده تصویر بزرگ‌تر «{m.full_name}» کلیک کنید")
@@ -261,18 +275,29 @@ class MemberListView(QWidget):
 
             if not has_valid_photo:
                 lbl_avatar.setText("👤")
-                lbl_avatar.setStyleSheet("""
-                    QLabel {
-                        background-color: #242424;
-                        border: 1px solid #444444;
-                        border-radius: 17px;
-                        color: #777777;
-                        font-size: 15px;
-                    }
-                """)
+                if palette:
+                    lbl_avatar.setStyleSheet(f"""
+                        QLabel {{
+                            background-color: {palette.btn_sec_bg};
+                            border: 1px solid {palette.border};
+                            border-radius: 17px;
+                            color: {palette.text_muted};
+                            font-size: 15px;
+                        }}
+                    """)
+                else:
+                    lbl_avatar.setStyleSheet("""
+                        QLabel {
+                            background-color: #242424;
+                            border: 1px solid #444444;
+                            border-radius: 17px;
+                            color: #777777;
+                            font-size: 15px;
+                        }
+                    """)
 
             lbl_name = QLabel(m.full_name)
-            lbl_name.setStyleSheet("color: #FFFFFF; font-size: 13px; font-weight: bold; background: transparent;")
+            lbl_name.setStyleSheet(f"color: {name_col}; font-size: 13px; font-weight: bold; background: transparent;")
             lbl_name.setToolTip(m.full_name)
             cell_w.setToolTip(m.full_name)
 
@@ -530,4 +555,7 @@ class MemberListView(QWidget):
                 self.load_members()
         except Exception as e:
             QMessageBox.critical(self, "خطا", f"خطایی رخ داد: {str(e)}")
+
+    def _on_theme_changed(self, theme_key: str):
+        self.load_members()
 

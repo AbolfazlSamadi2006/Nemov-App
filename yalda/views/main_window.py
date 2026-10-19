@@ -300,6 +300,8 @@ class MainWindow(QMainWindow):
         self._current_page_state = ("page", "dashboard")
 
         if hasattr(self, 'sidebar'):
+            self.sidebar.refresh_branding()
+            self.sidebar._apply_theme_style()
             self.sidebar.navigate("dashboard")
 
         try:

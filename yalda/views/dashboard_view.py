@@ -16,8 +16,19 @@ class DashboardView(QWidget):
         super().__init__(parent)
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
         self.init_ui()
+        try:
+            from yalda.utils.theme_manager import ThemeManager
+            ThemeManager.theme_changed.connect(self._on_theme_changed)
+        except Exception:
+            pass
 
     def init_ui(self):
+        try:
+            from yalda.utils.theme_manager import ThemeManager
+            palette = ThemeManager.get_current_palette()
+        except Exception:
+            palette = None
+
         layout = QVBoxLayout(self)
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(20)
@@ -27,12 +38,13 @@ class DashboardView(QWidget):
         title = QLabel("داشبورد مدیریتی باشگاه یلدا")
         title.setObjectName("h1")
         
-        date_lbl = QLabel(f"تاریخ امروز: {get_today_shamsi()}")
-        date_lbl.setStyleSheet("color: #8B0000; font-weight: bold; font-size: 14px;")
+        date_color = palette.primary if palette else "#DC2626"
+        self.date_lbl = QLabel(f"تاریخ امروز: {get_today_shamsi()}")
+        self.date_lbl.setStyleSheet(f"color: {date_color}; font-weight: bold; font-size: 14px;")
 
         header_layout.addWidget(title)
         header_layout.addStretch()
-        header_layout.addWidget(date_lbl)
+        header_layout.addWidget(self.date_lbl)
         layout.addLayout(header_layout)
 
         # Quick Actions Bar
@@ -43,10 +55,12 @@ class DashboardView(QWidget):
         actions_layout = QHBoxLayout(actions_frame)
         actions_layout.setContentsMargins(12, 12, 12, 12)
 
-        lbl_quick = QLabel("دسترسی سریع:")
-        lbl_quick.setStyleSheet("font-weight: bold; color: #FFFFFF; background: transparent;")
+        quick_color = palette.text_primary if palette else "#FFFFFF"
+        self.lbl_quick = QLabel("دسترسی سریع:")
+        self.lbl_quick.setStyleSheet(f"font-weight: bold; color: {quick_color}; background: transparent;")
 
         btn_add_member = QPushButton("➕ ثبت عضو جدید")
+        btn_add_member.setObjectName("primary_button")
         btn_add_member.setFixedHeight(36)
         btn_add_member.clicked.connect(lambda: self.navigate_to.emit("add_member"))
 
@@ -82,7 +96,7 @@ class DashboardView(QWidget):
         btn_new_nutrition.setFixedHeight(36)
         btn_new_nutrition.clicked.connect(lambda: self.navigate_to.emit("new_nutrition"))
 
-        actions_layout.addWidget(lbl_quick)
+        actions_layout.addWidget(self.lbl_quick)
         actions_layout.addWidget(btn_add_member)
         actions_layout.addWidget(btn_quick_tuition)
         actions_layout.addWidget(btn_new_workout)
@@ -120,6 +134,15 @@ class DashboardView(QWidget):
             dlg.exec()
 
     def refresh_dashboard(self):
+        try:
+            from yalda.utils.theme_manager import ThemeManager
+            palette = ThemeManager.get_current_palette()
+        except Exception:
+            palette = None
+
+        border_col = palette.primary if palette else "#DC2626"
+        name_col = palette.text_primary if palette else "#FFFFFF"
+
         members = MemberService.get_all_members(status_filter="all")
         
         # Populate All Members Table
@@ -151,7 +174,7 @@ class DashboardView(QWidget):
             if resolved_photo:
                 pix = QPixmap(resolved_photo)
                 if not pix.isNull():
-                    circ_pix = get_circular_pixmap(pix, 36, border_color="#8B0000", border_width=2)
+                    circ_pix = get_circular_pixmap(pix, 36, border_color=border_col, border_width=2)
                     lbl_avatar.setPixmap(circ_pix)
                     lbl_avatar.setCursor(Qt.CursorShape.PointingHandCursor)
                     lbl_avatar.setToolTip(f"برای مشاهده تصویر بزرگ‌تر «{m.full_name}» کلیک کنید")
@@ -160,18 +183,29 @@ class DashboardView(QWidget):
 
             if not has_valid_photo:
                 lbl_avatar.setText("👤")
-                lbl_avatar.setStyleSheet("""
-                    QLabel {
-                        background-color: #242424;
-                        border: 1px solid #444444;
-                        border-radius: 18px;
-                        color: #777777;
-                        font-size: 16px;
-                    }
-                """)
+                if palette:
+                    lbl_avatar.setStyleSheet(f"""
+                        QLabel {{
+                            background-color: {palette.btn_sec_bg};
+                            border: 1px solid {palette.border};
+                            border-radius: 18px;
+                            color: {palette.text_muted};
+                            font-size: 16px;
+                        }}
+                    """)
+                else:
+                    lbl_avatar.setStyleSheet("""
+                        QLabel {
+                            background-color: #242424;
+                            border: 1px solid #444444;
+                            border-radius: 18px;
+                            color: #777777;
+                            font-size: 16px;
+                        }
+                    """)
 
             lbl_name = QLabel(m.full_name)
-            lbl_name.setStyleSheet("color: #FFFFFF; font-size: 13px; font-weight: bold; background: transparent;")
+            lbl_name.setStyleSheet(f"color: {name_col}; font-size: 13px; font-weight: bold; background: transparent;")
 
             cell_l.addWidget(lbl_avatar)
             cell_l.addWidget(lbl_name)
@@ -221,4 +255,19 @@ class DashboardView(QWidget):
 
             status_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             self.table.setItem(row, 5, status_item)
+
+    def _on_theme_changed(self, theme_key: str):
+        self._apply_theme_style()
+        self.refresh_dashboard()
+
+    def _apply_theme_style(self):
+        try:
+            from yalda.utils.theme_manager import ThemeManager
+            palette = ThemeManager.get_current_palette()
+        except Exception:
+            return
+        if hasattr(self, "date_lbl") and self.date_lbl:
+            self.date_lbl.setStyleSheet(f"color: {palette.primary}; font-weight: bold; font-size: 14px;")
+        if hasattr(self, "lbl_quick") and self.lbl_quick:
+            self.lbl_quick.setStyleSheet(f"font-weight: bold; color: {palette.text_primary}; background: transparent;")
 

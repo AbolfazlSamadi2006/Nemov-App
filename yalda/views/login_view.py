@@ -11,40 +11,55 @@ from yalda.utils.credential_manager import CredentialManager
 from yalda.views.password_recovery_dialog import PasswordRecoveryDialog
 from yalda.views.trainer_register_dialog import TrainerRegisterDialog
 from yalda.views.cloud_restore_dialog import CloudRestoreDialog
+from yalda.utils.theme_manager import ThemeManager
 
-STYLE_INPUT_NORMAL = """
-    QLineEdit {
-        background-color: #1E1E1E;
-        color: #FFFFFF;
-        border: 1px solid #333333;
-        border-radius: 6px;
-        padding: 6px 12px;
-        font-size: 14px;
-    }
-    QLineEdit:focus {
-        border: 1px solid #8B0000;
-    }
-"""
-
-STYLE_INPUT_ERROR = """
-    QLineEdit {
-        background-color: #2D1515;
-        color: #FFAAAA;
-        border: 1.5px solid #EF4444;
-        border-radius: 6px;
-        padding: 6px 12px;
-        font-size: 14px;
-    }
-    QLineEdit:focus {
-        border: 1.5px solid #FF4444;
-    }
-"""
+STYLE_INPUT_NORMAL = ""
+STYLE_INPUT_ERROR = ""
 
 class LoginView(QWidget):
     login_success = pyqtSignal()
 
+    @staticmethod
+    def _get_input_style(palette, is_error=False) -> str:
+        input_bg = getattr(palette, "bg_input", getattr(palette, "input_bg", palette.bg_card if palette.is_dark else "#FFFFFF"))
+        input_border = getattr(palette, "input_border", palette.border_light)
+        focus_border = getattr(palette, "input_focus_border", palette.primary)
+
+        if is_error:
+            err_bg = "#2D1515" if palette.is_dark else "#FEF2F2"
+            err_text = "#FFAAAA" if palette.is_dark else "#991B1B"
+            err_border = "#EF4444" if palette.is_dark else "#DC2626"
+            return f"""
+                QLineEdit {{
+                    background-color: {err_bg};
+                    color: {err_text};
+                    border: 1.5px solid {err_border};
+                    border-radius: 6px;
+                    padding: 6px 12px;
+                    font-size: 14px;
+                }}
+                QLineEdit:focus {{
+                    border: 1.5px solid #FF4444;
+                }}
+            """
+        else:
+            return f"""
+                QLineEdit {{
+                    background-color: {input_bg};
+                    color: {palette.text_primary};
+                    border: 1px solid {input_border};
+                    border-radius: 6px;
+                    padding: 6px 12px;
+                    font-size: 14px;
+                }}
+                QLineEdit:focus {{
+                    border: 1.5px solid {focus_border};
+                }}
+            """
+
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.setObjectName("login_view")
         self.setWindowTitle(f"{config.APP_TITLE} - ورود به سیستم")
 
         # Explicitly set window icon to multi-resolution nemov.ico
@@ -55,14 +70,27 @@ class LoginView(QWidget):
         apply_windows_taskbar_icon(self)
 
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
-        self.setStyleSheet("background-color: #121212;")
         self._is_auto_filling = False
+        self._user_has_error = False
+        self._pass_has_error = False
+
         self.init_ui()
+
+        try:
+            ThemeManager.theme_changed.connect(self._on_theme_changed)
+        except Exception:
+            pass
+
+        self._apply_theme_style()
+
+    def _on_theme_changed(self, theme_key: str):
+        self._apply_theme_style()
 
     def showEvent(self, event):
         super().showEvent(event)
         from yalda.utils.image_utils import apply_windows_taskbar_icon
         apply_windows_taskbar_icon(self)
+        self._apply_theme_style()
         self.refresh_activation_state()
         self.clear_user_error()
         self.clear_pass_error()
@@ -93,23 +121,11 @@ class LoginView(QWidget):
         main_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         # Login Card Container
-        card = QFrame()
-        card.setFixedSize(480, 610)
-        card.setObjectName("login_card")
-        card.setStyleSheet("""
-            QFrame#login_card {
-                background-color: #000000;
-                border: 1px solid #222222;
-                border-radius: 12px;
-                padding: 20px 25px;
-            }
-            QLabel {
-                background-color: transparent;
-                background: transparent;
-            }
-        """)
+        self.card = QFrame()
+        self.card.setFixedSize(480, 610)
+        self.card.setObjectName("login_card")
 
-        card_layout = QVBoxLayout(card)
+        card_layout = QVBoxLayout(self.card)
         card_layout.setSpacing(8)
 
         # Logo Image (Enlarged)
@@ -124,19 +140,16 @@ class LoginView(QWidget):
             card_layout.addWidget(lbl_logo)
 
         # Subtitle Text
-        sub_lbl = QLabel(f"ورود به {config.APP_TITLE}")
-        sub_lbl.setStyleSheet("color: #E2E8F0; font-size: 14px; font-weight: bold; background: transparent; margin-top: 4px; margin-bottom: 6px;")
-        sub_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        card_layout.addWidget(sub_lbl)
+        self.sub_lbl = QLabel(f"ورود به {config.APP_TITLE}")
+        self.sub_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        card_layout.addWidget(self.sub_lbl)
 
         # Username Input
-        lbl_user = QLabel("نام کاربری:")
-        lbl_user.setStyleSheet("color: #DDDDDD; font-weight: bold; background: transparent;")
+        self.lbl_user = QLabel("نام کاربری:")
         
         self.txt_username = QLineEdit()
         self.txt_username.setFixedHeight(40)
         self.txt_username.setPlaceholderText("نام کاربری را وارد کنید")
-        self.txt_username.setStyleSheet(STYLE_INPUT_NORMAL)
         self.txt_username.textChanged.connect(self.on_username_text_changed)
         self.txt_username.returnPressed.connect(self.on_username_return_pressed)
         
@@ -146,48 +159,18 @@ class LoginView(QWidget):
         self.completer.setFilterMode(Qt.MatchFlag.MatchStartsWith)
         self.completer.setCompletionMode(QCompleter.CompletionMode.PopupCompletion)
         self.completer.setMaxVisibleItems(8)
-        popup = self.completer.popup()
-        if popup:
-            popup.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
-            popup.setStyleSheet("""
-                QListView {
-                    background-color: #1A1A1A;
-                    color: #FFFFFF;
-                    border: 1px solid #333333;
-                    border-radius: 6px;
-                    selection-background-color: #8B0000;
-                    selection-color: #FFFFFF;
-                    padding: 4px;
-                    font-size: 13px;
-                    outline: none;
-                }
-                QListView::item {
-                    padding: 8px 12px;
-                    border-radius: 4px;
-                }
-                QListView::item:hover {
-                    background-color: #2D1515;
-                    color: #FFFFFF;
-                }
-                QListView::item:selected {
-                    background-color: #8B0000;
-                    color: #FFFFFF;
-                }
-            """)
         self.txt_username.setCompleter(self.completer)
         self.completer.activated[str].connect(self.on_account_selected)
 
         self.lbl_user_error = QLabel()
-        self.lbl_user_error.setStyleSheet("color: #EF4444; font-size: 12px; font-weight: bold; background: transparent; padding: 2px;")
         self.lbl_user_error.setVisible(False)
         
-        card_layout.addWidget(lbl_user)
+        card_layout.addWidget(self.lbl_user)
         card_layout.addWidget(self.txt_username)
         card_layout.addWidget(self.lbl_user_error)
 
         # Password Input Layout with Eye Button
-        lbl_pass = QLabel("کلمه عبور:")
-        lbl_pass.setStyleSheet("color: #DDDDDD; font-weight: bold; background: transparent;")
+        self.lbl_pass = QLabel("کلمه عبور:")
         
         pass_box = QHBoxLayout()
         pass_box.setSpacing(6)
@@ -197,76 +180,30 @@ class LoginView(QWidget):
         self.txt_password.setEchoMode(QLineEdit.EchoMode.Password)
         self.txt_password.setPlaceholderText("کلمه عبور را وارد کنید")
         self.txt_password.returnPressed.connect(self.do_login)
-        self.txt_password.setStyleSheet(STYLE_INPUT_NORMAL)
         self.txt_password.textChanged.connect(self.clear_pass_error)
 
-        btn_eye = QPushButton("👁️")
-        btn_eye.setObjectName("eye_button")
-        btn_eye.setFixedSize(44, 40)
-        btn_eye.setCursor(Qt.CursorShape.PointingHandCursor)
-        btn_eye.setToolTip("نمایش / پنهان‌سازی کلمه عبور")
-        btn_eye.setStyleSheet("""
-            QPushButton#eye_button {
-                background-color: #8B0000;
-                color: #FFFFFF;
-                border: 1px solid #A00000;
-                border-radius: 6px;
-                font-size: 16px;
-                font-family: "Segoe UI Emoji", "Noto Color Emoji", "Apple Color Emoji", sans-serif;
-                padding: 0px;
-                margin: 0px;
-            }
-            QPushButton#eye_button:hover {
-                background-color: #A00000;
-            }
-        """)
-
-        btn_eye.clicked.connect(lambda: self.toggle_password(self.txt_password, btn_eye))
+        self.btn_eye = QPushButton("👁️")
+        self.btn_eye.setObjectName("eye_button")
+        self.btn_eye.setFixedSize(44, 40)
+        self.btn_eye.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_eye.setToolTip("نمایش / پنهان‌سازی کلمه عبور")
+        self.btn_eye.clicked.connect(lambda: self.toggle_password(self.txt_password, self.btn_eye))
 
         pass_box.addWidget(self.txt_password)
-        pass_box.addWidget(btn_eye)
+        pass_box.addWidget(self.btn_eye)
 
         self.lbl_pass_error = QLabel()
-        self.lbl_pass_error.setStyleSheet("color: #EF4444; font-size: 12px; font-weight: bold; background: transparent; padding: 2px;")
         self.lbl_pass_error.setVisible(False)
 
-        card_layout.addWidget(lbl_pass)
+        card_layout.addWidget(self.lbl_pass)
         card_layout.addLayout(pass_box)
         card_layout.addWidget(self.lbl_pass_error)
 
         # Remember Me Checkbox Row
-        check_icon_path = str(config.BASE_DIR / "resources" / "images" / "check.svg").replace("\\", "/")
         row_remember = QHBoxLayout()
         row_remember.setSpacing(8)
         self.chk_remember = QCheckBox("مرا به خاطر بسپار")
         self.chk_remember.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.chk_remember.setStyleSheet(f"""
-            QCheckBox {{
-                color: #CCCCCC;
-                font-size: 13px;
-                font-weight: 500;
-                background: transparent;
-                spacing: 8px;
-            }}
-            QCheckBox:hover {{
-                color: #FFFFFF;
-            }}
-            QCheckBox::indicator {{
-                width: 18px;
-                height: 18px;
-                border: 1px solid #444444;
-                border-radius: 4px;
-                background-color: #1E1E1E;
-            }}
-            QCheckBox::indicator:hover {{
-                border: 1px solid #8B0000;
-            }}
-            QCheckBox::indicator:checked {{
-                background-color: #8B0000;
-                border: 1px solid #A00000;
-                image: url("{check_icon_path}");
-            }}
-        """)
         self.chk_remember.toggled.connect(self.on_remember_toggled)
         row_remember.addWidget(self.chk_remember)
         row_remember.addStretch()
@@ -280,19 +217,6 @@ class LoginView(QWidget):
         self.btn_forgot = QPushButton("🔑 فراموشی کلمه عبور")
         self.btn_forgot.setFixedHeight(36)
         self.btn_forgot.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_forgot.setStyleSheet("""
-            QPushButton {
-                background-color: #1F2937;
-                color: #9CA3AF;
-                border: 1px solid #374151;
-                border-radius: 6px;
-                font-size: 12px;
-            }
-            QPushButton:hover {
-                background-color: #374151;
-                color: #FFFFFF;
-            }
-        """)
         self.btn_forgot.clicked.connect(self.open_forgot_dialog)
 
         self.btn_register = QPushButton("📝 ثبت‌نام مربی جدید")
@@ -308,20 +232,6 @@ class LoginView(QWidget):
         self.btn_cloud = QPushButton("☁️ بازیابی اطلاعات از سرور ابری (سیستم جدید)")
         self.btn_cloud.setFixedHeight(36)
         self.btn_cloud.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_cloud.setStyleSheet("""
-            QPushButton {
-                background-color: #1E3A8A;
-                color: #93C5FD;
-                border: 1px solid #2563EB;
-                border-radius: 6px;
-                font-size: 12px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: #2563EB;
-                color: #FFFFFF;
-            }
-        """)
         self.btn_cloud.clicked.connect(self.open_cloud_restore_dialog)
         card_layout.addWidget(self.btn_cloud)
         card_layout.addSpacing(6)
@@ -332,65 +242,276 @@ class LoginView(QWidget):
         self.btn_login.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_login.setDefault(True)
         self.btn_login.setAutoDefault(True)
-        self.btn_login.setStyleSheet("""
-            QPushButton {
-                background-color: #8B0000;
-                color: #FFFFFF;
-                font-size: 15px;
-                font-weight: bold;
-                border: none;
-                border-radius: 6px;
-            }
-            QPushButton:hover {
-                background-color: #A00000;
-            }
-        """)
         self.btn_login.clicked.connect(self.do_login)
         card_layout.addWidget(self.btn_login)
 
-        main_layout.addWidget(card)
+        main_layout.addWidget(self.card)
+
+    def _apply_theme_style(self):
+        """Applies dynamic theme styling to login canvas, card, inputs, buttons, and popups."""
+        try:
+            palette = ThemeManager.get_current_palette()
+        except Exception:
+            return
+
+        primary_text = getattr(palette, "text_on_primary", getattr(palette, "primary_text", "#FFFFFF"))
+
+        # 1. Root canvas background (scoped strictly to QWidget#login_view to avoid cascade)
+        self.setStyleSheet(f"QWidget#login_view {{ background-color: {palette.bg_base}; }}")
+
+        # 2. Login card container
+        if hasattr(self, "card"):
+            self.card.setStyleSheet(f"""
+                QFrame#login_card {{
+                    background-color: {palette.bg_card};
+                    border: 1px solid {palette.border};
+                    border-radius: 12px;
+                    padding: 20px 25px;
+                }}
+                QLabel {{
+                    background-color: transparent;
+                    background: transparent;
+                }}
+            """)
+
+        # 3. Titles & Field labels
+        if hasattr(self, "sub_lbl"):
+            self.sub_lbl.setStyleSheet(f"color: {palette.text_secondary}; font-size: 14px; font-weight: bold; background: transparent; margin-top: 4px; margin-bottom: 6px;")
+        if hasattr(self, "lbl_user"):
+            self.lbl_user.setStyleSheet(f"color: {palette.text_primary}; font-weight: bold; background: transparent;")
+        if hasattr(self, "lbl_pass"):
+            self.lbl_pass.setStyleSheet(f"color: {palette.text_primary}; font-weight: bold; background: transparent;")
+
+        # 4. Inputs
+        if hasattr(self, "txt_username"):
+            self.txt_username.setStyleSheet(self._get_input_style(palette, is_error=getattr(self, "_user_has_error", False)))
+        if hasattr(self, "txt_password"):
+            self.txt_password.setStyleSheet(self._get_input_style(palette, is_error=getattr(self, "_pass_has_error", False)))
+
+        # 5. Error labels
+        err_color = "#EF4444" if palette.is_dark else "#DC2626"
+        if hasattr(self, "lbl_user_error"):
+            self.lbl_user_error.setStyleSheet(f"color: {err_color}; font-size: 12px; font-weight: bold; background: transparent; padding: 2px;")
+        if hasattr(self, "lbl_pass_error"):
+            self.lbl_pass_error.setStyleSheet(f"color: {err_color}; font-size: 12px; font-weight: bold; background: transparent; padding: 2px;")
+
+        # 6. Eye password toggle button
+        if hasattr(self, "btn_eye"):
+            self.btn_eye.setStyleSheet(f"""
+                QPushButton#eye_button {{
+                    background-color: {palette.primary};
+                    color: {primary_text};
+                    border: 1px solid {palette.primary_hover};
+                    border-radius: 6px;
+                    font-size: 16px;
+                    font-family: "Segoe UI Emoji", "Noto Color Emoji", "Apple Color Emoji", sans-serif;
+                    padding: 0px;
+                    margin: 0px;
+                }}
+                QPushButton#eye_button:hover {{
+                    background-color: {palette.primary_hover};
+                }}
+            """)
+
+        # 7. Remember Checkbox
+        if hasattr(self, "chk_remember"):
+            check_icon_path = (config.BASE_DIR / "resources" / "images" / "check.svg").as_posix()
+            self.chk_remember.setStyleSheet(f"""
+                QCheckBox {{
+                    color: {palette.text_secondary};
+                    font-size: 13px;
+                    font-weight: 500;
+                    background: transparent;
+                    spacing: 8px;
+                }}
+                QCheckBox:hover {{
+                    color: {palette.text_primary};
+                }}
+                QCheckBox::indicator {{
+                    width: 18px;
+                    height: 18px;
+                    border: 1px solid {palette.indicator_border};
+                    border-radius: 4px;
+                    background-color: {palette.indicator_bg};
+                }}
+                QCheckBox::indicator:hover {{
+                    border: 1px solid {palette.primary_hover};
+                }}
+                QCheckBox::indicator:checked {{
+                    background-color: {palette.primary};
+                    border: 1px solid {palette.primary_hover};
+                    image: url("{check_icon_path}");
+                }}
+            """)
+
+        # 8. Forgot password button
+        if hasattr(self, "btn_forgot"):
+            self.btn_forgot.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: {palette.btn_sec_bg};
+                    color: {palette.btn_sec_text};
+                    border: 1px solid {palette.btn_sec_border};
+                    border-radius: 6px;
+                    font-size: 12px;
+                }}
+                QPushButton:hover {{
+                    background-color: {palette.btn_sec_hover};
+                    color: {palette.text_primary};
+                }}
+            """)
+
+        # 9. Cloud Restore Button
+        if hasattr(self, "btn_cloud"):
+            cloud_bg = "#1E3A8A" if palette.is_dark else "#EFF6FF"
+            cloud_text = "#93C5FD" if palette.is_dark else "#1D4ED8"
+            cloud_border = "#2563EB" if palette.is_dark else "#BFDBFE"
+            cloud_hover = "#2563EB" if palette.is_dark else "#DBEAFE"
+            self.btn_cloud.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: {cloud_bg};
+                    color: {cloud_text};
+                    border: 1px solid {cloud_border};
+                    border-radius: 6px;
+                    font-size: 12px;
+                    font-weight: bold;
+                }}
+                QPushButton:hover {{
+                    background-color: {cloud_hover};
+                    color: {"#FFFFFF" if palette.is_dark else "#1E40AF"};
+                }}
+            """)
+
+        # 10. Login Submit Button
+        if hasattr(self, "btn_login"):
+            self.btn_login.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: {palette.primary};
+                    color: {primary_text};
+                    font-size: 15px;
+                    font-weight: bold;
+                    border: none;
+                    border-radius: 6px;
+                }}
+                QPushButton:hover {{
+                    background-color: {palette.primary_hover};
+                }}
+                QPushButton:pressed {{
+                    background-color: {palette.primary_pressed};
+                }}
+            """)
+
+        # 11. Auto-complete popup dropdown
+        if hasattr(self, "completer") and self.completer:
+            popup = self.completer.popup()
+            if popup:
+                popup.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
+                popup_bg = palette.bg_surface if palette.is_dark else "#FFFFFF"
+                popup_border = palette.border
+                popup_hover = palette.table_item_selected if not palette.is_dark else palette.bg_card
+                popup_sel = palette.primary
+                popup_sel_txt = palette.primary_text
+                popup.setStyleSheet(f"""
+                    QListView {{
+                        background-color: {popup_bg};
+                        color: {palette.text_primary};
+                        border: 1px solid {popup_border};
+                        border-radius: 6px;
+                        selection-background-color: {popup_sel};
+                        selection-color: {popup_sel_txt};
+                        padding: 4px;
+                        font-size: 13px;
+                        outline: none;
+                    }}
+                    QListView::item {{
+                        padding: 8px 12px;
+                        border-radius: 4px;
+                    }}
+                    QListView::item:hover {{
+                        background-color: {popup_hover};
+                        color: {palette.text_primary};
+                    }}
+                    QListView::item:selected {{
+                        background-color: {popup_sel};
+                        color: {popup_sel_txt};
+                    }}
+                """)
+
+        # 12. Register button state styling
         self.refresh_activation_state()
 
     def clear_user_error(self):
-        self.txt_username.setStyleSheet(STYLE_INPUT_NORMAL)
+        self._user_has_error = False
+        try:
+            palette = ThemeManager.get_current_palette()
+            self.txt_username.setStyleSheet(self._get_input_style(palette, is_error=False))
+        except Exception:
+            pass
         self.lbl_user_error.setText("")
         self.lbl_user_error.setVisible(False)
 
     def clear_pass_error(self):
-        self.txt_password.setStyleSheet(STYLE_INPUT_NORMAL)
+        self._pass_has_error = False
+        try:
+            palette = ThemeManager.get_current_palette()
+            self.txt_password.setStyleSheet(self._get_input_style(palette, is_error=False))
+        except Exception:
+            pass
         self.lbl_pass_error.setText("")
         self.lbl_pass_error.setVisible(False)
 
     def refresh_activation_state(self):
         active = is_app_license_active()
+        try:
+            palette = ThemeManager.get_current_palette()
+        except Exception:
+            palette = None
+
+        if not hasattr(self, "btn_register"):
+            return
+
         if active:
             self.btn_register.setEnabled(True)
             self.btn_register.setToolTip("ثبت‌نام مربی جدید در سیستم")
-            self.btn_register.setStyleSheet("""
-                QPushButton {
-                    background-color: #065F46;
-                    color: #A7F3D0;
-                    border: 1px solid #059669;
+            if palette and not palette.is_dark:
+                reg_bg = "#ECFDF5"
+                reg_text = "#047857"
+                reg_border = "#A7F3D0"
+                reg_hover = "#D1FAE5"
+            else:
+                reg_bg = "#065F46"
+                reg_text = "#A7F3D0"
+                reg_border = "#059669"
+                reg_hover = "#047857"
+
+            self.btn_register.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: {reg_bg};
+                    color: {reg_text};
+                    border: 1px solid {reg_border};
                     border-radius: 6px;
                     font-size: 12px;
                     font-weight: bold;
-                }
-                QPushButton:hover {
-                    background-color: #047857;
-                    color: #FFFFFF;
-                }
+                }}
+                QPushButton:hover {{
+                    background-color: {reg_hover};
+                    color: {"#FFFFFF" if (not palette or palette.is_dark) else "#065F46"};
+                }}
             """)
         else:
             self.btn_register.setEnabled(False)
             self.btn_register.setToolTip("⚠️ ثبت‌نام مربی جدید در حال حاضر غیرفعال است.\nجهت فعال‌سازی، ابتدا ادمین کل باید وضعیت برنامه را فعال کند.")
-            self.btn_register.setStyleSheet("""
-                QPushButton {
-                    background-color: #262626;
-                    color: #666666;
-                    border: 1px solid #333333;
+            dis_bg = palette.btn_sec_bg if palette else ("#F1F5F9" if not palette or not palette.is_dark else "#262626")
+            dis_text = palette.text_muted if palette else ("#94A3B8" if not palette or not palette.is_dark else "#666666")
+            dis_border = palette.border if palette else ("#CBD5E1" if not palette or not palette.is_dark else "#333333")
+
+            self.btn_register.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: {dis_bg};
+                    color: {dis_text};
+                    border: 1px solid {dis_border};
                     border-radius: 6px;
                     font-size: 12px;
-                }
+                }}
             """)
 
     def toggle_password(self, field: QLineEdit, button: QPushButton):
@@ -501,15 +622,24 @@ class LoginView(QWidget):
         username = normalize_digits(raw_username)
         password = self.txt_password.text().strip()
 
+        try:
+            palette = ThemeManager.get_current_palette()
+        except Exception:
+            palette = None
+
         if not username:
-            self.txt_username.setStyleSheet(STYLE_INPUT_ERROR)
+            self._user_has_error = True
+            if palette:
+                self.txt_username.setStyleSheet(self._get_input_style(palette, is_error=True))
             self.lbl_user_error.setText("❌ لطفاً نام کاربری را وارد کنید.")
             self.lbl_user_error.setVisible(True)
             self.txt_username.setFocus()
             return
 
         if not password:
-            self.txt_password.setStyleSheet(STYLE_INPUT_ERROR)
+            self._pass_has_error = True
+            if palette:
+                self.txt_password.setStyleSheet(self._get_input_style(palette, is_error=True))
             self.lbl_pass_error.setText("❌ لطفاً کلمه عبور را وارد کنید.")
             self.lbl_pass_error.setVisible(True)
             self.txt_password.setFocus()
@@ -517,7 +647,9 @@ class LoginView(QWidget):
 
         target_user = username if check_username_exists(username) else (raw_username if check_username_exists(raw_username) else None)
         if not target_user:
-            self.txt_username.setStyleSheet(STYLE_INPUT_ERROR)
+            self._user_has_error = True
+            if palette:
+                self.txt_username.setStyleSheet(self._get_input_style(palette, is_error=True))
             self.lbl_user_error.setText("❌ چنین نام کاربری در سیستم وجود ندارد.")
             self.lbl_user_error.setVisible(True)
             self.txt_username.setFocus()
@@ -525,7 +657,9 @@ class LoginView(QWidget):
 
         # Check Hardware License: if app is not active on this machine and user is NOT admin, block login!
         if target_user != "admin" and not is_app_license_active():
-            self.txt_username.setStyleSheet(STYLE_INPUT_ERROR)
+            self._user_has_error = True
+            if palette:
+                self.txt_username.setStyleSheet(self._get_input_style(palette, is_error=True))
             self.lbl_user_error.setText("⛔ این نسخه برای سخت‌افزار این رایانه فعال نشده است.\nجهت فعال‌سازی با مدیر سیستم تماس بگیرید.")
             self.lbl_user_error.setVisible(True)
             return
@@ -538,7 +672,9 @@ class LoginView(QWidget):
                 CredentialManager.remove_credential(target_user)
             self.login_success.emit()
         else:
-            self.txt_password.setStyleSheet(STYLE_INPUT_ERROR)
+            self._pass_has_error = True
+            if palette:
+                self.txt_password.setStyleSheet(self._get_input_style(palette, is_error=True))
             self.lbl_pass_error.setText("❌ رمز عبور اشتباه است.")
             self.lbl_pass_error.setVisible(True)
             self.txt_password.setFocus()

@@ -28,7 +28,7 @@ PALETTES_METADATA: List[Dict[str, Any]] = [
         "name_fa": "طلایی سلطنتی",
         "name_en": "Royal Gold",
         "is_dark": True,
-        "colors": ["#141412", "#1F1E19", "#D4AF37", "#F59E0B"],
+        "colors": ["#14130F", "#23201A", "#D4AF37", "#DFBE5B"],
         "accent": "#D4AF37",
     },
     {
@@ -36,7 +36,7 @@ PALETTES_METADATA: List[Dict[str, Any]] = [
         "name_fa": "سبز نئون",
         "name_en": "Neon Pulse",
         "is_dark": True,
-        "colors": ["#0D1117", "#161B22", "#10B981", "#059669"],
+        "colors": ["#0F1715", "#1B2B27", "#10B981", "#34D399"],
         "accent": "#10B981",
     },
     {
@@ -44,7 +44,7 @@ PALETTES_METADATA: List[Dict[str, Any]] = [
         "name_fa": "آبی الکتریک",
         "name_en": "Electric Cyan",
         "is_dark": True,
-        "colors": ["#0B131E", "#131F2E", "#06B6D4", "#0891B2"],
+        "colors": ["#0E1720", "#1B2E42", "#06B6D4", "#22D3EE"],
         "accent": "#06B6D4",
     },
     {
@@ -52,7 +52,7 @@ PALETTES_METADATA: List[Dict[str, Any]] = [
         "name_fa": "بنفش سایبری",
         "name_en": "Cyber Amethyst",
         "is_dark": True,
-        "colors": ["#130E1F", "#1E1730", "#8B5CF6", "#7C3AED"],
+        "colors": ["#13101C", "#241E36", "#8B5CF6", "#A78BFA"],
         "accent": "#8B5CF6",
     },
     {
@@ -60,7 +60,7 @@ PALETTES_METADATA: List[Dict[str, Any]] = [
         "name_fa": "شعله خورشیدی",
         "name_en": "Solar Blaze",
         "is_dark": True,
-        "colors": ["#14100E", "#201914", "#F97316", "#EA580C"],
+        "colors": ["#16120E", "#2C221B", "#F97316", "#FB923C"],
         "accent": "#F97316",
     },
     {
@@ -68,7 +68,7 @@ PALETTES_METADATA: List[Dict[str, Any]] = [
         "name_fa": "نقره‌ای سربی",
         "name_en": "Stealth Silver",
         "is_dark": True,
-        "colors": ["#0F172A", "#1E293B", "#94A3B8", "#64748B"],
+        "colors": ["#141619", "#262B31", "#94A3B8", "#CBD5E1"],
         "accent": "#94A3B8",
     },
     {
@@ -76,7 +76,7 @@ PALETTES_METADATA: List[Dict[str, Any]] = [
         "name_fa": "آبی یخی",
         "name_en": "Arctic Ice",
         "is_dark": True,
-        "colors": ["#0C141F", "#142233", "#38BDF8", "#0284C7"],
+        "colors": ["#0C1622", "#192C44", "#38BDF8", "#7DD3FC"],
         "accent": "#38BDF8",
     },
     {
@@ -84,7 +84,7 @@ PALETTES_METADATA: List[Dict[str, Any]] = [
         "name_fa": "ماژنتای پرقدرت",
         "name_en": "Magenta Force",
         "is_dark": True,
-        "colors": ["#180D15", "#241420", "#EC4899", "#DB2777"],
+        "colors": ["#180F16", "#301D2C", "#EC4899", "#F472B6"],
         "accent": "#EC4899",
     },
     {
@@ -92,7 +92,7 @@ PALETTES_METADATA: List[Dict[str, Any]] = [
         "name_fa": "تایتان برنزی",
         "name_en": "Bronze Titan",
         "is_dark": True,
-        "colors": ["#14110E", "#211B15", "#CD7F32", "#B45309"],
+        "colors": ["#15120E", "#2B231B", "#CD7F32", "#D98C42"],
         "accent": "#CD7F32",
     },
     {
@@ -100,7 +100,7 @@ PALETTES_METADATA: List[Dict[str, Any]] = [
         "name_fa": "غرور ملی (ایران)",
         "name_en": "National Pride",
         "is_dark": True,
-        "colors": ["#0F1713", "#16241D", "#15803D", "#DC2626"],
+        "colors": ["#0F1713", "#1B2E26", "#15803D", "#DC2626"],
         "accent": "#15803D",
     },
     {
@@ -108,8 +108,8 @@ PALETTES_METADATA: List[Dict[str, Any]] = [
         "name_fa": "مشکی خالص OLED",
         "name_en": "OLED Obsidian",
         "is_dark": True,
-        "colors": ["#000000", "#0C0C0C", "#3B82F6", "#60A5FA"],
-        "accent": "#3B82F6",
+        "colors": ["#000000", "#141414", "#E11D48", "#F43F5E"],
+        "accent": "#E11D48",
     },
     # 5 Light Themes
     {
@@ -117,7 +117,7 @@ PALETTES_METADATA: List[Dict[str, Any]] = [
         "name_fa": "سفید المپیک",
         "name_en": "Olympic White",
         "is_dark": False,
-        "colors": ["#F8FAFC", "#FFFFFF", "#2563EB", "#1D4ED8"],
+        "colors": ["#F8FAFC", "#FFFFFF", "#2563EB", "#3B82F6"],
         "accent": "#2563EB",
     },
     {
@@ -125,7 +125,7 @@ PALETTES_METADATA: List[Dict[str, Any]] = [
         "name_fa": "فیروزه‌ای درمانی",
         "name_en": "Clinical Cyan",
         "is_dark": False,
-        "colors": ["#F0FDFA", "#FFFFFF", "#0891B2", "#0E7490"],
+        "colors": ["#F0FDFA", "#FFFFFF", "#0891B2", "#06B6D4"],
         "accent": "#0891B2",
     },
     {
@@ -133,7 +133,7 @@ PALETTES_METADATA: List[Dict[str, Any]] = [
         "name_fa": "نعناع تازه",
         "name_en": "Fresh Mint",
         "is_dark": False,
-        "colors": ["#F0FDF4", "#FFFFFF", "#059669", "#047857"],
+        "colors": ["#F0FDF4", "#FFFFFF", "#059669", "#10B981"],
         "accent": "#059669",
     },
     {
@@ -141,15 +141,15 @@ PALETTES_METADATA: List[Dict[str, Any]] = [
         "name_fa": "طلایی شامپاینی",
         "name_en": "Champagne Gold",
         "is_dark": False,
-        "colors": ["#FEFCE8", "#FFFFFF", "#B45309", "#92400E"],
-        "accent": "#B45309",
+        "colors": ["#FEFCE8", "#FFFFFF", "#D97706", "#F59E0B"],
+        "accent": "#D97706",
     },
     {
         "id": "soft_orchid",
         "name_fa": "ارکیده ملایم",
         "name_en": "Soft Orchid",
         "is_dark": False,
-        "colors": ["#FAF5FF", "#FFFFFF", "#7C3AED", "#6D28D9"],
+        "colors": ["#FAF5FF", "#FFFFFF", "#7C3AED", "#8B5CF6"],
         "accent": "#7C3AED",
     },
 ]

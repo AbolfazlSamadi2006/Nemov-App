@@ -205,10 +205,12 @@ class VideoRecorderAndEditorDialog(QDialog):
         main_layout.setSpacing(10)
 
         self.tabs = QTabWidget()
+        from yalda.utils.theme_manager import ThemeManager
+        palette = ThemeManager.get_current_palette()
         self.tabs.setStyleSheet(
-            "QTabWidget::pane { border: 1px solid #333333; background: #161616; border-radius: 6px; } "
+            f"QTabWidget::pane {{ border: 1px solid {palette.border_light}; background: {palette.bg_surface}; border-radius: 6px; }} "
             "QTabBar::tab { font-size: 13px; font-weight: bold; padding: 8px 20px; color: #aaaaaa; } "
-            "QTabBar::tab:selected { color: #ffffff; background: #242424; border-bottom: 2px solid #00E5FF; }"
+            f"QTabBar::tab:selected {{ color: {palette.text_primary}; background: {palette.bg_card}; border-bottom: 2px solid {palette.primary}; }}"
         )
 
         # Tab 0: Camera Video Recording

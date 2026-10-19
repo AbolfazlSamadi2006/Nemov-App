@@ -20,8 +20,9 @@ class ZoomableGraphicsView(QGraphicsView):
         self.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
         self.setResizeAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-        self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-        self.setStyleSheet("background-color: #181818; border: 1px solid #2C2C2C; border-radius: 8px;")
+        from yalda.utils.theme_manager import ThemeManager
+        palette = ThemeManager.get_current_palette()
+        self.setStyleSheet(f"background-color: {palette.bg_card}; border: 1px solid {palette.border}; border-radius: 8px;")
 
     def wheelEvent(self, event):
         if event.angleDelta().y() > 0:
@@ -123,7 +124,9 @@ class MedicalDocumentViewerDialog(QDialog):
         if self.notes_str:
             lbl_notes = QLabel(f"💬 توضیحات مربی: {self.notes_str}")
             lbl_notes.setWordWrap(True)
-            lbl_notes.setStyleSheet("color: #DDDDDD; font-size: 12px; background-color: #1E1E1E; padding: 8px 12px; border-radius: 6px;")
+            from yalda.utils.theme_manager import ThemeManager
+            palette = ThemeManager.get_current_palette()
+            lbl_notes.setStyleSheet(f"color: {palette.text_primary}; font-size: 12px; background-color: {palette.bg_surface}; border: 1px solid {palette.border_light}; padding: 8px 12px; border-radius: 6px;")
             layout.addWidget(lbl_notes)
 
         # Footer Row with Close Button

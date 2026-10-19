@@ -77,7 +77,7 @@ class CameraCaptureDialog(QDialog):
         self.lbl_video.setFixedSize(670, 460)
         self.lbl_video.setWordWrap(True)
         self.lbl_video.setStyleSheet(
-            "background-color: #1a1a1a; color: #aaaaaa; border: 2px solid #333333; border-radius: 10px; font-size: 14px; padding: 20px;"
+            "background-color: #000000; color: #aaaaaa; border: 2px solid #333333; border-radius: 10px; font-size: 14px; padding: 20px;"
         )
         layout.addWidget(self.lbl_video)
 

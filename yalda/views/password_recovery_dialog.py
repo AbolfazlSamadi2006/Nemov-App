@@ -6,6 +6,7 @@ from yalda.auth.authentication import (
     verify_recovery_credentials, update_trainer_profile, CurrentUser, find_user_by_email_or_phone
 )
 from yalda.services.email_service import EmailService
+from yalda.utils.theme_manager import ThemeManager
 
 
 class AutoResizingStackedWidget(QStackedWidget):
@@ -56,34 +57,7 @@ class PasswordRecoveryDialog(QDialog):
         self.init_ui()
 
     def init_ui(self):
-        self.setStyleSheet("""
-            QDialog {
-                background-color: #121212;
-                color: #FFFFFF;
-                font-family: 'Vazirmatn', 'Segoe UI', sans-serif;
-            }
-            QFrame#cardFrame {
-                background-color: #18181B;
-                border: 1px solid #333333;
-                border-radius: 12px;
-                padding: 15px;
-            }
-            QLabel {
-                color: #E5E7EB;
-                background: transparent;
-            }
-            QLineEdit {
-                background-color: #242427;
-                color: #FFFFFF;
-                border: 1px solid #3F3F46;
-                border-radius: 6px;
-                padding: 6px 12px;
-                font-size: 13px;
-            }
-            QLineEdit:focus {
-                border: 1px solid #DC2626;
-            }
-        """)
+        palette = ThemeManager.get_current_palette()
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(12, 12, 12, 12)
@@ -93,14 +67,14 @@ class PasswordRecoveryDialog(QDialog):
         scroll.setStyleSheet("QScrollArea { border: none; background: transparent; }")
 
         card = QFrame()
-        card.setObjectName("cardFrame")
+        card.setObjectName("card")
         card_layout = QVBoxLayout(card)
         card_layout.setSpacing(10)
         card_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
         # Header Title
         title_lbl = QLabel("🔑 بازیابی حساب کاربری مربی")
-        title_lbl.setStyleSheet("color: #DC2626; font-size: 19px; font-weight: bold; font-family: 'Segoe UI Emoji', 'Noto Color Emoji', 'Vazirmatn', sans-serif;")
+        title_lbl.setObjectName("h1")
         title_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
         card_layout.addWidget(title_lbl)
 
@@ -137,7 +111,7 @@ class PasswordRecoveryDialog(QDialog):
         page_email_layout.setSpacing(6)
 
         desc_email = QLabel("با وارد کردن ایمیل، شماره تماس یا نام کاربری، کد تایید ۵ رقمی به ایمیل شما فرستاده می‌شود:")
-        desc_email.setStyleSheet("color: #9CA3AF; font-size: 12px;")
+        desc_email.setObjectName("muted_text")
         desc_email.setWordWrap(True)
         page_email_layout.addWidget(desc_email)
 
@@ -152,25 +126,19 @@ class PasswordRecoveryDialog(QDialog):
         self.btn_send_otp = QPushButton("📩 دریافت کد تایید در ایمیل")
         self.btn_send_otp.setFixedHeight(40)
         self.btn_send_otp.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_send_otp.setStyleSheet("""
-            QPushButton {
-                background-color: #DC2626; color: white; font-size: 13px; font-weight: bold; border-radius: 6px; border: none;
-            }
-            QPushButton:hover { background-color: #B91C1C; }
-            QPushButton:disabled { background-color: #374151; color: #9CA3AF; }
-        """)
+        self.btn_send_otp.setObjectName("primary_button")
         self.btn_send_otp.clicked.connect(self.do_send_email_otp)
         page_email_layout.addWidget(self.btn_send_otp)
 
         # OTP Verification Container (Hidden initially)
         self.otp_verify_box = QFrame()
         self.otp_verify_box.setObjectName("otp_verify_box")
-        self.otp_verify_box.setStyleSheet("QFrame#otp_verify_box { background-color: #202023; border: 1px dashed #DC2626; border-radius: 8px; padding: 8px; }")
+        self.otp_verify_box.setStyleSheet(f"QFrame#otp_verify_box {{ background-color: {palette.bg_surface}; border: 1px dashed {palette.primary}; border-radius: 8px; padding: 8px; }}")
         otp_box_layout = QVBoxLayout(self.otp_verify_box)
         otp_box_layout.setSpacing(6)
 
         self.lbl_otp_sent_info = QLabel()
-        self.lbl_otp_sent_info.setStyleSheet("color: #10B981; font-size: 12px; font-weight: bold;")
+        self.lbl_otp_sent_info.setStyleSheet(f"color: {palette.primary}; font-size: 12px; font-weight: bold;")
         self.lbl_otp_sent_info.setWordWrap(True)
         otp_box_layout.addWidget(self.lbl_otp_sent_info)
 
@@ -180,40 +148,23 @@ class PasswordRecoveryDialog(QDialog):
         self.txt_entered_otp.setMaxLength(5)
         self.txt_entered_otp.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.txt_entered_otp.setPlaceholderText("— — — — —")
-        self.txt_entered_otp.setStyleSheet("""
-            QLineEdit {
-                font-size: 20px; font-weight: bold; letter-spacing: 8px; color: #F87171; background-color: #18181B; border: 1px solid #DC2626; border-radius: 6px; padding: 4px;
-            }
+        self.txt_entered_otp.setStyleSheet(f"""
+            QLineEdit {{
+                font-size: 20px; font-weight: bold; letter-spacing: 8px; color: {palette.primary}; background-color: {palette.bg_input}; border: 1px solid {palette.border}; border-radius: 6px; padding: 4px;
+            }}
         """)
         otp_box_layout.addWidget(self.txt_entered_otp)
 
         self.btn_confirm_otp = QPushButton("✅ تایید کد و ادامه")
         self.btn_confirm_otp.setFixedHeight(38)
         self.btn_confirm_otp.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_confirm_otp.setStyleSheet("""
-            QPushButton {
-                background-color: #059669; color: white; font-size: 13px; font-weight: bold; border-radius: 6px; border: none;
-            }
-            QPushButton:hover { background-color: #047857; }
-        """)
+        self.btn_confirm_otp.setObjectName("primary_button")
         self.btn_confirm_otp.clicked.connect(self.do_verify_email_otp)
         otp_box_layout.addWidget(self.btn_confirm_otp)
 
         self.btn_otp_spam_help = QPushButton("❓ کد تایید نیامد؟ راهنمای پوشه Spam (هرزنامه)")
         self.btn_otp_spam_help.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_otp_spam_help.setStyleSheet("""
-            QPushButton {
-                background: transparent;
-                color: #38BDF8;
-                border: none;
-                font-size: 11px;
-                text-decoration: underline;
-                padding: 4px;
-            }
-            QPushButton:hover {
-                color: #7DD3FC;
-            }
-        """)
+        self.btn_otp_spam_help.setObjectName("secondary_button")
         self.btn_otp_spam_help.clicked.connect(self._open_spam_guide)
         otp_box_layout.addWidget(self.btn_otp_spam_help, alignment=Qt.AlignmentFlag.AlignCenter)
 
@@ -232,7 +183,7 @@ class PasswordRecoveryDialog(QDialog):
         page_secret_layout.setSpacing(6)
 
         desc_secret = QLabel("شماره تلفن همراه و رمز ریکاوری مخفی ثبت‌شده خود را وارد کنید:")
-        desc_secret.setStyleSheet("color: #9CA3AF; font-size: 12px;")
+        desc_secret.setObjectName("muted_text")
         desc_secret.setWordWrap(True)
         page_secret_layout.addWidget(desc_secret)
 
@@ -241,19 +192,6 @@ class PasswordRecoveryDialog(QDialog):
         self.txt_phone.setFixedHeight(38)
         self.txt_phone.setPlaceholderText("مثال: 09123456789")
         self.txt_phone.setMaxLength(11)
-        self.txt_phone.setStyleSheet("""
-            QLineEdit {
-                background-color: #242427;
-                color: #FFFFFF;
-                border: 1px solid #3F3F46;
-                border-radius: 6px;
-                padding: 6px 12px;
-                font-size: 13px;
-            }
-            QLineEdit:focus {
-                border: 1px solid #2563EB;
-            }
-        """)
         page_secret_layout.addWidget(self.txt_phone)
 
         page_secret_layout.addWidget(QLabel("رمز ریکاوری مخفی:"))
@@ -264,39 +202,11 @@ class PasswordRecoveryDialog(QDialog):
         self.txt_recovery_code.setFixedHeight(38)
         self.txt_recovery_code.setEchoMode(QLineEdit.EchoMode.Password)
         self.txt_recovery_code.setPlaceholderText("رمز ریکاوری مخفی خود را وارد کنید")
-        self.txt_recovery_code.setStyleSheet("""
-            QLineEdit {
-                background-color: #242427;
-                color: #FFFFFF;
-                border: 1px solid #3F3F46;
-                border-radius: 6px;
-                padding: 6px 12px;
-                font-size: 13px;
-            }
-            QLineEdit:focus {
-                border: 1px solid #2563EB;
-            }
-        """)
-
-        EYE_STYLE = """
-            QPushButton {
-                background-color: #8B0000;
-                color: #FFFFFF;
-                border: 1px solid #A91D22;
-                border-radius: 6px;
-                font-size: 16px;
-                font-family: "Segoe UI Emoji", "Noto Color Emoji", "Apple Color Emoji", sans-serif;
-                padding: 0px;
-            }
-            QPushButton:hover {
-                background-color: #A91D22;
-            }
-        """
 
         btn_eye_rec = QPushButton("👁️")
         btn_eye_rec.setFixedSize(42, 38)
         btn_eye_rec.setCursor(Qt.CursorShape.PointingHandCursor)
-        btn_eye_rec.setStyleSheet(EYE_STYLE)
+        btn_eye_rec.setObjectName("secondary_button")
         btn_eye_rec.clicked.connect(lambda: self.toggle_eye(self.txt_recovery_code, btn_eye_rec))
 
         pass_rec_box.addWidget(self.txt_recovery_code)
@@ -306,12 +216,7 @@ class PasswordRecoveryDialog(QDialog):
         self.btn_verify_secret = QPushButton("🔍 بررسی و تایید اطلاعات")
         self.btn_verify_secret.setFixedHeight(40)
         self.btn_verify_secret.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_verify_secret.setStyleSheet("""
-            QPushButton {
-                background-color: #2563EB; color: white; font-size: 13px; font-weight: bold; border-radius: 6px; border: none;
-            }
-            QPushButton:hover { background-color: #1D4ED8; }
-        """)
+        self.btn_verify_secret.setObjectName("primary_button")
         self.btn_verify_secret.clicked.connect(self.do_verify_secret)
         page_secret_layout.addWidget(self.btn_verify_secret)
 
@@ -323,19 +228,19 @@ class PasswordRecoveryDialog(QDialog):
         # ========================================================
         self.step2_frame = QFrame()
         self.step2_frame.setObjectName("step2_frame")
-        self.step2_frame.setStyleSheet("""
-            QFrame#step2_frame {
-                background-color: #202023;
-                border: 1px solid #10B981;
+        self.step2_frame.setStyleSheet(f"""
+            QFrame#step2_frame {{
+                background-color: {palette.bg_surface};
+                border: 1px solid {palette.primary};
                 border-radius: 8px;
-            }
+            }}
         """)
         step2_layout = QVBoxLayout(self.step2_frame)
         step2_layout.setContentsMargins(12, 12, 12, 12)
         step2_layout.setSpacing(8)
 
         self.lbl_matched_username = QLabel("نام کاربری شما:")
-        self.lbl_matched_username.setStyleSheet("color: #10B981; font-size: 14px; font-weight: bold;")
+        self.lbl_matched_username.setStyleSheet(f"color: {palette.primary}; font-size: 14px; font-weight: bold;")
         step2_layout.addWidget(self.lbl_matched_username)
 
         step2_layout.addWidget(QLabel("کلمه عبور جدید:"))
@@ -346,24 +251,11 @@ class PasswordRecoveryDialog(QDialog):
         self.txt_new_password.setFixedHeight(38)
         self.txt_new_password.setEchoMode(QLineEdit.EchoMode.Password)
         self.txt_new_password.setPlaceholderText("کلمه عبور جدید را وارد کنید")
-        self.txt_new_password.setStyleSheet("""
-            QLineEdit {
-                background-color: #242427;
-                color: #FFFFFF;
-                border: 1px solid #3F3F46;
-                border-radius: 6px;
-                padding: 6px 12px;
-                font-size: 13px;
-            }
-            QLineEdit:focus {
-                border: 1px solid #10B981;
-            }
-        """)
 
         btn_eye_new = QPushButton("👁️")
         btn_eye_new.setFixedSize(42, 38)
         btn_eye_new.setCursor(Qt.CursorShape.PointingHandCursor)
-        btn_eye_new.setStyleSheet(EYE_STYLE)
+        btn_eye_new.setObjectName("secondary_button")
         btn_eye_new.clicked.connect(lambda: self.toggle_eye(self.txt_new_password, btn_eye_new))
 
         pass_new_box.addWidget(self.txt_new_password)
@@ -373,12 +265,7 @@ class PasswordRecoveryDialog(QDialog):
         self.btn_reset_and_login = QPushButton("🔐 ذخیره کلمه عبور جدید و ورود")
         self.btn_reset_and_login.setFixedHeight(40)
         self.btn_reset_and_login.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_reset_and_login.setStyleSheet("""
-            QPushButton {
-                background-color: #8B0000; color: white; font-size: 14px; font-weight: bold; border-radius: 6px; border: none;
-            }
-            QPushButton:hover { background-color: #A00000; }
-        """)
+        self.btn_reset_and_login.setObjectName("primary_button")
         self.btn_reset_and_login.clicked.connect(self.do_reset_and_login)
         step2_layout.addWidget(self.btn_reset_and_login)
 
@@ -431,32 +318,33 @@ class PasswordRecoveryDialog(QDialog):
         self.email_completer.setCompletionMode(QCompleter.CompletionMode.PopupCompletion)
         self.email_completer.activated[str].connect(self._on_email_selected)
 
+        palette = ThemeManager.get_current_palette()
         popup = self.email_completer.popup()
         popup.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
-        popup.setStyleSheet("""
-            QListView {
-                background-color: #1F1F23;
-                color: #F3F4F6;
-                border: 1px solid #3F3F46;
+        popup.setStyleSheet(f"""
+            QListView {{
+                background-color: {palette.bg_card};
+                color: {palette.text_primary};
+                border: 1px solid {palette.border};
                 border-radius: 8px;
                 padding: 4px;
                 font-family: 'Vazirmatn', 'Segoe UI', sans-serif;
                 font-size: 13px;
                 outline: none;
-            }
-            QListView::item {
+            }}
+            QListView::item {{
                 padding: 8px 12px;
                 border-radius: 6px;
                 min-height: 24px;
-            }
-            QListView::item:hover {
-                background-color: #2D2D35;
-                color: #FFFFFF;
-            }
-            QListView::item:selected {
-                background-color: #DC2626;
-                color: #FFFFFF;
-            }
+            }}
+            QListView::item:hover {{
+                background-color: {palette.bg_surface};
+                color: {palette.text_primary};
+            }}
+            QListView::item:selected {{
+                background-color: {palette.primary};
+                color: {palette.text_primary};
+            }}
         """)
         self.txt_email_identity.setCompleter(self.email_completer)
         self.txt_email_identity.textChanged.connect(self._on_email_text_changed)
@@ -523,7 +411,7 @@ class PasswordRecoveryDialog(QDialog):
                     self.do_send_email_otp()
                 event.accept()
                 return
-        super().keyPressEvent(event)
+            super().keyPressEvent(event)
 
     def switch_mode(self, index: int):
         self.stack.setCurrentIndex(index)
@@ -542,15 +430,16 @@ class PasswordRecoveryDialog(QDialog):
             else:
                 self.setFixedSize(540, 730)
 
+        palette = ThemeManager.get_current_palette()
         if index == 0:
             if hasattr(self, "email_completer") and self.email_completer.model():
                 emails = self._get_registered_emails()
                 self.email_completer.model().setStringList(emails)
-            self.btn_tab_email.setStyleSheet("background-color: #DC2626; color: white; font-weight: bold; border-radius: 6px; border: none;")
-            self.btn_tab_secret.setStyleSheet("background-color: #27272A; color: #9CA3AF; border: 1px solid #3F3F46; border-radius: 6px;")
+            self.btn_tab_email.setStyleSheet(f"background-color: {palette.primary}; color: {palette.text_primary}; font-weight: bold; border-radius: 6px; border: none;")
+            self.btn_tab_secret.setStyleSheet(f"background-color: {palette.bg_surface}; color: {palette.text_secondary}; border: 1px solid {palette.border}; border-radius: 6px;")
         else:
-            self.btn_tab_email.setStyleSheet("background-color: #27272A; color: #9CA3AF; border: 1px solid #3F3F46; border-radius: 6px;")
-            self.btn_tab_secret.setStyleSheet("background-color: #2563EB; color: white; font-weight: bold; border-radius: 6px; border: none;")
+            self.btn_tab_email.setStyleSheet(f"background-color: {palette.bg_surface}; color: {palette.text_secondary}; border: 1px solid {palette.border}; border-radius: 6px;")
+            self.btn_tab_secret.setStyleSheet(f"background-color: {palette.primary}; color: {palette.text_primary}; font-weight: bold; border-radius: 6px; border: none;")
 
     def toggle_eye(self, field: QLineEdit, btn: QPushButton):
         if field.echoMode() == QLineEdit.EchoMode.Password:

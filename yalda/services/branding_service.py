@@ -87,17 +87,25 @@ class BrandingService:
             return info
 
     @staticmethod
-    def save_club_info(name: str, phone: str, address: str) -> bool:
+    def save_club_info(name: Optional[str] = None, phone: Optional[str] = None, address: Optional[str] = None, app_theme: Optional[str] = None) -> bool:
         """
-        Persists club name, phone, and address into the SQLite SystemSetting table.
+        Persists club name, phone, address, and optionally app_theme into the SQLite SystemSetting table.
         """
         session = get_session()
         try:
-            data = {
-                "club_name": (name or "").strip(),
-                "club_phone": (phone or "").strip(),
-                "club_address": (address or "").strip(),
-            }
+            data = {}
+            if name is not None:
+                data["club_name"] = name.strip()
+            if phone is not None:
+                data["club_phone"] = phone.strip()
+            if address is not None:
+                data["club_address"] = address.strip()
+            if app_theme is not None:
+                tid = app_theme.strip()
+                data["app_theme"] = tid
+                data["selected_theme_id"] = tid
+                data["theme_mode"] = "light" if tid in LIGHT_PALETTES else "dark"
+
             for k, v in data.items():
                 setting = session.query(SystemSetting).filter(SystemSetting.key == k).first()
                 if not setting:

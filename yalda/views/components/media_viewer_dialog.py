@@ -51,19 +51,9 @@ class MediaViewerDialog(QDialog):
                 layout.addWidget(lbl_video_info)
 
                 btn_play = QPushButton("▶️ پخش فایل ویدیویی محلی")
+                btn_play.setObjectName("primary_button")
                 btn_play.setFixedHeight(40)
-                btn_play.setStyleSheet("""
-                    QPushButton {
-                        background-color: #8B0000;
-                        color: #FFFFFF;
-                        font-weight: bold;
-                        font-size: 14px;
-                        border-radius: 6px;
-                    }
-                    QPushButton:hover {
-                        background-color: #A00000;
-                    }
-                """)
+                btn_play.setCursor(Qt.CursorShape.PointingHandCursor)
                 btn_play.clicked.connect(self.play_video)
                 layout.addWidget(btn_play)
 

@@ -3,6 +3,7 @@ from PyQt6.QtWidgets import (
     QScrollArea, QWidget, QFrame
 )
 from PyQt6.QtCore import Qt
+from yalda.utils.theme_manager import ThemeManager
 
 
 class UnregisteredItemsDialog(QDialog):
@@ -34,16 +35,12 @@ class UnregisteredItemsDialog(QDialog):
         self.setWindowTitle(f"⚠️ بررسی {self.unit_plural} ثبت‌نشده در بانک")
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
         self.setFixedWidth(520)
-        self.setObjectName("unregistered_dialog")
-        self.setStyleSheet("""
-            QDialog#unregistered_dialog {
-                background-color: #18181B;
-            }
-        """)
 
         self.init_ui()
 
     def init_ui(self):
+        palette = ThemeManager.get_current_palette()
+
         layout = QVBoxLayout(self)
         layout.setContentsMargins(22, 20, 22, 20)
         layout.setSpacing(14)
@@ -55,13 +52,13 @@ class UnregisteredItemsDialog(QDialog):
         lbl_icon = QLabel("!")
         lbl_icon.setFixedSize(38, 38)
         lbl_icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        lbl_icon.setStyleSheet("""
+        lbl_icon.setStyleSheet(f"""
             background-color: rgba(245, 158, 11, 0.15);
-            color: #F59E0B;
+            color: {palette.primary};
             font-size: 22px;
             font-weight: 900;
             font-family: Arial, Tahoma, sans-serif;
-            border: 2px solid #F59E0B;
+            border: 2px solid {palette.primary};
             border-radius: 19px;
         """)
 
@@ -69,13 +66,13 @@ class UnregisteredItemsDialog(QDialog):
         header_text_layout.setSpacing(4)
 
         lbl_header_title = QLabel(f"ثبت‌نشده بودن {len(self.unregistered_items)} {self.unit_title} در بانک")
-        lbl_header_title.setStyleSheet("font-size: 15px; font-weight: bold; color: #F59E0B;")
+        lbl_header_title.setStyleSheet(f"font-size: 15px; font-weight: bold; color: {palette.primary};")
 
         lbl_header_desc = QLabel(
             f"تعداد <b>{len(self.unregistered_items)} مورد</b> از {self.unit_plural} وارد شده در جدول، در بانک اطلاعاتی موجود نیستند."
         )
         lbl_header_desc.setWordWrap(True)
-        lbl_header_desc.setStyleSheet("font-size: 12px; color: #D1D5DB; line-height: 1.4;")
+        lbl_header_desc.setObjectName("muted_text")
 
         header_text_layout.addWidget(lbl_header_title)
         header_text_layout.addWidget(lbl_header_desc)
@@ -88,29 +85,14 @@ class UnregisteredItemsDialog(QDialog):
         sep = QFrame()
         sep.setFrameShape(QFrame.Shape.HLine)
         sep.setFrameShadow(QFrame.Shadow.Sunken)
-        sep.setStyleSheet("background-color: #374151; max-height: 1px;")
+        sep.setStyleSheet(f"background-color: {palette.border}; max-height: 1px;")
         layout.addWidget(sep)
 
         # Collapsible button for list of unregistered items
         self.btn_toggle_list = QPushButton(f"لیست موارد ثبت‌نشده ({len(self.unregistered_items)} مورد)  [نمایش]")
         self.btn_toggle_list.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_toggle_list.setFixedHeight(34)
-        self.btn_toggle_list.setStyleSheet("""
-            QPushButton {
-                background-color: #27272A;
-                border: 1px solid #3F3F46;
-                border-radius: 6px;
-                color: #E4E4E7;
-                font-size: 12px;
-                font-weight: bold;
-                padding: 4px 12px;
-                text-align: right;
-            }
-            QPushButton:hover {
-                background-color: #3F3F46;
-                color: #FFFFFF;
-            }
-        """)
+        self.btn_toggle_list.setObjectName("secondary_button")
         self.btn_toggle_list.clicked.connect(self._toggle_items_list)
         layout.addWidget(self.btn_toggle_list)
 
@@ -118,26 +100,12 @@ class UnregisteredItemsDialog(QDialog):
         self.scroll_area = QScrollArea()
         self.scroll_area.setWidgetResizable(True)
         self.scroll_area.setFixedHeight(120)
-        self.scroll_area.setStyleSheet("""
-            QScrollArea {
-                background-color: #18181B;
-                border: 1px solid #3F3F46;
+        self.scroll_area.setStyleSheet(f"""
+            QScrollArea {{
+                background-color: {palette.bg_surface};
+                border: 1px solid {palette.border};
                 border-radius: 6px;
-            }
-            QScrollBar:vertical {
-                background: #18181B;
-                width: 8px;
-                margin: 2px 2px 2px 2px;
-                border-radius: 4px;
-            }
-            QScrollBar::handle:vertical {
-                background: #52525B;
-                min-height: 20px;
-                border-radius: 4px;
-            }
-            QScrollBar::handle:vertical:hover {
-                background: #71717A;
-            }
+            }}
         """)
 
         scroll_widget = QWidget()
@@ -148,12 +116,12 @@ class UnregisteredItemsDialog(QDialog):
 
         for idx, item_name in enumerate(self.unregistered_items, start=1):
             lbl_item = QLabel(f"<b>{idx}.</b> {item_name}")
-            lbl_item.setStyleSheet("""
-                background-color: #27272A;
-                border: 1px solid #3F3F46;
+            lbl_item.setStyleSheet(f"""
+                background-color: {palette.bg_card};
+                border: 1px solid {palette.border};
                 border-radius: 4px;
                 padding: 5px 10px;
-                color: #F3F4F6;
+                color: {palette.text_primary};
                 font-size: 12px;
             """)
             scroll_layout.addWidget(lbl_item)
@@ -170,7 +138,7 @@ class UnregisteredItemsDialog(QDialog):
             "• <b>بدون ثبت در بانک:</b> بانک تغییر نمی‌کند؛ ولی نام موارد در برنامه این ورزشکار و فایل PDF محفوظ می‌ماند."
         )
         lbl_hint.setWordWrap(True)
-        lbl_hint.setStyleSheet("font-size: 11.5px; color: #9CA3AF; line-height: 1.5; padding: 2px 0;")
+        lbl_hint.setObjectName("muted_text")
         layout.addWidget(lbl_hint)
 
         # Action Buttons
@@ -182,59 +150,19 @@ class UnregisteredItemsDialog(QDialog):
         self.btn_register = QPushButton(f"{btn_action_text} و ثبت در بانک")
         self.btn_register.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_register.setFixedHeight(40)
-        self.btn_register.setStyleSheet("""
-            QPushButton {
-                background-color: #10B981;
-                color: #FFFFFF;
-                border: none;
-                border-radius: 6px;
-                font-size: 13px;
-                font-weight: bold;
-                padding: 0 14px;
-            }
-            QPushButton:hover {
-                background-color: #059669;
-            }
-        """)
+        self.btn_register.setObjectName("primary_button")
         self.btn_register.clicked.connect(self._on_register_clicked)
 
         self.btn_unlisted = QPushButton(f"{btn_action_text} بدون ثبت در بانک")
         self.btn_unlisted.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_unlisted.setFixedHeight(40)
-        self.btn_unlisted.setStyleSheet("""
-            QPushButton {
-                background-color: #2563EB;
-                color: #FFFFFF;
-                border: none;
-                border-radius: 6px;
-                font-size: 13px;
-                font-weight: bold;
-                padding: 0 14px;
-            }
-            QPushButton:hover {
-                background-color: #1D4ED8;
-            }
-        """)
+        self.btn_unlisted.setObjectName("secondary_button")
         self.btn_unlisted.clicked.connect(self._on_unlisted_clicked)
 
         self.btn_cancel = QPushButton("انصراف و ویرایش")
         self.btn_cancel.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_cancel.setFixedHeight(40)
-        self.btn_cancel.setStyleSheet("""
-            QPushButton {
-                background-color: #374151;
-                color: #D1D5DB;
-                border: 1px solid #4B5563;
-                border-radius: 6px;
-                font-size: 12px;
-                font-weight: bold;
-                padding: 0 12px;
-            }
-            QPushButton:hover {
-                background-color: #4B5563;
-                color: #FFFFFF;
-            }
-        """)
+        self.btn_cancel.setObjectName("secondary_button")
         self.btn_cancel.clicked.connect(self.reject)
 
         btn_row.addWidget(self.btn_register, 2)
