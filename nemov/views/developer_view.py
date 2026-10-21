@@ -80,7 +80,7 @@ class DeveloperView(QWidget):
         self.lbl_dev_full_name.setTextInteractionFlags(SELECTABLE_FLAGS)
         self.lbl_dev_full_name.setStyleSheet("font-size: 20px; font-weight: bold; color: #FFFFFF;")
 
-        self.lbl_dev_role = QLabel("طراح، پیاده‌ساز و توسعه‌دهنده نرم‌افزار مدیریت باشگاه یلدا")
+        self.lbl_dev_role = QLabel("طراح، پیاده‌ساز و توسعه‌دهنده نرم‌افزار مدیریت ورزشی نِمُو (Nemov)")
         self.lbl_dev_role.setTextInteractionFlags(SELECTABLE_FLAGS)
         self.lbl_dev_role.setStyleSheet("font-size: 13px; color: #E53E3E; font-weight: bold;")
 

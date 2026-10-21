@@ -189,7 +189,7 @@ class ErrorDialog(QDialog):
     def copy_to_clipboard(self):
         clipboard = QApplication.clipboard()
         report = (
-            f"=== گزارش خطای نرم‌افزار یلدا ===\n"
+            f"=== گزارش خطای نرم‌افزار نِمُو (Nemov) ===\n"
             f"تاریخ و زمان: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
             f"پیام: {self.message}\n\n"
             f"جزئیات فنی:\n{self.technical_details}\n"
@@ -230,7 +230,7 @@ class LogViewerDialog(QDialog):
     """An advanced log viewer dialog with color-coding, numbered entries, 3-way filtering, search, and easy copy."""
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("📑 گزارشات و وقایع سیستم یلدا")
+        self.setWindowTitle("📑 گزارشات و وقایع سیستم نِمُو (Nemov)")
         self.resize(980, 660)
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowType.WindowContextHelpButtonHint)

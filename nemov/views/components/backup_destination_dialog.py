@@ -56,7 +56,7 @@ class BackupDestinationDialog(QDialog):
         # ----------------------------------------------------
         btn_server = self._create_option_button(
             title="☁️ ذخیره در سرور ابری (آنلاین)",
-            description="ارسال مستقیم و امن فایل پشتیبان به سرور ابری یلدا جهت حفاظت در برابر خرابی سیستم",
+            description="ارسال مستقیم و امن فایل پشتیبان به سرور ابری نِمُو جهت حفاظت در برابر خرابی سیستم",
             bg_color="#2563EB",
             hover_color="#1D4ED8"
         )

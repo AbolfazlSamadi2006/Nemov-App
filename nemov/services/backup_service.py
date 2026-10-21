@@ -375,7 +375,7 @@ class BackupService:
         with SessionLocal() as db:
             record = BackupRecord(
                 file_name=filename,
-                file_path="☁️ سرور ابری یلدا (Cloud Server)",
+                file_path="☁️ سرور ابری نِمُو (Nemov Cloud Server)",
                 backup_size_mb=size_mb,
                 backup_date_shamsi=shamsi_display,
                 created_at=now

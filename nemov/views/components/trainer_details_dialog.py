@@ -68,7 +68,7 @@ class TrainerDetailsDialog(QDialog):
         lbl_name.setStyleSheet(f"font-size: 18px; font-weight: bold; color: {palette.text_primary};")
         name_box.addWidget(lbl_name)
 
-        lbl_role = QLabel("🏋️ مربی رسمی باشگاه ورزشی یلدا")
+        lbl_role = QLabel("🏋️ مربی ورزشی")
         lbl_role.setStyleSheet(f"font-size: 12px; color: {palette.primary}; font-weight: bold;")
         name_box.addWidget(lbl_role)
 

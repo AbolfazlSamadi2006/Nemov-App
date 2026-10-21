@@ -15,7 +15,7 @@ class DataMigrationDialog(QDialog):
     """
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("فراخوانی اطلاعات نسخه قبلی - نرم‌افزار یلدا")
+        self.setWindowTitle("فراخوانی اطلاعات نسخه قبلی - نرم‌افزار نِمُو (Nemov)")
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
         self.setFixedSize(560, 360)
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowType.WindowContextHelpButtonHint)
@@ -49,7 +49,7 @@ class DataMigrationDialog(QDialog):
         # Description text
         desc_label = QLabel(
             "دیتابیس برنامه‌ای در این پوشه یافت نشد.\n\n"
-            "اگر قبلاً از نرم‌افزار یلدا استفاده می‌کردید و فایل‌های نسخه قبل را در پوشه یا درایو دیگری دارید، "
+            "اگر قبلاً از نرم‌افزار یلدا یا نسخه‌های قبلی نِمُو استفاده می‌کردید و فایل‌های نسخه قبل را در پوشه یا درایو دیگری دارید، "
             "می‌توانید اطلاعات قبلی خود را فراخوانی کنید تا تمامی داده‌ها و پرونده‌های شاگردان به این نسخه منتقل شوند."
         )
         desc_label.setWordWrap(True)

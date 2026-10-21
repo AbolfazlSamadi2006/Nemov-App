@@ -682,7 +682,9 @@ class HealthRecordView(QWidget):
             with zipfile.ZipFile(save_path, 'w', compression=zipfile.ZIP_DEFLATED) as zip_file:
                 lines = []
                 lines.append("=" * 60)
-                lines.append("پرونده پزشکی، سوابق آسیب‌دیدگی و نظرات مربی باشگاه بدنسازی یلدا")
+                from nemov.services.branding_service import BrandingService
+                club_name = BrandingService.get_active_club_name()
+                lines.append(f"پرونده پزشکی، سوابق آسیب‌دیدگی و نظرات مربی {club_name}")
                 lines.append("=" * 60)
                 lines.append(f"نام و نام خانوادگی ورزشکار: {member.full_name}")
                 lines.append(f"کد عضویت: {member.id}")

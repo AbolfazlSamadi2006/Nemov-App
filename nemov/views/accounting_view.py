@@ -825,7 +825,7 @@ class AccountingView(QWidget):
         time_label = f"{start_date} الی {end_date}" if (start_date and end_date) else "کل دوره"
 
         now_str = get_now_shamsi_for_filename()
-        default_name = f"گزارش مالی باشگاه یلدا_{now_str}.pdf"
+        default_name = f"گزارش مالی_{now_str}.pdf"
         from nemov.utils.export_utils import resolve_gym_export_path
         filepath, gym_folder_name = resolve_gym_export_path(
             default_name, self, "ذخیره گزارش مالی PDF", "PDF Files (*.pdf)"
@@ -860,7 +860,7 @@ class AccountingView(QWidget):
         time_label = f"{start_date} الی {end_date}" if (start_date and end_date) else "کل دوره"
 
         now_str = get_now_shamsi_for_filename()
-        default_name = f"صورت وضعیت مالی باشگاه یلدا_{now_str}.xlsx"
+        default_name = f"صورت وضعیت مالی_{now_str}.xlsx"
         from nemov.utils.export_utils import resolve_gym_export_path
         filepath, gym_folder_name = resolve_gym_export_path(
             default_name, self, "ذخیره گزارش اکسل", "فایل اکسل (*.xlsx);;Excel Workbook (*.xlsx)"

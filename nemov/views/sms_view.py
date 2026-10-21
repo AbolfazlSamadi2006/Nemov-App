@@ -622,7 +622,7 @@ class SmsView(QWidget):
         lbl_hc.setStyleSheet("font-size: 11px; color: #9CA3AF;")
         hours_chips_row.addWidget(lbl_hc)
 
-        btn_default = QPushButton("برنامه رسمی باشگاه یلدا")
+        btn_default = QPushButton("ساعات کاری پیش‌فرض")
         btn_default.setCursor(Qt.CursorShape.PointingHandCursor)
         btn_default.setStyleSheet(chip_btn_style)
         btn_default.clicked.connect(lambda: self.set_hours_preset(

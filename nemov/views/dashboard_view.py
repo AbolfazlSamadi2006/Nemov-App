@@ -35,7 +35,9 @@ class DashboardView(QWidget):
 
         # Header Title & Date
         header_layout = QHBoxLayout()
-        title = QLabel("داشبورد مدیریتی باشگاه یلدا")
+        from nemov.services.branding_service import BrandingService
+        club_name = BrandingService.get_active_club_name()
+        title = QLabel(f"داشبورد مدیریتی | {club_name}")
         title.setObjectName("h1")
         
         date_color = palette.primary if palette else "#DC2626"

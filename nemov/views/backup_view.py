@@ -29,7 +29,7 @@ class CloudBackupThread(QThread):
         try:
             self.progress_signal.emit(15, "در حال آماده‌سازی و استخراج پایگاه‌داده...")
             time.sleep(0.3)
-            self.progress_signal.emit(45, "در حال اتصال به سرور ابری یلدا...")
+            self.progress_signal.emit(45, "در حال اتصال به سرور ابری نِمُو...")
             time.sleep(0.3)
             self.progress_signal.emit(75, "در حال بارگذاری اطلاعات در سرور ابری...")
             from nemov.services.backup_service import upload_cloud_backup
@@ -2253,7 +2253,7 @@ class BackupView(QWidget):
             self.btn_prog_spam_guide.setVisible(False)
         self.lbl_prog_title.setText("☁️ در حال ارسال نسخه پشتیبان به سرور ابری...")
         self.lbl_prog_title.setStyleSheet("font-weight: bold; font-size: 13px; color: #F87171; font-family: 'Segoe UI Emoji', 'Noto Color Emoji', 'Vazirmatn', sans-serif;")
-        self.lbl_prog_detail.setText("در حال برقراری ارتباط با سرور ابری یلدا...")
+        self.lbl_prog_detail.setText("در حال برقراری ارتباط با سرور ابری نِمُو...")
         self.backup_progress_bar.setValue(10)
         self.backup_progress_bar.setStyleSheet("""
             QProgressBar {

@@ -146,7 +146,7 @@ def resolve_athlete_export_path(
     return final_filepath, athlete_name
 
 
-GYM_FOLDER_NAME = "باشگاه یلدا"
+GYM_FOLDER_NAME = "خروجی‌های نِمُو (Nemov)"
 
 
 def get_saved_gym_export_folder() -> str:

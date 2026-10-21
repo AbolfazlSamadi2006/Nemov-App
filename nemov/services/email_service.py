@@ -107,13 +107,13 @@ class EmailService:
         sender_name = getattr(config, "SUPPORT_EMAIL_SENDER_NAME", "پشتیبانی نرم‌افزار مدیریت ورزشی نِمُو (Nemov)")
 
         msg = MIMEMultipart("alternative")
-        msg["Subject"] = Header("کد تایید بازیابی کلمه عبور - باشگاه ورزشی یلدا", "utf-8")
+        msg["Subject"] = Header("کد تایید بازیابی کلمه عبور - نرم‌افزار مدیریت ورزشی نِمُو (Nemov)", "utf-8")
         msg["From"] = formataddr((str(Header(sender_name, "utf-8")), sender_email))
         msg["To"] = to_email
         msg["Reply-To"] = formataddr((str(Header(sender_name, "utf-8")), sender_email))
         msg["Date"] = formatdate(localtime=True)
         msg["Message-ID"] = make_msgid(domain="gmail.com")
-        msg["X-Mailer"] = f"YaldaGymApp/{getattr(config, 'APP_VERSION', 'v3.0.0')}"
+        msg["X-Mailer"] = f"NemovApp/{getattr(config, 'APP_VERSION', 'v3.3.0')}"
         msg["Auto-Submitted"] = "auto-generated"
 
         html_content = f"""<!DOCTYPE html>
@@ -239,7 +239,7 @@ class EmailService:
 
         plain_text = f"""درود بر شما مربی گرامی، {trainer_name or 'همکار گرامی'}؛
 
-درخواست بازیابی کلمه عبور برای حساب کاربری شما در نرم‌افزار مدیریت باشگاه یلدا ثبت شده است.
+درخواست بازیابی کلمه عبور برای حساب کاربری شما در نرم‌افزار مدیریت ورزشی نِمُو (Nemov) ثبت شده است.
 
 کد تایید یک‌بارمصرف شما (OTP):
 {otp_code}
@@ -521,13 +521,13 @@ class EmailService:
         filename = os.path.basename(backup_filepath)
 
         msg = MIMEMultipart("mixed")
-        msg["Subject"] = Header(f"نسخه پشتیبان پایگاه داده باشگاه یلدا - {shamsi_date}", "utf-8")
+        msg["Subject"] = Header(f"نسخه پشتیبان پایگاه داده نِمُو (Nemov) - {shamsi_date}", "utf-8")
         msg["From"] = formataddr((str(Header(sender_name, "utf-8")), sender_email))
         msg["To"] = to_email
         msg["Reply-To"] = formataddr((str(Header(sender_name, "utf-8")), sender_email))
         msg["Date"] = formatdate(localtime=True)
         msg["Message-ID"] = make_msgid(domain="gmail.com")
-        msg["X-Mailer"] = f"YaldaGymApp/{getattr(config, 'APP_VERSION', 'v3.0.0')}"
+        msg["X-Mailer"] = f"NemovApp/{getattr(config, 'APP_VERSION', 'v3.3.0')}"
         msg["Auto-Submitted"] = "auto-generated"
 
         html_body = f"""<!DOCTYPE html>
@@ -667,7 +667,7 @@ class EmailService:
 
         plain_text = f"""با سلام خدمت مربی محترم، {trainer_name or 'همکار گرامی'}؛
 
-نسخه پشتیبان جدید از پایگاه‌داده باشگاه ورزشی یلدا با موفقیت تهیه شد و فایل دیتابیس ({filename}) به این پیام پیوست گردیده است.
+نسخه پشتیبان جدید از پایگاه‌داده نرم‌افزار مدیریت ورزشی نِمُو (Nemov) با موفقیت تهیه شد و فایل دیتابیس ({filename}) به این پیام پیوست گردیده است.
 
 مشخصات نسخه پشتیبان:
 - نام فایل دیتابیس: {filename}

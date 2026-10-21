@@ -11,7 +11,7 @@ class CloudRestoreDialog(QDialog):
 
     def __init__(self, parent=None, initial_phone: str = ""):
         super().__init__(parent)
-        self.setWindowTitle("☁️ بازیابی اطلاعات از سرور ابری - باشگاه یلدا")
+        self.setWindowTitle("☁️ بازیابی اطلاعات از سرور ابری - نرم‌افزار نِمُو (Nemov)")
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
         self.setFixedSize(460, 320)
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowType.WindowContextHelpButtonHint)

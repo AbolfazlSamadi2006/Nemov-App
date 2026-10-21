@@ -18,7 +18,7 @@ class TrainerRegisterDialog(QDialog):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("ثبت‌نام مربی جدید - نرم‌افزار یلدا")
+        self.setWindowTitle("ثبت‌نام مربی جدید - نرم‌افزار مدیریت ورزشی نِمُو (Nemov)")
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
         from PyQt6.QtWidgets import QApplication
         screen = QApplication.primaryScreen()

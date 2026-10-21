@@ -1174,7 +1174,7 @@ Sitemap: https://nemovapp.ir/sitemap.xml
                     account = {
                         phone: phone,
                         trainer_name: trainerName || "مربی باشگاه",
-                        gym_name: gymName || "باشگاه یلدا",
+                        gym_name: gymName || "نرم‌افزار مدیریت ورزشی نِمُو",
                         remaining: 0,
                         total_credited: 0,
                         total_used: 0,
@@ -1235,7 +1235,7 @@ Sitemap: https://nemovapp.ir/sitemap.xml
                     });
                 }
                 const trainerName = body.trainer_name || "مربی باشگاه";
-                const gymName = body.gym_name || "باشگاه یلدا";
+                const gymName = body.gym_name || "نرم‌افزار مدیریت ورزشی نِمُو";
                 let account = null;
                 if (kv) {
                     account = await kv.get(`sms_trainer_${phone}`, { type: "json" });
@@ -4459,7 +4459,7 @@ function renderLoginPage(error = null) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ورود به سرور ابری کلودفلر یلدا</title>
+    <title>ورود به سرور ابری نِمُو | Nemov Cloud</title>
     <style>
         ${SHARED_FONT_CSS}
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -4553,7 +4553,7 @@ function renderLoginPage(error = null) {
 <body>
     <div class="card">
         <div class="logo-box">
-            <h1>☁️ سرور ابری کلودفلر یلدا</h1>
+            <h1>☁️ سرور ابری نِمُو (Nemov Cloud)</h1>
             <p>ورود مدیر کل به سامانه مانیتورینگ دیتابیس‌ها</p>
         </div>
         ${errorHtml}
@@ -4696,7 +4696,7 @@ function renderDashboardPage(trainers, totalSizeMb, lastActivity, mediaList = []
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مدیریت ابری و استودیوی رسانه - باشگاه یلدا</title>
+    <title>مدیریت ابری و استودیوی رسانه - سامانه ورزشی نِمُو (Nemov)</title>
     <style>
         ${SHARED_FONT_CSS}
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -5110,7 +5110,7 @@ function renderDashboardPage(trainers, totalSizeMb, lastActivity, mediaList = []
 <body>
     <header>
         <div class="brand">
-            <h1>☁️ سرور ابری کلودفلر باشگاه یلدا (Cloudflare Serverless)</h1>
+            <h1>☁️ سرور ابری سامانه ورزشی نِمُو (Nemov Cloud Serverless)</h1>
             <span class="badge-live">ورکر آنلاین ⚡</span>
         </div>
         <a href="/logout" class="btn-logout">خروج از پنل</a>
@@ -5243,7 +5243,7 @@ function renderDashboardPage(trainers, totalSizeMb, lastActivity, mediaList = []
                 ` : `
                 <div class="empty-state">
                     <p style="font-size: 16px; margin-bottom: 6px;">هنوز هیچ ویدیو یا تصویری در سرور آپلود نشده است.</p>
-                    <p style="font-size: 13px;">با ضبط یا آپلود ویدیوی تمرینات در نرم‌افزار یلدا، فایل‌ها به صورت خودکار در این استودیو قرار می‌گیرند.</p>
+                    <p style="font-size: 13px;">با ضبط یا آپلود ویدیوی تمرینات در نرم‌افزار نِمُو، فایل‌ها به صورت خودکار در این استودیو قرار می‌گیرند.</p>
                 </div>
                 `}
             </div>
@@ -5387,7 +5387,7 @@ function renderDashboardPage(trainers, totalSizeMb, lastActivity, mediaList = []
     <div id="toast" class="toast"></div>
 
     <footer>
-        توسعه داده شده برای سامانه هوشمند مدیریت باشگاه یلدا • قدرت گرفته از شبکه لبه ابری Cloudflare Workers © 2026
+        توسعه داده شده برای سامانه هوشمند مدیریت ورزشی نِمُو (Nemov) • قدرت گرفته از شبکه لبه ابری Cloudflare Workers © 2026
     </footer>
 
     <script>
@@ -5677,7 +5677,7 @@ function renderSandboxedVideoPlayer(title, videoStreamUrl) {
                 <h1>🎬 ${safeTitle}</h1>
                 <p>پخش اختصاصی حرکت بدنسازی</p>
             </div>
-            <div class="gym-badge">باشگاه یلدا</div>
+            <div class="gym-badge">سامانه ورزشی نِمُو</div>
         </div>
         <div class="video-box" id="videoBox">
             <video id="gymVideo" playsinline preload="metadata" loop>
@@ -5696,7 +5696,7 @@ function renderSandboxedVideoPlayer(title, videoStreamUrl) {
             </div>
         </div>
         <div class="player-footer">
-            <div>طراحی شده برای ورزشکاران • <span>باشگاه یلدا</span></div>
+            <div>طراحی شده برای ورزشکاران • <span>سامانه ورزشی نِمُو (Nemov)</span></div>
             <a class="download-link" href="${safeUrl}" download>دانلود فایل ویدیو 📥</a>
         </div>
     </div>
@@ -5758,7 +5758,7 @@ function renderSandboxedImageViewer(title, imageUrl) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${safeTitle} | باشگاه بدنسازی یلدا</title>
+    <title>${safeTitle} | سامانه ورزشی نِمُو (Nemov)</title>
     <style>
         ${SHARED_FONT_CSS}
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -5872,13 +5872,13 @@ function renderSandboxedImageViewer(title, imageUrl) {
                 <h1>🖼️ ${safeTitle}</h1>
                 <p>تصویر و الگوی حرکتی ورزشکار</p>
             </div>
-            <div class="gym-badge">باشگاه بدنسازی یلدا</div>
+            <div class="gym-badge">سامانه ورزشی نِمُو</div>
         </div>
         <div class="image-box">
             <img src="${safeUrl}" alt="${safeTitle}" loading="lazy" />
         </div>
         <div class="viewer-footer">
-            <div>برنامه تمرینی اختصاصی • <span>سامانه هوشمند یلدا</span></div>
+            <div>برنامه تمرینی اختصاصی • <span>سامانه ورزشی نِمُو (Nemov)</span></div>
             <a class="download-link" href="${safeUrl}" target="_blank" download>دریافت تصویر باکیفیت اصلی 📥</a>
         </div>
     </div>

@@ -211,7 +211,7 @@ class PDFGenerator:
             pass
 
         if not raw_club_name:
-            raw_club_name = getattr(config, 'APP_DEFAULT_CLUB_NAME', 'باشگاه بدنسازی یلدا')
+            raw_club_name = getattr(config, 'APP_DEFAULT_CLUB_NAME', 'نرم‌افزار مدیریت ورزشی نِمُو')
 
         # Determine font and reshape if Persian/Arabic
         is_persian = any('\u0600' <= ch <= '\u06FF' for ch in raw_club_name)
@@ -284,7 +284,7 @@ class PDFGenerator:
         from nemov.models.database_models import User
         from nemov.database.connection import get_session
 
-        trainer_name = "مربی باشگاه یلدا"
+        trainer_name = "مربی ورزشی"
         trainer_phone = "-"
         trainer_user = None
 
@@ -400,7 +400,9 @@ class PDFGenerator:
         )
 
         # Title
-        elements.append(Paragraph(reshape_title_text("برنامه تمرینی باشگاه بدنسازی یلدا"), title_style))
+        from nemov.services.branding_service import BrandingService
+        club_name = BrandingService.get_active_club_name()
+        elements.append(Paragraph(reshape_title_text(f"برنامه تمرینی {club_name}"), title_style))
         elements.append(Spacer(1, 10))
 
         goal_map = {
@@ -588,7 +590,9 @@ class PDFGenerator:
         cell_style = ParagraphStyle('CellStyle', parent=styles['Normal'], fontName=FONT_NAME, fontSize=10, leading=14, alignment=2)
         cell_header_style = ParagraphStyle('HeaderStyle', parent=styles['Normal'], fontName=TITLE_FONT_NAME, fontSize=10, leading=14, alignment=1, textColor=colors.white)
 
-        elements.append(Paragraph(reshape_title_text("برنامه غذایی و رژیمی باشگاه بدنسازی یلدا"), title_style))
+        from nemov.services.branding_service import BrandingService
+        club_name = BrandingService.get_active_club_name()
+        elements.append(Paragraph(reshape_title_text(f"برنامه غذایی و رژیمی {club_name}"), title_style))
         elements.append(Spacer(1, 10))
 
         nutrition_goals = {
@@ -763,7 +767,9 @@ class PDFGenerator:
         elements = []
 
         # 1. Title & Subtitle
-        elements.append(Paragraph(reshape_title_text("گزارش تراز و صورت مالی باشگاه بدنسازی یلدا"), title_style))
+        from nemov.services.branding_service import BrandingService
+        club_name = BrandingService.get_active_club_name()
+        elements.append(Paragraph(reshape_title_text(f"گزارش تراز و صورت مالی {club_name}"), title_style))
         elements.append(Spacer(1, 4))
 
         time_lbl = (filter_info or {}).get("time_label", "کل دوره")

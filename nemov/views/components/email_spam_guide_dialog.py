@@ -93,7 +93,7 @@ class EmailSpamGuideDialog(QDialog):
 
         lbl_web_steps = QLabel(
             "۱. در منوی سمت راست (یا چپ) جیمیل وارد پوشه <b>Spam (هرزنامه)</b> شوید.<br>"
-            "۲. ایمیل ارسالی از <b>باشگاه ورزشی یلدا</b> را باز کنید.<br>"
+            "۲. ایمیل ارسالی از <b>پشتیبانی نرم‌افزار نِمُو (Nemov)</b> را باز کنید.<br>"
             "۳. در بالای صفحه روی دکمه خاکستری <b>«گزارش به‌عنوان هرزنامه نیست» (Report not spam)</b> کلیک نمایید.<br>"
             "← ایمیل فوراً به صندوق اصلی منتقل شده و دفعات بعد نیز به Inbox می‌رود."
         )
@@ -185,7 +185,7 @@ class EmailSpamGuideDialog(QDialog):
 
         m2_layout.addLayout(email_row)
 
-        lbl_m2_tip = QLabel("کافیست نشانی بالا را در مخاطبین گوشی خود با عنوان «پشتیبانی باشگاه یلدا» ذخیره فرمایید.")
+        lbl_m2_tip = QLabel("کافیست نشانی بالا را در مخاطبین گوشی خود با عنوان «پشتیبانی نرم‌افزار نِمُو» ذخیره فرمایید.")
         lbl_m2_tip.setStyleSheet(f"color: {palette.text_muted}; font-size: 11px;")
         m2_layout.addWidget(lbl_m2_tip)
 

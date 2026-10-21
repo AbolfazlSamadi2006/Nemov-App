@@ -121,7 +121,9 @@ class ExcelGenerator:
         title_fill = PatternFill(start_color="881337", end_color="881337", fill_type="solid")  # Brand Deep Maroon
         title_align = ExcelGenerator._rtl_align(horizontal="center", vertical="center")
         title_cell = ws["A2"]
-        title_cell.value = "صورت وضعیت مالی و تراز درآمد و هزینه‌های باشگاه بدنسازی یلدا"
+        from nemov.services.branding_service import BrandingService
+        club_name = BrandingService.get_active_club_name()
+        title_cell.value = f"صورت وضعیت مالی و تراز درآمد و هزینه‌های {club_name}"
         ExcelGenerator._style_range(ws, "A2:H2", font=title_font, fill=title_fill, alignment=title_align)
         ws.row_dimensions[2].height = 42
 
