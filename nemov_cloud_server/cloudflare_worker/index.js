@@ -1832,7 +1832,7 @@ function renderLandingPage() {
             "name": "مهندس ابوالفضل صمدی کوچکسرائی",
             "alternateName": "Abolfazl Samadi",
             "image": "https://nemovapp.ir/images/developer_photo.jpg",
-            "email": "gymassistantapp.support@gmail.com",
+            "email": "support@nemovapp.ir",
             "url": "https://t.me/AqaSamadi"
           },
           "featureList": [
@@ -1902,7 +1902,7 @@ function renderLandingPage() {
           "alternateName": "Abolfazl Samadi",
           "image": "https://nemovapp.ir/images/developer_photo.jpg",
           "jobTitle": "Software Developer & Architect",
-          "email": "gymassistantapp.support@gmail.com",
+          "email": "support@nemovapp.ir",
           "url": "https://t.me/AqaSamadi"
         }
       ]
@@ -4323,9 +4323,9 @@ function renderLandingPage() {
                 </p>
 
                 <div class="contact-links-grid">
-                    <a href="mailto:gymassistantapp.support@gmail.com" class="contact-btn contact-btn-email" aria-label="ارسال ایمیل به پشتیبانی رسمی نرم‌افزار نِمُو">
+                    <a href="mailto:support@nemovapp.ir" class="contact-btn contact-btn-email" aria-label="ارسال ایمیل به پشتیبانی رسمی نرم‌افزار نِمُو">
                         <span aria-hidden="true">📧</span>
-                        <span>gymassistantapp.support@gmail.com</span>
+                        <span>support@nemovapp.ir</span>
                     </a>
                     <a href="https://t.me/AqaSamadi" target="_blank" rel="noopener noreferrer" class="contact-btn contact-btn-telegram" aria-label="ارتباط در تلگرام با مهندس ابوالفضل صمدی (باز شدن در تب جدید)">
                         <span aria-hidden="true">✈️</span>

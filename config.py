@@ -169,7 +169,8 @@ CLOUD_BACKUP_SECRET_KEY = os.environ.get("NEMOV_CLOUD_SECRET", "nemov_cloud_secu
 
 # Support Email Settings (Gmail SMTP)
 SUPPORT_EMAIL_ADDRESS = "gymassistantapp.support@gmail.com"
-SUPPORT_EMAIL_APP_PASSWORD = "xngruboohbruxqwk"
+SUPPORT_EMAIL_DISPLAY_ADDRESS = "support@nemovapp.ir"
+SUPPORT_EMAIL_APP_PASSWORD = "bfiwutjzroelfpow"
 SUPPORT_EMAIL_SENDER_NAME = "پشتیبانی نرم‌افزار مدیریت ورزشی نِمُو (Nemov)"
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT_SSL = 465

@@ -78,7 +78,7 @@ class EmailService:
         smtp_port_ssl = getattr(config, "SMTP_PORT_SSL", 465)
         smtp_port_tls = getattr(config, "SMTP_PORT_TLS", 587)
         email_addr = getattr(config, "SUPPORT_EMAIL_ADDRESS", "gymassistantapp.support@gmail.com")
-        app_password = getattr(config, "SUPPORT_EMAIL_APP_PASSWORD", "xngruboohbruxqwk")
+        app_password = getattr(config, "SUPPORT_EMAIL_APP_PASSWORD", "bfiwutjzroelfpow")
 
         # Try Port 465 SSL first
         try:
@@ -102,8 +102,9 @@ class EmailService:
         """
         Sends an HTML email with the 5-digit verification OTP code.
         """
-        sender_email = getattr(config, "SUPPORT_EMAIL_ADDRESS", "gymassistantapp.support@gmail.com")
-        sender_name = getattr(config, "SUPPORT_EMAIL_SENDER_NAME", "پشتیبانی نرم افزار همیار باشگاه یلدا")
+        auth_email = getattr(config, "SUPPORT_EMAIL_ADDRESS", "gymassistantapp.support@gmail.com")
+        sender_email = getattr(config, "SUPPORT_EMAIL_DISPLAY_ADDRESS", "support@nemovapp.ir")
+        sender_name = getattr(config, "SUPPORT_EMAIL_SENDER_NAME", "پشتیبانی نرم‌افزار مدیریت ورزشی نِمُو (Nemov)")
 
         msg = MIMEMultipart("alternative")
         msg["Subject"] = Header("کد تایید بازیابی کلمه عبور - باشگاه ورزشی یلدا", "utf-8")
@@ -257,7 +258,7 @@ class EmailService:
 
         try:
             with cls._create_smtp_connection() as server:
-                server.sendmail(sender_email, [to_email], msg.as_string())
+                server.sendmail(auth_email, [to_email], msg.as_string())
             return True, "کد تایید یک‌بارمصرف با موفقیت به ایمیل شما ارسال شد."
         except Exception as e:
             err_msg = str(e)
@@ -283,8 +284,9 @@ class EmailService:
         except Exception:
             pass
 
-        sender_email = getattr(config, "SUPPORT_EMAIL_ADDRESS", "gymassistantapp.support@gmail.com")
-        sender_name = getattr(config, "SUPPORT_EMAIL_SENDER_NAME", "پشتیبانی نرم‌افزار مدیریت ورزشی نِمُو")
+        auth_email = getattr(config, "SUPPORT_EMAIL_ADDRESS", "gymassistantapp.support@gmail.com")
+        sender_email = getattr(config, "SUPPORT_EMAIL_DISPLAY_ADDRESS", "support@nemovapp.ir")
+        sender_name = getattr(config, "SUPPORT_EMAIL_SENDER_NAME", "پشتیبانی نرم‌افزار مدیریت ورزشی نِمُو (Nemov)")
 
         msg = MIMEMultipart("alternative")
         msg["Subject"] = Header("🔐 کد یک‌بارمصرف فعال‌سازی و احراز هویت توسعه‌دهنده - نرم‌افزار نِمُو", "utf-8")
@@ -470,7 +472,7 @@ class EmailService:
 
         try:
             with cls._create_smtp_connection() as server:
-                server.sendmail(sender_email, [to_email], msg.as_string())
+                server.sendmail(auth_email, [to_email], msg.as_string())
             return True, "کد امنیتی یک‌بارمصرف با موفقیت به ایمیل شما ارسال شد."
         except Exception as e:
             err_msg = str(e)
@@ -488,8 +490,9 @@ class EmailService:
         if not os.path.exists(backup_filepath):
             return False, "فایل پشتیبان در مسیر مشخص‌شده یافت نشد."
 
-        sender_email = getattr(config, "SUPPORT_EMAIL_ADDRESS", "gymassistantapp.support@gmail.com")
-        sender_name = getattr(config, "SUPPORT_EMAIL_SENDER_NAME", "پشتیبانی نرم افزار همیار باشگاه یلدا")
+        auth_email = getattr(config, "SUPPORT_EMAIL_ADDRESS", "gymassistantapp.support@gmail.com")
+        sender_email = getattr(config, "SUPPORT_EMAIL_DISPLAY_ADDRESS", "support@nemovapp.ir")
+        sender_name = getattr(config, "SUPPORT_EMAIL_SENDER_NAME", "پشتیبانی نرم‌افزار مدیریت ورزشی نِمُو (Nemov)")
 
         metadata = metadata or {}
         shamsi_date = metadata.get("date", "-")
@@ -704,7 +707,7 @@ class EmailService:
         # Send via SMTP
         try:
             with cls._create_smtp_connection() as server:
-                server.sendmail(sender_email, [to_email], msg.as_string())
+                server.sendmail(auth_email, [to_email], msg.as_string())
             return True, f"نسخه پشتیبان با موفقیت به ایمیل {to_email} ارسال شد."
         except Exception as e:
             err_msg = str(e)
