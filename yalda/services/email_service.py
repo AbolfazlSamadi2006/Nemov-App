@@ -268,6 +268,219 @@ class EmailService:
             return False, f"خطا در ارسال ایمیل: {err_msg}"
 
     @classmethod
+    def send_developer_activation_otp_email(cls, to_email: str = "a.samadi2006@gmail.com", otp_code: str = None) -> tuple[bool, str]:
+        """
+        Sends an ultra-secure HTML email with the 5-digit verification OTP code
+        specifically for developer/admin activation and login authentication.
+        """
+        if not otp_code:
+            otp_code = cls.generate_and_store_otp(to_email, expiry_minutes=5)
+
+        # Log OTP code locally so developer has offline visibility
+        try:
+            from yalda.utils.logger import log_info
+            log_info(f"Developer Activation OTP generated for {to_email}: {otp_code}")
+        except Exception:
+            pass
+
+        sender_email = getattr(config, "SUPPORT_EMAIL_ADDRESS", "gymassistantapp.support@gmail.com")
+        sender_name = getattr(config, "SUPPORT_EMAIL_SENDER_NAME", "پشتیبانی نرم‌افزار مدیریت ورزشی نِمُو")
+
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = Header("🔐 کد یک‌بارمصرف فعال‌سازی و احراز هویت توسعه‌دهنده - نرم‌افزار نِمُو", "utf-8")
+        msg["From"] = formataddr((str(Header(sender_name, "utf-8")), sender_email))
+        msg["To"] = to_email
+        msg["Reply-To"] = formataddr((str(Header(sender_name, "utf-8")), sender_email))
+        msg["Date"] = formatdate(localtime=True)
+        msg["Message-ID"] = make_msgid(domain="gmail.com")
+        msg["X-Mailer"] = f"NemovApp/{getattr(config, 'APP_VERSION', 'v3.3.0')}"
+        msg["Auto-Submitted"] = "auto-generated"
+
+        html_content = f"""<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<style>
+  body {{
+    font-family: Tahoma, 'Segoe UI', Arial, sans-serif;
+    background-color: #0F172A;
+    color: #E2E8F0;
+    margin: 0;
+    padding: 24px;
+    direction: rtl;
+    text-align: right;
+  }}
+  .container {{
+    max-width: 560px;
+    margin: 0 auto;
+    background-color: #1E293B;
+    border: 1px solid #334155;
+    border-radius: 14px;
+    padding: 32px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+  }}
+  .header {{
+    text-align: center;
+    border-bottom: 2px solid #DC2626;
+    padding-bottom: 20px;
+    margin-bottom: 24px;
+  }}
+  .logo-title {{
+    color: #F87171;
+    font-size: 26px;
+    font-weight: bold;
+    margin: 0;
+  }}
+  .subtitle {{
+    color: #94A3B8;
+    font-size: 13px;
+    margin-top: 8px;
+    font-weight: 500;
+  }}
+  .badge-security {{
+    display: inline-block;
+    background-color: #7F1D1D;
+    color: #FECACA;
+    border: 1px solid #DC2626;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+    margin-top: 10px;
+  }}
+  .greeting {{
+    font-size: 15px;
+    line-height: 1.8;
+    color: #F1F5F9;
+    margin-bottom: 20px;
+  }}
+  .otp-box {{
+    background: linear-gradient(135deg, #18181B 0%, #27272A 100%);
+    border: 2px dashed #DC2626;
+    border-radius: 12px;
+    text-align: center;
+    padding: 24px;
+    margin: 24px 0;
+  }}
+  .otp-title {{
+    font-size: 13px;
+    color: #FCA5A5;
+    margin-bottom: 8px;
+    font-weight: bold;
+  }}
+  .otp-code {{
+    font-size: 42px;
+    font-weight: bold;
+    letter-spacing: 14px;
+    color: #F87171;
+    font-family: Consolas, 'Courier New', monospace;
+    margin: 12px 0;
+  }}
+  .otp-desc {{
+    font-size: 12px;
+    color: #CBD5E1;
+  }}
+  .instruction-box {{
+    background-color: #0F172A;
+    border-right: 4px solid #3B82F6;
+    padding: 14px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    color: #CBD5E1;
+    line-height: 1.8;
+    margin: 20px 0;
+  }}
+  .warning-box {{
+    background-color: #451A03;
+    border-right: 4px solid #F59E0B;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 12px;
+    color: #FEF3C7;
+    line-height: 1.7;
+    margin: 20px 0;
+  }}
+  .footer {{
+    text-align: center;
+    border-top: 1px solid #334155;
+    padding-top: 20px;
+    margin-top: 28px;
+    font-size: 11px;
+    color: #64748B;
+    line-height: 1.6;
+  }}
+</style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo-title">🏆 {config.APP_NAME}</div>
+      <div class="subtitle">سامانه احراز هویت دومرحله‌ای و فعال‌سازی سخت‌افزار (MFA / Hardware Activation)</div>
+      <div class="badge-security">🛡️ احراز هویت سطح ارشد امنیتی</div>
+    </div>
+
+    <div class="greeting">
+      جناب آقای <b>مهندس ابوالفضل صمدی کوچکسرائی</b> (طراح و برنامه‌نویس ارشد نرم‌افزار نِمُو)؛<br>
+      درخواست فعال‌سازی پروانه نرم‌افزار و ورود به عنوان مدیر ارشد سیستم ثبت گردید.
+    </div>
+
+    <div class="otp-box">
+      <div class="otp-title">کد یک‌بارمصرف امنیتی شما (Security OTP):</div>
+      <div class="otp-code">{otp_code}</div>
+      <div class="otp-desc">⏱️ مدت زمان اعتبار کد: <b>۵ دقیقه</b></div>
+    </div>
+
+    <div class="instruction-box">
+      💻 <b>دستورالعمل فعال‌سازی در برنامه:</b><br>
+      ۱. در کادر نام کاربری، عبارت <b>Abolfazl</b> را وارد نمایید.<br>
+      ۲. در کادر کلمه عبور، کد ۵ رقمی بالا (<b>{otp_code}</b>) را وارد نمایید.<br>
+      ۳. با فشردن دکمه ورود، پروانه نرم‌افزار بلافاصله برای سخت‌افزار رایانه فعلی قفل و فعال خواهد شد.
+    </div>
+
+    <div class="warning-box">
+      ⚠️ <b>اطلاعیه امنیتی:</b> این کد محرمانه بوده و صرفاً جهت فعال‌سازی بر روی این رایانه صادر شده است. چنانچه این درخواست توسط شما ثبت نشده است، ممکن است فرد دیگری در تلاش برای فعال‌سازی نرم‌افزار روی رایانه خود باشد.
+    </div>
+
+    <div class="footer">
+      این پیام به صورت خودکار توسط هسته امنیتی نرم‌افزار {config.APP_NAME} ارسال شده است.<br>
+      توسعه‌یافته توسط مهندس ابوالفضل صمدی کوچکسرائی
+    </div>
+  </div>
+</body>
+</html>"""
+
+        plain_text = f"""جناب آقای مهندس ابوالفضل صمدی کوچکسرائی؛
+
+درخواست فعال‌سازی پروانه نرم‌افزار نِمُو و احراز هویت دومرحله‌ای ثبت گردید.
+
+کد یک‌بارمصرف امنیتی شما (OTP):
+{otp_code}
+
+⏱️ مدت اعتبار کد: ۵ دقیقه
+
+دستورالعمل فعال‌سازی:
+۱. در فرم ورود نرم‌افزار، نام کاربری را Abolfazl وارد نمایید.
+۲. در کادر کلمه عبور، کد {otp_code} را وارد کرده و دکمه ورود را بزنید.
+۳. نرم‌افزار به صورت خودکار برای سخت‌افزار رایانه فعلی فعال خواهد شد.
+
+هسته امنیتی نرم‌افزار {config.APP_NAME}
+"""
+        msg.attach(MIMEText(plain_text, "plain", "utf-8"))
+        msg.attach(MIMEText(html_content, "html", "utf-8"))
+
+        try:
+            with cls._create_smtp_connection() as server:
+                server.sendmail(sender_email, [to_email], msg.as_string())
+            return True, "کد امنیتی یک‌بارمصرف با موفقیت به ایمیل شما ارسال شد."
+        except Exception as e:
+            err_msg = str(e)
+            if "Authentication" in err_msg or "Username and Password not accepted" in err_msg or "535" in err_msg:
+                return False, "خطای اعتبارسنجی سرویس ایمیل جیمیل (App Password نیاز به تمدید در حساب گوگل دارد)."
+            elif "getaddrinfo" in err_msg or "timed out" in err_msg or "Connection unexpectedly closed" in err_msg:
+                return False, "عدم برقراری ارتباط با اینترنت یا سرور ایمیل. لطفاً اتصال شبکه را بررسی کنید."
+            return False, f"خطا در ارسال ایمیل: {err_msg}"
+
+    @classmethod
     def send_backup_email(cls, to_email: str, trainer_name: str, backup_filepath: str, metadata: dict = None) -> tuple[bool, str]:
         """
         Sends an HTML email with the backup ZIP or DB file attached directly.

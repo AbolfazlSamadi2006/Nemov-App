@@ -1,4 +1,4 @@
-﻿name = "yalda-cloud-backup"
+name = "nemov"
 main = "index.js"
 compatibility_date = "2024-01-01"
 
@@ -10,4 +10,4 @@ bucket_name = "yalda-backups"
 # Fallback KV storage
 [[kv_namespaces]]
 binding = "BACKUPS_KV"
-id = "yalda_backups_kv"
+id = "8b62815d58a2110ebc2126c1973d8ae1"

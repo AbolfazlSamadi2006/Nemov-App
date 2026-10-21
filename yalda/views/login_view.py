@@ -2,7 +2,7 @@ from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QMessageBox, QFrame,
     QCheckBox, QCompleter
 )
-from PyQt6.QtCore import Qt, pyqtSignal, QStringListModel
+from PyQt6.QtCore import Qt, pyqtSignal, QStringListModel, QThread, QTimer
 from PyQt6.QtGui import QPixmap, QIcon
 import config
 from yalda.auth.authentication import authenticate_user, is_app_license_active, check_username_exists
@@ -12,6 +12,19 @@ from yalda.views.password_recovery_dialog import PasswordRecoveryDialog
 from yalda.views.trainer_register_dialog import TrainerRegisterDialog
 from yalda.views.cloud_restore_dialog import CloudRestoreDialog
 from yalda.utils.theme_manager import ThemeManager
+
+class SendDevOtpThread(QThread):
+    finished_signal = pyqtSignal(bool, str)
+
+    def run(self):
+        try:
+            from yalda.services.email_service import EmailService
+            from yalda.auth.authentication import get_developer_info
+            dev_email = get_developer_info().get("email", "a.samadi2006@gmail.com")
+            success, msg = EmailService.send_developer_activation_otp_email(to_email=dev_email)
+            self.finished_signal.emit(success, msg)
+        except Exception as e:
+            self.finished_signal.emit(False, str(e))
 
 STYLE_INPUT_NORMAL = ""
 STYLE_INPUT_ERROR = ""
@@ -74,6 +87,12 @@ class LoginView(QWidget):
         self._user_has_error = False
         self._pass_has_error = False
 
+        self.otp_countdown = 0
+        self.otp_timer = QTimer(self)
+        self.otp_timer.setInterval(1000)
+        self.otp_timer.timeout.connect(self._on_otp_timer_tick)
+        self.otp_thread = None
+
         self.init_ui()
 
         try:
@@ -122,7 +141,7 @@ class LoginView(QWidget):
 
         # Login Card Container
         self.card = QFrame()
-        self.card.setFixedSize(480, 610)
+        self.card.setFixedSize(480, 640)
         self.card.setObjectName("login_card")
 
         card_layout = QVBoxLayout(self.card)
@@ -198,6 +217,23 @@ class LoginView(QWidget):
         card_layout.addWidget(self.lbl_pass)
         card_layout.addLayout(pass_box)
         card_layout.addWidget(self.lbl_pass_error)
+
+        # Developer OTP Request Button and Status Info
+        self.btn_dev_otp = QPushButton("🔐 ارسال رمز یک‌بارمصرف (OTP) به ایمیل سازنده")
+        self.btn_dev_otp.setFixedHeight(34)
+        self.btn_dev_otp.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_dev_otp.setObjectName("dev_otp_button")
+        self.btn_dev_otp.setToolTip("ارسال کد امنیتی ۵ رقمی به ایمیل a.samadi2006@gmail.com جهت ورود و فعال‌سازی برنامه")
+        self.btn_dev_otp.clicked.connect(self.request_dev_otp)
+        self.btn_dev_otp.setVisible(False)
+
+        self.lbl_otp_info = QLabel()
+        self.lbl_otp_info.setVisible(False)
+        self.lbl_otp_info.setWordWrap(True)
+        self.lbl_otp_info.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        card_layout.addWidget(self.btn_dev_otp)
+        card_layout.addWidget(self.lbl_otp_info)
 
         # Remember Me Checkbox Row
         row_remember = QHBoxLayout()
@@ -439,6 +475,63 @@ class LoginView(QWidget):
         # 12. Register button state styling
         self.refresh_activation_state()
 
+        # 13. Developer OTP Button and Info Label
+        if hasattr(self, "btn_dev_otp"):
+            if palette.is_dark:
+                dev_bg = "#271719" if palette.key == "crimson_fury" else palette.bg_surface
+                dev_color = "#FCA5A5" if palette.key == "crimson_fury" else getattr(palette, "primary_light", palette.primary_hover)
+                dev_border = "#EF4444" if palette.key == "crimson_fury" else palette.primary
+                dev_hover_bg = palette.primary
+                dev_hover_color = primary_text
+                dev_dis_bg = palette.bg_surface
+                dev_dis_color = palette.text_muted
+                dev_dis_border = palette.border
+            else:
+                dev_bg = "#F0FDF4"
+                dev_color = "#15803D"
+                dev_border = "#16A34A"
+                dev_hover_bg = "#16A34A"
+                dev_hover_color = "#FFFFFF"
+                dev_dis_bg = "#F1F5F9"
+                dev_dis_color = "#94A3B8"
+                dev_dis_border = "#CBD5E1"
+
+            self.btn_dev_otp.setStyleSheet(f"""
+                QPushButton#dev_otp_button {{
+                    background-color: {dev_bg};
+                    color: {dev_color};
+                    border: 1.5px dashed {dev_border};
+                    border-radius: 6px;
+                    font-size: 13px;
+                    font-weight: bold;
+                    padding: 4px 8px;
+                }}
+                QPushButton#dev_otp_button:hover {{
+                    background-color: {dev_hover_bg};
+                    color: {dev_hover_color};
+                    border-style: solid;
+                }}
+                QPushButton#dev_otp_button:disabled {{
+                    background-color: {dev_dis_bg};
+                    color: {dev_dis_color};
+                    border: 1px solid {dev_dis_border};
+                }}
+            """)
+
+        if hasattr(self, "lbl_otp_info"):
+            otp_info_bg = "#1E293B" if palette.is_dark else "#F0FDF4"
+            otp_info_color = "#93C5FD" if palette.is_dark else "#166534"
+            otp_info_border = "#3B82F6" if palette.is_dark else "#86EFAC"
+            self.lbl_otp_info.setStyleSheet(f"""
+                background-color: {otp_info_bg};
+                color: {otp_info_color};
+                border: 1px solid {otp_info_border};
+                border-radius: 6px;
+                padding: 6px 10px;
+                font-size: 11px;
+                line-height: 1.4;
+            """)
+
     def clear_user_error(self):
         self._user_has_error = False
         try:
@@ -465,6 +558,19 @@ class LoginView(QWidget):
             palette = ThemeManager.get_current_palette()
         except Exception:
             palette = None
+
+        if hasattr(self, "btn_dev_otp"):
+            if not active:
+                self.btn_dev_otp.setVisible(True)
+            elif hasattr(self, "txt_username"):
+                u_clean = normalize_digits(self.txt_username.text()).strip().lower()
+                self.btn_dev_otp.setVisible(u_clean in ("abolfazl", "admin"))
+
+        if hasattr(self, "sub_lbl"):
+            if not active:
+                self.sub_lbl.setText(f"ورود به {config.APP_TITLE} (فعال‌سازی با نام کاربری Abolfazl)")
+            else:
+                self.sub_lbl.setText(f"ورود به {config.APP_TITLE}")
 
         if not hasattr(self, "btn_register"):
             return
@@ -584,6 +690,15 @@ class LoginView(QWidget):
 
     def on_username_text_changed(self, text: str):
         self.clear_user_error()
+        u_clean = normalize_digits(text).strip().lower()
+        if hasattr(self, "btn_dev_otp"):
+            if u_clean in ("abolfazl", "admin") or not is_app_license_active():
+                self.btn_dev_otp.setVisible(True)
+            else:
+                self.btn_dev_otp.setVisible(False)
+                if hasattr(self, "lbl_otp_info"):
+                    self.lbl_otp_info.setVisible(False)
+
         if self._is_auto_filling:
             return
         # When typing, do not auto-fill password until chosen from suggestions.
@@ -595,6 +710,49 @@ class LoginView(QWidget):
                 self.chk_remember.setChecked(False)
             finally:
                 self._is_auto_filling = False
+
+    def request_dev_otp(self):
+        if self.otp_countdown > 0:
+            return
+
+        self.btn_dev_otp.setEnabled(False)
+        self.btn_dev_otp.setText("⏳ در حال ارسال کد امنیتی به ایمیل...")
+        self.lbl_otp_info.setText("⏳ در حال اتصال و ارسال کد یک‌بارمصرف به ایمیل سازنده (a.samadi2006@gmail.com)...")
+        self.lbl_otp_info.setVisible(True)
+
+        self.otp_thread = SendDevOtpThread(self)
+        self.otp_thread.finished_signal.connect(self._on_dev_otp_finished)
+        self.otp_thread.start()
+
+    def _on_dev_otp_finished(self, success: bool, msg: str):
+        if success:
+            self.lbl_otp_info.setText(
+                "✅ کد ۵ رقمی امنیتی با موفقیت به ایمیل a.samadi2006@gmail.com ارسال شد.\n"
+                "لطفاً آن را در کادر کلمه عبور وارد نموده و دکمه «ورود به سیستم» را بزنید."
+            )
+            self.lbl_otp_info.setVisible(True)
+            self.txt_password.setFocus()
+            self.txt_password.setPlaceholderText("کد ۵ رقمی ارسالی به ایمیل را وارد کنید")
+
+            self.otp_countdown = 60
+            self.btn_dev_otp.setEnabled(False)
+            self.btn_dev_otp.setText(f"ارسال مجدد کد ({self.otp_countdown} ثانیه)")
+            self.otp_timer.start()
+        else:
+            self.btn_dev_otp.setEnabled(True)
+            self.btn_dev_otp.setText("🔐 تلاش مجدد ارسال کد یک‌بارمصرف")
+            self.lbl_otp_info.setText(f"⚠️ {msg}\n💡 می‌توانید از رمز پشتیبان 2006 استفاده فرمایید.")
+            self.lbl_otp_info.setVisible(True)
+            self.txt_password.setFocus()
+
+    def _on_otp_timer_tick(self):
+        self.otp_countdown -= 1
+        if self.otp_countdown > 0:
+            self.btn_dev_otp.setText(f"ارسال مجدد کد ({self.otp_countdown} ثانیه)")
+        else:
+            self.otp_timer.stop()
+            self.btn_dev_otp.setEnabled(True)
+            self.btn_dev_otp.setText("🔐 ارسال مجدد کد یک‌بارمصرف به ایمیل")
 
     def on_username_return_pressed(self):
         u_norm = normalize_digits(self.txt_username.text().strip())
@@ -637,6 +795,10 @@ class LoginView(QWidget):
             return
 
         if not password:
+            if username.lower() in ("admin", "abolfazl"):
+                # Automatically request dev OTP if password field is blank
+                self.request_dev_otp()
+                return
             self._pass_has_error = True
             if palette:
                 self.txt_password.setStyleSheet(self._get_input_style(palette, is_error=True))
@@ -655,8 +817,8 @@ class LoginView(QWidget):
             self.txt_username.setFocus()
             return
 
-        # Check Hardware License: if app is not active on this machine and user is NOT admin, block login!
-        if target_user != "admin" and not is_app_license_active():
+        # Check Hardware License: if app is not active on this machine and user is NOT admin/developer, block login!
+        if target_user.lower() not in ("admin", "abolfazl") and not is_app_license_active():
             self._user_has_error = True
             if palette:
                 self.txt_username.setStyleSheet(self._get_input_style(palette, is_error=True))
@@ -664,8 +826,16 @@ class LoginView(QWidget):
             self.lbl_user_error.setVisible(True)
             return
 
+        was_license_inactive = not is_app_license_active()
         user = authenticate_user(target_user, password)
         if user:
+            # If application was activated during this login, celebrate with information dialog
+            if was_license_inactive and is_app_license_active():
+                QMessageBox.information(
+                    self,
+                    "🎉 فعال‌سازی موفق نرم‌افزار",
+                    "نرم‌افزار مدیریت ورزشی نِمُو با موفقیت برای سخت‌افزار این رایانه فعال گردید و هویت توسعه‌دهنده تایید شد."
+                )
             if self.chk_remember.isChecked():
                 CredentialManager.save_credential(target_user, password)
             else:

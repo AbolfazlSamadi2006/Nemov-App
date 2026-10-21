@@ -126,7 +126,7 @@ function getStorage(env) {
     if (!env) return { r2: null, kv: null };
 
     // 1. Resolve KV storage (Cloudflare Workers KV - Primary Storage)
-    let kv = env.BACKUPS_KV || env.KV || env.BACKUP_KV || env.YALDA_KV || env.yalda_backups_kv || null;
+    let kv = env.BACKUPS_KV || env.KV || env.BACKUP_KV || env.NEMOV_KV || env.nemov_backups_kv || env.YALDA_KV || env.yalda_backups_kv || null;
     if (!kv) {
         for (const key of Object.keys(env)) {
             const val = env[key];
@@ -287,6 +287,20 @@ export default {
         const method = request.method;
         const secretApiKey = (env && env.SECRET_API_KEY) || SECRET_API_KEY;
 
+        // Force HTTPS 301 Redirect for plain HTTP requests (fixes mobile Safari & Google App ERR_CONNECTION_CLOSED)
+        const proto = request.headers.get("x-forwarded-proto") || url.protocol.replace(":", "");
+        if (proto === "http") {
+            const httpsUrl = "https://" + url.host + url.pathname + url.search;
+            return new Response(null, {
+                status: 301,
+                headers: {
+                    "Location": httpsUrl,
+                    "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
+                    "Alt-Svc": "clear"
+                }
+            });
+        }
+
         // CORS Headers
         const corsHeaders = {
             "Access-Control-Allow-Origin": "*",
@@ -328,11 +342,17 @@ export default {
             if (method !== "GET" && method !== "HEAD") {
                 return new Response("Method Not Allowed", { status: 405, headers: { "Allow": "GET, HEAD, OPTIONS", ...corsHeaders } });
             }
+            const logoEtag = 'W/"nemov-logo-v3.4.5"';
+            const ifNoneMatch = request && request.headers && (request.headers.get("if-none-match") || request.headers.get("If-None-Match"));
             const logoHeaders = {
                 ...corsHeaders,
                 "Content-Type": "image/png",
-                "Cache-Control": "public, max-age=31536000, immutable"
+                "Cache-Control": "public, max-age=31536000, immutable",
+                "ETag": logoEtag
             };
+            if (ifNoneMatch && (ifNoneMatch === logoEtag || ifNoneMatch.includes(logoEtag))) {
+                return new Response(null, { status: 304, headers: logoHeaders });
+            }
             if (method === "HEAD") {
                 return new Response(null, { headers: logoHeaders });
             }
@@ -1673,11 +1693,13 @@ const SHARED_FONT_CSS = `
 // ============================================================================
 // Landing Page Caching & Security Header Configuration
 // ============================================================================
-const LANDING_PAGE_ETAG = 'W/"landing-v3.4.4-nemov-720p-hd-logo"';
+const LANDING_PAGE_ETAG = 'W/"landing-v3.4.5-nemov-opt"';
 const LANDING_HEADERS = {
     "Content-Type": "text/html; charset=utf-8",
     "Cache-Control": "public, max-age=180, s-maxage=3600, stale-while-revalidate=86400",
     "ETag": LANDING_PAGE_ETAG,
+    "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
+    "Alt-Svc": "clear",
     "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data:; frame-ancestors 'self'; base-uri 'self'; form-action 'self';",
     "X-Content-Type-Options": "nosniff",
     "X-Frame-Options": "SAMEORIGIN",
@@ -1761,6 +1783,10 @@ function renderLandingPage() {
     <meta name="twitter:description" content="سامانه یکپارچه مربیگری و اتوماسیون باشگاه؛ پرونده سلامت، بانک حرکات با ویدیو، طراحی تخصصی رژیم غذایی، حسابداری مالی و صدور شناسنامه چاپی.">
     <meta name="twitter:image" content="https://nemovapp.ir/images/nemov_logo.png">
     <meta name="twitter:image:alt" content="نرم‌افزار مدیریت ورزشی نِمُو (Nemov)">
+
+    <!-- Preload Critical Above-The-Fold Assets -->
+    <link rel="preload" href="/images/nemov_logo.png" as="image" type="image/png">
+    <link rel="preload" href="/fonts/bkoodak.woff2" as="font" type="font/woff2" crossorigin>
 
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="/images/nemov_logo.png">
@@ -2988,7 +3014,7 @@ function renderLandingPage() {
             pointer-events: none;
         }
 
-        /* 3D Continuous Rotating Nemov Logo (Strictly Never Stops on Hover - Prominent Display) */
+        /* 3D Continuous Rotating Nemov Logo (Hardware-Accelerated & Ultra-Fluid 60fps) */
         .hero-logo-3d-wrapper {
             perspective: 1000px;
             display: flex;
@@ -3000,6 +3026,26 @@ function renderLandingPage() {
             position: relative;
         }
 
+        .hero-logo-3d-wrapper::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 115%;
+            height: 115%;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(220, 38, 38, 0.42) 0%, rgba(220, 38, 38, 0.12) 55%, transparent 75%);
+            filter: blur(14px);
+            pointer-events: none;
+            z-index: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .hero-logo-3d-wrapper:hover::before {
+            background: radial-gradient(circle, rgba(239, 68, 68, 0.65) 0%, rgba(220, 38, 38, 0.22) 58%, transparent 78%);
+        }
+
         .hero-logo-3d {
             width: 130px;
             height: 130px;
@@ -3007,15 +3053,16 @@ function renderLandingPage() {
             image-rendering: -webkit-optimize-contrast;
             transform-style: preserve-3d;
             animation: rotateLogo3D 8s linear infinite !important;
-            filter: drop-shadow(0 0 26px rgba(220, 38, 38, 0.65)) drop-shadow(0 8px 18px rgba(0, 0, 0, 0.75));
             will-change: transform;
             cursor: pointer;
-            transition: filter 0.3s ease;
+            position: relative;
+            z-index: 1;
+            filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.55));
+            backface-visibility: visible;
         }
 
         .hero-logo-3d:hover {
             animation-play-state: running !important;
-            filter: drop-shadow(0 0 38px rgba(239, 68, 68, 0.95)) drop-shadow(0 10px 22px rgba(0, 0, 0, 0.85));
         }
 
         @keyframes rotateLogo3D {
@@ -4324,40 +4371,65 @@ function renderLandingPage() {
                     rootMargin: '0px 0px 40px 0px'
                 });
                 revealElements.forEach(function(el) { observer.observe(el); });
-            }
-
-            function checkScrollReveals() {
-                var currentVh = window.innerHeight || document.documentElement.clientHeight || 800;
-                document.querySelectorAll('.reveal-pending:not(.revealed)').forEach(function(el) {
-                    var rect = el.getBoundingClientRect();
-                    if (rect.top <= currentVh * 0.95 && rect.bottom >= 0) {
-                        el.classList.add('revealed');
+            } else {
+                // Fallback for legacy browsers lacking IntersectionObserver
+                var ticking = false;
+                function checkScrollReveals() {
+                    var currentVh = window.innerHeight || document.documentElement.clientHeight || 800;
+                    document.querySelectorAll('.reveal-pending:not(.revealed)').forEach(function(el) {
+                        var rect = el.getBoundingClientRect();
+                        if (rect.top <= currentVh * 0.95 && rect.bottom >= 0) {
+                            el.classList.add('revealed');
+                        }
+                    });
+                }
+                function onScrollCheck() {
+                    if (!ticking) {
+                        requestAnimationFrame(function() {
+                            checkScrollReveals();
+                            ticking = false;
+                        });
+                        ticking = true;
                     }
-                });
+                }
+                window.addEventListener('scroll', onScrollCheck, { passive: true });
+                window.addEventListener('resize', onScrollCheck, { passive: true });
             }
 
-            window.addEventListener('scroll', checkScrollReveals, { passive: true });
-            window.addEventListener('resize', checkScrollReveals, { passive: true });
+            // 3. 3D Tilt Effect strictly for Desktop Fine-Pointer Devices (Bypassed entirely on touch/mobile)
+            var isDesktopFinePointer = false;
+            try {
+                isDesktopFinePointer = window.matchMedia && 
+                                       window.matchMedia('(hover: hover) and (pointer: fine)').matches &&
+                                       !('ontouchstart' in window) &&
+                                       navigator.maxTouchPoints <= 1;
+            } catch(e) {
+                isDesktopFinePointer = false;
+            }
 
-            // 3. 3D Tilt Effect on Desktop Hover
-            if (window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+            if (isDesktopFinePointer) {
                 var tiltCards = document.querySelectorAll('.feature-card, .highlight-card, .gym-card, .gym-join-card, .security-card, .developer-card');
                 tiltCards.forEach(function(card) {
                     card.classList.add('tilt-enabled');
+                    var rafId = null;
                     card.addEventListener('mousemove', function(e) {
-                        var rect = card.getBoundingClientRect();
-                        var x = e.clientX - rect.left;
-                        var y = e.clientY - rect.top;
-                        var centerX = rect.width / 2;
-                        var centerY = rect.height / 2;
-                        var rotateX = ((y - centerY) / centerY) * -6;
-                        var rotateY = ((x - centerX) / centerX) * 6;
+                        if (rafId) cancelAnimationFrame(rafId);
+                        rafId = requestAnimationFrame(function() {
+                            var rect = card.getBoundingClientRect();
+                            var x = e.clientX - rect.left;
+                            var y = e.clientY - rect.top;
+                            var centerX = rect.width / 2;
+                            var centerY = rect.height / 2;
+                            var rotateX = ((y - centerY) / centerY) * -6;
+                            var rotateY = ((x - centerX) / centerX) * 6;
 
-                        card.style.transform = 'perspective(1000px) rotateX(' + rotateX + 'deg) rotateY(' + rotateY + 'deg) translateY(-5px)';
-                        card.style.setProperty('--mouse-x', ((x / rect.width) * 100) + '%');
-                        card.style.setProperty('--mouse-y', ((y / rect.height) * 100) + '%');
-                    });
+                            card.style.transform = 'perspective(1000px) rotateX(' + rotateX + 'deg) rotateY(' + rotateY + 'deg) translateY(-5px)';
+                            card.style.setProperty('--mouse-x', ((x / rect.width) * 100) + '%');
+                            card.style.setProperty('--mouse-y', ((y / rect.height) * 100) + '%');
+                        });
+                    }, { passive: true });
                     card.addEventListener('mouseleave', function() {
+                        if (rafId) cancelAnimationFrame(rafId);
                         card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) translateY(0)';
                     });
                 });

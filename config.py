@@ -42,7 +42,7 @@ BRANDING_DIR = DATA_DIR / "branding"
 BRANDING_DIR.mkdir(parents=True, exist_ok=True)
 
 def sync_data_directories():
-    """Finds the latest yalda.db across runtime data folder, backups folder, and persistent AppData folder (with legacy YaldaGym migration fallback) to guarantee zero data loss."""
+    """Finds the latest database (nemov.db or yalda.db) across runtime data folder, backups folder, and persistent AppData folder (with legacy YaldaGym migration fallback) to guarantee zero data loss."""
     search_locations = [
         DATA_DIR,
         APPDATA_DATA_DIR
@@ -57,9 +57,10 @@ def sync_data_directories():
     
     db_candidates = []
     for loc in search_locations:
-        db_p = loc / "yalda.db"
-        if db_p.exists() and db_p.stat().st_size > 0:
-            db_candidates.append((db_p.stat().st_mtime, db_p, loc))
+        for db_name in ["nemov.db", "yalda.db"]:
+            db_p = loc / db_name
+            if db_p.exists() and db_p.stat().st_size > 0:
+                db_candidates.append((db_p.stat().st_mtime, db_p, loc))
         # Also check latest_backup.db inside backups/
         backup_p = loc / "backups" / "latest_backup.db"
         if backup_p.exists() and backup_p.stat().st_size > 0:
@@ -69,15 +70,16 @@ def sync_data_directories():
         db_candidates.sort(key=lambda x: x[0], reverse=True)
         latest_mtime, latest_db, latest_loc = db_candidates[0]
         
-        # Mirror latest DB to all target locations
+        # Mirror latest DB to all target locations (both nemov.db and legacy yalda.db fallback)
         for target_loc in target_locations:
             target_loc.mkdir(parents=True, exist_ok=True)
-            target_db = target_loc / "yalda.db"
-            if not target_db.exists() or target_db.stat().st_mtime < latest_mtime:
-                try:
-                    shutil.copy2(latest_db, target_db)
-                except Exception:
-                    pass
+            for target_name in ["nemov.db", "yalda.db"]:
+                target_db = target_loc / target_name
+                if not target_db.exists() or target_db.stat().st_mtime < latest_mtime:
+                    try:
+                        shutil.copy2(latest_db, target_db)
+                    except Exception:
+                        pass
             
             # Mirror uploads folder
             src_uploads = latest_loc / "uploads"
@@ -123,8 +125,13 @@ BACKUPS_DIR = DATA_DIR / "backups"
 for folder in [UPLOADS_DIR, PROFILE_PHOTOS_DIR, PROGRESS_PHOTOS_DIR, EXERCISE_MEDIA_DIR, PDF_EXPORTS_DIR, BACKUPS_DIR, BRANDING_DIR]:
     folder.mkdir(parents=True, exist_ok=True)
 
-# Database URI
-DB_PATH = DATA_DIR / "yalda.db"
+# Database URI (Primary nemov.db with automatic fallback to legacy yalda.db)
+DB_PATH = DATA_DIR / "nemov.db"
+if not DB_PATH.exists() and (DATA_DIR / "yalda.db").exists():
+    try:
+        shutil.copy2(DATA_DIR / "yalda.db", DB_PATH)
+    except Exception:
+        DB_PATH = DATA_DIR / "yalda.db"
 DATABASE_URI = f"sqlite:///{DB_PATH}"
 
 
@@ -163,7 +170,7 @@ CLOUD_BACKUP_SECRET_KEY = "yalda_cloud_sec_2006_gym"
 # Support Email Settings (Gmail SMTP)
 SUPPORT_EMAIL_ADDRESS = "gymassistantapp.support@gmail.com"
 SUPPORT_EMAIL_APP_PASSWORD = "xngruboohbruxqwk"
-SUPPORT_EMAIL_SENDER_NAME = "پشتیبانی نرم افزار همیار باشگاه یلدا"
+SUPPORT_EMAIL_SENDER_NAME = "پشتیبانی نرم‌افزار مدیریت ورزشی نِمُو (Nemov)"
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT_SSL = 465
 SMTP_PORT_TLS = 587

@@ -495,7 +495,9 @@ class NemovE2ETestSuite:
     def test_t1_10_cloudflare_worker_rebranding(self) -> TestResult:
         """T1.10: Verify Cloudflare Worker landing page title, metadata, schema and Yalda partner card."""
         t0 = time.time()
-        worker_file = PROJECT_ROOT / "yalda_cloud_server" / "cloudflare_worker" / "index.js"
+        worker_file = PROJECT_ROOT / "nemov_cloud_server" / "cloudflare_worker" / "index.js"
+        if not worker_file.exists():
+            worker_file = PROJECT_ROOT / "yalda_cloud_server" / "cloudflare_worker" / "index.js"
         if not worker_file.exists():
             return TestResult(1, "T1.10_CLOUDFLARE_WORKER", "Cloudflare Landing Page Rebranding", "M4",
                               "FAIL", "Cloudflare worker index.js not found.", (time.time() - t0) * 1000)

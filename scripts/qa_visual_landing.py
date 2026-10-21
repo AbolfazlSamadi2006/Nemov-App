@@ -6,7 +6,7 @@ import os
 EDGE_EXE = r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
 ARTIFACTS_DIR = pathlib.Path(r"C:\Users\user\.gemini\antigravity\brain\4b6897a3-c508-4ec6-8c8a-20cd600f30a6")
 
-worker_js = pathlib.Path("yalda_cloud_server/cloudflare_worker/index.js").read_text(encoding="utf-8")
+worker_js = pathlib.Path("nemov_cloud_server/cloudflare_worker/index.js").read_text(encoding="utf-8")
 
 # Extract base64 constants
 nemov_match = re.search(r'const NEMOV_LOGO_BASE64 = "(.*?)";', worker_js, re.DOTALL)
