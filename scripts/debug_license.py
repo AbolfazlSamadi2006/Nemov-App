@@ -3,10 +3,23 @@ import sqlite3
 from pathlib import Path
 
 paths = [
+    Path('data/nemov.db').resolve(),
     Path('data/yalda.db').resolve(),
+    Path(os.environ.get('APPDATA', '')) / 'Nemov' / 'data' / 'nemov.db',
+    Path(os.environ.get('APPDATA', '')) / 'Nemov' / 'data' / 'yalda.db',
     Path(os.environ.get('APPDATA', '')) / 'YaldaGym' / 'data' / 'yalda.db',
+    Path(os.environ.get('LOCALAPPDATA', '')) / 'Programs' / 'Nemov' / 'data' / 'nemov.db',
     Path(os.environ.get('LOCALAPPDATA', '')) / 'Programs' / 'YaldaGym' / 'data' / 'yalda.db'
 ]
+
+# Deduplicate paths preserving priority order
+seen_paths = set()
+unique_paths = []
+for p in paths:
+    if p not in seen_paths:
+        seen_paths.add(p)
+        unique_paths.append(p)
+paths = unique_paths
 
 for p in paths:
     print('--- Path:', p)

@@ -16,9 +16,9 @@ from PyQt6.QtWidgets import QApplication
 from PyQt6.QtCore import Qt, QPointF
 from PyQt6.QtGui import QMouseEvent, QFont, QFontDatabase
 
-from yalda.views.workout_library_view import ExerciseFormDialog, WorkoutLibraryView
-from yalda.services.workout_service import WorkoutService
-from yalda.models.database_models import Exercise
+from nemov.views.workout_library_view import ExerciseFormDialog, WorkoutLibraryView
+from nemov.services.workout_service import WorkoutService
+from nemov.models.database_models import Exercise
 import config
 
 ARTIFACTS_DIR = Path(r"C:\Users\user\.gemini\antigravity\brain\4b6897a3-c508-4ec6-8c8a-20cd600f30a6")

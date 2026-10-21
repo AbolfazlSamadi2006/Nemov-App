@@ -8,7 +8,7 @@ sys.path.insert(0, os.getcwd())
 
 from PyQt6.QtWidgets import QApplication
 from PyQt6.QtCore import Qt
-from yalda.views.main_window import MainWindow
+from nemov.views.main_window import MainWindow
 
 app = QApplication(sys.argv)
 app.setLayoutDirection(Qt.LayoutDirection.RightToLeft)

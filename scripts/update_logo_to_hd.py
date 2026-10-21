@@ -28,7 +28,7 @@ b64_str = base64.b64encode(buf.getvalue()).decode("ascii")
 print(f"Base64 length: {len(b64_str)} chars")
 
 # Update index.js
-index_js_path = pathlib.Path("yalda_cloud_server/cloudflare_worker/index.js")
+index_js_path = pathlib.Path("nemov_cloud_server/cloudflare_worker/index.js")
 content = index_js_path.read_text(encoding="utf-8")
 initial_len = len(content)
 

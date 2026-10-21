@@ -3,7 +3,9 @@
  * Author: Abolfazl Samadi
  */
 
-const SECRET_API_KEY = "yalda_cloud_sec_2006_gym";
+const PRIMARY_SECRET_API_KEY = "nemov_cloud_security";
+const LEGACY_SECRET_API_KEY = "yalda_cloud_sec_2006_gym";
+const SECRET_API_KEY = PRIMARY_SECRET_API_KEY;
 const ADMIN_USER = "Abolfazl";
 const ADMIN_PASS = "Abolfazl2006";
 const AUTH_COOKIE_NAME = "yalda_admin_session";
@@ -60,8 +62,14 @@ function normalizePersianDigits(str) {
         .replace(/[٠-٩]/g, d => String("٠١٢٣٤٥٦٧٨٩".indexOf(d)));
 }
 
-// Constant-time string equality helper mitigating timing side-channel attacks
+// Constant-time string equality helper mitigating timing side-channel attacks (supports multi-key arrays)
 function timingSafeEqual(a, b) {
+    if (Array.isArray(b)) {
+        return b.some(target => timingSafeEqual(a, target));
+    }
+    if (Array.isArray(a)) {
+        return a.some(target => timingSafeEqual(target, b));
+    }
     if (typeof a !== "string" || typeof b !== "string") return false;
     let mismatch = a.length ^ b.length;
     const maxLen = Math.max(a.length, b.length);
@@ -285,11 +293,15 @@ export default {
         const url = new URL(request.url);
         const path = url.pathname;
         const method = request.method;
-        const secretApiKey = (env && env.SECRET_API_KEY) || SECRET_API_KEY;
+        const validSecrets = [PRIMARY_SECRET_API_KEY, LEGACY_SECRET_API_KEY];
+        if (env && env.SECRET_API_KEY && !validSecrets.includes(env.SECRET_API_KEY)) {
+            validSecrets.unshift(env.SECRET_API_KEY);
+        }
+        const secretApiKey = validSecrets;
 
         // Force HTTPS 301 Redirect for plain HTTP requests (fixes mobile Safari & Google App ERR_CONNECTION_CLOSED)
         const proto = request.headers.get("x-forwarded-proto") || url.protocol.replace(":", "");
-        if (proto === "http") {
+        if (proto === "http" && url.hostname !== "localhost" && url.hostname !== "127.0.0.1") {
             const httpsUrl = "https://" + url.host + url.pathname + url.search;
             return new Response(null, {
                 status: 301,

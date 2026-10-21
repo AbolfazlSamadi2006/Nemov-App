@@ -24,7 +24,7 @@ if sys.stdout.encoding != "utf-8":
 
 from PyQt6.QtWidgets import QApplication
 from PyQt6.QtCore import Qt
-from yalda.utils.theme_manager import ThemeManager
+from nemov.utils.theme_manager import ThemeManager
 
 TEST_THEMES = ["royal_gold", "neon_pulse", "olympic_white", "fresh_mint"]
 
@@ -40,24 +40,24 @@ def run_visual_inspection():
     output_dir = PROJECT_ROOT / "qa_artifacts" / "m3_views"
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    from yalda.views.components.stat_card import StatCard
-    from yalda.views.dashboard_view import DashboardView
-    from yalda.views.member_list_view import MemberListView
-    from yalda.views.accounting_view import AccountingView
-    from yalda.views.sms_view import SmsView
-    from yalda.views.backup_view import BackupView
-    from yalda.views.components.tuition_payment_dialog import TuitionPaymentDialog
-    from yalda.views.components.expense_form_dialog import ExpenseFormDialog
-    from yalda.views.components.trainer_details_dialog import TrainerDetailsDialog
-    from yalda.views.trainer_register_dialog import TrainerRegisterDialog
-    from yalda.views.password_recovery_dialog import PasswordRecoveryDialog
-    from yalda.views.cloud_restore_dialog import CloudRestoreDialog
-    from yalda.views.components.backup_destination_dialog import BackupDestinationDialog
-    from yalda.views.components.email_spam_guide_dialog import EmailSpamGuideDialog
-    from yalda.views.components.unregistered_items_dialog import UnregisteredItemsDialog
-    from yalda.views.data_migration_dialog import DataMigrationDialog
-    from yalda.views.components.jalali_calendar_widget import JalaliCalendarDialog
-    from yalda.views.workout_editor_view import IncompletePlanWarningDialog
+    from nemov.views.components.stat_card import StatCard
+    from nemov.views.dashboard_view import DashboardView
+    from nemov.views.member_list_view import MemberListView
+    from nemov.views.accounting_view import AccountingView
+    from nemov.views.sms_view import SmsView
+    from nemov.views.backup_view import BackupView
+    from nemov.views.components.tuition_payment_dialog import TuitionPaymentDialog
+    from nemov.views.components.expense_form_dialog import ExpenseFormDialog
+    from nemov.views.components.trainer_details_dialog import TrainerDetailsDialog
+    from nemov.views.trainer_register_dialog import TrainerRegisterDialog
+    from nemov.views.password_recovery_dialog import PasswordRecoveryDialog
+    from nemov.views.cloud_restore_dialog import CloudRestoreDialog
+    from nemov.views.components.backup_destination_dialog import BackupDestinationDialog
+    from nemov.views.components.email_spam_guide_dialog import EmailSpamGuideDialog
+    from nemov.views.components.unregistered_items_dialog import UnregisteredItemsDialog
+    from nemov.views.data_migration_dialog import DataMigrationDialog
+    from nemov.views.components.jalali_calendar_widget import JalaliCalendarDialog
+    from nemov.views.workout_editor_view import IncompletePlanWarningDialog
 
     passed_checks = 0
     total_checks = 0

@@ -1,5 +1,5 @@
 // Independent Victory Audit Test Suite for Cloudflare Worker Speed & Responsive UI Optimization
-import worker from '../yalda_cloud_server/cloudflare_worker/index.js';
+import worker from '../nemov_cloud_server/cloudflare_worker/index.js';
 import fs from 'fs';
 import path from 'path';
 
@@ -221,7 +221,7 @@ async function runAudit() {
     console.log(`${BLUE}   Target: Cloudflare Worker Speed & UI Optimizer   ${RESET}`);
     console.log(`${BLUE}====================================================${RESET}\n`);
 
-    const sourcePath = path.resolve('yalda_cloud_server/cloudflare_worker/index.js');
+    const sourcePath = path.resolve('nemov_cloud_server/cloudflare_worker/index.js');
     const sourceCode = fs.readFileSync(sourcePath, 'utf-8');
 
     // ----------------------------------------------------

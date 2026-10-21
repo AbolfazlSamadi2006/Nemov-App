@@ -26,8 +26,8 @@ from dataclasses import fields
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from yalda.utils.theme_manager import ThemeManager, ThemePalette, PALETTES
-from yalda.views.components.theme_card import PALETTES_METADATA
+from nemov.utils.theme_manager import ThemeManager, ThemePalette, PALETTES
+from nemov.views.components.theme_card import PALETTES_METADATA
 
 
 HEX_REGEX = re.compile(r"^#[0-9a-fA-F]{6}$")

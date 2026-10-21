@@ -11,13 +11,13 @@ if sys.stdout.encoding != 'utf-8':
     except Exception:
         pass
 
-from yalda.utils.hardware_security import HardwareSecurity
-from yalda.auth.authentication import (
+from nemov.utils.hardware_security import HardwareSecurity
+from nemov.auth.authentication import (
     is_app_license_active, set_app_license_active, authenticate_user, get_session
 )
-from yalda.models.database_models import SystemSetting
+from nemov.models.database_models import SystemSetting
 from PyQt6.QtWidgets import QApplication
-from yalda.views.login_view import LoginView
+from nemov.views.login_view import LoginView
 
 def test_persistent_license():
     print("=== Testing Persistent Machine License Across Updates ===")

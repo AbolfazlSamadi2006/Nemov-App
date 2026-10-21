@@ -14,13 +14,13 @@ app = QApplication.instance()
 if not app:
     app = QApplication(sys.argv)
 
-from yalda.views.components.unregistered_items_dialog import UnregisteredItemsDialog
-from yalda.services.workout_service import WorkoutService
-from yalda.services.nutrition_service import NutritionService
-from yalda.services.member_service import MemberService
-from yalda.database.connection import get_session, check_and_migrate_db
-from yalda.models.database_models import Member, Exercise, FoodItem, WorkoutPlan, NutritionPlan
-from yalda.pdf.pdf_generator import PDFGenerator
+from nemov.views.components.unregistered_items_dialog import UnregisteredItemsDialog
+from nemov.services.workout_service import WorkoutService
+from nemov.services.nutrition_service import NutritionService
+from nemov.services.member_service import MemberService
+from nemov.database.connection import get_session, check_and_migrate_db
+from nemov.models.database_models import Member, Exercise, FoodItem, WorkoutPlan, NutritionPlan
+from nemov.pdf.pdf_generator import PDFGenerator
 
 
 def test_visual_dialog():

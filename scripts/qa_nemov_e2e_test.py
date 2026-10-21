@@ -181,8 +181,8 @@ class NemovE2ETestSuite:
     def backup_database_settings(self, keys: List[str]):
         """Backs up existing SQLite settings to restore after tests."""
         try:
-            from yalda.database.connection import get_session
-            from yalda.models.database_models import SystemSetting
+            from nemov.database.connection import get_session
+            from nemov.models.database_models import SystemSetting
             with get_session() as db:
                 for k in keys:
                     s = db.query(SystemSetting).filter(SystemSetting.key == k).first()
@@ -193,8 +193,8 @@ class NemovE2ETestSuite:
     def restore_database_settings(self):
         """Restores database settings to pristine pre-test state."""
         try:
-            from yalda.database.connection import get_session
-            from yalda.models.database_models import SystemSetting
+            from nemov.database.connection import get_session
+            from nemov.models.database_models import SystemSetting
             with get_session() as db:
                 for k, v in self._db_backup_settings.items():
                     s = db.query(SystemSetting).filter(SystemSetting.key == k).first()
@@ -251,9 +251,9 @@ class NemovE2ETestSuite:
     def test_t1_2_window_titles_rebranding(self) -> TestResult:
         """T1.2: Verify MainWindow, LoginView and Sidebar window/header titles."""
         t0 = time.time()
-        main_win_path = PROJECT_ROOT / "yalda" / "views" / "main_window.py"
-        login_view_path = PROJECT_ROOT / "yalda" / "views" / "login_view.py"
-        sidebar_path = PROJECT_ROOT / "yalda" / "views" / "components" / "sidebar.py"
+        main_win_path = PROJECT_ROOT / "nemov" / "views" / "main_window.py"
+        login_view_path = PROJECT_ROOT / "nemov" / "views" / "login_view.py"
+        sidebar_path = PROJECT_ROOT / "nemov" / "views" / "components" / "sidebar.py"
 
         main_text = main_win_path.read_text(encoding="utf-8") if main_win_path.exists() else ""
         login_text = login_view_path.read_text(encoding="utf-8") if login_view_path.exists() else ""
@@ -317,10 +317,10 @@ class NemovE2ETestSuite:
                               "FAIL", f"Failed to inspect ICO image: {e}", duration)
 
     def test_t1_4_appusermodelid_registration(self) -> TestResult:
-        """T1.4: Verify SetCurrentProcessExplicitAppUserModelID registration in main.py / yalda/app.py."""
+        """T1.4: Verify SetCurrentProcessExplicitAppUserModelID registration in main.py / nemov/app.py."""
         t0 = time.time()
         main_py = PROJECT_ROOT / "main.py"
-        app_py = PROJECT_ROOT / "yalda" / "app.py"
+        app_py = PROJECT_ROOT / "nemov" / "app.py"
 
         main_text = main_py.read_text(encoding="utf-8") if main_py.exists() else ""
         app_text = app_py.read_text(encoding="utf-8") if app_py.exists() else ""
@@ -344,8 +344,8 @@ class NemovE2ETestSuite:
         """T1.5: Verify SQLite SystemSetting table supports all required branding & appearance keys."""
         t0 = time.time()
         try:
-            from yalda.database.connection import get_session
-            from yalda.models.database_models import SystemSetting
+            from nemov.database.connection import get_session
+            from nemov.models.database_models import SystemSetting
 
             test_keys = ["club_name", "club_phone", "club_address", "club_logo_path", "app_theme"]
             with get_session() as db:
@@ -364,15 +364,15 @@ class NemovE2ETestSuite:
     def test_t1_6_branding_service_interface(self) -> TestResult:
         """T1.6: Verify BrandingService interface contracts and methods."""
         t0 = time.time()
-        service_file = PROJECT_ROOT / "yalda" / "services" / "branding_service.py"
+        service_file = PROJECT_ROOT / "nemov" / "services" / "branding_service.py"
 
         if not service_file.exists():
             return TestResult(1, "T1.6_BRANDING_SERVICE", "BrandingService Interface Contract", "M2",
-                              "PENDING", "yalda/services/branding_service.py pending implementation in M2.",
+                              "PENDING", "nemov/services/branding_service.py pending implementation in M2.",
                               (time.time() - t0) * 1000)
 
         try:
-            from yalda.services.branding_service import (
+            from nemov.services.branding_service import (
                 get_club_info, save_club_info, save_custom_logo,
                 reset_to_default_logo, get_active_logo_path, get_active_club_name
             )
@@ -393,20 +393,20 @@ class NemovE2ETestSuite:
     def test_t1_7_theme_manager_palettes(self) -> TestResult:
         """T1.7: Verify ThemeManager contains exactly 17 palettes (12 dark, 5 light) with valid tokens."""
         t0 = time.time()
-        theme_mgr_file = PROJECT_ROOT / "yalda" / "utils" / "theme_manager.py"
+        theme_mgr_file = PROJECT_ROOT / "nemov" / "utils" / "theme_manager.py"
         if not theme_mgr_file.exists():
-            theme_mgr_file = PROJECT_ROOT / "yalda" / "services" / "theme_manager.py"
+            theme_mgr_file = PROJECT_ROOT / "nemov" / "services" / "theme_manager.py"
 
         if not theme_mgr_file.exists():
             return TestResult(1, "T1.7_THEME_MANAGER_PALETTES", "ThemeManager 17-Palette Engine", "M3",
-                              "PENDING", "yalda/utils/theme_manager.py pending implementation in M3.",
+                              "PENDING", "nemov/utils/theme_manager.py pending implementation in M3.",
                               (time.time() - t0) * 1000)
 
         try:
             try:
-                from yalda.utils.theme_manager import ThemeManager
+                from nemov.utils.theme_manager import ThemeManager
             except ImportError:
-                from yalda.services.theme_manager import ThemeManager
+                from nemov.services.theme_manager import ThemeManager
 
             palettes = ThemeManager.PALETTES
             count = len(palettes)
@@ -440,7 +440,7 @@ class NemovE2ETestSuite:
     def test_t1_8_pdf_official_signature_and_header(self) -> TestResult:
         """T1.8: Verify PDF generator official centered footer signature and dynamic header."""
         t0 = time.time()
-        pdf_gen_file = PROJECT_ROOT / "yalda" / "pdf" / "pdf_generator.py"
+        pdf_gen_file = PROJECT_ROOT / "nemov" / "pdf" / "pdf_generator.py"
         pdf_text = pdf_gen_file.read_text(encoding="utf-8") if pdf_gen_file.exists() else ""
 
         required_signature = "طراحی و ارائه‌شده توسط نرم‌افزار مدیریت ورزشی نِمُو (Nemov)"
@@ -452,7 +452,7 @@ class NemovE2ETestSuite:
 
         # Test canvas rendering
         try:
-            from yalda.pdf.pdf_generator import PDFGenerator
+            from nemov.pdf.pdf_generator import PDFGenerator
             spy = SpyCanvas()
             mock_doc = MockDoc()
 
@@ -476,7 +476,7 @@ class NemovE2ETestSuite:
     def test_t1_9_dynamic_sms_club_replacement(self) -> TestResult:
         """T1.9: Verify dynamic club name injection into #GYM# variable in SMS service."""
         t0 = time.time()
-        sms_file = PROJECT_ROOT / "yalda" / "services" / "sms_service.py"
+        sms_file = PROJECT_ROOT / "nemov" / "services" / "sms_service.py"
         sms_text = sms_file.read_text(encoding="utf-8") if sms_file.exists() else ""
 
         # Check if sms_service resolves club name dynamically rather than static config.APP_NAME only
@@ -497,7 +497,7 @@ class NemovE2ETestSuite:
         t0 = time.time()
         worker_file = PROJECT_ROOT / "nemov_cloud_server" / "cloudflare_worker" / "index.js"
         if not worker_file.exists():
-            worker_file = PROJECT_ROOT / "yalda_cloud_server" / "cloudflare_worker" / "index.js"
+            worker_file = PROJECT_ROOT / "nemov_cloud_server" / "cloudflare_worker" / "index.js"
         if not worker_file.exists():
             return TestResult(1, "T1.10_CLOUDFLARE_WORKER", "Cloudflare Landing Page Rebranding", "M4",
                               "FAIL", "Cloudflare worker index.js not found.", (time.time() - t0) * 1000)
@@ -557,8 +557,8 @@ class NemovE2ETestSuite:
         self.ensure_qt()
         self.backup_database_settings(["app_theme"])
         try:
-            from yalda.utils.theme_manager import ThemeManager
-            from yalda.services.branding_service import save_club_info
+            from nemov.utils.theme_manager import ThemeManager
+            from nemov.services.branding_service import save_club_info
 
             # 1. Save royal_gold to DB
             save_club_info(app_theme="royal_gold")
@@ -586,8 +586,8 @@ class NemovE2ETestSuite:
         t0 = time.time()
         self.ensure_qt()
         try:
-            from yalda.views.login_view import LoginView
-            from yalda.utils.theme_manager import ThemeManager
+            from nemov.views.login_view import LoginView
+            from nemov.utils.theme_manager import ThemeManager
 
             login = LoginView()
 
@@ -621,9 +621,9 @@ class NemovE2ETestSuite:
         """T2.1: Boundary Value Analysis: Empty, whitespace or None club name fallback."""
         t0 = time.time()
         try:
-            from yalda.services.branding_service import get_active_club_name, save_club_info
-            from yalda.database.connection import get_session
-            from yalda.models.database_models import SystemSetting
+            from nemov.services.branding_service import get_active_club_name, save_club_info
+            from nemov.database.connection import get_session
+            from nemov.models.database_models import SystemSetting
         except ImportError:
             return TestResult(2, "T2.1_EMPTY_CLUB_NAME_FALLBACK", "Empty Club Name Fallback", "M2",
                               "PENDING", "BrandingService pending implementation in M2.", (time.time() - t0) * 1000)
@@ -662,9 +662,9 @@ class NemovE2ETestSuite:
         """T2.2: Boundary Value Analysis: Missing / Corrupted / Non-existent logo fallback."""
         t0 = time.time()
         try:
-            from yalda.services.branding_service import get_active_logo_path
-            from yalda.database.connection import get_session
-            from yalda.models.database_models import SystemSetting
+            from nemov.services.branding_service import get_active_logo_path
+            from nemov.database.connection import get_session
+            from nemov.models.database_models import SystemSetting
         except ImportError:
             return TestResult(2, "T2.2_MISSING_LOGO_FALLBACK", "Missing Custom Logo Fallback", "M2",
                               "PENDING", "BrandingService pending implementation in M2.", (time.time() - t0) * 1000)
@@ -701,10 +701,10 @@ class NemovE2ETestSuite:
         """T2.3: Boundary Value Analysis: Invalid / Unknown theme ID fallback to crimson_fury."""
         t0 = time.time()
         try:
-            from yalda.utils.theme_manager import ThemeManager
+            from nemov.utils.theme_manager import ThemeManager
         except ImportError:
             try:
-                from yalda.services.theme_manager import ThemeManager
+                from nemov.services.theme_manager import ThemeManager
             except ImportError:
                 return TestResult(2, "T2.3_INVALID_THEME_FALLBACK", "Invalid Theme ID Fallback", "M3",
                                   "PENDING", "ThemeManager pending implementation in M3.", (time.time() - t0) * 1000)
@@ -735,7 +735,7 @@ class NemovE2ETestSuite:
         self.ensure_qt()
 
         try:
-            from yalda.views.backup_view import BackupView
+            from nemov.views.backup_view import BackupView
             view = BackupView()
 
             resolutions = [(1024, 768), (1920, 1080)]
@@ -769,8 +769,8 @@ class NemovE2ETestSuite:
         t0 = time.time()
         self.ensure_qt()
         try:
-            from yalda.views.components.sidebar import Sidebar
-            from yalda.utils.theme_manager import ThemeManager
+            from nemov.views.components.sidebar import Sidebar
+            from nemov.utils.theme_manager import ThemeManager
 
             sidebar = Sidebar()
             ThemeManager.apply_theme("electric_cyan")
@@ -806,8 +806,8 @@ class NemovE2ETestSuite:
         """T3.1: Pairwise: Theme switching + PDF generation top bar accent color reflection."""
         t0 = time.time()
         try:
-            from yalda.utils.theme_manager import ThemeManager
-            from yalda.pdf.pdf_generator import PDFGenerator
+            from nemov.utils.theme_manager import ThemeManager
+            from nemov.pdf.pdf_generator import PDFGenerator
             from reportlab.lib import colors
         except ImportError:
             return TestResult(3, "T3.1_THEME_PDF_ACCENT", "Theme Switching -> PDF Top Bar Accent Reflection", "M3",
@@ -858,10 +858,10 @@ class NemovE2ETestSuite:
         """T3.2: Pairwise: Custom logo upload -> PDF watermark -> Reset to Nemov logo round-trip."""
         t0 = time.time()
         try:
-            from yalda.services.branding_service import (
+            from nemov.services.branding_service import (
                 save_custom_logo, reset_to_default_logo, get_active_logo_path
             )
-            from yalda.pdf.pdf_generator import PDFGenerator
+            from nemov.pdf.pdf_generator import PDFGenerator
         except ImportError:
             return TestResult(3, "T3.2_LOGO_UPLOAD_RESET_ROUNDTRIP", "Logo Upload -> PDF Watermark -> Reset Round-Trip", "M2/M3",
                               "PENDING", "BrandingService or PDFGenerator pending M2/M3 integration.", (time.time() - t0) * 1000)
@@ -912,8 +912,8 @@ class NemovE2ETestSuite:
         """T3.3: Pairwise: Dynamic club info -> SMS template #GYM# variable replacement."""
         t0 = time.time()
         try:
-            from yalda.services.branding_service import save_club_info
-            from yalda.services.sms_service import DEFAULT_SMS_TEMPLATES
+            from nemov.services.branding_service import save_club_info
+            from nemov.services.sms_service import DEFAULT_SMS_TEMPLATES
         except ImportError:
             return TestResult(3, "T3.3_CLUB_INFO_SMS_FORMATTING", "Club Info -> SMS #GYM# Replacement", "M3",
                               "PENDING", "BrandingService or SmsService pending M3 dynamic integration.", (time.time() - t0) * 1000)
@@ -948,8 +948,8 @@ class NemovE2ETestSuite:
         t0 = time.time()
         self.ensure_qt()
         try:
-            from yalda.views.main_window import MainWindow
-            from yalda.utils.theme_manager import ThemeManager
+            from nemov.views.main_window import MainWindow
+            from nemov.utils.theme_manager import ThemeManager
 
             mw = MainWindow()
             for theme_key in ["royal_gold", "champagne_gold", "stealth_silver"]:
@@ -992,11 +992,11 @@ class NemovE2ETestSuite:
         self.ensure_qt()
 
         try:
-            from yalda.utils.theme_manager import ThemeManager
-            from yalda.services.branding_service import (
+            from nemov.utils.theme_manager import ThemeManager
+            from nemov.services.branding_service import (
                 save_club_info, reset_to_default_logo, get_active_club_name, get_active_logo_path
             )
-            from yalda.pdf.pdf_generator import PDFGenerator
+            from nemov.pdf.pdf_generator import PDFGenerator
         except ImportError:
             return TestResult(4, "T4.1_TRAINER_WORKFLOW_E2E", "Complete Trainer Workflow E2E", "M1-M4",
                               "PENDING", "Core rebranding, branding service or theme manager pending milestone completion.",
@@ -1191,7 +1191,7 @@ class NemovE2ETestSuite:
 - **T1.3**: Multi-Resolution Windows Icon Layers (`resources/icons/nemov.ico` with 16, 24, 32, 48, 64, 128, 256 px; `nemov_logo.png` 512x512).
 - **T1.4**: Windows AppUserModelID Registration (`nemov.sports.management.desktop.v3` for taskbar pinning).
 - **T1.5**: SQLite Database `SystemSetting` Table Keys (`club_name`, `club_phone`, `club_address`, `club_logo_path`, `app_theme`).
-- **T1.6**: Branding Service Interface (`yalda/services/branding_service.py` - get_club_info, save_club_info, save_custom_logo, reset_to_default_logo, get_active_logo_path, get_active_club_name).
+- **T1.6**: Branding Service Interface (`nemov/services/branding_service.py` - get_club_info, save_club_info, save_custom_logo, reset_to_default_logo, get_active_logo_path, get_active_club_name).
 - **T1.7**: Theme Manager Palettes Engine (`ThemeManager.PALETTES` count == 17: 12 dark + 5 light).
 - **T1.8**: PDF Official Footer Signature (`طراحی و ارائه‌شده توسط نرم‌افزار مدیریت ورزشی نِمُو (Nemov)` at y=7).
 - **T1.9**: SMS Dynamic Club Name Injection (`#GYM#` variable dynamic substitution).

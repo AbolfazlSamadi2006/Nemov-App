@@ -18,9 +18,9 @@ from PyQt6.QtWidgets import QApplication
 from PyQt6.QtGui import QFontDatabase, QFont, QFontMetrics
 from PyQt6.QtCore import Qt
 import config
-from yalda.database.connection import init_db
-from yalda.views.food_library_view import FoodLibraryView
-from yalda.views.nutrition_editor_view import NutritionEditorView
+from nemov.database.connection import init_db
+from nemov.views.food_library_view import FoodLibraryView
+from nemov.views.nutrition_editor_view import NutritionEditorView
 
 def run_qa():
     app = QApplication.instance() or QApplication(sys.argv)

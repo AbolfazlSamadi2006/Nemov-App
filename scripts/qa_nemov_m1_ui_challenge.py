@@ -38,8 +38,8 @@ from PyQt6.QtCore import Qt, QPointF, QEvent
 from PyQt6.QtGui import QMouseEvent, QPixmap
 
 import config
-from yalda.utils.theme_manager import ThemeManager, PALETTES
-from yalda.views.components.theme_card import ThemePaletteCard, PALETTES_METADATA
+from nemov.utils.theme_manager import ThemeManager, PALETTES
+from nemov.views.components.theme_card import ThemePaletteCard, PALETTES_METADATA
 
 
 class EmpiricalUIChallengeRunner:

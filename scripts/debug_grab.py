@@ -9,7 +9,7 @@ with open("debug_grab.log", "w", encoding="utf-8") as f:
     try:
         from PyQt6.QtWidgets import QApplication
         app = QApplication([])
-        from yalda.views.sms_view import SmsView
+        from nemov.views.sms_view import SmsView
         sms_view = SmsView()
         f.write("SmsView created.\n")
         sms_view.resize(1024, 700)

@@ -8,12 +8,12 @@ sys.path.insert(0, os.path.abspath("."))
 from PyQt6.QtWidgets import QApplication, QHeaderView
 from PyQt6.QtCore import Qt, QTimer
 import config
-from yalda.models.database_models import User
-from yalda.auth.authentication import CurrentUser
-from yalda.views.main_window import MainWindow
-from yalda.views.components.tuition_payment_dialog import TuitionPaymentDialog
-from yalda.views.dashboard_view import DashboardView
-from yalda.views.member_list_view import MemberListView
+from nemov.models.database_models import User
+from nemov.auth.authentication import CurrentUser
+from nemov.views.main_window import MainWindow
+from nemov.views.components.tuition_payment_dialog import TuitionPaymentDialog
+from nemov.views.dashboard_view import DashboardView
+from nemov.views.member_list_view import MemberListView
 
 def run_qa():
     app = QApplication(sys.argv)

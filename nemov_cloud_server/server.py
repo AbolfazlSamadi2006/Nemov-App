@@ -15,7 +15,10 @@ BASE_DIR = Path(__file__).resolve().parent
 STORAGE_DIR = BASE_DIR / "server_data" / "backups"
 STORAGE_DIR.mkdir(parents=True, exist_ok=True)
 
-SECRET_API_KEY = os.environ.get("YALDA_API_KEY", "yalda_cloud_sec_2006_gym")
+PRIMARY_SECRET_API_KEY = os.environ.get("NEMOV_API_KEY", "nemov_cloud_security")
+LEGACY_SECRET_API_KEY = os.environ.get("YALDA_API_KEY", "yalda_cloud_sec_2006_gym")
+VALID_API_KEYS = {PRIMARY_SECRET_API_KEY, LEGACY_SECRET_API_KEY, "nemov_cloud_security", "yalda_cloud_sec_2006_gym"}
+SECRET_API_KEY = PRIMARY_SECRET_API_KEY
 ADMIN_USERNAME = os.environ.get("ADMIN_USER", "admin")
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASS", "2006")
 SESSION_SECRET = os.environ.get("SESSION_SECRET", "super_secret_session_key_yalda_2006")
@@ -71,7 +74,7 @@ async def upload_backup(
     file: UploadFile = File(...),
     x_api_key: str = Header(None)
 ):
-    if x_api_key != SECRET_API_KEY:
+    if x_api_key not in VALID_API_KEYS:
         raise HTTPException(status_code=401, detail="کلید امنیتی سرور نامعتبر است.")
 
     clean_phone = "".join(filter(str.isdigit, phone))
@@ -80,11 +83,17 @@ async def upload_backup(
 
     trainer_dir = STORAGE_DIR / clean_phone
     trainer_dir.mkdir(parents=True, exist_ok=True)
-    db_file_path = trainer_dir / "yalda.db"
+    db_file_path = trainer_dir / "nemov.db"
 
     # Save and overwrite previous database file
     with open(db_file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
+
+    # Legacy copy for backward compatibility
+    try:
+        shutil.copy2(db_file_path, trainer_dir / "yalda.db")
+    except Exception:
+        pass
 
     file_size_mb = round(os.path.getsize(db_file_path) / (1024 * 1024), 2)
     now = datetime.now()
@@ -112,18 +121,20 @@ async def upload_backup(
 async def download_backup(phone: str, x_api_key: str = Header(None), req: Request = None):
     # Allow either API key header or logged in admin session
     is_admin = req and req.session.get("is_admin")
-    if not is_admin and x_api_key != SECRET_API_KEY:
+    if not is_admin and x_api_key not in VALID_API_KEYS:
         raise HTTPException(status_code=401, detail="دسترسی غیرمجاز")
 
     clean_phone = "".join(filter(str.isdigit, phone))
-    db_file_path = STORAGE_DIR / clean_phone / "yalda.db"
+    db_file_path = STORAGE_DIR / clean_phone / "nemov.db"
+    if not db_file_path.exists():
+        db_file_path = STORAGE_DIR / clean_phone / "yalda.db"
 
     if not db_file_path.exists():
         raise HTTPException(status_code=404, detail="نسخه پشتیبان برای این مربی یافت نشد.")
 
     return FileResponse(
         path=str(db_file_path),
-        filename=f"yalda_{clean_phone}.db",
+        filename=f"nemov_{clean_phone}.db",
         media_type="application/octet-stream"
     )
 

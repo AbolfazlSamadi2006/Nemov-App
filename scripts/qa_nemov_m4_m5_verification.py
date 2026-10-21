@@ -46,10 +46,10 @@ def main():
     passed_checks = 0
     total_checks = 0
 
-    from yalda.utils.theme_manager import ThemeManager
-    from yalda.services.branding_service import BrandingService
-    from yalda.views.backup_view import BackupView
-    from yalda.views.components.theme_card import ThemePaletteCard, PALETTES_METADATA
+    from nemov.utils.theme_manager import ThemeManager
+    from nemov.services.branding_service import BrandingService
+    from nemov.views.backup_view import BackupView
+    from nemov.views.components.theme_card import ThemePaletteCard, PALETTES_METADATA
 
     # ----------------------------------------------------------------------------------
     # PART 1: Milestone 4 Appearance Settings UI & Cards Grid
@@ -168,9 +168,9 @@ def main():
     print(f"  [PASS] 5 Light themes 9router model: pure #FFFFFF cards, #0F172A slate text, #E2E8F0 subtle borders")
     passed_checks += 1
 
-    # 2.3: Zero residual #8B0000 in yalda/views/
+    # 2.3: Zero residual #8B0000 in nemov/views/
     total_checks += 1
-    views_dir = PROJECT_ROOT / "yalda" / "views"
+    views_dir = PROJECT_ROOT / "nemov" / "views"
     residual_crimson_files = []
     for py_file in views_dir.rglob("*.py"):
         if py_file.name == "theme_card.py":
@@ -180,12 +180,12 @@ def main():
             residual_crimson_files.append(str(py_file.relative_to(PROJECT_ROOT)))
 
     assert len(residual_crimson_files) == 0, f"Found residual #8B0000 in: {residual_crimson_files}"
-    print(f"  [PASS] Complete absence of residual #8B0000 in all views and dialogs across yalda/views/")
+    print(f"  [PASS] Complete absence of residual #8B0000 in all views and dialogs across nemov/views/")
     passed_checks += 1
 
     # 2.4: Startup Persistence Hook in app.py & BrandingService
     total_checks += 1
-    app_py_content = (PROJECT_ROOT / "yalda" / "app.py").read_text(encoding="utf-8")
+    app_py_content = (PROJECT_ROOT / "nemov" / "app.py").read_text(encoding="utf-8")
     assert "ThemeManager.apply_saved_theme(" in app_py_content, "ThemeManager.apply_saved_theme missing from app.py"
     assert "dark_theme.qss" not in app_py_content, "Residual dark_theme.qss reference found in app.py"
     print(f"  [PASS] Startup persistence hook verified: app.py calls ThemeManager.apply_saved_theme()")
@@ -193,7 +193,7 @@ def main():
 
     # 2.5: Multi-View Instantiation & Visual Verification in Dark & Light
     total_checks += 1
-    from yalda.views.main_window import MainWindow
+    from nemov.views.main_window import MainWindow
     mw = MainWindow()
     mw.resize(1280, 800)
     mw.show()

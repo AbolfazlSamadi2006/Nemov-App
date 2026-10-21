@@ -24,7 +24,7 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
 
 import config
-from yalda.pdf.pdf_generator import (
+from nemov.pdf.pdf_generator import (
     setup_fonts,
     reshape_text,
     reshape_title_text,
@@ -34,7 +34,7 @@ from yalda.pdf.pdf_generator import (
     TITLE_FONT_NAME,
     PDFGenerator
 )
-from yalda.utils.jalali_date import get_today_shamsi
+from nemov.utils.jalali_date import get_today_shamsi
 
 ARTIFACTS_DIR = Path(r"C:\Users\user\.gemini\antigravity\brain\4b6897a3-c508-4ec6-8c8a-20cd600f30a6")
 ARTIFACTS_DIR.mkdir(parents=True, exist_ok=True)

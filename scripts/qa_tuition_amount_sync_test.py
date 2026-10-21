@@ -8,10 +8,10 @@ sys.path.insert(0, os.path.abspath("."))
 from PyQt6.QtWidgets import QApplication
 from PyQt6.QtCore import Qt, QTimer
 import config
-from yalda.models.database_models import User
-from yalda.auth.authentication import CurrentUser
-from yalda.views.components.tuition_payment_dialog import TuitionPaymentDialog
-from yalda.services.member_service import MemberService
+from nemov.models.database_models import User
+from nemov.auth.authentication import CurrentUser
+from nemov.views.components.tuition_payment_dialog import TuitionPaymentDialog
+from nemov.services.member_service import MemberService
 
 def run_qa():
     app = QApplication(sys.argv)

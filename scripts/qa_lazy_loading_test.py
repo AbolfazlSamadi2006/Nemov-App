@@ -8,12 +8,12 @@ sys.path.insert(0, os.getcwd())
 from PyQt6.QtWidgets import QApplication
 app = QApplication(sys.argv)
 
-from yalda.database.connection import init_db
+from nemov.database.connection import init_db
 init_db()
 
 print("--- 1. Testing Import & Startup Speeds ---")
 t0 = time.perf_counter()
-from yalda.views.main_window import MainWindow
+from nemov.views.main_window import MainWindow
 t_import = time.perf_counter() - t0
 print(f"Import MainWindow time: {t_import:.4f}s")
 

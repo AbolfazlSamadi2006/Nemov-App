@@ -11,8 +11,8 @@ if sys.stderr.encoding != 'utf-8':
 
 from PyQt6.QtWidgets import QApplication, QMessageBox
 from PyQt6.QtCore import Qt
-from yalda.views.login_view import LoginView
-from yalda.utils.credential_manager import CredentialManager
+from nemov.views.login_view import LoginView
+from nemov.utils.credential_manager import CredentialManager
 
 QMessageBox.information = lambda *args, **kwargs: QMessageBox.StandardButton.Ok
 QMessageBox.warning = lambda *args, **kwargs: QMessageBox.StandardButton.Ok

@@ -13,7 +13,7 @@ if sys.stderr.encoding != 'utf-8':
 
 from PyQt6.QtWidgets import QApplication, QMessageBox
 from PyQt6.QtCore import Qt
-from yalda.views.main_window import MainWindow
+from nemov.views.main_window import MainWindow
 
 QMessageBox.information = lambda *args, **kwargs: QMessageBox.StandardButton.Ok
 QMessageBox.warning = lambda *args, **kwargs: QMessageBox.StandardButton.Ok

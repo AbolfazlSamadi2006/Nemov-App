@@ -12,7 +12,7 @@ from PyQt6.QtWidgets import QApplication
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFont, QFontDatabase
 import config
-from yalda.views.templates_manager_view import TemplatesManagerView
+from nemov.views.templates_manager_view import TemplatesManagerView
 
 app = QApplication.instance() or QApplication(sys.argv)
 app.setLayoutDirection(Qt.LayoutDirection.RightToLeft)

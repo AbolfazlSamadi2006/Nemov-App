@@ -12,7 +12,7 @@ from PyQt6.QtCore import Qt
 app = QApplication([])
 app.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
 
-from yalda.views.sms_view import SmsView
+from nemov.views.sms_view import SmsView
 
 sms_view = SmsView()
 # Mock balance for realistic visual QA

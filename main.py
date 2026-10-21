@@ -3,8 +3,8 @@ import traceback
 import threading
 from datetime import datetime
 import config
-from yalda.utils.logger import setup_logging, log_critical, log_error, log_info
-from yalda.app import YaldaApplication
+from nemov.utils.logger import setup_logging, log_critical, log_error, log_info
+from nemov.app import NemovApplication, YaldaApplication
 
 def exception_hook(exctype, value, tb):
     error_msg = "".join(traceback.format_exception(exctype, value, tb))
@@ -19,7 +19,7 @@ def exception_hook(exctype, value, tb):
     try:
         from PyQt6.QtWidgets import QApplication
         if QApplication.instance():
-            from yalda.views.components.error_dialog import show_error_dialog
+            from nemov.views.components.error_dialog import show_error_dialog
             show_error_dialog(
                 message="متاسفانه خطای پیش‌بینی‌نشده‌ای در برنامه رخ داد. جهت پایداری نرم‌افزار، اجرای آن متوقف نشد و جزئیات در فایل لاگ خطاها ذخیره گردید.",
                 technical_details=error_msg,
@@ -44,7 +44,7 @@ def main():
     sys.excepthook = exception_hook
     threading.excepthook = thread_exception_hook
     log_info("Starting Nemov Application...")
-    app = YaldaApplication()
+    app = NemovApplication()
     sys.exit(app.run())
 
 if __name__ == "__main__":

@@ -63,7 +63,7 @@ def run_adversarial_suite():
     # TEST SUITE 1: PALETTES METADATA SPECIFICATION
     # -------------------------------------------------------------------------
     print("\n--- [SUITE 1] PALETTES METADATA SPECIFICATION ---")
-    from yalda.views.components.theme_card import PALETTES_METADATA, ThemePaletteCard
+    from nemov.views.components.theme_card import PALETTES_METADATA, ThemePaletteCard
 
     total_meta = len(PALETTES_METADATA)
     check(total_meta == 17, "Total palette count in metadata is exactly 17", f"Got {total_meta}")
@@ -114,7 +114,7 @@ def run_adversarial_suite():
     # TEST SUITE 2: BACKUPVIEW INSTANTIATION & TAB STRUCTURE
     # -------------------------------------------------------------------------
     print("\n--- [SUITE 2] BACKUPVIEW TAB STRUCTURE & NAMING ---")
-    from yalda.views.backup_view import BackupView
+    from nemov.views.backup_view import BackupView
 
     backup_view = BackupView()
     tabs = getattr(backup_view, "tabs", None)
@@ -249,7 +249,7 @@ def run_adversarial_suite():
     # TEST SUITE 5: CARD SELECTION & PERSISTENCE ROUNDTRIP
     # -------------------------------------------------------------------------
     print("\n--- [SUITE 5] SELECTION INTERACTION & PERSISTENCE ROUNDTRIP ---")
-    from yalda.services.branding_service import BrandingService
+    from nemov.services.branding_service import BrandingService
 
     # Save original theme
     original_theme = BrandingService.get_selected_theme_id()

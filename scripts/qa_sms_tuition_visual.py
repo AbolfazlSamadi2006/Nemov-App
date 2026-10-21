@@ -3,9 +3,9 @@ sys.path.insert(0, os.path.abspath("."))
 from PyQt6.QtWidgets import QApplication
 from PyQt6.QtCore import Qt, QTimer
 import config
-from yalda.auth.authentication import CurrentUser
-from yalda.models.database_models import User
-from yalda.views.main_window import MainWindow
+from nemov.auth.authentication import CurrentUser
+from nemov.models.database_models import User
+from nemov.views.main_window import MainWindow
 
 app = QApplication(sys.argv)
 

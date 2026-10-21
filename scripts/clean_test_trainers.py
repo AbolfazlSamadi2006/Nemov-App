@@ -15,13 +15,31 @@ import config
 
 db_paths = [
     config.DB_PATH,
-    config.APPDATA_DATA_DIR / "yalda.db"
+    config.DATA_DIR / "nemov.db",
+    config.DATA_DIR / "yalda.db",
+    config.APPDATA_DATA_DIR / "nemov.db",
+    config.APPDATA_DATA_DIR / "yalda.db",
+    config.LEGACY_APPDATA_DATA_DIR / "yalda.db",
 ]
 
 # Also check dist if exists
-dist_db = Path("dist/Yalda/data/yalda.db")
-if dist_db.exists():
-    db_paths.append(dist_db)
+for dist_candidate in [
+    Path("dist/Nemov/data/nemov.db"),
+    Path("dist/Nemov/data/yalda.db"),
+    Path("dist/Yalda/data/yalda.db"),
+]:
+    if dist_candidate.exists():
+        db_paths.append(dist_candidate)
+
+# Deduplicate paths preserving priority order
+seen_paths = set()
+unique_db_paths = []
+for p in db_paths:
+    res = p.resolve() if p.exists() else p
+    if res not in seen_paths:
+        seen_paths.add(res)
+        unique_db_paths.append(p)
+db_paths = unique_db_paths
 
 print("Starting clean up of test trainers (علی محمدی و مینا احمدی)...")
 

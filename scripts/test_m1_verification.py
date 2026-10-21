@@ -33,8 +33,8 @@ def test_m1():
     # 3. GUI elements check
     from PyQt6.QtWidgets import QApplication
     app = QApplication.instance() or QApplication(sys.argv)
-    from yalda.views.login_view import LoginView
-    from yalda.views.main_window import MainWindow
+    from nemov.views.login_view import LoginView
+    from nemov.views.main_window import MainWindow
 
     login = LoginView()
     assert login.windowTitle() == "نرم‌افزار مدیریت ورزشی نِمُو - ورود به سیستم", f"Login title: {login.windowTitle()}"

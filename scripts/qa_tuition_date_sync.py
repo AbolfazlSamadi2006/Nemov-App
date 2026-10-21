@@ -9,12 +9,12 @@ from PyQt6.QtWidgets import QApplication
 from PyQt6.QtGui import QFont
 from PyQt6.QtCore import Qt, QTimer
 import config
-from yalda.models.database_models import User
-from yalda.auth.authentication import CurrentUser
-from yalda.views.components.tuition_payment_dialog import TuitionPaymentDialog
-from yalda.services.member_service import MemberService
-from yalda.services.accounting_service import AccountingService
-from yalda.utils.jalali_date import get_today_shamsi, parse_shamsi
+from nemov.models.database_models import User
+from nemov.auth.authentication import CurrentUser
+from nemov.views.components.tuition_payment_dialog import TuitionPaymentDialog
+from nemov.services.member_service import MemberService
+from nemov.services.accounting_service import AccountingService
+from nemov.utils.jalali_date import get_today_shamsi, parse_shamsi
 
 def run_qa():
     app = QApplication(sys.argv)

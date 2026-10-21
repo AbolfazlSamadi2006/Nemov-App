@@ -50,8 +50,8 @@ class BrandingAdversarialTestSuite:
         self._temp_files: List[str] = []
 
     def backup_db(self):
-        from yalda.database.connection import get_session
-        from yalda.models.database_models import SystemSetting
+        from nemov.database.connection import get_session
+        from nemov.models.database_models import SystemSetting
         keys = ["club_name", "club_phone", "club_address", "club_logo_path", "selected_theme_id", "app_theme", "theme_mode"]
         with get_session() as session:
             for k in keys:
@@ -59,8 +59,8 @@ class BrandingAdversarialTestSuite:
                 self._db_backup[k] = row.value if row else None
 
     def restore_db(self):
-        from yalda.database.connection import get_session
-        from yalda.models.database_models import SystemSetting
+        from nemov.database.connection import get_session
+        from nemov.models.database_models import SystemSetting
         try:
             with get_session() as session:
                 for k, v in self._db_backup.items():
@@ -89,9 +89,9 @@ class BrandingAdversarialTestSuite:
     # CASE 1: Empty club name fallback
     # ----------------------------------------------------------------------------------
     def test_case_1_empty_club_name(self):
-        from yalda.services.branding_service import BrandingService, DEFAULT_CLUB_NAME
-        from yalda.database.connection import get_session
-        from yalda.models.database_models import SystemSetting
+        from nemov.services.branding_service import BrandingService, DEFAULT_CLUB_NAME
+        from nemov.database.connection import get_session
+        from nemov.models.database_models import SystemSetting
 
         expected_fallback = "نرم‌افزار مدیریت ورزشی نِمُو"
 
@@ -132,9 +132,9 @@ class BrandingAdversarialTestSuite:
     # CASE 2: Whitespace-only club name fallback
     # ----------------------------------------------------------------------------------
     def test_case_2_whitespace_club_name(self):
-        from yalda.services.branding_service import BrandingService
-        from yalda.database.connection import get_session
-        from yalda.models.database_models import SystemSetting
+        from nemov.services.branding_service import BrandingService
+        from nemov.database.connection import get_session
+        from nemov.models.database_models import SystemSetting
 
         expected_fallback = "نرم‌افزار مدیریت ورزشی نِمُو"
         whitespace_samples = [
@@ -180,9 +180,9 @@ class BrandingAdversarialTestSuite:
     # CASE 3: Non-existent custom logo path fallback
     # ----------------------------------------------------------------------------------
     def test_case_3_non_existent_logo(self):
-        from yalda.services.branding_service import BrandingService
-        from yalda.database.connection import get_session
-        from yalda.models.database_models import SystemSetting
+        from nemov.services.branding_service import BrandingService
+        from nemov.database.connection import get_session
+        from nemov.models.database_models import SystemSetting
 
         fake_paths = [
             "completely_missing_logo_987654321.png",
@@ -220,9 +220,9 @@ class BrandingAdversarialTestSuite:
     # CASE 4: Corrupted / 0-byte image file fallback
     # ----------------------------------------------------------------------------------
     def test_case_4_corrupted_and_zero_byte_logo(self):
-        from yalda.services.branding_service import BrandingService
-        from yalda.database.connection import get_session
-        from yalda.models.database_models import SystemSetting
+        from nemov.services.branding_service import BrandingService
+        from nemov.database.connection import get_session
+        from nemov.models.database_models import SystemSetting
 
         # Create 4 adversarial test files
         # 4a: 0-byte file
@@ -301,9 +301,9 @@ class BrandingAdversarialTestSuite:
     # CASE 5: Reset button round-trip
     # ----------------------------------------------------------------------------------
     def test_case_5_reset_button_roundtrip(self):
-        from yalda.services.branding_service import BrandingService
-        from yalda.database.connection import get_session
-        from yalda.models.database_models import SystemSetting
+        from nemov.services.branding_service import BrandingService
+        from nemov.database.connection import get_session
+        from nemov.models.database_models import SystemSetting
         from PIL import Image
 
         # 1. Create a valid image
@@ -362,9 +362,9 @@ class BrandingAdversarialTestSuite:
     # CASE 6: Persistence round-trip across new database sessions
     # ----------------------------------------------------------------------------------
     def test_case_6_persistence_roundtrip(self):
-        from yalda.services.branding_service import BrandingService
-        from yalda.database.connection import get_session
-        from yalda.models.database_models import SystemSetting
+        from nemov.services.branding_service import BrandingService
+        from nemov.database.connection import get_session
+        from nemov.models.database_models import SystemSetting
         import gc
 
         test_club_name = "مجموعه ورزشی و بدنسازی نِمُو شمال"
@@ -424,7 +424,7 @@ class BrandingAdversarialTestSuite:
     # CASE 7: Special characters, Persian RTL & Emojis
     # ----------------------------------------------------------------------------------
     def test_case_7_unicode_special_characters(self):
-        from yalda.services.branding_service import BrandingService
+        from nemov.services.branding_service import BrandingService
 
         complex_name = "باشگاه بدنسازی «قهرمانان البرز» | Nemov Gym #1 (شعبه مرکزی) 🔥🏋️‍♂️🥇"
         complex_address = "بلوار آیت‌الله بهشتی، کوچه ۱۲/۳، پلاک ۸۵، زنگ ۲"
@@ -446,7 +446,7 @@ class BrandingAdversarialTestSuite:
     # CASE 8: Very long string boundary inputs
     # ----------------------------------------------------------------------------------
     def test_case_8_long_string_boundary(self):
-        from yalda.services.branding_service import BrandingService
+        from nemov.services.branding_service import BrandingService
 
         huge_name = "نِمُو " * 500  # 2500 characters
         huge_address = "آدرس بسیار طولانی " * 200
@@ -472,7 +472,7 @@ class BrandingAdversarialTestSuite:
     # CASE 9: File format validation in save_custom_logo
     # ----------------------------------------------------------------------------------
     def test_case_9_file_format_and_extension_validation(self):
-        from yalda.services.branding_service import BrandingService
+        from nemov.services.branding_service import BrandingService
 
         # Test uploading a .txt or .exe file disguised or renamed
         tf_txt = tempfile.NamedTemporaryFile(suffix=".txt", delete=False)

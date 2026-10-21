@@ -77,6 +77,7 @@ Section "MainSection" SEC01
     CreateDirectory "$INSTDIR\data\uploads\progress-photos"
     CreateDirectory "$INSTDIR\data\uploads\exercise-media"
     CreateDirectory "$INSTDIR\data\branding"
+    File /oname=$INSTDIR\data\nemov.db "data\nemov.db"
     File /oname=$INSTDIR\data\yalda.db "data\yalda.db"
     SetOverwrite on
 

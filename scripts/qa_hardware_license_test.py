@@ -15,13 +15,13 @@ if sys.stdout.encoding != 'utf-8':
 
 from PyQt6.QtWidgets import QApplication
 from PyQt6.QtCore import Qt
-from yalda.utils.hardware_security import HardwareSecurity
-from yalda.auth.authentication import (
+from nemov.utils.hardware_security import HardwareSecurity
+from nemov.auth.authentication import (
     is_app_license_active, set_app_license_active, authenticate_user, CurrentUser, get_session
 )
-from yalda.models.database_models import SystemSetting, User
-from yalda.views.developer_view import DeveloperView
-from yalda.views.login_view import LoginView
+from nemov.models.database_models import SystemSetting, User
+from nemov.views.developer_view import DeveloperView
+from nemov.views.login_view import LoginView
 
 def run_tests():
     print("==================================================")

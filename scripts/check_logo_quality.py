@@ -5,7 +5,7 @@ import re
 from PIL import Image
 
 # 1. Embedded
-js = pathlib.Path('yalda_cloud_server/cloudflare_worker/index.js').read_text(encoding='utf-8')
+js = pathlib.Path('nemov_cloud_server/cloudflare_worker/index.js').read_text(encoding='utf-8')
 m = re.search(r'const NEMOV_LOGO_BASE64 = "(.*?)";', js, re.DOTALL)
 if m:
     b64_clean = re.sub(r'\s+', '', m.group(1))

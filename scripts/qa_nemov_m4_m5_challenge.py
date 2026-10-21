@@ -40,9 +40,9 @@ from PyQt6.QtWidgets import QApplication
 from PyQt6.QtGui import QColor, QImage
 from PyQt6.QtCore import Qt
 
-from yalda.utils.theme_manager import ThemeManager, PALETTES, ThemePalette
-from yalda.services.branding_service import BrandingService
-from yalda.views.components.theme_card import PALETTES_METADATA, ThemePaletteCard
+from nemov.utils.theme_manager import ThemeManager, PALETTES, ThemePalette
+from nemov.services.branding_service import BrandingService
+from nemov.views.components.theme_card import PALETTES_METADATA, ThemePaletteCard
 
 # ---------------------------------------------------------------------------
 # Windows Process Memory Helper
@@ -222,8 +222,8 @@ def run_all_challenges():
     # SECTION 2: Rapid Sequential Live Theme Switching & Fuzzing (100 Cycles)
     # =========================================================================
     print("\n--- [SECTION 2] Rapid Sequential Live Theme Switching & Fuzzing (100 Cycles) ---")
-    from yalda.views.backup_view import BackupView
-    from yalda.views.main_window import MainWindow
+    from nemov.views.backup_view import BackupView
+    from nemov.views.main_window import MainWindow
 
     mw = MainWindow()
     mw.resize(1024, 768)
@@ -436,7 +436,7 @@ def run_all_challenges():
     # =========================================================================
     print("\n--- [SECTION 5] Zero-Tolerance Color Invariant & Hardcoded Styles Audit ---")
     
-    views_dir = PROJECT_ROOT / "yalda" / "views"
+    views_dir = PROJECT_ROOT / "nemov" / "views"
     crimson_hits = []
     hardcoded_dark_hits = []
 
@@ -475,7 +475,7 @@ def run_all_challenges():
     # =========================================================================
     print("\n--- [SECTION 6] Offscreen Visual Render & Pixel Luminance Sampling ---")
     
-    from yalda.views.main_window import MainWindow
+    from nemov.views.main_window import MainWindow
 
     mw_render = MainWindow()
     mw_render.resize(1280, 800)

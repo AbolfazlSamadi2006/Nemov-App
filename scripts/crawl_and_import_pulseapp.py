@@ -13,8 +13,8 @@ APP_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(APP_DIR))
 
 import config
-from yalda.database.connection import get_session, mark_data_changed
-from yalda.models.database_models import Exercise
+from nemov.database.connection import get_session, mark_data_changed
+from nemov.models.database_models import Exercise
 import cv2
 
 # Taxonomy Mappings

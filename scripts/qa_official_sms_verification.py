@@ -11,7 +11,7 @@ if sys.stdout.encoding != 'utf-8':
 if sys.stderr.encoding != 'utf-8':
     sys.stderr.reconfigure(encoding='utf-8')
 
-from yalda.services.sms_service import SmsService, DEFAULT_SMS_TEMPLATES
+from nemov.services.sms_service import SmsService, DEFAULT_SMS_TEMPLATES
 import config
 
 print("=== STEP 1: Verifying DEFAULT_SMS_TEMPLATES ===")
@@ -70,7 +70,7 @@ print(f"✅ All {len(test_phones)} phone normalization test cases passed!")
 print("\n=== STEP 3: Verifying UI and Live Previews ===")
 from PyQt6.QtWidgets import QApplication, QMessageBox, QLabel
 from PyQt6.QtCore import Qt
-from yalda.views.main_window import MainWindow
+from nemov.views.main_window import MainWindow
 
 QMessageBox.information = lambda *args, **kwargs: QMessageBox.StandardButton.Ok
 QMessageBox.warning = lambda *args, **kwargs: QMessageBox.StandardButton.Ok

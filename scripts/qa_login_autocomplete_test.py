@@ -15,8 +15,8 @@ from PyQt6.QtWidgets import QApplication, QMessageBox
 from PyQt6.QtCore import Qt
 from PyQt6.QtTest import QTest
 
-from yalda.views.login_view import LoginView
-from yalda.utils.credential_manager import CredentialManager
+from nemov.views.login_view import LoginView
+from nemov.utils.credential_manager import CredentialManager
 
 # Suppress message boxes
 QMessageBox.information = lambda *args, **kwargs: QMessageBox.StandardButton.Ok

@@ -1,6 +1,6 @@
 import pathlib
 
-p = pathlib.Path('yalda_cloud_server/cloudflare_worker/index.js')
+p = pathlib.Path('nemov_cloud_server/cloudflare_worker/index.js')
 content = p.read_text(encoding='utf-8')
 
 # 1. Update hero-logo-3d-wrapper to display: flex
