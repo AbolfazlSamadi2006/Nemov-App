@@ -1349,7 +1349,13 @@ class BackupView(QWidget):
             self.txt_last_name.setText(u.last_name or "")
             self.txt_phone.setText(u.phone or "")
             email_val = (u.email or "").strip()
-            if email_val.lower() == getattr(config, "SUPPORT_EMAIL_ADDRESS", "").lower():
+            system_support_emails = {
+                getattr(config, "SUPPORT_EMAIL_ADDRESS", "").lower(),
+                getattr(config, "SUPPORT_EMAIL_DISPLAY_ADDRESS", "").lower(),
+                "support@nemovapp.ir",
+                "gymassistantapp.support@gmail.com"
+            }
+            if email_val.lower() in system_support_emails:
                 email_val = ""
             self.txt_email.setText(email_val)
             self.picker_birth_date.set_date(u.birth_date_shamsi or "")
@@ -2136,12 +2142,18 @@ class BackupView(QWidget):
             u = CurrentUser.get()
             # 1. First priority: whatever is currently entered in the email field on screen
             input_email = self.txt_email.text().strip()
-            if input_email.lower() == getattr(config, "SUPPORT_EMAIL_ADDRESS", "").lower():
+            system_support_emails = {
+                getattr(config, "SUPPORT_EMAIL_ADDRESS", "").lower(),
+                getattr(config, "SUPPORT_EMAIL_DISPLAY_ADDRESS", "").lower(),
+                "support@nemovapp.ir",
+                "gymassistantapp.support@gmail.com"
+            }
+            if input_email.lower() in system_support_emails:
                 input_email = ""
 
             # 2. Second priority: email stored in trainer user record (excluding support email)
             db_email = (u.email or "").strip() if u else ""
-            if db_email.lower() == getattr(config, "SUPPORT_EMAIL_ADDRESS", "").lower():
+            if db_email.lower() in system_support_emails:
                 db_email = ""
 
             target_email = input_email or db_email

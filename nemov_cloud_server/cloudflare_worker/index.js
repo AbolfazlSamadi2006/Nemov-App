@@ -1705,10 +1705,10 @@ const SHARED_FONT_CSS = `
 // ============================================================================
 // Landing Page Caching & Security Header Configuration
 // ============================================================================
-const LANDING_PAGE_ETAG = 'W/"landing-v3.4.5-nemov-opt"';
+const LANDING_PAGE_ETAG = 'W/"landing-v3.4.6-nemov-support-email"';
 const LANDING_HEADERS = {
     "Content-Type": "text/html; charset=utf-8",
-    "Cache-Control": "public, max-age=180, s-maxage=3600, stale-while-revalidate=86400",
+    "Cache-Control": "public, max-age=60, s-maxage=120, stale-while-revalidate=600",
     "ETag": LANDING_PAGE_ETAG,
     "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
     "Alt-Svc": "clear",

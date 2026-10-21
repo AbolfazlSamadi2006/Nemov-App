@@ -144,7 +144,7 @@ class EmailSpamGuideDialog(QDialog):
         m2_layout.addWidget(lbl_m2_desc)
 
         # Support email display and Copy button
-        email_addr = getattr(config, "SUPPORT_EMAIL_ADDRESS", "gymassistantapp.support@gmail.com")
+        email_addr = getattr(config, "SUPPORT_EMAIL_DISPLAY_ADDRESS", getattr(config, "SUPPORT_EMAIL_ADDRESS", "support@nemovapp.ir"))
         email_row = QHBoxLayout()
         email_row.setSpacing(8)
 
