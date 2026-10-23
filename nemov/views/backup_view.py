@@ -1512,10 +1512,6 @@ class BackupView(QWidget):
             from nemov.services.branding_service import BrandingService
             BrandingService.save_selected_theme_id(theme_id)
 
-            if hasattr(self, "theme_cards"):
-                for cid, card in self.theme_cards.items():
-                    card.set_selected(cid == theme_id)
-
             try:
                 from nemov.utils.theme_manager import ThemeManager
                 ThemeManager.apply_theme(theme_id)
@@ -1532,6 +1528,10 @@ class BackupView(QWidget):
                     """)
             except Exception:
                 pass
+
+            if hasattr(self, "theme_cards"):
+                for cid, card in self.theme_cards.items():
+                    card.set_selected(cid == theme_id)
 
             self.branding_changed_signal.emit()
         except Exception:

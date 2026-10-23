@@ -180,6 +180,13 @@ class ThemePaletteCard(QFrame):
         self._init_ui()
         self._update_appearance()
 
+        # Connect to dynamic ThemeManager signal for live adaptation
+        try:
+            from nemov.utils.theme_manager import ThemeManager
+            ThemeManager.theme_changed.connect(self._on_global_theme_changed)
+        except Exception:
+            pass
+
     def _init_ui(self):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(10, 8, 10, 8)
@@ -191,22 +198,11 @@ class ThemePaletteCard(QFrame):
         header_layout.setSpacing(6)
 
         self.lbl_title = QLabel(self.name_fa)
-        self.lbl_title.setStyleSheet("font-size: 11px; font-weight: bold; color: #FFFFFF; background: transparent;")
         self.lbl_title.setWordWrap(False)
 
         self.badge_selected = QLabel("✓")
         self.badge_selected.setFixedSize(18, 18)
         self.badge_selected.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.badge_selected.setStyleSheet(f"""
-            QLabel {{
-                background-color: {self.accent_color};
-                color: #FFFFFF;
-                font-family: 'Segoe UI', Arial, sans-serif;
-                font-size: 11px;
-                font-weight: bold;
-                border-radius: 9px;
-            }}
-        """)
         self.badge_selected.setVisible(self.is_selected)
 
         header_layout.addWidget(self.lbl_title, 1)
@@ -215,7 +211,6 @@ class ThemePaletteCard(QFrame):
 
         # Subtitle: English Name
         self.lbl_subtitle = QLabel(self.name_en)
-        self.lbl_subtitle.setStyleSheet("font-size: 10px; color: #8E8E93; font-family: Segoe UI, sans-serif; background: transparent;")
         layout.addWidget(self.lbl_subtitle)
 
         layout.addStretch(1)
@@ -226,57 +221,158 @@ class ThemePaletteCard(QFrame):
         swatches_layout.setSpacing(8)
 
         swatch_labels = ["پس‌زمینه", "کارت", "رنگ اصلی", "هاور"]
+        self.swatch_widgets = []
         for idx, color_hex in enumerate(self.colors[:4]):
             swatch = QLabel()
             swatch.setFixedSize(22, 22)
             swatch.setToolTip(f"{swatch_labels[idx]}: {color_hex}")
-            # White/light border for contrast
-            border_style = "border: 1px solid rgba(255, 255, 255, 0.25);" if self.is_dark else "border: 1px solid rgba(0, 0, 0, 0.15);"
-            swatch.setStyleSheet(f"""
-                QLabel {{
-                    background-color: {color_hex};
-                    border-radius: 11px;
-                    {border_style}
-                }}
-            """)
             swatches_layout.addWidget(swatch)
+            self.swatch_widgets.append((swatch, color_hex))
 
         swatches_layout.addStretch(1)
         layout.addLayout(swatches_layout)
 
+    def _on_global_theme_changed(self, theme_key: str = ""):
+        """Slot called whenever the global theme changes to live-adapt card styles."""
+        self._update_appearance()
+
+    def refresh_theme(self):
+        """Forces refreshing the card appearance based on the active theme."""
+        self._update_appearance()
+
     def _update_appearance(self):
-        """Updates frame border and background depending on selection state."""
+        """Updates frame border, background, typography, and swatches based on active app theme and selection."""
+        try:
+            from nemov.utils.theme_manager import ThemeManager
+            current_palette = ThemeManager.get_current_palette()
+            is_app_dark = current_palette.is_dark if current_palette else True
+        except Exception:
+            is_app_dark = True
+            current_palette = None
+
         obj_name = self.objectName()
-        if self.is_selected:
-            self.setStyleSheet(f"""
-                QFrame#{obj_name} {{
-                    background-color: #242428;
-                    border: 2px solid {self.accent_color};
-                    border-radius: 10px;
-                }}
-            """)
-            if hasattr(self, "badge_selected"):
-                self.badge_selected.setVisible(True)
+
+        if is_app_dark:
+            # ---------------------------------------------------------
+            # Active App Theme is DARK: Render Dark Surface Card
+            # ---------------------------------------------------------
+            if hasattr(self, "lbl_title"):
+                self.lbl_title.setStyleSheet("font-size: 11px; font-weight: bold; color: #FFFFFF; background: transparent;")
+            if hasattr(self, "lbl_subtitle"):
+                self.lbl_subtitle.setStyleSheet("font-size: 10px; color: #8E8E93; font-family: Segoe UI, sans-serif; background: transparent;")
+
+            if self.is_selected:
+                self.setStyleSheet(f"""
+                    QFrame#{obj_name} {{
+                        background-color: #242428;
+                        border: 2px solid {self.accent_color};
+                        border-radius: 10px;
+                    }}
+                """)
+                if hasattr(self, "badge_selected"):
+                    self.badge_selected.setStyleSheet(f"""
+                        QLabel {{
+                            background-color: {self.accent_color};
+                            color: #FFFFFF;
+                            font-family: 'Segoe UI', Arial, sans-serif;
+                            font-size: 11px;
+                            font-weight: bold;
+                            border-radius: 9px;
+                        }}
+                    """)
+                    self.badge_selected.setVisible(True)
+            else:
+                self.setStyleSheet(f"""
+                    QFrame#{obj_name} {{
+                        background-color: #18181A;
+                        border: 1px solid #38383C;
+                        border-radius: 10px;
+                    }}
+                    QFrame#{obj_name}:hover {{
+                        background-color: #222226;
+                        border: 1px solid #5A5A60;
+                    }}
+                """)
+                if hasattr(self, "badge_selected"):
+                    self.badge_selected.setVisible(False)
+
+            # Swatch outlines for dark mode
+            if hasattr(self, "swatch_widgets"):
+                for swatch, color_hex in self.swatch_widgets:
+                    swatch.setStyleSheet(f"""
+                        QLabel {{
+                            background-color: {color_hex};
+                            border-radius: 11px;
+                            border: 1px solid rgba(255, 255, 255, 0.25);
+                        }}
+                    """)
         else:
-            self.setStyleSheet(f"""
-                QFrame#{obj_name} {{
-                    background-color: #18181A;
-                    border: 1px solid #38383C;
-                    border-radius: 10px;
-                }}
-                QFrame#{obj_name}:hover {{
-                    background-color: #222226;
-                    border: 1px solid #5A5A60;
-                }}
-            """)
-            if hasattr(self, "badge_selected"):
-                self.badge_selected.setVisible(False)
+            # ---------------------------------------------------------
+            # Active App Theme is LIGHT: Render Light Surface Card
+            # Harmonized with the active light theme's palette & colors!
+            # ---------------------------------------------------------
+            card_bg = "#FFFFFF"
+            hover_bg = current_palette.bg_base if (current_palette and hasattr(current_palette, "bg_base")) else "#F0FDF4"
+            border_color = current_palette.border_light if (current_palette and hasattr(current_palette, "border_light")) else "#CBD5E1"
+            title_color = current_palette.text_primary if (current_palette and hasattr(current_palette, "text_primary")) else "#0F172A"
+            subtitle_color = current_palette.text_muted if (current_palette and hasattr(current_palette, "text_muted")) else "#64748B"
+            app_accent = current_palette.primary if (current_palette and hasattr(current_palette, "primary")) else self.accent_color
+
+            if hasattr(self, "lbl_title"):
+                self.lbl_title.setStyleSheet(f"font-size: 11px; font-weight: bold; color: {title_color}; background: transparent;")
+            if hasattr(self, "lbl_subtitle"):
+                self.lbl_subtitle.setStyleSheet(f"font-size: 10px; color: {subtitle_color}; font-family: Segoe UI, sans-serif; background: transparent;")
+
+            if self.is_selected:
+                self.setStyleSheet(f"""
+                    QFrame#{obj_name} {{
+                        background-color: {hover_bg};
+                        border: 2.5px solid {self.accent_color};
+                        border-radius: 10px;
+                    }}
+                """)
+                if hasattr(self, "badge_selected"):
+                    self.badge_selected.setStyleSheet(f"""
+                        QLabel {{
+                            background-color: {self.accent_color};
+                            color: #FFFFFF;
+                            font-family: 'Segoe UI', Arial, sans-serif;
+                            font-size: 11px;
+                            font-weight: bold;
+                            border-radius: 9px;
+                        }}
+                    """)
+                    self.badge_selected.setVisible(True)
+            else:
+                self.setStyleSheet(f"""
+                    QFrame#{obj_name} {{
+                        background-color: {card_bg};
+                        border: 1px solid {border_color};
+                        border-radius: 10px;
+                    }}
+                    QFrame#{obj_name}:hover {{
+                        background-color: {hover_bg};
+                        border: 1.5px solid {app_accent};
+                    }}
+                """)
+                if hasattr(self, "badge_selected"):
+                    self.badge_selected.setVisible(False)
+
+            # Swatch outlines for light mode: crisp subtle border so light colors pop
+            if hasattr(self, "swatch_widgets"):
+                for swatch, color_hex in self.swatch_widgets:
+                    swatch.setStyleSheet(f"""
+                        QLabel {{
+                            background-color: {color_hex};
+                            border-radius: 11px;
+                            border: 1px solid rgba(0, 0, 0, 0.18);
+                        }}
+                    """)
 
     def set_selected(self, selected: bool):
         """Sets the selected state and refreshes appearance."""
-        if self.is_selected != selected:
-            self.is_selected = selected
-            self._update_appearance()
+        self.is_selected = selected
+        self._update_appearance()
 
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:

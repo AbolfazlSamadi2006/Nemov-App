@@ -95,6 +95,7 @@ def make_feature_table(rows_data: list) -> QFrame:
     # Header row
     hdr = QFrame()
     hdr.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
+    hdr.setFixedHeight(48)
     hdr.setStyleSheet("""
         QFrame {
             background-color: #21262D;
@@ -108,7 +109,7 @@ def make_feature_table(rows_data: list) -> QFrame:
     hlay.setSpacing(16)
 
     lbl_h1 = QLabel("🎯 بخش / قابلیت")
-    lbl_h1.setFixedWidth(230)
+    lbl_h1.setFixedWidth(240)
     lbl_h1.setAlignment(Qt.AlignmentFlag.AlignLeading | Qt.AlignmentFlag.AlignVCenter)
     lbl_h1.setStyleSheet(f"color: #F87171; font-family: '{FONT_FAMILY}'; font-size: 13.5px; font-weight: bold; border: none; background: transparent;")
 
@@ -119,6 +120,8 @@ def make_feature_table(rows_data: list) -> QFrame:
     hlay.addWidget(lbl_h1)
     hlay.addWidget(lbl_h2, 1)
     vlay.addWidget(hdr)
+
+    total_tbl_h = 48
 
     for idx, (col1, col2) in enumerate(rows_data):
         row_f = QFrame()
@@ -140,21 +143,29 @@ def make_feature_table(rows_data: list) -> QFrame:
 
         c1 = QLabel()
         c1.setText(f"<div align='right'>{col1.replace(chr(10), '<br/>')}</div>")
-        c1.setFixedWidth(230)
+        c1.setFixedWidth(240)
         c1.setWordWrap(True)
         c1.setAlignment(Qt.AlignmentFlag.AlignLeading | Qt.AlignmentFlag.AlignVCenter)
         c1.setStyleSheet(f"color: #FFFFFF; font-family: '{FONT_FAMILY}'; font-size: 13px; font-weight: bold; border: none; background: transparent;")
 
         c2 = QLabel()
-        c2.setText(f"<div align='right'>{col2}</div>")
+        c2.setText(f"<div align='right' style='line-height: 1.55;'>{col2}</div>")
         c2.setWordWrap(True)
         c2.setAlignment(Qt.AlignmentFlag.AlignLeading | Qt.AlignmentFlag.AlignVCenter)
         c2.setStyleSheet(f"color: #D0D7DE; font-family: '{FONT_FAMILY}'; font-size: 13px; border: none; background: transparent;")
 
         rlay.addWidget(c1)
         rlay.addWidget(c2, 1)
+
+        # Dynamically calculate ample row height to prevent text clipping
+        h_needed = c2.heightForWidth(600)
+        row_h = max(58, h_needed + 34)
+        row_f.setFixedHeight(row_h)
+        total_tbl_h += row_h
+
         vlay.addWidget(row_f)
 
+    tbl.setFixedHeight(total_tbl_h)
     return tbl
 
 
