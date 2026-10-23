@@ -1930,31 +1930,8 @@ class NutritionEditorView(QWidget):
     def _create_meal_widget(self, meal_key: str, meal_title: str, foods_list: list) -> QWidget:
         widget = QWidget()
         layout_meal = QVBoxLayout(widget)
-        layout_meal.setContentsMargins(8, 8, 8, 8)
-        layout_meal.setSpacing(10)
-
-        row_top = QHBoxLayout()
-        btn_undo = QPushButton("↩️ Undo")
-        btn_undo.setObjectName("undo_button")
-        btn_undo.setToolTip("بازگشت به مرحله قبل (Ctrl+Z)")
-        btn_undo.clicked.connect(self.undo)
-
-        btn_redo = QPushButton("↪️ Redo")
-        btn_redo.setObjectName("redo_button")
-        btn_redo.setToolTip("انجام مجدد مرحله بعد (Ctrl+Y)")
-        btn_redo.clicked.connect(self.redo)
-
-        self._undo_buttons.append(btn_undo)
-        self._redo_buttons.append(btn_redo)
-
-        btn_add_item = QPushButton("➕ افزودن ماده غذایی")
-        btn_add_item.setObjectName("secondary_button")
-
-        row_top.addStretch()
-        row_top.addWidget(btn_undo)
-        row_top.addWidget(btn_redo)
-        row_top.addWidget(btn_add_item)
-        layout_meal.addLayout(row_top)
+        layout_meal.setContentsMargins(6, 6, 6, 6)
+        layout_meal.setSpacing(6)
 
         table = QTableWidget(0, 5)
         table.setHorizontalHeaderLabels(["نام ماده غذایی", "مقدار (ضریب واحد)", "کیلوکالری دریافتی", "توضیحات مربی", "حذف"])
@@ -1971,11 +1948,57 @@ class NutritionEditorView(QWidget):
         header.setSectionResizeMode(4, QHeaderView.ResizeMode.Fixed)
         table.setColumnWidth(4, 60)
 
-        btn_add_item.clicked.connect(lambda _, t=table: self.add_food_row(t, foods_list))
-
         layout_meal.addWidget(table)
         self.meal_tables.append((meal_key, table))
         return widget
+
+    def _create_meal_tab_corner_widget(self) -> QWidget:
+        corner = QWidget()
+        corner_layout = QHBoxLayout(corner)
+        corner_layout.setContentsMargins(6, 2, 8, 2)
+        corner_layout.setSpacing(6)
+
+        btn_undo = QPushButton("↩️ Undo")
+        btn_undo.setObjectName("undo_button")
+        btn_undo.setToolTip("بازگشت به مرحله قبل (Ctrl+Z)")
+        btn_undo.clicked.connect(self.undo)
+
+        btn_redo = QPushButton("↪️ Redo")
+        btn_redo.setObjectName("redo_button")
+        btn_redo.setToolTip("انجام مجدد مرحله بعد (Ctrl+Y)")
+        btn_redo.clicked.connect(self.redo)
+
+        self._undo_buttons.append(btn_undo)
+        self._redo_buttons.append(btn_redo)
+
+        btn_add_item = QPushButton("➕ افزودن ماده غذایی")
+        btn_add_item.setObjectName("secondary_button")
+        btn_add_item.setCursor(Qt.CursorShape.PointingHandCursor)
+        btn_add_item.clicked.connect(self.on_add_food_clicked)
+
+        corner_layout.addWidget(btn_undo)
+        corner_layout.addWidget(btn_redo)
+        corner_layout.addWidget(btn_add_item)
+
+        return corner
+
+    def get_current_active_meal_table(self) -> QTableWidget:
+        current_w = self.tabs.currentWidget()
+        if isinstance(current_w, QTabWidget):
+            current_w = current_w.currentWidget()
+        if current_w:
+            tbl = current_w.findChild(QTableWidget)
+            if tbl:
+                return tbl
+        if self.meal_tables:
+            return self.meal_tables[0][1]
+        return None
+
+    def on_add_food_clicked(self):
+        table = self.get_current_active_meal_table()
+        if table:
+            foods_list = NutritionService.get_all_foods()
+            self.add_food_row(table, foods_list)
 
     def setup_meal_tabs(self):
         days_mode = self.combo_days.currentData() or "all_days"
@@ -2048,6 +2071,7 @@ class NutritionEditorView(QWidget):
                     table.insertRow(r)
                     self._create_food_row_widgets(table, r, foods_list, itm)
                 self.tabs.addTab(widget, meal_title)
+            self.tabs.setCornerWidget(self._create_meal_tab_corner_widget(), Qt.Corner.TopRightCorner)
         else:
             for d_idx, (day_key, day_title) in enumerate(days):
                 day_info = days_data[d_idx] if d_idx < len(days_data) else None
@@ -2068,6 +2092,7 @@ class NutritionEditorView(QWidget):
                         table.insertRow(r)
                         self._create_food_row_widgets(table, r, foods_list, itm)
                     day_tab_widget.addTab(widget, meal_title)
+                day_tab_widget.setCornerWidget(self._create_meal_tab_corner_widget(), Qt.Corner.TopRightCorner)
                 self.tabs.addTab(day_tab_widget, f"📅 {day_title}")
 
         self.tabs.blockSignals(False)

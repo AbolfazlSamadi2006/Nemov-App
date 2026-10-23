@@ -1063,10 +1063,11 @@ QGroupBox {{
 
 QGroupBox::title {{
     subcontrol-origin: margin;
-    subcontrol-position: top right;
-    padding: 0 8px;
+    subcontrol-position: top left;
+    left: 16px;
+    padding: 0 6px;
     color: {palette.primary_hover if palette.is_dark else palette.primary};
-    background-color: {palette.bg_card};
+    background-color: transparent;
 }}
 
 /* Buttons */
