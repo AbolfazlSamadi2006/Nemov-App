@@ -6,6 +6,9 @@ from PyQt6.QtGui import QKeySequence, QShortcut
 from nemov.services.workout_service import WorkoutService
 from nemov.services.member_service import MemberService
 from nemov.views.components.searchable_combo_box import SearchableComboBox
+from nemov.views.components.field_validator import (
+    validate_workout_sets, validate_workout_reps, validate_workout_weight, validate_workout_rest
+)
 from nemov.views.components.day_management_dialogs import DaySelectionReductionDialog, DayIncreaseChoiceDialog
 from nemov.views.components.unregistered_items_dialog import UnregisteredItemsDialog
 from nemov.utils.theme_manager import ThemeManager
@@ -850,6 +853,32 @@ class WorkoutEditorView(QWidget):
         txt_rest.textEdited.connect(lambda: self._snapshot_change())
         txt_tempo.textEdited.connect(lambda: self._snapshot_change())
 
+        # Micro-guardrails validation on blur/enter
+        def _check_sets(w=txt_sets):
+            err = validate_workout_sets(w.text())
+            w.setToolTip(err or "")
+            w.setStyleSheet("border: 1px solid #F59E0B; color: #F59E0B;" if err else "")
+
+        def _check_reps(w=txt_reps):
+            err = validate_workout_reps(w.text())
+            w.setToolTip(err or "")
+            w.setStyleSheet("border: 1px solid #F59E0B; color: #F59E0B;" if err else "")
+
+        def _check_weight(w=txt_weight):
+            err = validate_workout_weight(w.text())
+            w.setToolTip(err or "")
+            w.setStyleSheet("border: 1px solid #EF4444; color: #EF4444;" if err else "")
+
+        def _check_rest(w=txt_rest):
+            err = validate_workout_rest(w.text())
+            w.setToolTip(err or "")
+            w.setStyleSheet("border: 1px solid #EF4444; color: #EF4444;" if err else "")
+
+        txt_sets.editingFinished.connect(_check_sets)
+        txt_reps.editingFinished.connect(_check_reps)
+        txt_weight.editingFinished.connect(_check_weight)
+        txt_rest.editingFinished.connect(_check_rest)
+
         table.setCellWidget(row, 0, combo_ex)
         table.setCellWidget(row, 1, txt_sets)
         table.setCellWidget(row, 2, txt_reps)
@@ -1206,6 +1235,26 @@ class WorkoutEditorView(QWidget):
         if total_exercises == 0:
             QMessageBox.warning(self, "خطا", "لطفاً ابتدا حداقل یک حرکت ورزشی به برنامه اضافه کنید.")
             return None
+
+        # Validate workout sets, reps, weight, and rest guardrails
+        for day in days_data:
+            for ex in day.get("exercises", []):
+                s_err = validate_workout_sets(ex.get("sets"))
+                if s_err and "بزرگتر از صفر" in s_err:
+                    QMessageBox.warning(self, "خطا در تعداد ست", s_err.replace("⚠️ ", ""))
+                    return None
+                r_err = validate_workout_reps(ex.get("reps"))
+                if r_err and "منفی" in r_err:
+                    QMessageBox.warning(self, "خطا در تعداد تکرار", r_err.replace("⚠️ ", ""))
+                    return None
+                w_err = validate_workout_weight(ex.get("weight"))
+                if w_err:
+                    QMessageBox.warning(self, "خطا در وزنه", w_err.replace("⚠️ ", ""))
+                    return None
+                rst_err = validate_workout_rest(ex.get("rest"))
+                if rst_err:
+                    QMessageBox.warning(self, "خطا در زمان استراحت", rst_err.replace("⚠️ ", ""))
+                    return None
 
         # Check duplicate template title in workout plans bank
         title = plan_info["title"].strip()

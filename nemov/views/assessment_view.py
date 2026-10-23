@@ -6,6 +6,9 @@ import os
 import shutil
 import config
 from nemov.views.components.jalali_calendar_widget import JalaliDatePicker
+from nemov.views.components.field_validator import (
+    MicroWarningLabel, validate_weight, validate_height, validate_body_fat, validate_limb_circ
+)
 from nemov.services.assessment_service import AssessmentService
 
 
@@ -98,6 +101,14 @@ class EditAssessmentDialog(QDialog):
         grid.addWidget(self.spin_thigh, 5, 1)
 
         layout.addLayout(grid)
+
+        self.lbl_edit_warn = MicroWarningLabel()
+        layout.addWidget(self.lbl_edit_warn)
+
+        for sp in (self.spin_height, self.spin_weight, self.spin_fat, self.spin_neck,
+                   self.spin_chest, self.spin_arm, self.spin_abdomen, self.spin_waist,
+                   self.spin_hip, self.spin_thigh):
+            sp.editingFinished.connect(self._validate_edit_inputs)
 
         # Photos
         row_p = QHBoxLayout()
@@ -228,7 +239,31 @@ class EditAssessmentDialog(QDialog):
                 self.after_photo_path = str(dest)
                 self._update_photo_buttons()
 
+    def _validate_edit_inputs(self):
+        err = None
+        if self.spin_weight.value() > 0:
+            err = validate_weight(self.spin_weight.value())
+        if not err and self.spin_height.value() > 0:
+            err = validate_height(self.spin_height.value())
+        if not err and self.spin_fat.value() > 0:
+            err = validate_body_fat(self.spin_fat.value())
+        if not err and self.spin_thigh.value() > 0:
+            err = validate_limb_circ(self.spin_thigh.value(), "thigh")
+        if not err and self.spin_arm.value() > 0:
+            err = validate_limb_circ(self.spin_arm.value(), "arm")
+        if not err and self.spin_waist.value() > 0:
+            err = validate_limb_circ(self.spin_waist.value(), "waist")
+        if not err and self.spin_abdomen.value() > 0:
+            err = validate_limb_circ(self.spin_abdomen.value(), "abdomen")
+        if not err and self.spin_chest.value() > 0:
+            err = validate_limb_circ(self.spin_chest.value(), "chest")
+        if not err and self.spin_neck.value() > 0:
+            err = validate_limb_circ(self.spin_neck.value(), "neck")
+        self.lbl_edit_warn.show_warning(err)
+        return err is None
+
     def save_changes(self):
+        self._validate_edit_inputs()
         w = self.spin_weight.value()
         if w <= 0:
             QMessageBox.warning(self, "خطا", "لطفاً وزن را وارد کنید.")
@@ -500,6 +535,14 @@ class AssessmentView(QWidget):
         row2.addStretch()
         layout_form.addLayout(row2)
 
+        self.lbl_assessment_warn = MicroWarningLabel()
+        layout_form.addWidget(self.lbl_assessment_warn)
+
+        for sp in (self.spin_height, self.spin_weight, self.spin_fat, self.spin_neck,
+                   self.spin_chest, self.spin_arm, self.spin_abdomen, self.spin_waist,
+                   self.spin_hip, self.spin_thigh):
+            sp.editingFinished.connect(self._validate_assessment_inputs)
+
         row3 = QHBoxLayout()
         row3.setSpacing(8)
 
@@ -598,7 +641,31 @@ class AssessmentView(QWidget):
             self.after_photo_path = str(dest)
             self.btn_after.setText(f"📷 عکس بعد: {os.path.basename(fp)[:12]}")
 
+    def _validate_assessment_inputs(self):
+        err = None
+        if self.spin_weight.value() > 0:
+            err = validate_weight(self.spin_weight.value())
+        if not err and self.spin_height.value() > 0:
+            err = validate_height(self.spin_height.value())
+        if not err and self.spin_fat.value() > 0:
+            err = validate_body_fat(self.spin_fat.value())
+        if not err and self.spin_thigh.value() > 0:
+            err = validate_limb_circ(self.spin_thigh.value(), "thigh")
+        if not err and self.spin_arm.value() > 0:
+            err = validate_limb_circ(self.spin_arm.value(), "arm")
+        if not err and self.spin_waist.value() > 0:
+            err = validate_limb_circ(self.spin_waist.value(), "waist")
+        if not err and self.spin_abdomen.value() > 0:
+            err = validate_limb_circ(self.spin_abdomen.value(), "abdomen")
+        if not err and self.spin_chest.value() > 0:
+            err = validate_limb_circ(self.spin_chest.value(), "chest")
+        if not err and self.spin_neck.value() > 0:
+            err = validate_limb_circ(self.spin_neck.value(), "neck")
+        self.lbl_assessment_warn.show_warning(err)
+        return err is None
+
     def save_assessment(self):
+        self._validate_assessment_inputs()
         date_str = self.picker_date.text()
         if not date_str:
             QMessageBox.warning(self, "خطا", "لطفاً تاریخ ارزیابی را وارد کنید.")

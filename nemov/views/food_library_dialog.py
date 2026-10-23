@@ -3,6 +3,9 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import Qt
 from nemov.services.nutrition_service import NutritionService
+from nemov.views.components.field_validator import (
+    MicroWarningLabel, validate_food_macros
+)
 
 class FoodFormDialog(QDialog):
     def __init__(self, parent=None, food_data=None):
@@ -72,6 +75,14 @@ class FoodFormDialog(QDialog):
         row_macros.addWidget(self.spin_fat)
         layout.addLayout(row_macros)
 
+        self.lbl_food_warn = MicroWarningLabel()
+        layout.addWidget(self.lbl_food_warn)
+
+        self.spin_cal.editingFinished.connect(self._check_food_macros)
+        self.spin_protein.editingFinished.connect(self._check_food_macros)
+        self.spin_carbs.editingFinished.connect(self._check_food_macros)
+        self.spin_fat.editingFinished.connect(self._check_food_macros)
+
         btn_save = QPushButton("ذخیره تغییرات" if self.food_data else "افزودن به بانک")
         btn_save.clicked.connect(self.save)
         layout.addWidget(btn_save)
@@ -79,7 +90,27 @@ class FoodFormDialog(QDialog):
         if self.food_data:
             self.load_data()
 
+    def _check_food_macros(self):
+        err = validate_food_macros(
+            self.spin_cal.value(),
+            self.spin_protein.value(),
+            self.spin_carbs.value(),
+            self.spin_fat.value()
+        )
+        self.lbl_food_warn.show_warning(err)
+        return err is None
+
     def save(self):
+        if not self._check_food_macros():
+            err = validate_food_macros(
+                self.spin_cal.value(),
+                self.spin_protein.value(),
+                self.spin_carbs.value(),
+                self.spin_fat.value()
+            )
+            if err:
+                QMessageBox.warning(self, "خطا در مقادیر تغذیه‌ای", err.replace("⚠️ ", ""))
+                return
         name_fa = self.txt_name.text().strip()
         if not name_fa:
             QMessageBox.warning(self, "خطا", "لطفاً نام ماده غذایی را وارد کنید.")

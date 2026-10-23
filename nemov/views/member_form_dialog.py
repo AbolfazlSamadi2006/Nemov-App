@@ -3,6 +3,10 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import Qt
 from nemov.views.components.jalali_calendar_widget import JalaliDatePicker
+from nemov.views.components.field_validator import (
+    MicroWarningLabel, validate_weight, validate_height, validate_phone,
+    validate_birthdate_age, validate_tuition_amount
+)
 from nemov.utils.jalali_date import add_months_shamsi
 import os
 
@@ -17,7 +21,7 @@ class MemberFormDialog(QDialog):
         screen = QApplication.primaryScreen()
         avail_h = screen.availableGeometry().height() if screen else 800
         self._compact_mode = avail_h < 650
-        dlg_h = min(585, max(525, avail_h - 36))
+        dlg_h = min(615, max(540, avail_h - 36))
         self.setFixedSize(650, dlg_h)
 
         self.init_ui()
@@ -56,7 +60,13 @@ class MemberFormDialog(QDialog):
         self.combo_gender.setMinimumWidth(90)
 
         row2.addWidget(QLabel("تلفن همراه:"))
-        row2.addWidget(self.txt_phone)
+        v_phone = QVBoxLayout()
+        v_phone.setSpacing(1)
+        v_phone.addWidget(self.txt_phone)
+        self.lbl_phone_warn = MicroWarningLabel()
+        v_phone.addWidget(self.lbl_phone_warn)
+        row2.addLayout(v_phone)
+        self.txt_phone.editingFinished.connect(self._validate_phone_field)
         row2.addWidget(QLabel("شغل:"))
         row2.addWidget(self.txt_job)
         row2.addWidget(QLabel("جنسیت:"))
@@ -76,6 +86,9 @@ class MemberFormDialog(QDialog):
 
         row_birth_photo.addWidget(QLabel("تاریخ تولد:"))
         row_birth_photo.addWidget(self.picker_birth)
+        self.lbl_birth_warn = MicroWarningLabel()
+        row_birth_photo.addWidget(self.lbl_birth_warn)
+        self.picker_birth.date_changed.connect(self._validate_birth_field)
         row_birth_photo.addSpacing(15)
         row_birth_photo.addWidget(self.btn_photo)
         row_birth_photo.addStretch()
@@ -123,6 +136,10 @@ class MemberFormDialog(QDialog):
         row_hw_top.addWidget(self.spin_weight)
         row_hw_top.addStretch()
         vbox_hw.addLayout(row_hw_top)
+        self.lbl_hw_warn = MicroWarningLabel()
+        vbox_hw.addWidget(self.lbl_hw_warn)
+        self.spin_height.editingFinished.connect(self._validate_hw_fields)
+        self.spin_weight.editingFinished.connect(self._validate_hw_fields)
 
         row_activity = QHBoxLayout()
         row_activity.setSpacing(6)
@@ -213,7 +230,13 @@ class MemberFormDialog(QDialog):
         grid_mem.addWidget(lbl_start, 1, 0)
         grid_mem.addWidget(self.picker_start, 1, 1)
         grid_mem.addWidget(lbl_fee, 1, 2)
-        grid_mem.addWidget(self.txt_tuition_fee, 1, 3)
+        v_fee = QVBoxLayout()
+        v_fee.setSpacing(1)
+        v_fee.addWidget(self.txt_tuition_fee)
+        self.lbl_tuition_warn = MicroWarningLabel()
+        v_fee.addWidget(self.lbl_tuition_warn)
+        grid_mem.addLayout(v_fee, 1, 3)
+        self.txt_tuition_fee.editingFinished.connect(self._validate_tuition_field)
 
         # Row 2: Expiry Date (Col 0,1) & Membership Type (Col 2,3)
         lbl_expire = QLabel("تاریخ انقضا:")
@@ -288,6 +311,28 @@ class MemberFormDialog(QDialog):
         else:
             self.recalculate_expiry()
 
+
+    def _validate_phone_field(self):
+        err = validate_phone(self.txt_phone.text())
+        self.lbl_phone_warn.show_warning(err)
+        return err is None
+
+    def _validate_birth_field(self):
+        err = validate_birthdate_age(self.picker_birth.text())
+        self.lbl_birth_warn.show_warning(err)
+        return err is None
+
+    def _validate_hw_fields(self):
+        err_w = validate_weight(self.spin_weight.value())
+        err_h = validate_height(self.spin_height.value())
+        err = err_w or err_h
+        self.lbl_hw_warn.show_warning(err)
+        return err is None
+
+    def _validate_tuition_field(self):
+        err = validate_tuition_amount(self.txt_tuition_fee.text())
+        self.lbl_tuition_warn.show_warning(err)
+        return err is None
 
     def choose_photo(self):
         from nemov.utils.image_source_chooser import get_image_file_path
@@ -405,15 +450,20 @@ class MemberFormDialog(QDialog):
             QMessageBox.warning(self, "خطا", msg)
             return
 
-        # Phone format check (Must not exceed 11 digits, or '-' for no phone)
+        # Validate fields and display micro-warnings
+        self._validate_hw_fields()
+        self._validate_birth_field()
+        self._validate_tuition_field()
+
+        # Phone format check
         if phone != "-":
-            persian_to_eng = str.maketrans('۰۱۲۳۴۵۶۷۸۹', '0123456789')
-            phone_eng = phone.translate(persian_to_eng)
-            if len(phone_eng) > 11:
+            err_phone = validate_phone(phone)
+            if err_phone:
+                self.lbl_phone_warn.show_warning(err_phone)
                 QMessageBox.warning(
                     self,
                     "خطا در شماره تلفن",
-                    "شماره تماس نمی‌تواند بیشتر از ۱۱ رقم باشد.\nدر صورت عدم وجود تلفن، علامت - را قرار دهید."
+                    err_phone.replace("⚠️ ", "") + "\nدر صورت عدم وجود تلفن، علامت - را قرار دهید."
                 )
                 self.txt_phone.setFocus()
                 return

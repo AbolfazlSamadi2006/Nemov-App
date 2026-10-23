@@ -8,6 +8,9 @@ from PyQt6.QtGui import QPixmap
 import config
 from nemov.auth.authentication import register_trainer, CurrentUser
 from nemov.views.components.jalali_calendar_widget import JalaliDatePicker
+from nemov.views.components.field_validator import (
+    MicroWarningLabel, validate_phone, validate_birthdate_age
+)
 from nemov.utils.image_utils import get_circular_pixmap
 from nemov.utils.theme_manager import ThemeManager
 
@@ -88,12 +91,18 @@ class TrainerRegisterDialog(QDialog):
         self.txt_phone.setPlaceholderText("09123456789")
         self.txt_phone.setMaxLength(11)
         v3.addWidget(self.txt_phone)
+        self.lbl_phone_warn = MicroWarningLabel()
+        v3.addWidget(self.lbl_phone_warn)
+        self.txt_phone.editingFinished.connect(self._validate_phone)
 
         v4 = QVBoxLayout()
         v4.addWidget(QLabel("تاریخ تولد (شمسی):"))
         self.picker_birth_date = JalaliDatePicker(default_today=False)
         self.picker_birth_date.setFixedHeight(38)
         v4.addWidget(self.picker_birth_date)
+        self.lbl_birth_warn = MicroWarningLabel()
+        v4.addWidget(self.lbl_birth_warn)
+        self.picker_birth_date.date_changed.connect(self._validate_birth)
 
 
         row_contact.addLayout(v3)
@@ -294,7 +303,19 @@ class TrainerRegisterDialog(QDialog):
         self.lbl_rec_confirm_error.setText("")
         self.lbl_rec_confirm_error.setVisible(False)
 
+    def _validate_phone(self):
+        err = validate_phone(self.txt_phone.text())
+        self.lbl_phone_warn.show_warning(err)
+        return err is None
+
+    def _validate_birth(self):
+        err = validate_birthdate_age(self.picker_birth_date.text())
+        self.lbl_birth_warn.show_warning(err)
+        return err is None
+
     def do_register(self):
+        self._validate_phone()
+        self._validate_birth()
         try:
             self.clear_pass_confirm_error()
             self.clear_rec_confirm_error()

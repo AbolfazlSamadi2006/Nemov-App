@@ -9,6 +9,9 @@ from nemov.services.member_service import MemberService
 from nemov.database.connection import get_session
 from nemov.models.database_models import TuitionPayment
 from nemov.views.components.jalali_calendar_widget import JalaliDatePicker
+from nemov.views.components.field_validator import (
+    MicroWarningLabel, validate_tuition_amount
+)
 from nemov.utils.jalali_date import (
     get_today_shamsi, is_valid_shamsi, add_months_shamsi,
     normalize_digits, days_until_expire, parse_shamsi
@@ -73,6 +76,10 @@ class TuitionPaymentDialog(QDialog):
         self.txt_amount.setPlaceholderText("مبلغ به تومان (مثلاً ۲,۰۰۰,۰۰۰)")
         self.txt_amount.textChanged.connect(self._format_amount_input)
         layout.addWidget(self.txt_amount)
+
+        self.lbl_amount_warn = MicroWarningLabel()
+        layout.addWidget(self.lbl_amount_warn)
+        self.txt_amount.editingFinished.connect(self._validate_amount_field)
 
         # 3. Payment Date
         layout.addWidget(QLabel("تاریخ پرداخت (شمسی): *"))
@@ -304,7 +311,18 @@ class TuitionPaymentDialog(QDialog):
                 self.txt_amount.setText(formatted)
                 self.txt_amount.blockSignals(False)
 
+    def _validate_amount_field(self):
+        err = validate_tuition_amount(self.txt_amount.text())
+        self.lbl_amount_warn.show_warning(err)
+        return err is None
+
     def save_payment(self):
+        if not self._validate_amount_field():
+            err = validate_tuition_amount(self.txt_amount.text())
+            if err:
+                QMessageBox.warning(self, "خطای ورودی", err.replace("⚠️ ", ""))
+                self.txt_amount.setFocus()
+                return
         mid = self.combo_member.currentData()
         if not mid:
             QMessageBox.warning(self, "خطا", "لطفاً یک ورزشکار را انتخاب فرمایید.")

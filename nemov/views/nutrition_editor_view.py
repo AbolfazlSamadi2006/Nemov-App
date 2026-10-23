@@ -6,6 +6,9 @@ from PyQt6.QtGui import QKeySequence, QShortcut
 from nemov.services.nutrition_service import NutritionService
 from nemov.services.member_service import MemberService
 from nemov.views.components.searchable_combo_box import SearchableComboBox
+from nemov.views.components.field_validator import (
+    MicroWarningLabel, validate_daily_calories, validate_protein
+)
 from nemov.views.components.day_management_dialogs import DaySelectionReductionDialog, DayIncreaseChoiceDialog
 from nemov.views.components.unregistered_items_dialog import UnregisteredItemsDialog
 
@@ -261,6 +264,9 @@ class NutritionEditorView(QWidget):
         row_cal.addWidget(self.txt_total_calories)
         row_cal.addWidget(self.lbl_calorie_comparison, 1)
         layout_form.addLayout(row_cal)
+
+        self.lbl_cal_warn = MicroWarningLabel()
+        layout_form.addWidget(self.lbl_cal_warn)
 
         # Row 4: Macronutrients Target Engine & Balance Cards
         self._setup_macro_cards(layout_form)
@@ -996,6 +1002,10 @@ class NutritionEditorView(QWidget):
             f"درشت‌مغذی‌های محاسبه‌شده{day_suffix}: پروتئین {int(round(total_p))} گرم | کربوهیدرات {int(round(total_c))} گرم | چربی {int(round(total_f))} گرم"
         )
 
+        if hasattr(self, 'lbl_cal_warn'):
+            cal_err = validate_daily_calories(total_cal_int)
+            self.lbl_cal_warn.show_warning(cal_err)
+
         tdee = getattr(self, "_current_member_tdee", 0) or 0
         if tdee > 0:
             diff = total_cal_int - tdee
@@ -1208,6 +1218,9 @@ class NutritionEditorView(QWidget):
         p_bot.addWidget(self.lbl_status_p, 1)
         p_bot.addWidget(self.btn_suggest_p)
         layout_p.addLayout(p_bot)
+
+        self.lbl_protein_warn = MicroWarningLabel()
+        layout_p.addWidget(self.lbl_protein_warn)
 
         # Card 2: Carbs (🍞 کربوهیدرات)
         self.card_carbs = QFrame()
@@ -1523,6 +1536,12 @@ class NutritionEditorView(QWidget):
             tgt_fld.blockSignals(True)
             tgt_fld.setText(str(tgt_val))
             tgt_fld.blockSignals(False)
+
+        if macro_key == "protein" and hasattr(self, 'lbl_protein_warn'):
+            f_val = self._get_factor_macro("protein")
+            tgt_p = self._get_target_macro("protein")
+            p_err = validate_protein(factor=f_val, total_grams=tgt_p)
+            self.lbl_protein_warn.show_warning(p_err)
 
         self.update_dynamic_calories()
         self._snapshot_change()
