@@ -89,13 +89,47 @@ class DashboardView(QWidget):
         btn_quick_tuition.clicked.connect(lambda: self.navigate_to.emit("pay_tuition"))
 
         btn_new_workout = QPushButton("🏋️ ساخت برنامه تمرینی")
-        btn_new_workout.setObjectName("secondary_button")
         btn_new_workout.setFixedHeight(36)
+        btn_new_workout.setCursor(Qt.CursorShape.PointingHandCursor)
+        btn_new_workout.setStyleSheet("""
+            QPushButton {
+                background-color: #2563EB;
+                color: #FFFFFF;
+                font-weight: bold;
+                border: none;
+                border-radius: 6px;
+                padding: 0 14px;
+                font-size: 13px;
+            }
+            QPushButton:hover {
+                background-color: #1D4ED8;
+            }
+            QPushButton:pressed {
+                background-color: #1E40AF;
+            }
+        """)
         btn_new_workout.clicked.connect(lambda: self.navigate_to.emit("new_workout"))
 
         btn_new_nutrition = QPushButton("🥗 ساخت برنامه غذایی")
-        btn_new_nutrition.setObjectName("secondary_button")
         btn_new_nutrition.setFixedHeight(36)
+        btn_new_nutrition.setCursor(Qt.CursorShape.PointingHandCursor)
+        btn_new_nutrition.setStyleSheet("""
+            QPushButton {
+                background-color: #8B5CF6;
+                color: #FFFFFF;
+                font-weight: bold;
+                border: none;
+                border-radius: 6px;
+                padding: 0 14px;
+                font-size: 13px;
+            }
+            QPushButton:hover {
+                background-color: #7C3AED;
+            }
+            QPushButton:pressed {
+                background-color: #6D28D9;
+            }
+        """)
         btn_new_nutrition.clicked.connect(lambda: self.navigate_to.emit("new_nutrition"))
 
         actions_layout.addWidget(self.lbl_quick)
