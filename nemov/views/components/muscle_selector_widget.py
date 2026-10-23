@@ -16,7 +16,10 @@ MUSCLE_DEFINITIONS = {
         "legacy": "shoulders",
         "view": "front",
         "polys": [
-            [(124, 60), (150, 60), (156, 84), (118, 84)]
+            [
+                (122, 62), (137, 68), (152, 62),
+                (158, 86), (145, 90), (137, 88), (129, 90), (116, 86)
+            ]
         ]
     },
     "shoulders": {
@@ -25,8 +28,16 @@ MUSCLE_DEFINITIONS = {
         "legacy": "shoulders",
         "view": "front",
         "polys": [
-            [(68, 95), (96, 75), (97, 90), (90, 126), (68, 115)],
-            [(177, 90), (178, 75), (206, 95), (206, 115), (184, 126)]
+            # Left deltoid (mannequin right)
+            [
+                (93, 76), (105, 84), (98, 102), (90, 126),
+                (74, 122), (64, 108), (68, 92), (80, 80)
+            ],
+            # Right deltoid (mannequin left)
+            [
+                (181, 76), (169, 84), (176, 102), (184, 126),
+                (200, 122), (210, 108), (206, 92), (194, 80)
+            ]
         ]
     },
     "chest": {
@@ -35,8 +46,16 @@ MUSCLE_DEFINITIONS = {
         "legacy": "chest",
         "view": "front",
         "polys": [
-            [(98, 90), (137, 92), (137, 132), (96, 128)],
-            [(137, 92), (176, 90), (178, 128), (137, 132)]
+            # Left pec
+            [
+                (137, 91), (137, 131), (124, 130), (106, 132),
+                (95, 124), (98, 102), (106, 88), (122, 88), (134, 90)
+            ],
+            # Right pec
+            [
+                (137, 91), (137, 131), (150, 130), (168, 132),
+                (179, 124), (176, 102), (168, 88), (152, 88), (140, 90)
+            ]
         ]
     },
     "biceps": {
@@ -45,8 +64,16 @@ MUSCLE_DEFINITIONS = {
         "legacy": "arms",
         "view": "front",
         "polys": [
-            [(60, 130), (88, 125), (82, 172), (52, 165)],
-            [(186, 125), (214, 130), (222, 165), (192, 172)]
+            # Left bicep (mannequin right)
+            [
+                (88, 126), (92, 142), (87, 164), (76, 172),
+                (64, 170), (55, 156), (58, 138), (70, 124)
+            ],
+            # Right bicep (mannequin left)
+            [
+                (186, 126), (182, 142), (187, 164), (198, 172),
+                (210, 170), (219, 156), (216, 138), (204, 124)
+            ]
         ]
     },
     "forearms": {
@@ -55,8 +82,18 @@ MUSCLE_DEFINITIONS = {
         "legacy": "arms",
         "view": "front",
         "polys": [
-            [(45, 172), (80, 178), (62, 235), (25, 222)],
-            [(194, 178), (229, 172), (249, 222), (212, 235)]
+            # Left forearm (mannequin right)
+            [
+                (62, 172), (76, 174), (78, 186), (72, 204),
+                (62, 222), (54, 234), (44, 234), (36, 224),
+                (30, 208), (34, 192), (44, 178), (54, 172)
+            ],
+            # Right forearm (mannequin left)
+            [
+                (212, 172), (198, 174), (196, 186), (202, 204),
+                (212, 222), (220, 234), (230, 234), (238, 224),
+                (244, 208), (240, 192), (230, 178), (220, 172)
+            ]
         ]
     },
     "abs": {
@@ -65,7 +102,11 @@ MUSCLE_DEFINITIONS = {
         "legacy": "abs",
         "view": "front",
         "polys": [
-            [(100, 135), (174, 135), (166, 218), (108, 218)]
+            [
+                (106, 133), (124, 130), (137, 131), (150, 130), (168, 133),
+                (174, 146), (176, 168), (172, 194), (164, 214), (152, 232), (137, 244),
+                (122, 232), (110, 214), (102, 194), (98, 168), (100, 146)
+            ]
         ]
     },
     "legs_front": {
@@ -74,8 +115,18 @@ MUSCLE_DEFINITIONS = {
         "legacy": "legs",
         "view": "front",
         "polys": [
-            [(85, 225), (135, 228), (125, 325), (85, 320)],
-            [(139, 228), (189, 225), (189, 320), (149, 325)]
+            # Left quad (mannequin right)
+            [
+                (98, 226), (134, 236), (136, 260), (132, 290),
+                (124, 320), (114, 328), (96, 324), (84, 308),
+                (80, 278), (84, 248), (90, 232)
+            ],
+            # Right quad (mannequin left)
+            [
+                (176, 226), (140, 236), (138, 260), (142, 290),
+                (150, 320), (160, 328), (178, 324), (190, 308),
+                (194, 278), (190, 248), (184, 232)
+            ]
         ]
     },
     "traps": {
@@ -84,7 +135,11 @@ MUSCLE_DEFINITIONS = {
         "legacy": "back",
         "view": "back",
         "polys": [
-            [(395, 62), (430, 62), (452, 95), (412, 108), (372, 95)]
+            [
+                (396, 62), (412, 60), (428, 62), (442, 78),
+                (454, 94), (436, 102), (412, 126), (388, 102),
+                (370, 94), (382, 78)
+            ]
         ]
     },
     "upper_back": {
@@ -93,7 +148,11 @@ MUSCLE_DEFINITIONS = {
         "legacy": "back",
         "view": "back",
         "polys": [
-            [(370, 96), (412, 108), (454, 96), (460, 138), (412, 146), (364, 138)]
+            [
+                (372, 96), (392, 104), (412, 126), (432, 104),
+                (452, 96), (462, 120), (454, 142), (412, 150),
+                (370, 142), (362, 120)
+            ]
         ]
     },
     "triceps": {
@@ -102,8 +161,16 @@ MUSCLE_DEFINITIONS = {
         "legacy": "arms",
         "view": "back",
         "polys": [
-            [(334, 112), (362, 106), (356, 168), (328, 155)],
-            [(462, 106), (490, 112), (496, 155), (468, 168)]
+            # Left tricep (mannequin left on back)
+            [
+                (344, 106), (362, 102), (360, 126), (356, 154),
+                (348, 170), (336, 168), (330, 150), (334, 126)
+            ],
+            # Right tricep (mannequin right on back)
+            [
+                (480, 106), (462, 102), (464, 126), (468, 154),
+                (476, 170), (488, 168), (494, 150), (490, 126)
+            ]
         ]
     },
     "lats": {
@@ -112,8 +179,16 @@ MUSCLE_DEFINITIONS = {
         "legacy": "back",
         "view": "back",
         "polys": [
-            [(362, 138), (412, 146), (412, 186), (372, 185)],
-            [(412, 146), (462, 138), (452, 185), (412, 186)]
+            # Left lat wing
+            [
+                (362, 142), (412, 150), (412, 188), (388, 186),
+                (370, 176), (364, 158)
+            ],
+            # Right lat wing
+            [
+                (462, 142), (412, 150), (412, 188), (436, 186),
+                (454, 176), (460, 158)
+            ]
         ]
     },
     "lower_back": {
@@ -122,7 +197,10 @@ MUSCLE_DEFINITIONS = {
         "legacy": "back",
         "view": "back",
         "polys": [
-            [(385, 186), (439, 186), (434, 218), (390, 218)]
+            [
+                (388, 186), (412, 188), (436, 186),
+                (432, 218), (412, 222), (392, 218)
+            ]
         ]
     },
     "glutes": {
@@ -131,7 +209,16 @@ MUSCLE_DEFINITIONS = {
         "legacy": "legs",
         "view": "back",
         "polys": [
-            [(366, 218), (458, 218), (462, 266), (412, 268), (362, 266)]
+            # Left glute
+            [
+                (366, 218), (412, 222), (412, 268), (392, 270),
+                (372, 264), (360, 248), (362, 230)
+            ],
+            # Right glute
+            [
+                (458, 218), (412, 222), (412, 268), (432, 270),
+                (452, 264), (464, 248), (462, 230)
+            ]
         ]
     },
     "legs_back": {
@@ -140,18 +227,48 @@ MUSCLE_DEFINITIONS = {
         "legacy": "legs",
         "view": "back",
         "polys": [
-            [(362, 268), (408, 268), (402, 342), (366, 335)],
-            [(416, 268), (462, 268), (458, 335), (422, 342)]
+            # Left hamstring
+            [
+                (368, 266), (408, 268), (406, 296), (402, 326),
+                (392, 338), (374, 336), (364, 322), (364, 292)
+            ],
+            # Right hamstring
+            [
+                (456, 266), (416, 268), (418, 296), (422, 326),
+                (432, 338), (450, 336), (460, 322), (460, 292)
+            ]
         ]
     },
     "calves": {
         "name_fa": "ساق پا",
         "color": "#38BDF8",
         "legacy": "legs",
-        "view": "back",
+        "view": "both",
         "polys": [
-            [(366, 340), (404, 344), (398, 425), (370, 422)],
-            [(420, 344), (458, 340), (454, 422), (426, 425)]
+            # Back view - Left calf
+            [
+                (376, 338), (394, 338), (406, 344), (408, 364),
+                (404, 388), (396, 408), (390, 428), (382, 428),
+                (372, 410), (364, 390), (364, 366), (368, 348)
+            ],
+            # Back view - Right calf
+            [
+                (448, 338), (430, 338), (418, 344), (416, 364),
+                (420, 388), (428, 408), (434, 428), (442, 428),
+                (452, 410), (460, 390), (460, 366), (456, 348)
+            ],
+            # Front view - Left shin/calf
+            [
+                (96, 340), (112, 340), (120, 356), (118, 384),
+                (110, 414), (102, 428), (96, 428), (88, 410),
+                (86, 384), (88, 356)
+            ],
+            # Front view - Right shin/calf
+            [
+                (178, 340), (162, 340), (154, 356), (156, 384),
+                (164, 414), (172, 428), (178, 428), (186, 410),
+                (188, 384), (186, 356)
+            ]
         ]
     }
 }
@@ -402,14 +519,15 @@ class BodyCanvasWidget(QWidget):
             stroke_c = QColor(base_col.red(), base_col.green(), base_col.blue(), stroke_alpha)
 
             if glow:
-                # Outer soft glow
-                glow_c = QColor(base_col.red(), base_col.green(), base_col.blue(), 50)
-                painter.setPen(QPen(glow_c, stroke_width + 4.0, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
+                # Soft outer atmospheric halo
+                glow_c = QColor(base_col.red(), base_col.green(), base_col.blue(), 55)
+                painter.setPen(QPen(glow_c, stroke_width + 3.0, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
                 painter.setBrush(Qt.BrushStyle.NoBrush)
                 for poly in info["polys"]:
                     screen_poly = QPolygonF([QPointF(off_x + x * scale_x, off_y + y * scale_y) for x, y in poly])
                     painter.drawPolygon(screen_poly)
 
+            # Delicate organic edge and vibrant illuminated muscle body
             painter.setPen(QPen(stroke_c, stroke_width, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
             painter.setBrush(QBrush(fill_c))
 
@@ -421,11 +539,11 @@ class BodyCanvasWidget(QWidget):
 
         # Draw hovered (if not in active_muscles)
         if self.hovered_muscle and self.hovered_muscle not in active_muscles:
-            draw_polys(self.hovered_muscle, fill_alpha=80, stroke_alpha=200, stroke_width=1.8, glow=True)
+            draw_polys(self.hovered_muscle, fill_alpha=85, stroke_alpha=180, stroke_width=1.0, glow=True)
 
         # Draw selected (single muscle or all constituent muscles of legacy group)
         for sel_m in active_muscles:
-            draw_polys(sel_m, fill_alpha=160, stroke_alpha=255, stroke_width=2.5, glow=True)
+            draw_polys(sel_m, fill_alpha=175, stroke_alpha=210, stroke_width=1.2, glow=True)
 
 
 class MuscleSelectorWidget(QFrame):
