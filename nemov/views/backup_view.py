@@ -2,9 +2,9 @@ import os
 import time
 from pathlib import Path
 from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QTableWidget, QTableWidgetItem, QHeaderView, QFileDialog, QMessageBox, QGroupBox, QGridLayout, QFrame, QDialog, QScrollArea, QProgressBar, QInputDialog, QCheckBox, QAbstractItemView, QTabWidget
+    QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QTableWidget, QTableWidgetItem, QHeaderView, QFileDialog, QMessageBox, QGroupBox, QGridLayout, QFrame, QDialog, QScrollArea, QProgressBar, QInputDialog, QCheckBox, QAbstractItemView, QTabWidget
 )
-from PyQt6.QtCore import Qt, pyqtSignal, QTimer, QThread
+from PyQt6.QtCore import Qt, pyqtSignal, QTimer, QThread, QPoint
 from PyQt6.QtGui import QPixmap, QColor, QBrush
 import config
 from nemov.services.backup_service import BackupService
@@ -1507,9 +1507,29 @@ class BackupView(QWidget):
             QMessageBox.critical(self, "خطا", f"بازنشانی لوگو با خطا مواجه شد:\n{e}")
 
     def _on_theme_card_clicked(self, theme_id: str):
-        """Handles selection of a theme palette card."""
+        """Handles selection of a theme palette card with Liquid Circular Ripple & Neon Glow Ring transition."""
         try:
             from nemov.services.branding_service import BrandingService
+            current_theme = BrandingService.get_selected_theme_id()
+            if current_theme == theme_id:
+                return
+
+            win = self.window()
+            card = self.theme_cards.get(theme_id) if hasattr(self, "theme_cards") else None
+
+            # 1. Capture click origin from card center in window coordinates
+            if card and win:
+                origin = card.mapTo(win, card.rect().center())
+            elif win:
+                origin = win.rect().center()
+            else:
+                origin = QPoint(0, 0)
+
+            # 2. Grab old window snapshot before applying new theme
+            old_pixmap = win.grab() if win else None
+            card_accent = getattr(card, "accent_color", "#10B981") if card else "#10B981"
+
+            # 3. Save and apply new theme
             BrandingService.save_selected_theme_id(theme_id)
 
             try:
@@ -1530,10 +1550,19 @@ class BackupView(QWidget):
                 pass
 
             if hasattr(self, "theme_cards"):
-                for cid, card in self.theme_cards.items():
-                    card.set_selected(cid == theme_id)
+                for cid, c in self.theme_cards.items():
+                    c.set_selected(cid == theme_id)
 
             self.branding_changed_signal.emit()
+
+            # 4. Grab new snapshot and launch Liquid Circular Ripple & Neon Glow Ring Overlay
+            if win and old_pixmap and not old_pixmap.isNull():
+                win.repaint()
+                QApplication.processEvents()
+                new_pixmap = win.grab()
+                if new_pixmap and not new_pixmap.isNull():
+                    from nemov.views.components.theme_ripple_overlay import ThemeRippleOverlay
+                    ThemeRippleOverlay(win, old_pixmap, new_pixmap, origin, card_accent, duration_ms=450)
         except Exception:
             pass
 
