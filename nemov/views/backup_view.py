@@ -20,23 +20,39 @@ class CloudBackupThread(QThread):
     progress_signal = pyqtSignal(int, str)
     finished_signal = pyqtSignal(bool, str)
 
-    def __init__(self, phone: str, trainer_name: str):
+    def __init__(self, phone: str, trainer_name: str, sync_videos: bool = False):
         super().__init__()
         self.phone = phone
         self.trainer_name = trainer_name
+        self.sync_videos = sync_videos
 
     def run(self):
         try:
-            self.progress_signal.emit(15, "در حال آماده‌سازی و استخراج پایگاه‌داده...")
-            time.sleep(0.3)
-            self.progress_signal.emit(45, "در حال اتصال به سرور ابری نِمُو...")
-            time.sleep(0.3)
+            succ = 0
+            if self.sync_videos:
+                self.progress_signal.emit(10, "در حال بررسی ویدیوها و رسانه‌های جدید...")
+                from nemov.services.cloud_sync_service import sync_all_pending_exercise_media
+                
+                def on_sync_progress(idx, total, name):
+                    pct = 12 + int((idx / max(1, total)) * 55)
+                    self.progress_signal.emit(pct, f"در حال بارگذاری ویدیوی «{name}» ({idx}/{total})...")
+
+                succ, fail, errors = sync_all_pending_exercise_media(progress_callback=on_sync_progress)
+                time.sleep(0.2)
+                self.progress_signal.emit(70, "در حال اتصال به سرور جهت ارسال پایگاه‌داده...")
+            else:
+                self.progress_signal.emit(15, "در حال آماده‌سازی و استخراج پایگاه‌داده...")
+                time.sleep(0.2)
+                self.progress_signal.emit(45, "در حال اتصال به سرور ابری نِمُو...")
+
+            time.sleep(0.2)
             self.progress_signal.emit(75, "در حال بارگذاری اطلاعات در سرور ابری...")
             from nemov.services.backup_service import upload_cloud_backup
             success, msg = upload_cloud_backup(trainer_phone=self.phone, trainer_name=self.trainer_name)
             if success:
-                self.progress_signal.emit(100, "پشتیبان‌گیری ابری با موفقیت تکمیل شد.")
-                self.finished_signal.emit(True, msg)
+                final_msg = f"همگام‌سازی {succ} ویدیو انجام شد و نسخه پشتیبان با موفقیت در سرور ذخیره گردید." if (self.sync_videos and succ > 0) else msg
+                self.progress_signal.emit(100, "پشتیبان‌گیری در سرور با موفقیت تکمیل شد.")
+                self.finished_signal.emit(True, final_msg)
             else:
                 self.finished_signal.emit(False, msg)
         except Exception as e:
@@ -768,6 +784,25 @@ class BackupView(QWidget):
         toolbar_layout.addWidget(btn_restore_file)
 
         toolbar_layout.addStretch()
+
+        self.chk_autosave = QCheckBox("☁️ ذخیره خودکار در سرور (AutoSave)")
+        self.chk_autosave.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.chk_autosave.setStyleSheet("""
+            QCheckBox {
+                color: #93C5FD;
+                font-weight: bold;
+                font-size: 11px;
+                font-family: 'Segoe UI Emoji', 'Noto Color Emoji', 'Vazirmatn', sans-serif;
+            }
+            QCheckBox::indicator {
+                width: 16px;
+                height: 16px;
+            }
+        """)
+        self.chk_autosave.setToolTip("همگام‌سازی سبک پایگاه‌داده در پس‌زمینه بدون افت فریم و کندی (هر زمان که اینترنت متصل باشد)")
+        self.chk_autosave.toggled.connect(self._on_autosave_toggled)
+        toolbar_layout.addWidget(self.chk_autosave)
+
         layout.addWidget(toolbar_frame)
 
         # Non-blocking Backup Progress Card
@@ -1387,7 +1422,16 @@ class BackupView(QWidget):
         else:
             self.box_admin_trainers.setVisible(False)
 
-        # 3. Backups
+        # 3. Backups & AutoSave
+        try:
+            from nemov.services.autosave_service import is_autosave_enabled
+            if hasattr(self, "chk_autosave"):
+                self.chk_autosave.blockSignals(True)
+                self.chk_autosave.setChecked(is_autosave_enabled())
+                self.chk_autosave.blockSignals(False)
+        except Exception:
+            pass
+
         self.load_backups()
 
         # 4. Notification History
@@ -2164,8 +2208,25 @@ class BackupView(QWidget):
         elif choice == BackupDestinationDialog.CHOICE_SERVER:
             u = CurrentUser.get()
             phone = u.phone if (u and u.phone) else "09336427711"
-            trainer_name = u.full_name if u else "مدیر باشگاه"
-            self._start_cloud_backup_async(phone, trainer_name)
+            trainer_name = u.full_name if u else "مربی محترم"
+
+            from nemov.services.cloud_sync_service import get_pending_sync_count
+            pending_count = get_pending_sync_count()
+
+            sync_videos = False
+            if pending_count > 0:
+                from nemov.views.components.cloud_backup_choice_dialog import CloudBackupChoiceDialog
+                dlg_choice = CloudBackupChoiceDialog(pending_count=pending_count, parent=self)
+                if dlg_choice.exec() != QDialog.DialogCode.Accepted:
+                    return
+                if dlg_choice.selected_choice == CloudBackupChoiceDialog.CHOICE_CANCEL:
+                    return
+                elif dlg_choice.selected_choice == CloudBackupChoiceDialog.CHOICE_SYNC_AND_BACKUP:
+                    sync_videos = True
+                else:
+                    sync_videos = False
+
+            self._start_cloud_backup_async(phone, trainer_name, sync_videos=sync_videos)
 
         elif choice == BackupDestinationDialog.CHOICE_EMAIL:
             u = CurrentUser.get()
@@ -2275,7 +2336,7 @@ class BackupView(QWidget):
                     title="خطا در پشتیبان‌گیری"
                 )
 
-    def _start_cloud_backup_async(self, phone: str, trainer_name: str):
+    def _start_cloud_backup_async(self, phone: str, trainer_name: str, sync_videos: bool = False):
         self.progress_card.setVisible(True)
         self.btn_prog_close.setVisible(False)
         if hasattr(self, "btn_prog_spam_guide"):
@@ -2294,7 +2355,7 @@ class BackupView(QWidget):
             }
         """)
 
-        self.cloud_worker = CloudBackupThread(phone, trainer_name)
+        self.cloud_worker = CloudBackupThread(phone, trainer_name, sync_videos=sync_videos)
         self.cloud_worker.progress_signal.connect(self._on_backup_progress)
         self.cloud_worker.finished_signal.connect(lambda ok, msg: self._on_cloud_backup_finished(ok, msg, phone))
         self.cloud_worker.start()
@@ -2327,11 +2388,29 @@ class BackupView(QWidget):
         self.backup_progress_bar.setValue(percent)
         self.lbl_prog_detail.setText(detail_msg)
 
+    def _on_autosave_toggled(self, checked: bool):
+        try:
+            from nemov.services.autosave_service import set_autosave_enabled, AutoSaveManager
+            set_autosave_enabled(checked)
+            mgr = AutoSaveManager.get_instance()
+            if checked:
+                mgr.start()
+            else:
+                mgr.stop()
+        except Exception as e:
+            print(f"Error toggling autosave: {e}")
+
     def _on_cloud_backup_finished(self, success: bool, msg: str, phone: str):
         self.btn_prog_close.setVisible(True)
         if success:
             BackupService.record_cloud_backup(phone)
             self.load_backups()
+            try:
+                main_w = self.window()
+                if hasattr(main_w, "_view_exercises") and main_w._view_exercises is not None:
+                    main_w._view_exercises.update_sync_button_state()
+            except Exception:
+                pass
             self.lbl_prog_title.setText("✅ پشتیبان‌گیری در سرور ابری با موفقیت تکمیل شد!")
             self.lbl_prog_title.setStyleSheet("font-weight: bold; font-size: 13px; color: #10B981; font-family: 'Segoe UI Emoji', 'Noto Color Emoji', 'Vazirmatn', sans-serif;")
             self.lbl_prog_detail.setText(msg)

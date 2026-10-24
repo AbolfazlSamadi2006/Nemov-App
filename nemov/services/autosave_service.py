@@ -1,0 +1,141 @@
+"""
+nemov/services/autosave_service.py
+Lightweight, non-blocking background AutoSave service for Nemov.
+Periodically backs up database to cloud server when internet is connected,
+with 0% UI lag and no interruptions.
+"""
+import time
+from PyQt6.QtCore import QObject, QThread, QTimer, pyqtSignal
+from nemov.database.connection import get_session
+from nemov.models.database_models import SystemSetting
+from nemov.auth.authentication import CurrentUser
+from nemov.utils.logger import log_info, log_error
+
+
+SETTING_KEY_AUTOSAVE = "cloud_autosave_enabled"
+DEFAULT_AUTOSAVE_INTERVAL_MS = 15 * 60 * 1000  # 15 minutes
+
+
+def is_autosave_enabled() -> bool:
+    """Checks if background cloud autosave is enabled in system settings."""
+    try:
+        session = get_session()
+        try:
+            s = session.query(SystemSetting).filter(SystemSetting.key == SETTING_KEY_AUTOSAVE).first()
+            if s and s.value:
+                return s.value.strip().lower() == "true"
+        finally:
+            session.close()
+    except Exception:
+        pass
+    return False
+
+
+def set_autosave_enabled(enabled: bool) -> bool:
+    """Enables or disables cloud autosave in system settings."""
+    try:
+        session = get_session()
+        try:
+            s = session.query(SystemSetting).filter(SystemSetting.key == SETTING_KEY_AUTOSAVE).first()
+            val = "true" if enabled else "false"
+            if s:
+                s.value = val
+            else:
+                s = SystemSetting(key=SETTING_KEY_AUTOSAVE, value=val)
+                session.add(s)
+            session.commit()
+            log_info(f"Cloud autosave setting set to: {val}")
+            return True
+        finally:
+            session.close()
+    except Exception as e:
+        log_error(f"Failed to update autosave setting: {e}")
+        return False
+
+
+class AutoSaveWorker(QThread):
+    """
+    Completely silent, low-priority background thread for syncing database to cloud.
+    Guarantees 0% UI lag and no intrusive popups on network drops.
+    """
+    autosave_done = pyqtSignal(bool, str)
+
+    def __init__(self, phone: str, trainer_name: str, parent=None):
+        super().__init__(parent)
+        self.phone = phone
+        self.trainer_name = trainer_name
+
+    def run(self):
+        try:
+            from nemov.services.backup_service import is_internet_connected, upload_cloud_backup, BackupService
+            # Check connection with fast timeout
+            if not is_internet_connected(timeout=2.0):
+                self.autosave_done.emit(False, "No internet connection")
+                return
+
+            # Perform database upload
+            success, msg = upload_cloud_backup(trainer_phone=self.phone, trainer_name=self.trainer_name)
+            if success:
+                try:
+                    BackupService.record_cloud_backup(self.phone)
+                except Exception:
+                    pass
+                log_info(f"AutoSave completed successfully for {self.phone}")
+                self.autosave_done.emit(True, msg)
+            else:
+                log_info(f"AutoSave skipped or transient fail: {msg}")
+                self.autosave_done.emit(False, msg)
+        except Exception as e:
+            log_error(f"AutoSaveWorker exception: {e}")
+            self.autosave_done.emit(False, str(e))
+
+
+class AutoSaveManager(QObject):
+    """
+    Orchestrates periodic AutoSave background executions.
+    """
+    _instance = None
+
+    @classmethod
+    def get_instance(cls):
+        if cls._instance is None:
+            cls._instance = AutoSaveManager()
+        return cls._instance
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.timer = QTimer(self)
+        self.timer.setInterval(DEFAULT_AUTOSAVE_INTERVAL_MS)
+        self.timer.timeout.connect(self.trigger_autosave_if_eligible)
+        self.worker = None
+
+    def start(self):
+        """Starts the periodic autosave timer."""
+        if not self.timer.isActive():
+            self.timer.start()
+            log_info("AutoSaveManager timer started (15m interval).")
+
+    def stop(self):
+        """Stops the autosave timer."""
+        if self.timer.isActive():
+            self.timer.stop()
+            log_info("AutoSaveManager timer stopped.")
+
+    def trigger_autosave_if_eligible(self):
+        """Checks conditions and runs background autosave if enabled and user logged in."""
+        if not is_autosave_enabled():
+            return
+
+        u = CurrentUser.get()
+        if not u:
+            return
+
+        # Do not run if worker is currently in progress
+        if self.worker and self.worker.isRunning():
+            return
+
+        phone = u.phone if (u and u.phone) else "09336427711"
+        trainer_name = u.full_name if u else "مربی محترم"
+
+        self.worker = AutoSaveWorker(phone=phone, trainer_name=trainer_name, parent=self)
+        self.worker.start()

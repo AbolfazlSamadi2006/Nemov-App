@@ -88,6 +88,13 @@ class MainWindow(QMainWindow):
         self._is_navigating_back = False
         self._current_page_state = ("page", "dashboard")
 
+        # Initialize AutoSave engine
+        try:
+            from nemov.services.autosave_service import AutoSaveManager
+            AutoSaveManager.get_instance().start()
+        except Exception as e:
+            print(f"Error starting AutoSaveManager: {e}")
+
     @property
     def view_members(self):
         if self._view_members is None:
