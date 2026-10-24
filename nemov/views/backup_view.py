@@ -799,7 +799,7 @@ class BackupView(QWidget):
                 height: 16px;
             }
         """)
-        self.chk_autosave.setToolTip("همگام‌سازی سبک پایگاه‌داده در پس‌زمینه بدون افت فریم و کندی (هر زمان که اینترنت متصل باشد)")
+        self.chk_autosave.setToolTip("همگام‌سازی سبک پایگاه‌داده هر ۵ دقیقه در پس‌زمینه (تنها در صورت ثبت اطلاعات جدید و اتصال اینترنت)")
         self.chk_autosave.toggled.connect(self._on_autosave_toggled)
         toolbar_layout.addWidget(self.chk_autosave)
 
@@ -2405,6 +2405,11 @@ class BackupView(QWidget):
         if success:
             BackupService.record_cloud_backup(phone)
             self.load_backups()
+            try:
+                from nemov.services.autosave_service import AutoSaveManager
+                AutoSaveManager.get_instance().record_manual_backup_done()
+            except Exception:
+                pass
             try:
                 main_w = self.window()
                 if hasattr(main_w, "_view_exercises") and main_w._view_exercises is not None:
