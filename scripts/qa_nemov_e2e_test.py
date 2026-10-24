@@ -222,7 +222,7 @@ class NemovE2ETestSuite:
             "APP_NAME": "نِمُو",
             "APP_TITLE": "نرم‌افزار مدیریت ورزشی نِمُو",
             "APP_ENGLISH_NAME": "Nemov",
-            "APP_VERSION": "v3.3.0",
+            "APP_VERSION": "v3.4.0",
             "APP_USER_MODEL_ID": "nemov.sports.management.desktop.v3",
         }
 

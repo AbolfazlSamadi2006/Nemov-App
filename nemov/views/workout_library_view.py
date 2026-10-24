@@ -1,12 +1,140 @@
 from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QComboBox, QPushButton, QTableWidget, QTableWidgetItem, QHeaderView, QDialog, QMessageBox, QTextEdit, QFileDialog, QCheckBox, QFrame, QScrollArea
+    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QComboBox, QPushButton, QTableWidget, QTableWidgetItem, QHeaderView, QDialog, QMessageBox, QTextEdit, QFileDialog, QCheckBox, QFrame, QScrollArea,
+    QStyledItemDelegate, QStyleOptionViewItem, QToolTip, QAbstractItemView
 )
-from PyQt6.QtCore import Qt, pyqtSignal, QThread
+from PyQt6.QtCore import Qt, pyqtSignal, QThread, QTimer, QRect, QModelIndex, QEvent
+from PyQt6.QtGui import QPainter, QColor, QFont, QHelpEvent
 from nemov.services.workout_service import WorkoutService
 from nemov.views.components.media_viewer_dialog import MediaViewerDialog
 from nemov.views.components.undo_delete_banner import UndoDeleteBanner
 import os
 from nemov.views.components.muscle_selector_widget import MuscleSelectorWidget, MUSCLE_DEFINITIONS
+
+
+class OperationsDelegate(QStyledItemDelegate):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.hover_row = -1
+        self.hover_btn = 0  # 0: none, 1: media, 2: edit, 3: del
+
+    def _get_button_rects(self, rect: QRect):
+        start_x = rect.left() + max(0, (rect.width() - 226) // 2)
+        y = rect.top() + max(0, (rect.height() - 30) // 2)
+        media_rect = QRect(start_x, y, 84, 30)
+        edit_rect = QRect(start_x + 90, y, 72, 30)
+        del_rect = QRect(start_x + 168, y, 58, 30)
+        return media_rect, edit_rect, del_rect
+
+    def paint(self, painter: QPainter, option: QStyleOptionViewItem, index: QModelIndex):
+        super().paint(painter, option, index)
+        ex = index.data(Qt.ItemDataRole.UserRole)
+        if not ex:
+            return
+
+        painter.save()
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+
+        btn_font = QFont(option.font)
+        btn_font.setPixelSize(11)
+        btn_font.setBold(True)
+        painter.setFont(btn_font)
+
+        media_rect, edit_rect, del_rect = self._get_button_rects(option.rect)
+        r = index.row()
+
+        # 1. Media
+        has_cloud = index.data(Qt.ItemDataRole.UserRole + 1)
+        media_bg = QColor("#3D3D3D") if (self.hover_row == r and self.hover_btn == 1) else QColor("#2D2D2D")
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(media_bg)
+        painter.drawRoundedRect(media_rect, 6, 6)
+        painter.setPen(QColor("#FFFFFF"))
+        painter.drawText(media_rect, Qt.AlignmentFlag.AlignCenter, "🎬 رسانه ☁️" if has_cloud else "🎬 رسانه")
+
+        # 2. Edit
+        edit_bg = QColor("#B45309") if (self.hover_row == r and self.hover_btn == 2) else QColor("#D97706")
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(edit_bg)
+        painter.drawRoundedRect(edit_rect, 6, 6)
+        painter.setPen(QColor("#FFFFFF"))
+        painter.drawText(edit_rect, Qt.AlignmentFlag.AlignCenter, "✏️ ویرایش")
+
+        # 3. Delete
+        del_bg = QColor("#B71C1C") if (self.hover_row == r and self.hover_btn == 3) else QColor("#D32F2F")
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(del_bg)
+        painter.drawRoundedRect(del_rect, 6, 6)
+        painter.setPen(QColor("#FFFFFF"))
+        painter.drawText(del_rect, Qt.AlignmentFlag.AlignCenter, "🗑️ حذف")
+
+        painter.restore()
+
+    def editorEvent(self, event: QEvent, model, option: QStyleOptionViewItem, index: QModelIndex) -> bool:
+        ex = index.data(Qt.ItemDataRole.UserRole)
+        if not ex:
+            return False
+
+        media_rect, edit_rect, del_rect = self._get_button_rects(option.rect)
+        pos = event.position().toPoint() if hasattr(event, "position") else None
+
+        if event.type() == QEvent.Type.MouseMove and pos is not None:
+            btn = 0
+            if media_rect.contains(pos):
+                btn = 1
+            elif edit_rect.contains(pos):
+                btn = 2
+            elif del_rect.contains(pos):
+                btn = 3
+
+            r = index.row()
+            if self.hover_row != r or self.hover_btn != btn:
+                self.hover_row = r
+                self.hover_btn = btn
+                if option.widget:
+                    option.widget.viewport().update()
+
+            if option.widget:
+                if btn != 0:
+                    option.widget.viewport().setCursor(Qt.CursorShape.PointingHandCursor)
+                else:
+                    option.widget.viewport().unsetCursor()
+            return True
+
+        if event.type() in (QEvent.Type.MouseButtonPress, QEvent.Type.MouseButtonRelease):
+            if hasattr(event, "button") and event.button() == Qt.MouseButton.LeftButton and pos is not None:
+                if media_rect.contains(pos) or edit_rect.contains(pos) or del_rect.contains(pos):
+                    if event.type() == QEvent.Type.MouseButtonRelease:
+                        parent_view = self.parent()
+                        if media_rect.contains(pos):
+                            if hasattr(parent_view, "show_media"):
+                                parent_view.show_media(ex)
+                        elif edit_rect.contains(pos):
+                            if hasattr(parent_view, "open_edit_dialog"):
+                                parent_view.open_edit_dialog(ex)
+                        elif del_rect.contains(pos):
+                            if hasattr(parent_view, "delete_exercise"):
+                                parent_view.delete_exercise(ex)
+                    return True
+
+        return super().editorEvent(event, model, option, index)
+
+    def helpEvent(self, event: QHelpEvent, view: QAbstractItemView, option: QStyleOptionViewItem, index: QModelIndex) -> bool:
+        if event.type() == QEvent.Type.ToolTip:
+            media_rect, edit_rect, del_rect = self._get_button_rects(option.rect)
+            pos = event.pos()
+            if media_rect.contains(pos):
+                has_cloud = index.data(Qt.ItemDataRole.UserRole + 1)
+                if has_cloud:
+                    QToolTip.showText(event.globalPos(), "ویدیو در سرور ابری آنلاین است.", view)
+                    return True
+            elif del_rect.contains(pos):
+                QToolTip.showText(event.globalPos(), "حذف حرکت", view)
+                return True
+            QToolTip.hideText()
+            event.ignore()
+            return True
+        return super().helpEvent(event, view, option, index)
+
 
 class ExerciseFormDialog(QDialog):
     def __init__(self, parent=None, exercise_data=None):
@@ -504,7 +632,11 @@ class WorkoutLibraryView(QWidget):
         self.txt_search = QLineEdit()
         self.txt_search.setPlaceholderText("جستجو در نام حرکات...")
         self.txt_search.setMinimumWidth(125)
-        self.txt_search.textChanged.connect(self.load_exercises)
+        self.search_timer = QTimer(self)
+        self.search_timer.setSingleShot(True)
+        self.search_timer.setInterval(250)
+        self.search_timer.timeout.connect(self.load_exercises)
+        self.txt_search.textChanged.connect(self.search_timer.start)
 
         self.combo_muscle = QComboBox()
         self.combo_muscle.addItem("همه عضلات", "all")
@@ -694,6 +826,8 @@ class WorkoutLibraryView(QWidget):
         self.table.setColumnWidth(6, 250)
         self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+        self.table.setItemDelegateForColumn(6, OperationsDelegate(self))
+        self.table.viewport().setMouseTracking(True)
 
         layout.addWidget(self.table, 1)
 
@@ -738,10 +872,27 @@ class WorkoutLibraryView(QWidget):
     def clear_anatomy_filter(self):
         self.anat_selector.clear_selection(emit_signal=True)
 
-    def load_exercises(self):
+    def load_exercises(self, force: bool = False):
+        if hasattr(self, "search_timer") and self.search_timer.isActive():
+            self.search_timer.stop()
+
+        if not hasattr(self, "_checkbox_pool"):
+            self._checkbox_pool = []
+        if not hasattr(self, "_exercises_filter_cache"):
+            self._exercises_filter_cache = {}
+
         search_query = self.txt_search.text().strip()
         muscle = self.combo_muscle.currentData()
-        exercises = WorkoutService.get_all_exercises(muscle_group=muscle, search_query=search_query)
+        current_filter = (search_query, muscle)
+        if not force and getattr(self, "_last_loaded_filter", None) == current_filter:
+            return
+        self._last_loaded_filter = current_filter
+
+        if not force and current_filter in self._exercises_filter_cache:
+            exercises = self._exercises_filter_cache[current_filter]
+        else:
+            exercises = WorkoutService.get_all_exercises(muscle_group=muscle, search_query=search_query)
+            self._exercises_filter_cache[current_filter] = exercises
 
         total_count = len(exercises)
         cur_muscle_name = self.combo_muscle.currentText()
@@ -769,128 +920,93 @@ class WorkoutLibraryView(QWidget):
         self.btn_bulk_delete.setText("🗑️ حذف انتخاب‌شده‌ها")
         self.btn_bulk_delete.setEnabled(False)
 
-        self.table.setRowCount(0)
-        self.table.setRowCount(len(exercises))
+        n = len(exercises)
+        self.table.setUpdatesEnabled(False)
+        old_count = self.table.rowCount()
+
+        if n < old_count:
+            for r in range(n, old_count):
+                w = self.table.cellWidget(r, 0)
+                if w:
+                    self.table.removeCellWidget(r, 0)
+                    w.setParent(None)
+                    self._checkbox_pool.append(w)
+            self.table.setRowCount(n)
+        elif n > old_count:
+            self.table.setRowCount(n)
+            for r in range(old_count, n):
+                if self._checkbox_pool:
+                    chk_w = self._checkbox_pool.pop()
+                else:
+                    chk_w = QWidget()
+                    chk_w.resize(44, 52)
+                    chk = QCheckBox(chk_w)
+                    chk.setGeometry(12, 16, 20, 20)
+                    chk.toggled.connect(self.on_row_checkbox_toggled)
+                self.table.setCellWidget(r, 0, chk_w)
+
+                for c in range(1, 6):
+                    it = QTableWidgetItem("")
+                    if c == 3:
+                        it.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+                    self.table.setItem(r, c, it)
+
+                it6 = QTableWidgetItem()
+                self.table.setItem(r, 6, it6)
+
         for row, ex in enumerate(exercises):
             # Checkbox in column 0
-            chk_w = QWidget()
-            chk_w.setStyleSheet("background: transparent;")
-            chk_l = QHBoxLayout(chk_w)
-            chk_l.setContentsMargins(0, 0, 0, 0)
-            chk_l.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            chk = QCheckBox()
+            chk_w = self.table.cellWidget(row, 0)
+            chk = chk_w.findChild(QCheckBox)
+            chk.blockSignals(True)
+            chk.setChecked(False)
             chk.setProperty("item_id", ex.id)
             chk.setProperty("item_name", ex.name_fa)
-            chk.toggled.connect(self.on_row_checkbox_toggled)
-            chk_l.addWidget(chk)
-            self.table.setCellWidget(row, 0, chk_w)
+            chk.blockSignals(False)
 
-            it_name = QTableWidgetItem(ex.name_fa)
+            it_name = self.table.item(row, 1)
+            it_name.setText(ex.name_fa)
             it_name.setToolTip(ex.name_fa)
-            self.table.setItem(row, 1, it_name)
-            
-            muscle_name = muscle_map.get(ex.primary_muscle, ex.primary_muscle)
-            if getattr(ex, "is_corrective", False):
-                muscle_display = f"{muscle_name} (اصلاحی)"
-            else:
-                muscle_display = muscle_name
-            it_muscle = QTableWidgetItem(muscle_display)
-            it_muscle.setToolTip(muscle_display)
-            self.table.setItem(row, 2, it_muscle)
 
-            it_equip = QTableWidgetItem(equip_map.get(ex.equipment, ex.equipment or "-"))
-            it_equip.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-            it_equip.setToolTip(equip_map.get(ex.equipment, ex.equipment or "-"))
-            self.table.setItem(row, 3, it_equip)
+            muscle_name = muscle_map.get(ex.primary_muscle, ex.primary_muscle)
+            muscle_display = f"{muscle_name} (اصلاحی)" if getattr(ex, "is_corrective", False) else muscle_name
+            it_muscle = self.table.item(row, 2)
+            it_muscle.setText(muscle_display)
+            it_muscle.setToolTip(muscle_display)
+
+            eq_txt = equip_map.get(ex.equipment, ex.equipment or "-")
+            it_equip = self.table.item(row, 3)
+            it_equip.setText(eq_txt)
+            it_equip.setToolTip(eq_txt)
 
             contra_txt = ex.contraindications or "-"
-            it_contra = QTableWidgetItem(contra_txt)
+            it_contra = self.table.item(row, 4)
+            it_contra.setText(contra_txt)
             if ex.contraindications:
                 it_contra.setToolTip(ex.contraindications)
-            self.table.setItem(row, 4, it_contra)
 
             desc_txt = ex.description or "-"
-            it_desc = QTableWidgetItem(desc_txt)
+            it_desc = self.table.item(row, 5)
+            it_desc.setText(desc_txt)
             if ex.description:
-                it_desc.setToolTip(ex.description)
-            self.table.setItem(row, 5, it_desc)
+                it_desc.setToolTip(desc_txt)
 
-            # Operations Widget (Media, Edit, Delete)
-            btn_container = QWidget()
-            btn_container.setStyleSheet("background: transparent;")
-            btn_layout = QHBoxLayout(btn_container)
-            btn_layout.setContentsMargins(4, 2, 4, 2)
-            btn_layout.setSpacing(6)
-            btn_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            # Column 6: Operations delegate data
+            it6 = self.table.item(row, 6)
+            it6.setData(Qt.ItemDataRole.UserRole, ex)
+            it6.setData(Qt.ItemDataRole.UserRole + 1, bool(getattr(ex, "video_cloud_url", None)))
 
-            has_cloud = bool(getattr(ex, "video_cloud_url", None))
-            btn_media = QPushButton("🎬 رسانه ☁️" if has_cloud else "🎬 رسانه")
-            if has_cloud:
-                btn_media.setToolTip("ویدیو در سرور ابری آنلاین است.")
-            btn_media.setFixedSize(84, 30)
-            btn_media.setCursor(Qt.CursorShape.PointingHandCursor)
-            btn_media.setStyleSheet("""
-                QPushButton {
-                    background-color: #2D2D2D;
-                    color: #FFFFFF;
-                    font-weight: bold;
-                    border: none;
-                    border-radius: 6px;
-                    padding: 2px 4px;
-                    font-size: 11px;
-                }
-                QPushButton:hover {
-                    background-color: #3D3D3D;
-                }
-            """)
-            btn_media.clicked.connect(lambda _, item=ex: self.show_media(item))
+        self.table.setUpdatesEnabled(True)
 
-            btn_edit = QPushButton("✏️ ویرایش")
-            btn_edit.setFixedSize(72, 30)
-            btn_edit.setCursor(Qt.CursorShape.PointingHandCursor)
-            btn_edit.setStyleSheet("""
-                QPushButton {
-                    background-color: #D97706;
-                    color: #FFFFFF;
-                    font-weight: bold;
-                    border: none;
-                    border-radius: 6px;
-                    padding: 2px 4px;
-                    font-size: 11px;
-                }
-                QPushButton:hover {
-                    background-color: #B45309;
-                }
-            """)
-            btn_edit.clicked.connect(lambda _, item=ex: self.open_edit_dialog(item))
+        if force or not hasattr(self, "_sync_state_initialized"):
+            self._sync_state_initialized = True
+            self.update_sync_button_state()
 
-            btn_delete = QPushButton("🗑️ حذف")
-            btn_delete.setToolTip("حذف حرکت")
-            btn_delete.setFixedSize(58, 30)
-            btn_delete.setCursor(Qt.CursorShape.PointingHandCursor)
-            btn_delete.setStyleSheet("""
-                QPushButton {
-                    background-color: #D32F2F;
-                    color: #FFFFFF;
-                    font-weight: bold;
-                    border: none;
-                    border-radius: 6px;
-                    padding: 2px 4px;
-                    font-size: 11px;
-                }
-                QPushButton:hover {
-                    background-color: #B71C1C;
-                }
-            """)
-            btn_delete.clicked.connect(lambda _, item=ex: self.delete_exercise(item))
-
-            btn_layout.addWidget(btn_media)
-            btn_layout.addWidget(btn_edit)
-            btn_layout.addWidget(btn_delete)
-
-            self.table.setCellWidget(row, 6, btn_container)
-
-        self.update_sync_button_state()
+    def reload_exercises(self):
+        if hasattr(self, "_exercises_filter_cache"):
+            self._exercises_filter_cache.clear()
+        self._sync_state_initialized = False
+        self.load_exercises(force=True)
 
     def update_sync_button_state(self):
         if not hasattr(self, "btn_cloud_sync"):
@@ -964,10 +1080,10 @@ class WorkoutLibraryView(QWidget):
         def commit_delete(ids):
             for eid in ids:
                 WorkoutService.delete_exercise(eid)
-            self.load_exercises()
+            self.reload_exercises()
 
         def undo_delete(ids):
-            self.load_exercises()
+            self.reload_exercises()
             QMessageBox.information(self, "بازگردانی", "حرکات ورزشی با موفقیت بازگردانده شدند.")
 
         self.undo_banner.start_countdown(count, selected_ids, commit_delete, undo_delete, "حرکت ورزشی")
@@ -1009,8 +1125,8 @@ class WorkoutLibraryView(QWidget):
             self._hide_rows_by_ids([exercise.id])
             self.undo_banner.start_countdown(
                 1, [exercise.id],
-                on_commit=lambda ids: [WorkoutService.delete_exercise(eid) for eid in ids] and self.load_exercises(),
-                on_undo=lambda ids: self.load_exercises(),
+                on_commit=lambda ids: [WorkoutService.delete_exercise(eid) for eid in ids] and self.reload_exercises(),
+                on_undo=lambda ids: self.reload_exercises(),
                 item_label="حرکت ورزشی"
             )
 
@@ -1019,7 +1135,7 @@ class WorkoutLibraryView(QWidget):
         if dlg.exec() == QDialog.DialogCode.Accepted:
             data = dlg.get_data()
             WorkoutService.create_exercise(data)
-            self.load_exercises()
+            self.reload_exercises()
             QMessageBox.information(self, "موفقیت", "حرکت جدید به بانک افزوده شد.")
 
     def open_edit_dialog(self, exercise):
@@ -1027,7 +1143,7 @@ class WorkoutLibraryView(QWidget):
         if dlg.exec() == QDialog.DialogCode.Accepted:
             data = dlg.get_data()
             WorkoutService.update_exercise(exercise.id, data)
-            self.load_exercises()
+            self.reload_exercises()
             QMessageBox.information(self, "موفقیت", "حرکت ورزشی با موفقیت ویرایش شد.")
 
     def sync_videos_to_cloud(self):
@@ -1093,7 +1209,7 @@ class WorkoutLibraryView(QWidget):
         self.cloud_sync_progress.emit(remaining, total)
 
     def _on_sync_worker_finished(self, success_count: int, fail_count: int, errors: list):
-        self.load_exercises()
+        self.reload_exercises()
         self.cloud_sync_finished.emit(success_count, fail_count)
         if errors and fail_count > 0:
             QMessageBox.warning(
@@ -1111,7 +1227,7 @@ class WorkoutLibraryView(QWidget):
             )
 
     def _on_sync_worker_error(self, err_msg: str):
-        self.load_exercises()
+        self.reload_exercises()
         self.cloud_sync_finished.emit(0, 1)
         QMessageBox.critical(self, "خطا در همگام‌سازی", f"خطایی در حین ارسال اطلاعات رخ داد: {err_msg}")
 
