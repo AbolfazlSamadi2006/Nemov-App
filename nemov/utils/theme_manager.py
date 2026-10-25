@@ -1070,6 +1070,31 @@ QGroupBox::title {{
     background-color: transparent;
 }}
 
+/* Assignment Box with Cutout Border and Transparent Background */
+QGroupBox#assign_plan_box {{
+    background-color: transparent;
+    border: 1px solid {palette.border_light if palette.is_dark else palette.border};
+    border-radius: 8px;
+    margin-top: 12px;
+    padding-top: 14px;
+    padding-bottom: 10px;
+    padding-left: 14px;
+    padding-right: 14px;
+    font-weight: bold;
+}}
+
+QGroupBox#assign_plan_box::title {{
+    subcontrol-origin: margin;
+    subcontrol-position: top left;
+    left: 18px;
+    top: 2px;
+    padding: 0 8px;
+    color: {palette.primary_hover if palette.is_dark else palette.primary};
+    background-color: {palette.bg_base};
+    font-size: 13px;
+    font-weight: bold;
+}}
+
 /* Buttons */
 QPushButton {{
     background-color: {palette.primary};

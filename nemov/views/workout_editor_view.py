@@ -286,7 +286,8 @@ class WorkoutEditorView(QWidget):
         self.setup_day_tabs()
 
         # Assignment Box & Actions
-        assign_box = QGroupBox("تخصیص برنامه به ورزشکار")
+        assign_box = QGroupBox("تخصیص برنامه تمرینی به ورزشکار")
+        assign_box.setObjectName("assign_plan_box")
         layout_assign = QHBoxLayout(assign_box)
 
         self.combo_member = SearchableComboBox(placeholder="جستجو یا تایپ نام ورزشکار...")
