@@ -11,6 +11,7 @@ from nemov.views.components.field_validator import (
 )
 from nemov.views.components.day_management_dialogs import DaySelectionReductionDialog, DayIncreaseChoiceDialog
 from nemov.views.components.unregistered_items_dialog import UnregisteredItemsDialog
+from nemov.views.components.animated_accordion import AnimatedAccordionCurtain
 
 class NutritionEditorView(QWidget):
     manage_templates_requested = pyqtSignal()
@@ -166,10 +167,23 @@ class NutritionEditorView(QWidget):
         lbl_goal = QLabel("هدف:")
         self.combo_goal = QComboBox()
         self.combo_goal.setFixedHeight(30)
-        self.combo_goal.addItem("عضله‌سازی (Muscle Gain)", "muscle_gain")
-        self.combo_goal.addItem("کاهش وزن و چربی‌سوزی (Weight Loss)", "weight_loss")
-        self.combo_goal.addItem("افزایش وزن (Weight Gain)", "weight_gain")
-        self.combo_goal.addItem("تثبیت وزن (Maintenance)", "maintenance")
+        self.combo_goal.setMinimumWidth(195)
+        self.combo_goal.view().setMinimumWidth(205)
+        self.combo_goal.setStyleSheet("""
+            QComboBox {
+                padding-right: 8px;
+                padding-left: 22px;
+                font-size: 12px;
+            }
+            QComboBox QAbstractItemView::item {
+                min-height: 28px;
+                padding: 4px 8px;
+            }
+        """)
+        self.combo_goal.addItem("عضله‌سازی", "muscle_gain")
+        self.combo_goal.addItem("کاهش وزن و چربی‌سوزی", "weight_loss")
+        self.combo_goal.addItem("افزایش وزن", "weight_gain")
+        self.combo_goal.addItem("تثبیت وزن", "maintenance")
         self.combo_goal.currentIndexChanged.connect(self._on_goal_changed)
 
         lbl_days = QLabel("روزها:")
@@ -279,9 +293,9 @@ class NutritionEditorView(QWidget):
             "font-size: 11px; font-weight: bold; padding: 4px 10px; border-radius: 4px; background-color: #374151; color: #E5E7EB;"
         )
 
-        row_cal.addWidget(lbl_goal, 1)
-        row_cal.addWidget(self.combo_goal, 1)
-        row_cal.addWidget(lbl_days, 1)
+        row_cal.addWidget(lbl_goal)
+        row_cal.addWidget(self.combo_goal, 2)
+        row_cal.addWidget(lbl_days)
         row_cal.addWidget(self.combo_days, 1)
         row_cal.addWidget(lbl_tdee)
         row_cal.addWidget(self.txt_member_tdee)
@@ -301,7 +315,8 @@ class NutritionEditorView(QWidget):
         # Row 3: Macronutrients Target Engine & Balance Cards
         self._setup_macro_cards(layout_details)
 
-        layout_form.addWidget(self.form_details_widget)
+        self.form_details_curtain = AnimatedAccordionCurtain(self.form_details_widget, form_box, duration_ms=340)
+        layout_form.addWidget(self.form_details_curtain)
         layout.addWidget(form_box)
 
         # Tabs for Meals
@@ -2502,22 +2517,24 @@ class NutritionEditorView(QWidget):
             )
 
     def toggle_form_collapse(self):
-        if not hasattr(self, "form_details_widget"):
+        if not hasattr(self, "form_details_curtain"):
             return
-        is_details_visible = self.form_details_widget.isVisible()
-        if is_details_visible:
-            self.form_details_widget.hide()
-            self.btn_toggle_form.setText("🔽 باز کردن و ویرایش فرم")
-            self._update_form_summary()
-        else:
-            self.form_details_widget.show()
+        if self.form_details_curtain.is_collapsed():
+            self.form_details_curtain.expand()
             self.btn_toggle_form.setText("🔼 جمع کردن مشخصات")
             if hasattr(self, "lbl_form_sub"):
                 self.lbl_form_sub.setText("مشخصات رژیم، اهداف انرژی روزانه و درشت‌مغذی‌ها")
                 self.lbl_form_sub.setStyleSheet("font-size: 11px; font-weight: normal; color: #9CA3AF;")
+        else:
+            self._update_form_summary(force=True)
+            self.form_details_curtain.collapse()
+            self.btn_toggle_form.setText("🔽 باز کردن و ویرایش فرم")
 
-    def _update_form_summary(self):
-        if not hasattr(self, "lbl_form_sub") or (hasattr(self, "form_details_widget") and self.form_details_widget.isVisible()):
+    def _update_form_summary(self, force: bool = False):
+        if not hasattr(self, "lbl_form_sub"):
+            return
+        is_collapsed = hasattr(self, "form_details_curtain") and self.form_details_curtain.is_collapsed()
+        if not is_collapsed and not force:
             return
         member_name = self.combo_member_top.currentText() if hasattr(self, "combo_member_top") else "ورزشکار انتخاب نشده"
         if not member_name or "انتخاب" in member_name:
