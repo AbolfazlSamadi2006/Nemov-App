@@ -5,7 +5,7 @@ Unicode True
 
 !define PRODUCT_NAME "Nemov"
 !define PRODUCT_NAME_EN "Nemov"
-!define PRODUCT_VERSION "3.4.0"
+!define PRODUCT_VERSION "3.4.1"
 !define PRODUCT_PUBLISHER "Abolfazl Samadi"
 !define PRODUCT_WEB_SITE "https://github.com/AbolfazlSamadi2006/Nemov-App"
 !define PRODUCT_EXE "Nemov.exe"

@@ -140,7 +140,7 @@ DATABASE_URI = f"sqlite:///{DB_PATH}"
 APP_NAME = "نِمُو"
 APP_TITLE = "نرم‌افزار مدیریت ورزشی نِمُو"
 APP_ENGLISH_NAME = "Nemov"
-APP_VERSION = "v3.4.0"
+APP_VERSION = "v3.4.1"
 APP_USER_MODEL_ID = "nemov.sports.management.desktop.v3"
 GYM_ADDRESS = "باشگاه بدنسازی یلدا | مازندران، قائمشهر، خیابان کوچکسرا، نبش شقایق ۳"
 
