@@ -118,6 +118,35 @@ class OperationsDelegate(QStyledItemDelegate):
 
         return super().editorEvent(event, model, option, index)
 
+
+class TwoLineDescriptionDelegate(QStyledItemDelegate):
+    def paint(self, painter: QPainter, option: QStyleOptionViewItem, index: QModelIndex):
+        painter.save()
+        self.initStyleOption(option, index)
+
+        style = option.widget.style() if option.widget else QApplication.style()
+        style.drawPrimitive(style.PrimitiveElement.PE_PanelItemViewItem, option, painter, option.widget)
+
+        raw_text = index.data(Qt.ItemDataRole.DisplayRole) or ""
+        if " | " in raw_text:
+            parts = [p.strip() for p in raw_text.split(" | ") if p.strip()]
+            display_text = "\n".join(parts[:2])
+        else:
+            display_text = raw_text
+
+        rect = option.rect.adjusted(10, 3, -10, -3)
+        font = QFont(option.font)
+        font.setPointSize(9)
+        font.setStyleStrategy(QFont.StyleStrategy.PreferAntialias)
+        painter.setFont(font)
+        painter.setPen(QColor("#D1D5DB"))
+
+        flags = Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter | Qt.TextFlag.TextWordWrap
+        painter.drawText(rect, flags, display_text)
+
+        painter.restore()
+
+
     def helpEvent(self, event: QHelpEvent, view: QAbstractItemView, option: QStyleOptionViewItem, index: QModelIndex) -> bool:
         if event.type() == QEvent.Type.ToolTip:
             media_rect, edit_rect, del_rect = self._get_button_rects(option.rect)
@@ -125,7 +154,7 @@ class OperationsDelegate(QStyledItemDelegate):
             if media_rect.contains(pos):
                 has_cloud = index.data(Qt.ItemDataRole.UserRole + 1)
                 if has_cloud:
-                    QToolTip.showText(event.globalPos(), "ویدیو در سرور ابری آنلاین است.", view)
+                    QToolTip.showText(event.globalPos(), "ویدیو در سرور آنلاین است.", view)
                     return True
             elif del_rect.contains(pos):
                 QToolTip.showText(event.globalPos(), "حذف حرکت", view)
@@ -535,7 +564,7 @@ class ExerciseFormDialog(QDialog):
             self.media_path = actual_path
             fn = os.path.basename(actual_path)
             if self.video_cloud_url:
-                self.lbl_media_status.setText(f"فایل: {fn} (همگام در سرور ابری ☁️)")
+                self.lbl_media_status.setText(f"فایل: {fn} (همگام در سرور ☁️)")
             else:
                 self.lbl_media_status.setText(f"فایل: {fn}")
             self.lbl_media_status.setStyleSheet("color: #4CAF50; font-size: 11px;")
@@ -599,7 +628,7 @@ class WorkoutLibraryView(QWidget):
         header.addWidget(title)
         header.addStretch()
 
-        self.btn_cloud_sync = QPushButton("☁️ همگام‌سازی ویدیوها در سرور ابری")
+        self.btn_cloud_sync = QPushButton("☁️ همگام‌سازی ویدیوها در سرور")
         self.btn_cloud_sync.setObjectName("secondary_button")
         self.btn_cloud_sync.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_cloud_sync.setStyleSheet("""
@@ -810,22 +839,24 @@ class WorkoutLibraryView(QWidget):
         self.table = QTableWidget()
         self.table.setColumnCount(7)
         self.table.setHorizontalHeaderLabels(["انتخاب", "نام حرکت", "عضله اصلی", "تجهیزات", "محدودیت آسیب‌دیدگی", "توضیحات", "عملیات"])
-        self.table.verticalHeader().setDefaultSectionSize(52)
+        self.table.verticalHeader().setDefaultSectionSize(54)
+        self.table.verticalHeader().setDefaultAlignment(Qt.AlignmentFlag.AlignCenter)
         header = self.table.horizontalHeader()
         header.setMinimumSectionSize(40)
         header.setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
-        self.table.setColumnWidth(0, 44)
+        self.table.setColumnWidth(0, 56)
         self.table.setColumnWidth(1, 195)
-        self.table.setColumnWidth(2, 150)
+        self.table.setColumnWidth(2, 140)
         header.setSectionResizeMode(3, QHeaderView.ResizeMode.Fixed)
-        self.table.setColumnWidth(3, 65)
-        self.table.setColumnWidth(4, 145)
+        self.table.setColumnWidth(3, 75)
+        self.table.setColumnWidth(4, 130)
         header.setSectionResizeMode(5, QHeaderView.ResizeMode.Stretch)
         header.setSectionResizeMode(6, QHeaderView.ResizeMode.Fixed)
         self.table.setColumnWidth(6, 250)
         self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+        self.table.setItemDelegateForColumn(5, TwoLineDescriptionDelegate(self))
         self.table.setItemDelegateForColumn(6, OperationsDelegate(self))
         self.table.viewport().setMouseTracking(True)
 
@@ -939,10 +970,12 @@ class WorkoutLibraryView(QWidget):
                     chk_w = self._checkbox_pool.pop()
                 else:
                     chk_w = QWidget()
-                    chk_w.resize(44, 52)
+                    chk_lay = QHBoxLayout(chk_w)
+                    chk_lay.setContentsMargins(0, 0, 0, 0)
+                    chk_lay.setAlignment(Qt.AlignmentFlag.AlignCenter)
                     chk = QCheckBox(chk_w)
-                    chk.setGeometry(12, 16, 20, 20)
                     chk.toggled.connect(self.on_row_checkbox_toggled)
+                    chk_lay.addWidget(chk)
                 self.table.setCellWidget(r, 0, chk_w)
 
                 for c in range(1, 6):
@@ -979,11 +1012,30 @@ class WorkoutLibraryView(QWidget):
             it_equip.setText(eq_txt)
             it_equip.setToolTip(eq_txt)
 
-            contra_txt = ex.contraindications or "-"
+            raw_contra = ex.contraindications or "-"
+            contra_map = {
+                "wrist_injury": "آسیب مچ دست",
+                "elbow_injury": "آسیب آرنج",
+                "shoulder_injury": "آسیب سرشانه",
+                "knee_injury": "آسیب زانو",
+                "back_injury": "آسیب کمر",
+                "neck_injury": "آسیب گردن",
+                "ankle_injury": "آسیب مچ پا",
+                "hip_injury": "آسیب لگن",
+                "none": "-",
+                "-": "-"
+            }
+            if raw_contra and raw_contra != "-":
+                parts = [p.strip() for p in raw_contra.replace("،", ",").split(",") if p.strip()]
+                contra_txt = "، ".join(contra_map.get(p, p) for p in parts)
+            else:
+                contra_txt = "-"
+
             it_contra = self.table.item(row, 4)
             it_contra.setText(contra_txt)
+            it_contra.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             if ex.contraindications:
-                it_contra.setToolTip(ex.contraindications)
+                it_contra.setToolTip(contra_txt)
 
             desc_txt = ex.description or "-"
             it_desc = self.table.item(row, 5)
@@ -1016,11 +1068,11 @@ class WorkoutLibraryView(QWidget):
         if pending_count > 0:
             fa_count = str(pending_count).translate(str.maketrans('0123456789', '۰۱۲۳۴۵۶۷۸۹'))
             self.btn_cloud_sync.setText(f"☁️ همگام‌سازی رسانه‌ها ({fa_count} جدید)")
-            self.btn_cloud_sync.setToolTip(f"{fa_count} رسانه محلی (فیلم یا عکس) هنوز در سرور ابری آپلود نشده است. برای همگام‌سازی کلیک کنید.")
+            self.btn_cloud_sync.setToolTip(f"{fa_count} رسانه محلی (فیلم یا عکس) هنوز در سرور آپلود نشده است. برای همگام‌سازی کلیک کنید.")
             self.btn_cloud_sync.setEnabled(True)
         else:
             self.btn_cloud_sync.setText("☁️ تمام رسانه‌ها همگام هستند")
-            self.btn_cloud_sync.setToolTip("تمام ویدیوها و تصاویر موجود در برنامه در سرور ابری همگام‌سازی شده‌اند.")
+            self.btn_cloud_sync.setToolTip("تمام ویدیوها و تصاویر موجود در برنامه در سرور همگام‌سازی شده‌اند.")
             self.btn_cloud_sync.setEnabled(False)
 
     def toggle_select_all(self, checked):
@@ -1163,7 +1215,7 @@ class WorkoutLibraryView(QWidget):
                 self,
                 "عدم اتصال به اینترنت",
                 "❌ دستگاه شما به اینترنت متصل نیست!\n\n"
-                "برای آپلود و همگام‌سازی ویدیوها و تصاویر در سرور ابری، لطفاً ابتدا اتصال اینترنت خود را بررسی نمایید.\n"
+                "برای آپلود و همگام‌سازی ویدیوها و تصاویر در سرور، لطفاً ابتدا اتصال اینترنت خود را بررسی نمایید.\n"
                 "پس از برقراری ارتباط اینترنت، مجدداً روی این دکمه کلیک کنید تا عملیات همگام‌سازی بدون مشکل انجام شود."
             )
             return
@@ -1174,15 +1226,15 @@ class WorkoutLibraryView(QWidget):
             QMessageBox.information(
                 self,
                 "همگام‌سازی ابری",
-                "تمام ویدیوها و تصاویر موجود در برنامه از قبل در سرور ابری همگام‌سازی شده‌اند و رسانه جدیدی وجود ندارد."
+                "تمام ویدیوها و تصاویر موجود در برنامه از قبل در سرور همگام‌سازی شده‌اند و رسانه جدیدی وجود ندارد."
             )
             self.update_sync_button_state()
             return
 
         fa_count = str(pending_count).translate(str.maketrans('0123456789', '۰۱۲۳۴۵۶۷۸۹'))
         reply = QMessageBox.question(
-            self, "همگام‌سازی رسانه‌ها در سرور ابری",
-            f"تعداد {fa_count} رسانه جدید (ویدیو یا تصویر) جهت آپلود در سرور ابری آماده است.\n\n"
+            self, "همگام‌سازی رسانه‌ها در سرور",
+            f"تعداد {fa_count} رسانه جدید (ویدیو یا تصویر) جهت آپلود در سرور آماده است.\n\n"
             "آیا مایلید عملیات آپلود و همگام‌سازی آنلاین آغاز شود؟",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.Yes
@@ -1223,7 +1275,7 @@ class WorkoutLibraryView(QWidget):
             fa_count = str(success_count).translate(str.maketrans('0123456789', '۰۱۲۳۴۵۶۷۸۹'))
             QMessageBox.information(
                 self, "همگام‌سازی موفق",
-                f"✅ تعداد {fa_count} رسانه آموزشی (فیلم یا عکس) با موفقیت در سرور ابری آپلود شد و لینک‌های آنلاین به‌روزرسانی شدند."
+                f"✅ تعداد {fa_count} رسانه آموزشی (فیلم یا عکس) با موفقیت در سرور آپلود شد و لینک‌های آنلاین به‌روزرسانی شدند."
             )
 
     def _on_sync_worker_error(self, err_msg: str):

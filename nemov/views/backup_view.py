@@ -43,10 +43,10 @@ class CloudBackupThread(QThread):
             else:
                 self.progress_signal.emit(15, "در حال آماده‌سازی و استخراج پایگاه‌داده...")
                 time.sleep(0.2)
-                self.progress_signal.emit(45, "در حال اتصال به سرور ابری نِمُو...")
+                self.progress_signal.emit(45, "در حال اتصال به سرور نِمُو...")
 
             time.sleep(0.2)
-            self.progress_signal.emit(75, "در حال بارگذاری اطلاعات در سرور ابری...")
+            self.progress_signal.emit(75, "در حال بارگذاری اطلاعات در سرور...")
             from nemov.services.backup_service import upload_cloud_backup
             success, msg = upload_cloud_backup(trainer_phone=self.phone, trainer_name=self.trainer_name)
             if success:
@@ -739,10 +739,10 @@ class BackupView(QWidget):
         btn_create.clicked.connect(self.create_backup)
         toolbar_layout.addWidget(btn_create)
 
-        btn_restore_cloud = QPushButton("☁️ بازگردانی از سرور ابری")
+        btn_restore_cloud = QPushButton("☁️ بازگردانی از سرور")
         btn_restore_cloud.setFixedHeight(36)
         btn_restore_cloud.setCursor(Qt.CursorShape.PointingHandCursor)
-        btn_restore_cloud.setToolTip("بازگردانی آخرین نسخه پشتیبان از سرور ابری کلودفلر")
+        btn_restore_cloud.setToolTip("بازگردانی آخرین نسخه پشتیبان از سرور کلودفلر")
         btn_restore_cloud.setStyleSheet("""
             QPushButton {
                 background-color: #1E3A8A;
@@ -2341,9 +2341,9 @@ class BackupView(QWidget):
         self.btn_prog_close.setVisible(False)
         if hasattr(self, "btn_prog_spam_guide"):
             self.btn_prog_spam_guide.setVisible(False)
-        self.lbl_prog_title.setText("☁️ در حال ارسال نسخه پشتیبان به سرور ابری...")
+        self.lbl_prog_title.setText("☁️ در حال ارسال نسخه پشتیبان به سرور...")
         self.lbl_prog_title.setStyleSheet("font-weight: bold; font-size: 13px; color: #F87171; font-family: 'Segoe UI Emoji', 'Noto Color Emoji', 'Vazirmatn', sans-serif;")
-        self.lbl_prog_detail.setText("در حال برقراری ارتباط با سرور ابری نِمُو...")
+        self.lbl_prog_detail.setText("در حال برقراری ارتباط با سرور نِمُو...")
         self.backup_progress_bar.setValue(10)
         self.backup_progress_bar.setStyleSheet("""
             QProgressBar {
@@ -2416,7 +2416,7 @@ class BackupView(QWidget):
                     main_w._view_exercises.update_sync_button_state()
             except Exception:
                 pass
-            self.lbl_prog_title.setText("✅ پشتیبان‌گیری در سرور ابری با موفقیت تکمیل شد!")
+            self.lbl_prog_title.setText("✅ پشتیبان‌گیری در سرور با موفقیت تکمیل شد!")
             self.lbl_prog_title.setStyleSheet("font-weight: bold; font-size: 13px; color: #10B981; font-family: 'Segoe UI Emoji', 'Noto Color Emoji', 'Vazirmatn', sans-serif;")
             self.lbl_prog_detail.setText(msg)
             self.backup_progress_bar.setValue(100)
@@ -2523,7 +2523,7 @@ class BackupView(QWidget):
         reply2 = QMessageBox.critical(
             self,
             "🔴 تایید نهایی حذف",
-            "کلیه اطلاعات این مربی از حافظه سیستم و سرور ابری پاک خواهد شد. آیا تایید نهایی را صادر می‌کنید؟",
+            "کلیه اطلاعات این مربی از حافظه سیستم و سرور پاک خواهد شد. آیا تایید نهایی را صادر می‌کنید؟",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No
         )

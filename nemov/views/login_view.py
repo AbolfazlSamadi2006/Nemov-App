@@ -265,7 +265,7 @@ class LoginView(QWidget):
         card_layout.addLayout(row_actions)
 
         # Cloud Restore Button (for new computer or fresh install)
-        self.btn_cloud = QPushButton("☁️ بازیابی اطلاعات از سرور ابری (سیستم جدید)")
+        self.btn_cloud = QPushButton("☁️ بازیابی اطلاعات از سرور (سیستم جدید)")
         self.btn_cloud.setFixedHeight(36)
         self.btn_cloud.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_cloud.clicked.connect(self.open_cloud_restore_dialog)

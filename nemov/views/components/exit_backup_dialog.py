@@ -48,7 +48,7 @@ class ExitBackupDialog(QDialog):
         # Action Buttons
         # ----------------------------------------------------
         # 1. Cloud Online Backup
-        self.btn_cloud = QPushButton("☁️ ذخیره در سرور ابری (آنلاین)")
+        self.btn_cloud = QPushButton("☁️ ذخیره در سرور (آنلاین)")
         self.btn_cloud.setFixedHeight(46)
         self.btn_cloud.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_cloud.setStyleSheet("""
@@ -137,7 +137,7 @@ class ExitBackupDialog(QDialog):
             QMessageBox.warning(
                 self,
                 "قطع اتصال اینترنت",
-                "⚠️ سیستم شما به اینترنت متصل نیست!\n\nلطفاً ابتدا سیستم خود را به اینترنت متصل نمایید و سپس دکمه «ذخیره در سرور ابری» را فشار دهید."
+                "⚠️ سیستم شما به اینترنت متصل نیست!\n\nلطفاً ابتدا سیستم خود را به اینترنت متصل نمایید و سپس دکمه «ذخیره در سرور» را فشار دهید."
             )
             return
 
@@ -146,11 +146,11 @@ class ExitBackupDialog(QDialog):
         trainer_name = u.full_name if u else "مدیر باشگاه"
 
         self.btn_cloud.setEnabled(False)
-        self.btn_cloud.setText("⏳ در حال ارسال به سرور ابری...")
+        self.btn_cloud.setText("⏳ در حال ارسال به سرور...")
 
         success, msg = upload_cloud_backup(trainer_phone=phone, trainer_name=trainer_name)
         self.btn_cloud.setEnabled(True)
-        self.btn_cloud.setText("☁️ ذخیره در سرور ابری (آنلاین)")
+        self.btn_cloud.setText("☁️ ذخیره در سرور (آنلاین)")
 
         if success:
             QMessageBox.information(self, "موفقیت", msg)

@@ -82,10 +82,10 @@ def _format_network_error_message(exc: Exception) -> str:
     """Converts raw socket / network exceptions into user-friendly Persian guidance."""
     err_str = str(exc)
     if "10054" in err_str or "forcibly closed" in err_str.lower() or "connection reset" in err_str.lower():
-        return "ارتباط با سرور ابری به دلیل اختلال لحظه‌ای شبکه یا فایروال اینترنت قطع شد (WinError 10054). لطفاً چند لحظه بعد مجدداً تلاش نمایید."
+        return "ارتباط با سرور به دلیل اختلال لحظه‌ای شبکه یا فایروال اینترنت قطع شد (WinError 10054). لطفاً چند لحظه بعد مجدداً تلاش نمایید."
     if "timed out" in err_str.lower() or isinstance(exc, (TimeoutError, socket.timeout)):
-        return "مهلت زمانی اتصال به سرور ابری به پایان رسید (Timeout). لطفاً سرعت اینترنت را بررسی نموده و دوباره تلاش کنید."
-    return f"خطا در ارتباط با سرور ابری: {err_str}"
+        return "مهلت زمانی اتصال به سرور به پایان رسید (Timeout). لطفاً سرعت اینترنت را بررسی نموده و دوباره تلاش کنید."
+    return f"خطا در ارتباط با سرور: {err_str}"
 
 
 def is_internet_connected(timeout: float = 3.0) -> bool:
@@ -186,7 +186,7 @@ def upload_cloud_backup(trainer_phone: str, trainer_name: str = "", server_url: 
                 with urllib.request.urlopen(req, timeout=adaptive_timeout, context=ctx) as response:
                     resp_data = json.loads(response.read().decode("utf-8"))
                     if response.status in (200, 201) and resp_data.get("success", True):
-                        return True, "نسخه پشتیبان با موفقیت در سرور ابری و حافظه سیستم ذخیره شد."
+                        return True, "نسخه پشتیبان با موفقیت در سرور و حافظه سیستم ذخیره شد."
                     else:
                         return False, resp_data.get("message", "خطا در ثبت بک‌آپ روی سرور.")
             except urllib.error.HTTPError as e:
@@ -207,7 +207,7 @@ def upload_cloud_backup(trainer_phone: str, trainer_name: str = "", server_url: 
                 
         if last_exc:
             return False, _format_network_error_message(last_exc)
-        return False, "خطا در برقراری ارتباط با سرور ابری."
+        return False, "خطا در برقراری ارتباط با سرور."
         
     except Exception as e:
         return False, f"خطا در آماده‌سازی نسخه پشتیبان: {str(e)}"
@@ -276,20 +276,20 @@ def download_and_restore_cloud_backup(trainer_phone: str, server_url: str = None
                     except Exception:
                         pass
 
-                    return True, "اطلاعات و پایگاه‌داده با موفقیت از سرور ابری دریافت و بازیابی شد."
+                    return True, "اطلاعات و پایگاه‌داده با موفقیت از سرور دریافت و بازیابی شد."
                 else:
                     return False, f"سرور با وضعیت {response.status} پاسخ داد."
 
         except urllib.error.HTTPError as e:
             if e.code == 404:
-                return False, "هیچ نسخه پشتیبانی برای این شماره موبایل در سرور ابری یافت نشد."
+                return False, "هیچ نسخه پشتیبانی برای این شماره موبایل در سرور یافت نشد."
             elif e.code == 401:
-                return False, "کلید احراز هویت سرور ابری نامعتبر است."
+                return False, "کلید احراز هویت سرور نامعتبر است."
             elif e.code in (502, 503, 504) and attempt < max_retries:
                 time.sleep(2 * attempt)
                 continue
             else:
-                return False, f"خطای ارتباط با سرور ابری (کد {e.code})"
+                return False, f"خطای ارتباط با سرور (کد {e.code})"
         except Exception as e:
             last_exc = e
             if _is_transient_network_error(e) and attempt < max_retries:
@@ -299,7 +299,7 @@ def download_and_restore_cloud_backup(trainer_phone: str, server_url: str = None
 
     if last_exc:
         return False, _format_network_error_message(last_exc)
-    return False, "خطا در دریافت اطلاعات از سرور ابری."
+    return False, "خطا در دریافت اطلاعات از سرور."
 
 
 class BackupService:
@@ -375,7 +375,7 @@ class BackupService:
         with SessionLocal() as db:
             record = BackupRecord(
                 file_name=filename,
-                file_path="☁️ سرور ابری نِمُو (Nemov Cloud Server)",
+                file_path="☁️ سرور نِمُو (Nemov Cloud Server)",
                 backup_size_mb=size_mb,
                 backup_date_shamsi=shamsi_display,
                 created_at=now

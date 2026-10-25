@@ -167,7 +167,7 @@ def get_developer_info() -> dict:
     default_photo = str(config.BASE_DIR / "resources" / "images" / "developer_photo.jpg")
 
     defaults = {
-        "first_name": "ابوالفضل",
+        "first_name": "مهندس ابوالفضل",
         "last_name": "صمدی کوچکسرائی",
         "phone": "09336427711",
         "email": "a.samadi2006@gmail.com",

@@ -42,10 +42,10 @@ def _format_network_error_message(exc: Exception) -> str:
     """Converts raw socket / network exceptions into user-friendly Persian guidance."""
     err_str = str(exc)
     if "10054" in err_str or "forcibly closed" in err_str.lower() or "connection reset" in err_str.lower():
-        return "ارتباط با سرور ابری به دلیل اختلال لحظه‌ای شبکه یا فایروال اینترنت قطع شد (WinError 10054). لطفاً چند لحظه بعد مجدداً تلاش نمایید."
+        return "ارتباط با سرور به دلیل اختلال لحظه‌ای شبکه یا فایروال اینترنت قطع شد (WinError 10054). لطفاً چند لحظه بعد مجدداً تلاش نمایید."
     if "timed out" in err_str.lower() or isinstance(exc, (TimeoutError, socket.timeout)):
-        return "مهلت زمانی اتصال به سرور ابری به پایان رسید (Timeout). لطفاً سرعت اینترنت را بررسی نموده و دوباره تلاش کنید."
-    return f"خطای ارتباط با سرور ابری: {err_str}"
+        return "مهلت زمانی اتصال به سرور به پایان رسید (Timeout). لطفاً سرعت اینترنت را بررسی نموده و دوباره تلاش کنید."
+    return f"خطای ارتباط با سرور: {err_str}"
 
 
 def upload_exercise_video_to_cloud(video_path: str, custom_filename: str = None) -> tuple[bool, str, str]:
@@ -150,7 +150,7 @@ def upload_exercise_video_to_cloud(video_path: str, custom_filename: str = None)
                     err_data = json.loads(e.read().decode("utf-8"))
                     msg = err_data.get("detail", err_data.get("message", f"خطای سرور: {e.code}"))
                 except Exception:
-                    msg = f"خطای سرور ابری (کد {e.code})"
+                    msg = f"خطای سرور (کد {e.code})"
                 return False, msg, filename
             except Exception as e:
                 last_exc = e
@@ -161,7 +161,7 @@ def upload_exercise_video_to_cloud(video_path: str, custom_filename: str = None)
 
         if last_exc:
             return False, _format_network_error_message(last_exc), filename
-        return False, "خطا در ارسال ویدیو به سرور ابری", filename
+        return False, "خطا در ارسال ویدیو به سرور", filename
     finally:
         if temp_h264_path and os.path.exists(temp_h264_path):
             try:
@@ -274,7 +274,7 @@ def upload_exercise_image_to_cloud(image_path: str, custom_filename: str = None)
                     err_data = json.loads(e.read().decode("utf-8"))
                     msg = err_data.get("detail", err_data.get("message", f"خطای سرور: {e.code}"))
                 except Exception:
-                    msg = f"خطای سرور ابری (کد {e.code})"
+                    msg = f"خطای سرور (کد {e.code})"
                 return False, msg, filename
             except Exception as e:
                 last_exc = e
@@ -285,7 +285,7 @@ def upload_exercise_image_to_cloud(image_path: str, custom_filename: str = None)
 
         if last_exc:
             return False, _format_network_error_message(last_exc), filename
-        return False, "خطا در ارسال تصویر به سرور ابری", filename
+        return False, "خطا در ارسال تصویر به سرور", filename
     finally:
         if temp_img_path and os.path.exists(temp_img_path):
             try:

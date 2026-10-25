@@ -570,14 +570,14 @@ class Sidebar(QFrame):
             import os
 
             info = get_developer_info()
-            fname = info.get("first_name", "ابوالفضل")
+            fname = info.get("first_name", "مهندس ابوالفضل")
             lname = info.get("last_name", "صمدی کوچکسرائی")
             phone = info.get("phone", "09336427711")
             email = info.get("email", "a.samadi2006@gmail.com")
             github = info.get("github", "github.com/AbolfazlSamadi2006")
             photo_path = info.get("photo_path")
 
-            self.lbl_dev_name.setText(f"{fname} {lname}".strip() or "ابوالفضل صمدی")
+            self.lbl_dev_name.setText(f"{fname} {lname}".strip() or "مهندس ابوالفضل صمدی کوچکسرائی")
             self.lbl_dev_full.setText(f"{fname} {lname}".strip())
             self.lbl_dev_phone.setText(f"📞 {phone}")
             self.lbl_dev_email.setText(f"✉️ {email}")

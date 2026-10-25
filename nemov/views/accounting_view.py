@@ -186,20 +186,20 @@ class AccountingView(QWidget):
         r1_right.addWidget(self.lbl_trainer)
 
         self.combo_trainer_filter = QComboBox()
-        self.combo_trainer_filter.setFixedWidth(200)
+        self.combo_trainer_filter.setFixedWidth(220)
         self.combo_trainer_filter.setFixedHeight(38)
         self.reload_trainers()
         self.combo_trainer_filter.currentIndexChanged.connect(self.on_filter_changed)
         r1_right.addWidget(self.combo_trainer_filter)
 
         self.lbl_type = QLabel("نوع تراکنش:")
-        self.lbl_type.setFixedWidth(75)
+        self.lbl_type.setFixedWidth(80)
         self.lbl_type.setAlignment(Qt.AlignmentFlag.AlignCenter)
         r1_right.addWidget(self.lbl_type)
 
         # 1. طول فیلد لیست باکس همه تراکنش ها کمتر شه (210px) با حفظ کامل و خوانای متن
         self.combo_type_filter = QComboBox()
-        self.combo_type_filter.setFixedWidth(210)
+        self.combo_type_filter.setFixedWidth(235)
         self.combo_type_filter.setFixedHeight(38)
         self.combo_type_filter.addItem("همه تراکنش‌ها (درآمد و هزینه)", "all")
         self.combo_type_filter.addItem("🟢 فقط درآمدها (شهریه)", "income")
@@ -565,8 +565,8 @@ class AccountingView(QWidget):
         w = self.width()
         if w < 1160:
             # Compact TV / small laptop mode: keep all dates (132px) and labels 100% readable while fitting 1050px width
-            self.combo_trainer_filter.setFixedWidth(165)
-            self.combo_type_filter.setFixedWidth(175)
+            self.combo_trainer_filter.setFixedWidth(205)
+            self.combo_type_filter.setFixedWidth(220)
             self.lbl_search.setFixedWidth(42)
             self.lbl_from.setFixedWidth(42)
             self.lbl_to.setFixedWidth(30)
@@ -579,8 +579,8 @@ class AccountingView(QWidget):
                     self.quick_buttons[k].setFixedWidth(bw)
         else:
             # Standard desktop mode: full original widths
-            self.combo_trainer_filter.setFixedWidth(200)
-            self.combo_type_filter.setFixedWidth(210)
+            self.combo_trainer_filter.setFixedWidth(220)
+            self.combo_type_filter.setFixedWidth(235)
             self.lbl_search.setFixedWidth(54)
             self.lbl_from.setFixedWidth(54)
             self.lbl_to.setFixedWidth(54)

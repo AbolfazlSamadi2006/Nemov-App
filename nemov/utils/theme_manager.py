@@ -1220,8 +1220,8 @@ QComboBox:focus, QSpinBox:focus, QDoubleSpinBox:focus {{
 }}
 
 QComboBox {{
-    padding-left: 32px;
-    padding-right: 12px;
+    padding-left: 20px;
+    padding-right: 8px;
 }}
 
 QComboBox:editable {{
@@ -1241,7 +1241,7 @@ QComboBox QLineEdit {{
 QComboBox::drop-down {{
     subcontrol-origin: padding;
     subcontrol-position: top left;
-    width: 28px;
+    width: 20px;
     border-right: 1px solid {input_border};
     background-color: {btn_sec_bg};
     border-top-left-radius: 5px;
@@ -1250,8 +1250,8 @@ QComboBox::drop-down {{
 
 QComboBox::down-arrow {{
     image: url({arrow_down_path});
-    width: 14px;
-    height: 14px;
+    width: 12px;
+    height: 12px;
 }}
 
 QComboBox QAbstractItemView {{

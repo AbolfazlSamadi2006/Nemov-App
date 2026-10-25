@@ -76,7 +76,7 @@ class DeveloperView(QWidget):
         v_info = QVBoxLayout()
         SELECTABLE_FLAGS = Qt.TextInteractionFlag.TextSelectableByMouse | Qt.TextInteractionFlag.LinksAccessibleByMouse
 
-        self.lbl_dev_full_name = QLabel("ابوالفضل صمدی کوچکسرائی")
+        self.lbl_dev_full_name = QLabel("مهندس ابوالفضل صمدی کوچکسرائی")
         self.lbl_dev_full_name.setTextInteractionFlags(SELECTABLE_FLAGS)
         self.lbl_dev_full_name.setStyleSheet("font-size: 20px; font-weight: bold; color: #FFFFFF;")
 
@@ -417,7 +417,7 @@ class DeveloperView(QWidget):
     def load_data(self):
         # 1. Dev Info
         info = get_developer_info()
-        fname = info.get("first_name", "ابوالفضل")
+        fname = info.get("first_name", "مهندس ابوالفضل")
         lname = info.get("last_name", "صمدی کوچکسرائی")
         phone = info.get("phone", "09336427711")
         email = info.get("email", "a.samadi2006@gmail.com")

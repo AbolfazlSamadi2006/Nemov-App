@@ -11,7 +11,7 @@ class CloudRestoreDialog(QDialog):
 
     def __init__(self, parent=None, initial_phone: str = ""):
         super().__init__(parent)
-        self.setWindowTitle("☁️ بازیابی اطلاعات از سرور ابری - نرم‌افزار نِمُو (Nemov)")
+        self.setWindowTitle("☁️ بازیابی اطلاعات از سرور - نرم‌افزار نِمُو (Nemov)")
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
         self.setFixedSize(460, 320)
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowType.WindowContextHelpButtonHint)
@@ -27,14 +27,14 @@ class CloudRestoreDialog(QDialog):
         card_l = QVBoxLayout(card)
         card_l.setSpacing(12)
 
-        title = QLabel("☁️ بازیابی خودکار اطلاعات از سرور ابری")
+        title = QLabel("☁️ بازیابی خودکار اطلاعات از سرور")
         title.setObjectName("h2")
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         card_l.addWidget(title)
 
         desc = QLabel(
             "اگر برنامه را در سیستم جدید نصب کرده‌اید یا قصد بازگردانی اطلاعات را دارید، "
-            "شماره موبایل ثبت‌شده خود را وارد کنید تا آخرین نسخه پشتیبان از سرور ابری دریافت و بارگذاری شود:"
+            "شماره موبایل ثبت‌شده خود را وارد کنید تا آخرین نسخه پشتیبان از سرور دریافت و بارگذاری شود:"
         )
         desc.setObjectName("muted_text")
         desc.setWordWrap(True)
@@ -78,7 +78,7 @@ class CloudRestoreDialog(QDialog):
             QMessageBox.warning(self, "خطا", "لطفاً شماره موبایل مربی را وارد کنید.")
             return
 
-        self.lbl_status.setText("⏳ در حال برقراری ارتباط با سرور ابری و دریافت آخرین نسخه پشتیبان...")
+        self.lbl_status.setText("⏳ در حال برقراری ارتباط با سرور و دریافت آخرین نسخه پشتیبان...")
         self.btn_submit.setEnabled(False)
         self.repaint()
 
@@ -114,7 +114,7 @@ class CloudRestoreDialog(QDialog):
             QMessageBox.information(
                 self,
                 "بازیابی موفقیت‌آمیز",
-                f"اطلاعات شما با موفقیت از سرور ابری بازیابی شد!\nخوش آمدید {trainer_name} 🌸\nتمامی ورزشکاران، برنامه‌ها و پرونده‌ها در نرم‌افزار بارگذاری شدند."
+                f"اطلاعات شما با موفقیت از سرور بازیابی شد!\nخوش آمدید {trainer_name} 🌸\nتمامی ورزشکاران، برنامه‌ها و پرونده‌ها در نرم‌افزار بارگذاری شدند."
             )
             self.restore_success.emit()
             self.accept()
