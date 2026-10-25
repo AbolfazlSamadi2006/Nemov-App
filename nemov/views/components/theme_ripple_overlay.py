@@ -25,7 +25,7 @@ class ThemeRippleOverlay(QWidget):
         new_pixmap: QPixmap,
         origin: QPoint,
         accent_color: str,
-        duration_ms: int = 450
+        duration_ms: int = 750
     ):
         super().__init__(parent_window)
         self.old_pixmap = old_pixmap
@@ -51,12 +51,12 @@ class ThemeRippleOverlay(QWidget):
         self.show()
         self.raise_()
 
-        # Smooth deceleration curve (OutCubic) for natural liquid wave feeling
+        # Silky smooth sinusoidal curve (InOutSine) for natural, soft liquid wave feeling
         self.anim = QPropertyAnimation(self, b"radius", self)
         self.anim.setDuration(duration_ms)
         self.anim.setStartValue(0.0)
         self.anim.setEndValue(self.max_radius)
-        self.anim.setEasingCurve(QEasingCurve.Type.OutCubic)
+        self.anim.setEasingCurve(QEasingCurve.Type.InOutSine)
         self.anim.finished.connect(self.deleteLater)
         self.anim.start()
 

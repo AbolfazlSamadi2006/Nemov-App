@@ -1606,7 +1606,7 @@ class BackupView(QWidget):
                 new_pixmap = win.grab()
                 if new_pixmap and not new_pixmap.isNull():
                     from nemov.views.components.theme_ripple_overlay import ThemeRippleOverlay
-                    ThemeRippleOverlay(win, old_pixmap, new_pixmap, origin, card_accent, duration_ms=450)
+                    ThemeRippleOverlay(win, old_pixmap, new_pixmap, origin, card_accent, duration_ms=750)
         except Exception:
             pass
 
