@@ -128,36 +128,68 @@ class TwoLineDescriptionDelegate(QStyledItemDelegate):
         style.drawPrimitive(style.PrimitiveElement.PE_PanelItemViewItem, option, painter, option.widget)
 
         raw_text = index.data(Qt.ItemDataRole.DisplayRole) or ""
-        if " | " in raw_text:
-            parts = [p.strip() for p in raw_text.split(" | ") if p.strip()]
-            display_text = "\n".join(parts[:2])
-        else:
-            display_text = raw_text
+        if not raw_text or raw_text.strip() == "-":
+            painter.restore()
+            return
 
-        rect = option.rect.adjusted(10, 3, -10, -3)
+        clean_text = raw_text.replace("\r\n", " ").replace("\n", " ").strip()
+        if " | " in clean_text:
+            parts = [p.strip() for p in clean_text.split(" | ") if p.strip()]
+            clean_text = " - ".join(parts[:2])
+
+        rect = option.rect.adjusted(12, 4, -12, -4)
         font = QFont(option.font)
         font.setPointSize(9)
         font.setStyleStrategy(QFont.StyleStrategy.PreferAntialias)
         painter.setFont(font)
         painter.setPen(QColor("#D1D5DB"))
 
-        flags = Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter | Qt.TextFlag.TextWordWrap
-        painter.drawText(rect, flags, display_text)
+        fm = painter.fontMetrics()
+        line_height = fm.lineSpacing()
+
+        # Word wrap into at most 2 lines with elide
+        words = clean_text.split()
+        l1_words = []
+        l2_words = []
+        is_l1 = True
+
+        for w in words:
+            if is_l1:
+                test_str = " ".join(l1_words + [w])
+                if fm.horizontalAdvance(test_str) <= rect.width():
+                    l1_words.append(w)
+                else:
+                    is_l1 = False
+                    l2_words.append(w)
+            else:
+                l2_words.append(w)
+
+        line1 = " ".join(l1_words)
+        line2 = " ".join(l2_words)
+
+        if line2:
+            line2_elided = fm.elidedText(line2, Qt.TextElideMode.ElideRight, rect.width())
+            total_h = line_height * 2
+            start_y = rect.top() + max(0, (rect.height() - total_h) // 2)
+            r1 = QRect(rect.left(), start_y, rect.width(), line_height)
+            r2 = QRect(rect.left(), start_y + line_height, rect.width(), line_height)
+            painter.drawText(r1, Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter, line1)
+            painter.drawText(r2, Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter, line2_elided)
+        else:
+            line1_elided = fm.elidedText(line1, Qt.TextElideMode.ElideRight, rect.width())
+            r1 = QRect(rect.left(), rect.top(), rect.width(), rect.height())
+            painter.drawText(r1, Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter, line1_elided)
 
         painter.restore()
 
-
     def helpEvent(self, event: QHelpEvent, view: QAbstractItemView, option: QStyleOptionViewItem, index: QModelIndex) -> bool:
         if event.type() == QEvent.Type.ToolTip:
-            media_rect, edit_rect, del_rect = self._get_button_rects(option.rect)
-            pos = event.pos()
-            if media_rect.contains(pos):
-                has_cloud = index.data(Qt.ItemDataRole.UserRole + 1)
-                if has_cloud:
-                    QToolTip.showText(event.globalPos(), "ویدیو در سرور آنلاین است.", view)
-                    return True
-            elif del_rect.contains(pos):
-                QToolTip.showText(event.globalPos(), "حذف حرکت", view)
+            raw_text = index.data(Qt.ItemDataRole.DisplayRole) or ""
+            if raw_text and raw_text.strip() != "-":
+                tooltip_text = raw_text.replace(" | ", "\n• ")
+                if " | " in raw_text:
+                    tooltip_text = "• " + tooltip_text
+                QToolTip.showText(event.globalPos(), tooltip_text, view)
                 return True
             QToolTip.hideText()
             event.ignore()
@@ -839,7 +871,7 @@ class WorkoutLibraryView(QWidget):
         self.table = QTableWidget()
         self.table.setColumnCount(7)
         self.table.setHorizontalHeaderLabels(["انتخاب", "نام حرکت", "عضله اصلی", "تجهیزات", "محدودیت آسیب‌دیدگی", "توضیحات", "عملیات"])
-        self.table.verticalHeader().setDefaultSectionSize(54)
+        self.table.verticalHeader().setDefaultSectionSize(58)
         self.table.verticalHeader().setDefaultAlignment(Qt.AlignmentFlag.AlignCenter)
         header = self.table.horizontalHeader()
         header.setMinimumSectionSize(40)

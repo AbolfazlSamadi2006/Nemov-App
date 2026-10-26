@@ -3721,7 +3721,7 @@ function renderLandingPage() {
                 <span>🏆 سامانه جامع مدیریت هوشمند و مربیگری باشگاه‌های ورزشی | Nemov</span>
             </div>
             <h1 id="hero-heading" class="hero-title">
-                <span class="hero-title-gradient">نرم‌افزار مدیریت ورزشی نِمُو (Nemov)</span>
+                <span class="hero-title-gradient">نرم‌افزار مدیریت ورزشی نِمُو</span>
             </h1>
             <p class="hero-tagline">
                 راهکار یکپارچه و پیشرفته برای مربیان حرفه‌ای و مدیران باشگاه‌های بدنسازی
@@ -4187,7 +4187,7 @@ function renderLandingPage() {
         <section id="partner-gyms" class="section" role="region" aria-labelledby="partner-gyms-heading">
             <div class="section-header">
                 <div class="section-pill">شبکه باشگاه‌های پیشرو</div>
-                <h2 id="partner-gyms-heading" class="section-title">باشگاه‌های مجهز به نرم‌افزار نِمُو (Nemov)</h2>
+                <h2 id="partner-gyms-heading" class="section-title">باشگاه‌های مجهز به نرم‌افزار نِمُو</h2>
                 <p class="section-subtitle">
                     مجموعه‌های ورزشی ممتازی که با تجهیز به این سامانه، بالاترین استاندارد مربیگری و رضایت ورزشکاران را به ارمغان آورده‌اند
                 </p>
@@ -4305,7 +4305,7 @@ function renderLandingPage() {
         <section id="contact" class="section" role="region" aria-labelledby="contact-heading">
             <div class="section-header">
                 <div class="section-pill">پشتیبانی و توسعه رسمی</div>
-                <h2 id="contact-heading" class="section-title">توسعه‌دهنده نرم‌افزار نِمُو (Nemov)</h2>
+                <h2 id="contact-heading" class="section-title">توسعه‌دهنده نرم‌افزار نِمُو</h2>
                 <p class="section-subtitle">
                     راه‌های ارتباطی رسمی جهت مشاوره، پشتیبانی فنی و تجهیز باشگاه‌های ورزشی
                 </p>
@@ -5696,7 +5696,7 @@ function renderSandboxedVideoPlayer(title, videoStreamUrl) {
             </div>
         </div>
         <div class="player-footer">
-            <div>طراحی شده برای ورزشکاران • <span>سامانه ورزشی نِمُو (Nemov)</span></div>
+            <div>طراحی شده برای ورزشکاران • <span>سامانه ورزشی نِمُو</span></div>
             <a class="download-link" href="${safeUrl}" download>دانلود فایل ویدیو 📥</a>
         </div>
     </div>
@@ -5878,7 +5878,7 @@ function renderSandboxedImageViewer(title, imageUrl) {
             <img src="${safeUrl}" alt="${safeTitle}" loading="lazy" />
         </div>
         <div class="viewer-footer">
-            <div>برنامه تمرینی اختصاصی • <span>سامانه ورزشی نِمُو (Nemov)</span></div>
+            <div>برنامه تمرینی اختصاصی • <span>سامانه ورزشی نِمُو</span></div>
             <a class="download-link" href="${safeUrl}" target="_blank" download>دریافت تصویر باکیفیت اصلی 📥</a>
         </div>
     </div>
