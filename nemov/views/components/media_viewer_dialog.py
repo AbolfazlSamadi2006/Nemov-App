@@ -12,6 +12,12 @@ class MediaViewerDialog(QDialog):
         self.title_str = title
         self.media_path = media_path
         self.media_type = media_type or "image"
+        if video_url:
+            import re
+            import config
+            target_base = config.DEFAULT_CLOUD_BACKUP_URL.rstrip("/")
+            video_url = re.sub(r"https?://[^/]+\.workers\.dev", target_base, video_url)
+            video_url = re.sub(r"https?://storage\.gymassistantapp\.ir", target_base, video_url)
         self.video_url = video_url
 
         self.setWindowTitle(f"رسانه و ویدیو آموزشی: {title}")
@@ -113,7 +119,12 @@ class MediaViewerDialog(QDialog):
             url_str = self.video_url.strip()
             if not (url_str.startswith("http://") or url_str.startswith("https://")):
                 url_str = "https://" + url_str
-            if "workers.dev" in url_str and "title=" not in url_str and self.title_str:
+            import re
+            import config
+            target_base = config.DEFAULT_CLOUD_BACKUP_URL.rstrip("/")
+            url_str = re.sub(r"https?://[^/]+\.workers\.dev", target_base, url_str)
+            url_str = re.sub(r"https?://storage\.gymassistantapp\.ir", target_base, url_str)
+            if ("nemovapp.ir" in url_str or "workers.dev" in url_str) and "title=" not in url_str and self.title_str:
                 from urllib.parse import quote
                 sep = "&" if "?" in url_str else "?"
                 url_str = f"{url_str}{sep}title={quote(self.title_str)}"

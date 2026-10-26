@@ -212,6 +212,10 @@ class ViewWorkoutPlanDialog(QDialog):
 
     def show_media(self, exercise):
         target_video = exercise.video_cloud_url or exercise.video_url
+        if target_video and "workers.dev" in target_video:
+            import re
+            import config
+            target_video = re.sub(r"https?://[^/]+\.workers\.dev", config.DEFAULT_CLOUD_BACKUP_URL.rstrip("/"), target_video)
         dlg = MediaViewerDialog(
             title=exercise.name_fa,
             media_path=exercise.media_path,
