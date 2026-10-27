@@ -125,9 +125,11 @@ class MemberService:
             session.add(member)
             session.flush()
 
-            # Create default empty health record
-            health_rec = HealthRecord(member_id=member.id)
-            session.add(health_rec)
+            # Create default empty health record if not already present
+            existing_hr = session.query(HealthRecord).filter(HealthRecord.member_id == member.id).first()
+            if not existing_hr:
+                health_rec = HealthRecord(member_id=member.id)
+                session.add(health_rec)
 
             session.commit()
             mark_data_changed()

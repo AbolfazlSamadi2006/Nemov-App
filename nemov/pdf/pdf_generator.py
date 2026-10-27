@@ -346,6 +346,8 @@ class PDFGenerator:
     def generate_workout_pdf(member, workout_plan, output_filepath: str):
         """Generates printable PDF for Member's Workout Plan."""
         setup_fonts()
+        if hasattr(member, 'days') and not hasattr(workout_plan, 'days'):
+            member, workout_plan = workout_plan, member
         if hasattr(workout_plan, 'id') and workout_plan.id:
             from nemov.services.workout_service import WorkoutService
             joined_p = WorkoutService.get_plan_by_id(workout_plan.id)
@@ -399,10 +401,32 @@ class PDFGenerator:
             textColor=colors.white
         )
 
-        # Title
+        # Title with Dynamic Club Logo
         from nemov.services.branding_service import BrandingService
         club_name = BrandingService.get_active_club_name()
-        elements.append(Paragraph(reshape_title_text(f"برنامه تمرینی {club_name}"), title_style))
+        logo_path = BrandingService.get_club_logo_path()
+        header_title = Paragraph(reshape_title_text(f"برنامه تمرینی {club_name}"), title_style)
+        
+        logo_img = None
+        if logo_path and os.path.exists(logo_path):
+            try:
+                from reportlab.platypus import Image as RLImage
+                logo_img = RLImage(logo_path, width=48, height=48)
+                logo_img.hAlign = 'LEFT'
+            except Exception:
+                logo_img = None
+                
+        if logo_img:
+            header_table = Table([[logo_img, header_title]], colWidths=[55, 465])
+            header_table.setStyle(TableStyle([
+                ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+                ('ALIGN', (0,0), (0,0), 'LEFT'),
+                ('ALIGN', (1,0), (1,0), 'CENTER'),
+                ('PADDING', (0,0), (-1,-1), 0),
+            ]))
+            elements.append(header_table)
+        else:
+            elements.append(header_title)
         elements.append(Spacer(1, 10))
 
         goal_map = {
@@ -553,6 +577,8 @@ class PDFGenerator:
     def generate_nutrition_pdf(member, nutrition_plan, output_filepath: str):
         """Generates printable PDF for Member's Nutrition Plan."""
         setup_fonts()
+        if hasattr(member, 'meals') and not hasattr(nutrition_plan, 'meals'):
+            member, nutrition_plan = nutrition_plan, member
         if hasattr(nutrition_plan, 'id') and nutrition_plan.id:
             from nemov.services.nutrition_service import NutritionService
             joined_p = NutritionService.get_plan_by_id(nutrition_plan.id)
@@ -592,7 +618,29 @@ class PDFGenerator:
 
         from nemov.services.branding_service import BrandingService
         club_name = BrandingService.get_active_club_name()
-        elements.append(Paragraph(reshape_title_text(f"برنامه غذایی و رژیمی {club_name}"), title_style))
+        logo_path = BrandingService.get_club_logo_path()
+        header_title = Paragraph(reshape_title_text(f"برنامه غذایی و رژیمی {club_name}"), title_style)
+        
+        logo_img = None
+        if logo_path and os.path.exists(logo_path):
+            try:
+                from reportlab.platypus import Image as RLImage
+                logo_img = RLImage(logo_path, width=48, height=48)
+                logo_img.hAlign = 'LEFT'
+            except Exception:
+                logo_img = None
+                
+        if logo_img:
+            header_table = Table([[logo_img, header_title]], colWidths=[55, 465])
+            header_table.setStyle(TableStyle([
+                ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+                ('ALIGN', (0,0), (0,0), 'LEFT'),
+                ('ALIGN', (1,0), (1,0), 'CENTER'),
+                ('PADDING', (0,0), (-1,-1), 0),
+            ]))
+            elements.append(header_table)
+        else:
+            elements.append(header_title)
         elements.append(Spacer(1, 10))
 
         nutrition_goals = {
@@ -712,12 +760,16 @@ class PDFGenerator:
         return output_filepath
 
     @staticmethod
-    def generate_financial_pdf(output_filepath: str, summary: dict, transactions: list, filter_info: dict = None):
+    def generate_financial_pdf(output_filepath: str = None, summary: dict = None, transactions: list = None, filter_info: dict = None, output_path: str = None, **kwargs):
         """
-        Generates an official A4 Landscape Financial Statement PDF for Yalda Gym.
+        Generates an official A4 Landscape Financial Statement PDF for Nemov / Yalda Gym.
+        Supports both output_filepath and output_path keyword arguments.
         """
         setup_fonts()
-        output_path = Path(output_filepath)
+        final_output = output_filepath or output_path or kwargs.get("output_path") or kwargs.get("output_filepath")
+        if not final_output:
+            raise ValueError("output_filepath is required for generate_financial_pdf")
+        output_path = Path(final_output)
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
         from reportlab.lib.pagesizes import A4, landscape
@@ -766,10 +818,32 @@ class PDFGenerator:
 
         elements = []
 
-        # 1. Title & Subtitle
+        # 1. Title & Subtitle with Dynamic Club Logo
         from nemov.services.branding_service import BrandingService
         club_name = BrandingService.get_active_club_name()
-        elements.append(Paragraph(reshape_title_text(f"گزارش تراز و صورت مالی {club_name}"), title_style))
+        logo_path = BrandingService.get_club_logo_path()
+        header_title = Paragraph(reshape_title_text(f"گزارش تراز و صورت مالی {club_name}"), title_style)
+        
+        logo_img = None
+        if logo_path and os.path.exists(logo_path):
+            try:
+                from reportlab.platypus import Image as RLImage
+                logo_img = RLImage(logo_path, width=48, height=48)
+                logo_img.hAlign = 'LEFT'
+            except Exception:
+                logo_img = None
+                
+        if logo_img:
+            header_table = Table([[logo_img, header_title]], colWidths=[55, 465])
+            header_table.setStyle(TableStyle([
+                ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+                ('ALIGN', (0,0), (0,0), 'LEFT'),
+                ('ALIGN', (1,0), (1,0), 'CENTER'),
+                ('PADDING', (0,0), (-1,-1), 0),
+            ]))
+            elements.append(header_table)
+        else:
+            elements.append(header_title)
         elements.append(Spacer(1, 4))
 
         time_lbl = (filter_info or {}).get("time_label", "کل دوره")

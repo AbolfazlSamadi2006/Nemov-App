@@ -250,6 +250,16 @@ class BrandingService:
         name = (info.get("club_name") or "").strip()
         return name if name else DEFAULT_CLUB_NAME
 
+    @classmethod
+    def get_club_name(cls) -> str:
+        """Convenience alias for get_active_club_name."""
+        return cls.get_active_club_name()
+
+    @classmethod
+    def get_club_logo_path(cls) -> str:
+        """Convenience alias for get_active_logo_path."""
+        return cls.get_active_logo_path()
+
     @staticmethod
     def get_selected_theme_id() -> str:
         """
@@ -294,5 +304,7 @@ save_custom_logo = BrandingService.save_custom_logo
 reset_to_default_logo = BrandingService.reset_to_default_logo
 get_active_logo_path = BrandingService.get_active_logo_path
 get_active_club_name = BrandingService.get_active_club_name
+get_club_name = BrandingService.get_active_club_name
+get_club_logo_path = BrandingService.get_active_logo_path
 get_selected_theme_id = BrandingService.get_selected_theme_id
 save_selected_theme_id = BrandingService.save_selected_theme_id

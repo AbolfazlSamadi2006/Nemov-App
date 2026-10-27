@@ -252,6 +252,38 @@ class SmsService:
             logger.warning(f"Error fetching SMS history: {e}")
             return []
 
+    @classmethod
+    def get_templates(cls):
+        """Returns the dictionary of default SMS templates."""
+        return DEFAULT_SMS_TEMPLATES
+
+    @classmethod
+    def render_template(cls, template_key_or_pattern: str, **kwargs) -> str:
+        """
+        Renders an SMS template or custom string by replacing placeholder tags
+        such as #NAME#, #GYM#, #DATE#, #EXPIRY#, #REASON#, #DAYS#, #WOMEN#, #MEN#, #NOTE#.
+        """
+        if template_key_or_pattern in DEFAULT_SMS_TEMPLATES:
+            text = DEFAULT_SMS_TEMPLATES[template_key_or_pattern].get("pattern", "")
+        else:
+            text = str(template_key_or_pattern)
+
+        gym_val = kwargs.get("gym") or kwargs.get("GYM")
+        if not gym_val:
+            try:
+                from nemov.services.branding_service import BrandingService
+                gym_val = BrandingService.get_club_name()
+            except Exception:
+                gym_val = config.APP_NAME
+        kwargs["gym"] = gym_val
+
+        for k, v in kwargs.items():
+            pattern_tag = f"#{k.upper()}#"
+            text = text.replace(pattern_tag, str(v))
+            if k.lower() == "expiry":
+                text = text.replace("#DATE#", str(v))
+        return text
+
     # =========================================================================
     # Auto-Trigger Helpers (Birthday & Tuition Expiry)
     # =========================================================================

@@ -939,8 +939,6 @@ class WorkoutLibraryView(QWidget):
         if hasattr(self, "search_timer") and self.search_timer.isActive():
             self.search_timer.stop()
 
-        if not hasattr(self, "_checkbox_pool"):
-            self._checkbox_pool = []
         if not hasattr(self, "_exercises_filter_cache"):
             self._exercises_filter_cache = {}
 
@@ -985,44 +983,29 @@ class WorkoutLibraryView(QWidget):
 
         n = len(exercises)
         self.table.setUpdatesEnabled(False)
-        old_count = self.table.rowCount()
-
-        if n < old_count:
-            for r in range(n, old_count):
-                w = self.table.cellWidget(r, 0)
-                if w:
-                    self.table.removeCellWidget(r, 0)
-                    w.setParent(None)
-                    self._checkbox_pool.append(w)
-            self.table.setRowCount(n)
-        elif n > old_count:
-            self.table.setRowCount(n)
-            for r in range(old_count, n):
-                if self._checkbox_pool:
-                    chk_w = self._checkbox_pool.pop()
-                else:
-                    chk_w = QWidget()
-                    chk_lay = QHBoxLayout(chk_w)
-                    chk_lay.setContentsMargins(0, 0, 0, 0)
-                    chk_lay.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                    chk = QCheckBox(chk_w)
-                    chk.toggled.connect(self.on_row_checkbox_toggled)
-                    chk_lay.addWidget(chk)
-                self.table.setCellWidget(r, 0, chk_w)
-
-                for c in range(1, 6):
-                    it = QTableWidgetItem("")
-                    if c == 3:
-                        it.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-                    self.table.setItem(r, c, it)
-
-                it6 = QTableWidgetItem()
-                self.table.setItem(r, 6, it6)
+        self.table.setRowCount(n)
 
         for row, ex in enumerate(exercises):
-            # Checkbox in column 0
-            chk_w = self.table.cellWidget(row, 0)
-            chk = chk_w.findChild(QCheckBox)
+            # Safe Checkbox in column 0 (immune to C++ wrapper deletion)
+            chk = None
+            try:
+                chk_w = self.table.cellWidget(row, 0)
+                if chk_w:
+                    chk = chk_w.findChild(QCheckBox)
+            except (RuntimeError, AttributeError):
+                chk_w = None
+                chk = None
+
+            if not chk_w or not chk:
+                chk_w = QWidget()
+                chk_lay = QHBoxLayout(chk_w)
+                chk_lay.setContentsMargins(0, 0, 0, 0)
+                chk_lay.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                chk = QCheckBox(chk_w)
+                chk.toggled.connect(self.on_row_checkbox_toggled)
+                chk_lay.addWidget(chk)
+                self.table.setCellWidget(row, 0, chk_w)
+
             chk.blockSignals(True)
             chk.setChecked(False)
             chk.setProperty("item_id", ex.id)
@@ -1030,17 +1013,27 @@ class WorkoutLibraryView(QWidget):
             chk.blockSignals(False)
 
             it_name = self.table.item(row, 1)
+            if not it_name:
+                it_name = QTableWidgetItem("")
+                self.table.setItem(row, 1, it_name)
             it_name.setText(ex.name_fa)
             it_name.setToolTip(ex.name_fa)
 
             muscle_name = muscle_map.get(ex.primary_muscle, ex.primary_muscle)
             muscle_display = f"{muscle_name} (اصلاحی)" if getattr(ex, "is_corrective", False) else muscle_name
             it_muscle = self.table.item(row, 2)
+            if not it_muscle:
+                it_muscle = QTableWidgetItem("")
+                self.table.setItem(row, 2, it_muscle)
             it_muscle.setText(muscle_display)
             it_muscle.setToolTip(muscle_display)
 
             eq_txt = equip_map.get(ex.equipment, ex.equipment or "-")
             it_equip = self.table.item(row, 3)
+            if not it_equip:
+                it_equip = QTableWidgetItem("")
+                it_equip.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+                self.table.setItem(row, 3, it_equip)
             it_equip.setText(eq_txt)
             it_equip.setToolTip(eq_txt)
 
@@ -1064,6 +1057,10 @@ class WorkoutLibraryView(QWidget):
                 contra_txt = "-"
 
             it_contra = self.table.item(row, 4)
+            if not it_contra:
+                it_contra = QTableWidgetItem("")
+                it_contra.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+                self.table.setItem(row, 4, it_contra)
             it_contra.setText(contra_txt)
             it_contra.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             if ex.contraindications:
@@ -1071,12 +1068,18 @@ class WorkoutLibraryView(QWidget):
 
             desc_txt = ex.description or "-"
             it_desc = self.table.item(row, 5)
+            if not it_desc:
+                it_desc = QTableWidgetItem("")
+                self.table.setItem(row, 5, it_desc)
             it_desc.setText(desc_txt)
             if ex.description:
                 it_desc.setToolTip(desc_txt)
 
             # Column 6: Operations delegate data
             it6 = self.table.item(row, 6)
+            if not it6:
+                it6 = QTableWidgetItem()
+                self.table.setItem(row, 6, it6)
             it6.setData(Qt.ItemDataRole.UserRole, ex)
             it6.setData(Qt.ItemDataRole.UserRole + 1, bool(getattr(ex, "video_cloud_url", None)))
 

@@ -340,6 +340,20 @@ class AccountingService:
 
             # Update member's current tuition fee
             member.tuition_fee = float(amount)
+
+            # Auto-renew membership expiration date if payment is for a monthly cycle
+            norm_type = (payment_type or "").strip()
+            if "ماهانه" in norm_type or "دوره" in norm_type or not norm_type:
+                from nemov.utils.jalali_date import get_today_shamsi, add_months_shamsi, days_until_expire
+                today_sh = get_today_shamsi()
+                curr_exp = member.membership_expire_shamsi
+                if not curr_exp or days_until_expire(curr_exp) < 0:
+                    base_d = format_shamsi(payment_date_shamsi) if payment_date_shamsi else today_sh
+                else:
+                    base_d = curr_exp
+                member.membership_expire_shamsi = add_months_shamsi(base_d, 1)
+                member.status = "active"
+
             session.commit()
             session.refresh(tp)
             mark_data_changed()
