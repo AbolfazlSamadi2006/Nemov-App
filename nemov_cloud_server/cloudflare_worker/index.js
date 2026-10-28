@@ -1762,15 +1762,15 @@ function renderLandingPage() {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
-    <title>نرم‌افزار مدیریت ورزشی نِمُو (Nemov) | نسخه ۳.۳.۰</title>
+    <title>نرم‌افزار مدیریت ورزشی نِمُو | نسخه ۳.۴.۱</title>
     
     <!-- SEO Semantic Meta Tags -->
-    <meta name="description" content="نرم‌افزار مدیریت ورزشی نِمُو (Nemov). پرونده سلامت فیزیکی، بانک ویدیو حرکات، رژیم غذایی و کالری‌شماری هوشمند، حسابداری مالی و صدور شناسنامه چاپی بدون نیاز به اینترنت با پشتیبان‌گیری ابری.">
+    <meta name="description" content="نرم‌افزار مدیریت ورزشی نِمُو. پرونده سلامت فیزیکی، بانک ویدیو حرکات، رژیم غذایی و کالری‌شماری هوشمند، حسابداری مالی و صدور شناسنامه چاپی بدون نیاز به اینترنت با پشتیبان‌گیری ابری.">
     <meta name="keywords" content="نمو, Nemov, نرم افزار مدیریت ورزشی نمو, نرم افزار مدیریت باشگاه, نرم افزار بدنسازی, برنامه تمرینی, برنامه غذایی بدنسازی, مدیریت باشگاه بدنسازی, باشگاه بدنسازی یلدا, محراب حاجی پور, ابوالفضل صمدی, Nemov App">
     <link rel="canonical" href="https://nemovapp.ir/">
     <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
     <meta name="author" content="مهندس ابوالفضل صمدی کوچکسرائی">
-    <meta name="publisher" content="نرم‌افزار مدیریت ورزشی نِمُو (Nemov)">
+    <meta name="publisher" content="نرم‌افزار مدیریت ورزشی نِمُو">
     <meta name="application-name" content="نِمُو">
     <meta name="theme-color" content="#090A0E">
     <meta name="msapplication-TileColor" content="#DC2626">
@@ -1778,7 +1778,7 @@ function renderLandingPage() {
     <!-- Open Graph Meta Tags (Telegram, WhatsApp, Social Cards) -->
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="نرم‌افزار مدیریت ورزشی نِمُو | Nemov">
-    <meta property="og:title" content="نرم‌افزار مدیریت ورزشی نِمُو (Nemov) | نسخه ۳.۳.۰">
+    <meta property="og:title" content="نرم‌افزار مدیریت ورزشی نِمُو | نسخه ۳.۴.۱">
     <meta property="og:description" content="سامانه یکپارچه مربیگری و اتوماسیون باشگاه؛ پرونده سلامت، بانک حرکات با ویدیو، طراحی تخصصی رژیم غذایی، حسابداری مالی و صدور شناسنامه چاپی.">
     <meta property="og:url" content="https://nemovapp.ir/">
     <meta property="og:image" content="https://nemovapp.ir/images/nemov_logo.png">
@@ -1786,15 +1786,15 @@ function renderLandingPage() {
     <meta property="og:image:type" content="image/png">
     <meta property="og:image:width" content="512">
     <meta property="og:image:height" content="512">
-    <meta property="og:image:alt" content="نرم‌افزار مدیریت ورزشی نِمُو (Nemov)">
+    <meta property="og:image:alt" content="نرم‌افزار مدیریت ورزشی نِمُو">
     <meta property="og:locale" content="fa_IR">
 
     <!-- Twitter Card Meta Tags -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="نرم‌افزار مدیریت ورزشی نِمُو (Nemov) | نسخه ۳.۳.۰">
+    <meta name="twitter:title" content="نرم‌افزار مدیریت ورزشی نِمُو | نسخه ۳.۴.۱">
     <meta name="twitter:description" content="سامانه یکپارچه مربیگری و اتوماسیون باشگاه؛ پرونده سلامت، بانک حرکات با ویدیو، طراحی تخصصی رژیم غذایی، حسابداری مالی و صدور شناسنامه چاپی.">
     <meta name="twitter:image" content="https://nemovapp.ir/images/nemov_logo.png">
-    <meta name="twitter:image:alt" content="نرم‌افزار مدیریت ورزشی نِمُو (Nemov)">
+    <meta name="twitter:image:alt" content="نرم‌افزار مدیریت ورزشی نِمُو">
 
     <!-- Preload Critical Above-The-Fold Assets -->
     <link rel="preload" href="/images/nemov_logo.png" as="image" type="image/png">
@@ -1815,11 +1815,11 @@ function renderLandingPage() {
           "alternateName": ["Nemov", "Nemov Sports Management Software", "همیار باشگاه"],
           "applicationCategory": "SportsApplication",
           "operatingSystem": "Windows 10, Windows 11",
-          "description": "نرم‌افزار مدیریت ورزشی نِمُو (Nemov)؛ شامل پرونده سلامت، طراحی تمرین با ویدیو، رژیم غذایی و کالری‌شماری، حسابداری و صدور شناسنامه ورزشی چاپی.",
+          "description": "نرم‌افزار مدیریت ورزشی نِمُو؛ شامل پرونده سلامت، طراحی تمرین با ویدیو، رژیم غذایی و کالری‌شماری، حسابداری و صدور شناسنامه ورزشی چاپی.",
           "url": "https://nemovapp.ir/",
           "image": "https://nemovapp.ir/images/nemov_logo.png",
-          "version": "3.3.0",
-          "softwareVersion": "3.3.0",
+          "version": "3.4.1",
+          "softwareVersion": "3.4.1",
           "offers": {
             "@type": "Offer",
             "price": "0",
@@ -3785,7 +3785,7 @@ function renderLandingPage() {
                             </div>
                             <div class="window-title-text">
                                 <img src="/images/nemov_logo.png" alt="" class="win-logo-mini" width="18" height="18">
-                                <span>نرم‌افزار مدیریت ورزشی نِمُو (Nemov) - نسخه ۳.۳.۰ [پایگاه داده آفلاین فعال]</span>
+                                <span>نرم‌افزار مدیریت ورزشی نِمُو - نسخه ۳.۴.۱ [پایگاه داده آفلاین فعال]</span>
                             </div>
                             <div class="window-status-pill">
                                 <span class="live-dot"></span>
@@ -4314,7 +4314,7 @@ function renderLandingPage() {
             <div class="developer-card reveal-on-scroll">
                 <div class="tilt-glare-overlay" aria-hidden="true"></div>
                 <div class="developer-avatar-box">
-                    <img src="/images/developer_photo.jpg" alt="مهندس ابوالفضل صمدی کوچکسرائی - توسعه‌دهنده نرم‌افزار مدیریت ورزشی نِمُو (Nemov)" class="developer-avatar-img" width="88" height="88" loading="lazy">
+                    <img src="/images/developer_photo.jpg" alt="مهندس ابوالفضل صمدی کوچکسرائی - توسعه‌دهنده نرم‌افزار مدیریت ورزشی نِمُو" class="developer-avatar-img" width="88" height="88" loading="lazy">
                 </div>
                 <h3 class="developer-name">مهندس ابوالفضل صمدی کوچکسرائی</h3>
                 <span class="developer-role">توسعه‌دهنده و طراح نرم‌افزار | Software Developer & Architect</span>
@@ -4696,7 +4696,7 @@ function renderDashboardPage(trainers, totalSizeMb, lastActivity, mediaList = []
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مدیریت ابری و استودیوی رسانه - سامانه ورزشی نِمُو (Nemov)</title>
+    <title>مدیریت ابری و استودیوی رسانه - سامانه ورزشی نِمُو</title>
     <style>
         ${SHARED_FONT_CSS}
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -5387,7 +5387,7 @@ function renderDashboardPage(trainers, totalSizeMb, lastActivity, mediaList = []
     <div id="toast" class="toast"></div>
 
     <footer>
-        توسعه داده شده برای سامانه هوشمند مدیریت ورزشی نِمُو (Nemov) • قدرت گرفته از شبکه لبه ابری Cloudflare Workers © 2026
+        توسعه داده شده برای سامانه هوشمند مدیریت ورزشی نِمُو • قدرت گرفته از شبکه لبه ابری Cloudflare Workers © 2026
     </footer>
 
     <script>
@@ -5758,7 +5758,7 @@ function renderSandboxedImageViewer(title, imageUrl) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${safeTitle} | سامانه ورزشی نِمُو (Nemov)</title>
+    <title>${safeTitle} | سامانه ورزشی نِمُو</title>
     <style>
         ${SHARED_FONT_CSS}
         * { box-sizing: border-box; margin: 0; padding: 0; }
