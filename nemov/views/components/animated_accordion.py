@@ -106,6 +106,13 @@ class AnimatedAccordionCurtain(QScrollArea):
         self.toggled.emit(False)
         self.anim.start()
 
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        if self.content_widget and self.viewport():
+            vp_w = self.viewport().width()
+            if vp_w > 0:
+                self.content_widget.resize(vp_w, self.content_widget.height())
+
     def _on_anim_finished(self):
         if self._is_collapsed:
             self.setFixedHeight(0)

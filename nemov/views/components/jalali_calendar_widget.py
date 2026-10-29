@@ -204,7 +204,24 @@ class JalaliDatePicker(QWidget):
         self.btn_calendar = QPushButton("📅")
         self.btn_calendar.setFixedWidth(42)
         self.btn_calendar.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_calendar.setObjectName("secondary_button")
+        self.btn_calendar.setStyleSheet("""
+            QPushButton {
+                background-color: #DC2626;
+                color: #FFFFFF;
+                border: 1px solid #B91C1C;
+                border-radius: 6px;
+                font-size: 16px;
+                font-family: "Segoe UI Emoji", "Noto Color Emoji", "Apple Color Emoji", sans-serif;
+                padding: 0px;
+                margin: 0px;
+            }
+            QPushButton:hover {
+                background-color: #B91C1C;
+            }
+            QPushButton:pressed {
+                background-color: #991B1B;
+            }
+        """)
         self.btn_calendar.clicked.connect(self.open_calendar)
 
         layout.addWidget(self.line_edit)

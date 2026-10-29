@@ -140,12 +140,12 @@ class NutritionEditorView(QWidget):
         lbl_top_member = QLabel("ورزشکار:")
         self.combo_member_top = SearchableComboBox(placeholder="انتخاب ورزشکار...")
         self.combo_member_top.setFixedHeight(30)
-        self.combo_member_top.setMinimumWidth(185)
+        self.combo_member_top.setMinimumWidth(140)
 
         lbl_tpl = QLabel("الگوهای آماده:")
         self.combo_templates = QComboBox()
         self.combo_templates.setFixedHeight(30)
-        self.combo_templates.addItem("--- انتخاب و بارگذاری الگوی آماده رژیم از بانک ---", None)
+        self.combo_templates.addItem("--- انتخاب الگوی آماده رژیم از بانک ---", None)
         self.load_template_dropdown()
         self.combo_templates.currentIndexChanged.connect(self.on_template_selected)
 
@@ -167,8 +167,8 @@ class NutritionEditorView(QWidget):
         lbl_goal = QLabel("هدف:")
         self.combo_goal = QComboBox()
         self.combo_goal.setFixedHeight(30)
-        self.combo_goal.setMinimumWidth(195)
-        self.combo_goal.view().setMinimumWidth(205)
+        self.combo_goal.setMinimumWidth(110)
+        self.combo_goal.view().setMinimumWidth(185)
         self.combo_goal.setStyleSheet("""
             QComboBox {
                 padding-right: 8px;
@@ -189,20 +189,22 @@ class NutritionEditorView(QWidget):
         lbl_days = QLabel("روزها:")
         self.combo_days = QComboBox()
         self.combo_days.setFixedHeight(30)
-        self.combo_days.addItem("📅 شنبه تا جمعه (۷ روز)", "7_days")
-        self.combo_days.addItem("📅 روزهای تمرینی و استراحت", "training_rest")
+        self.combo_days.setMinimumWidth(110)
+        self.combo_days.view().setMinimumWidth(170)
+        self.combo_days.addItem("📅 شنبه تا جمعه", "7_days")
+        self.combo_days.addItem("📅 تمرینی و استراحت", "training_rest")
         self.combo_days.addItem("📅 ۲ روز در هفته", "2_days")
         self.combo_days.addItem("📅 ۳ روز در هفته", "3_days")
         self.combo_days.addItem("📅 ۴ روز در هفته", "4_days")
         self.combo_days.addItem("📅 ۵ روز در هفته", "5_days")
         self.combo_days.addItem("📅 ۶ روز در هفته", "6_days")
-        self.combo_days.addItem("📅 الگوی ثابت (کلیه روزها)", "all_days")
+        self.combo_days.addItem("📅 کلیه روزها (ثابت)", "all_days")
         self.combo_days.currentIndexChanged.connect(self.on_days_pattern_changed)
 
         lbl_tdee = QLabel("TDEE:")
         self.txt_member_tdee = QLineEdit("0")
         self.txt_member_tdee.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.txt_member_tdee.setFixedWidth(58)
+        self.txt_member_tdee.setFixedWidth(50)
         self.txt_member_tdee.setFixedHeight(30)
         self.txt_member_tdee.setStyleSheet(
             "font-weight: bold; color: #FBBF24; background-color: #1F2937; border: 1px solid #374151; border-radius: 4px; padding: 1px 2px;"
@@ -248,49 +250,49 @@ class NutritionEditorView(QWidget):
         """
 
         self.btn_tdee_p300 = QPushButton("+300")
-        self.btn_tdee_p300.setFixedSize(38, 28)
+        self.btn_tdee_p300.setFixedSize(30, 24)
         self.btn_tdee_p300.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_tdee_p300.setStyleSheet(btn_style_plus)
         self.btn_tdee_p300.setToolTip("افزودن ۳۰۰ کیلوکالری به TDEE")
         self.btn_tdee_p300.clicked.connect(lambda: self.adjust_tdee(300))
 
         self.btn_tdee_p500 = QPushButton("+500")
-        self.btn_tdee_p500.setFixedSize(38, 28)
+        self.btn_tdee_p500.setFixedSize(30, 24)
         self.btn_tdee_p500.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_tdee_p500.setStyleSheet(btn_style_plus)
         self.btn_tdee_p500.setToolTip("افزودن ۵۰۰ کیلوکالری به TDEE")
         self.btn_tdee_p500.clicked.connect(lambda: self.adjust_tdee(500))
 
         self.btn_tdee_m300 = QPushButton("-300")
-        self.btn_tdee_m300.setFixedSize(38, 28)
+        self.btn_tdee_m300.setFixedSize(30, 24)
         self.btn_tdee_m300.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_tdee_m300.setStyleSheet(btn_style_minus)
         self.btn_tdee_m300.setToolTip("کاستن ۳۰۰ کیلوکالری از TDEE")
         self.btn_tdee_m300.clicked.connect(lambda: self.adjust_tdee(-300))
 
         self.btn_tdee_m500 = QPushButton("-500")
-        self.btn_tdee_m500.setFixedSize(38, 28)
+        self.btn_tdee_m500.setFixedSize(30, 24)
         self.btn_tdee_m500.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_tdee_m500.setStyleSheet(btn_style_minus)
         self.btn_tdee_m500.setToolTip("کاستن ۵۰۰ کیلوکالری از TDEE")
         self.btn_tdee_m500.clicked.connect(lambda: self.adjust_tdee(-500))
 
         self.lbl_total_calories_title = QLabel("دریافتی:")
-        self.txt_total_calories = QLineEdit("‏0 کیلوکالری")
+        self.txt_total_calories = QLineEdit("‏0 کالری")
         self.txt_total_calories.setReadOnly(True)
         self.txt_total_calories.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.txt_total_calories.setFixedWidth(95)
+        self.txt_total_calories.setFixedWidth(78)
         self.txt_total_calories.setFixedHeight(30)
         self.txt_total_calories.setStyleSheet(
             "font-weight: bold; color: #34D399; background-color: #1F2937; border: 1px solid #374151; border-radius: 4px; padding: 1px 2px;"
         )
 
-        self.lbl_calorie_comparison = QLabel("‏⚖️ وضعیت: ورزشکار انتخاب نشده")
+        self.lbl_calorie_comparison = QLabel("‏⚖️ بدون ورزشکار")
         self.lbl_calorie_comparison.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.lbl_calorie_comparison.setFixedHeight(30)
-        self.lbl_calorie_comparison.setMinimumWidth(190)
+        self.lbl_calorie_comparison.setMinimumWidth(95)
         self.lbl_calorie_comparison.setStyleSheet(
-            "font-size: 11px; font-weight: bold; padding: 4px 10px; border-radius: 4px; background-color: #374151; color: #E5E7EB;"
+            "font-size: 10.5px; font-weight: bold; padding: 2px 6px; border-radius: 4px; background-color: #374151; color: #E5E7EB;"
         )
 
         row_cal.addWidget(lbl_goal)
@@ -506,7 +508,7 @@ class NutritionEditorView(QWidget):
         cur = self.combo_templates.currentData()
         self.combo_templates.blockSignals(True)
         self.combo_templates.clear()
-        self.combo_templates.addItem("--- انتخاب و بارگذاری الگوی آماده رژیم از بانک ---", None)
+        self.combo_templates.addItem("--- انتخاب الگوی آماده رژیم از بانک ---", None)
         plans = NutritionService.get_all_plans()
         for p in plans:
             goal_title = {
@@ -1043,8 +1045,8 @@ class NutritionEditorView(QWidget):
                     total_f += (food.fat_g or 0.0) * amt
 
         total_cal_int = int(round(total_cal))
-        self.lbl_total_calories_title.setText(f"مجموع کیلوکالری دریافتی{day_suffix}:")
-        self.txt_total_calories.setText(f"\u200f{total_cal_int:,} کیلوکالری")
+        self.lbl_total_calories_title.setText(f"دریافتی{day_suffix}:")
+        self.txt_total_calories.setText(f"\u200f{total_cal_int:,} کالری")
         self.txt_total_calories.setToolTip(
             f"درشت‌مغذی‌های محاسبه‌شده{day_suffix}: پروتئین {int(round(total_p))} گرم | کربوهیدرات {int(round(total_c))} گرم | چربی {int(round(total_f))} گرم"
         )
@@ -1057,32 +1059,32 @@ class NutritionEditorView(QWidget):
         if tdee > 0:
             diff = total_cal_int - tdee
             if total_cal_int == 0:
-                self.lbl_calorie_comparison.setText(f"\u200f⚖️ هدف روزانه (TDEE): {tdee:,} کیلوکالری")
+                self.lbl_calorie_comparison.setText(f"\u200f⚖️ TDEE هدف: {tdee:,} کالری")
                 self.lbl_calorie_comparison.setStyleSheet(
                     "font-size: 11px; font-weight: bold; padding: 4px 10px; border-radius: 6px; background-color: #374151; color: #E5E7EB;"
                 )
             elif abs(diff) <= 50:
-                self.lbl_calorie_comparison.setText(f"\u200f✅ منطبق با TDEE ({diff:+,} کیلوکالری)")
+                self.lbl_calorie_comparison.setText(f"\u200f✅ منطبق با هدف ({diff:+,})")
                 self.lbl_calorie_comparison.setStyleSheet(
                     "font-size: 11px; font-weight: bold; padding: 4px 10px; border-radius: 6px; background-color: #065F46; color: #FFFFFF;"
                 )
             elif diff < -50:
-                self.lbl_calorie_comparison.setText(f"\u200f📉 {abs(diff):,} کیلوکالری کمتر از TDEE")
+                self.lbl_calorie_comparison.setText(f"\u200f🔻 {abs(diff):,} کالری کسری")
                 self.lbl_calorie_comparison.setStyleSheet(
                     "font-size: 11px; font-weight: bold; padding: 4px 10px; border-radius: 6px; background-color: #1E40AF; color: #FFFFFF;"
                 )
             else:
-                self.lbl_calorie_comparison.setText(f"\u200f📈 {diff:,} کیلوکالری بیشتر از TDEE")
+                self.lbl_calorie_comparison.setText(f"\u200f🔺 {diff:,} کالری مازاد")
                 self.lbl_calorie_comparison.setStyleSheet(
                     "font-size: 11px; font-weight: bold; padding: 4px 10px; border-radius: 6px; background-color: #B45309; color: #FFFFFF;"
                 )
         else:
             if total_cal_int > 0:
                 self.lbl_calorie_comparison.setText(
-                    f"\u200fپروتئین: {int(round(total_p))} گرم | کربوهیدرات: {int(round(total_c))} گرم | چربی: {int(round(total_f))} گرم"
+                    f"\u200f🎯 ماکرو: {int(round(total_p))}P / {int(round(total_c))}C / {int(round(total_f))}F"
                 )
             else:
-                self.lbl_calorie_comparison.setText("\u200f⚖️ وضعیت انرژی: ورزشکار انتخاب نشده")
+                self.lbl_calorie_comparison.setText("\u200f⚖️ بدون ورزشکار")
             self.lbl_calorie_comparison.setStyleSheet(
                 "font-size: 11px; font-weight: bold; padding: 4px 10px; border-radius: 6px; background-color: #374151; color: #E5E7EB;"
             )
@@ -1105,12 +1107,12 @@ class NutritionEditorView(QWidget):
             self.lbl_actual_p.setText(f"\u200fمصرفی: {act_p:,} گرم")
             self.lbl_actual_c.setText(f"\u200fمصرفی: {act_c:,} گرم")
             self.lbl_actual_f.setText(f"\u200fمصرفی: {act_f:,} گرم")
-            self.lbl_actual_energy.setText(f"\u200fمصرفی: {total_cal_int:,} کیلوکالری")
+            self.lbl_actual_energy.setText(f"\u200fمصرفی: {total_cal_int:,} کالری")
 
-            self.lbl_target_p_kcal.setText(f"\u200f({p_kcal:,} کیلوکالری)")
-            self.lbl_target_c_kcal.setText(f"\u200f({c_kcal:,} کیلوکالری)")
-            self.lbl_target_f_kcal.setText(f"\u200f({f_kcal:,} کیلوکالری)")
-            self.lbl_target_energy.setText(f"\u200f{macro_tgt_cal:,} کیلوکالری")
+            self.lbl_target_p_kcal.setText(f"\u200f({p_kcal:,} کالری)")
+            self.lbl_target_c_kcal.setText(f"\u200f({c_kcal:,} کالری)")
+            self.lbl_target_f_kcal.setText(f"\u200f({f_kcal:,} کالری)")
+            self.lbl_target_energy.setText(f"\u200f{macro_tgt_cal:,} کالری")
 
             # Update status badges for Protein, Carbs, Fat
             macro_labels = {
@@ -1127,36 +1129,36 @@ class NutritionEditorView(QWidget):
                     diff = act_v - tgt_v
                     if diff < -2:
                         deficit = abs(diff)
-                        lbl_status.setText(f"\u200f📉 {deficit:,} گرم کسری")
+                        lbl_status.setText(f"\u200f📉 {deficit:,}g کسری")
                         lbl_status.setToolTip(f"کسری {m_title}: {deficit:,} گرم (معادل {deficit * factor:,} کیلوکالری)")
                         lbl_status.setStyleSheet("font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 4px; background-color: #1E3A8A; color: #93C5FD; border: none;")
                     elif abs(diff) <= 2:
-                        lbl_status.setText("\u200f✅ تکمیل شد")
+                        lbl_status.setText("\u200f✅ تکمیل")
                         lbl_status.setToolTip(f"سهمیه {m_title} روزانه تکمیل و منطبق با هدف است.")
                         lbl_status.setStyleSheet("font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 4px; background-color: #065F46; color: #A7F3D0; border: none;")
                     else:
                         surplus = diff
-                        lbl_status.setText(f"\u200f📈 +{surplus:,} گرم مازاد")
+                        lbl_status.setText(f"\u200f📈 +{surplus:,}g مازاد")
                         lbl_status.setToolTip(f"مازاد {m_title}: {surplus:,} گرم (معادل {surplus * factor:,} کیلوکالری)")
                         lbl_status.setStyleSheet("font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 4px; background-color: #78350F; color: #FDE68A; border: none;")
 
             # Update Energy Summary Status Badge
             if macro_tgt_cal <= 0:
-                self.lbl_status_energy.setText("\u200f⚖️ هدف نامشخص")
+                self.lbl_status_energy.setText("\u200f⚖️ نامشخص")
                 self.lbl_status_energy.setToolTip("مجموع کیلوکالری از درشت‌مغذی‌ها نامشخص است.")
                 self.lbl_status_energy.setStyleSheet("font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 4px; background-color: #1E293B; color: #94A3B8; border: none;")
             else:
                 cal_diff = total_cal_int - macro_tgt_cal
                 if cal_diff < -50:
-                    self.lbl_status_energy.setText(f"\u200f📉 {abs(cal_diff):,} کیلوکالری کسری")
+                    self.lbl_status_energy.setText(f"\u200f📉 {abs(cal_diff):,} کسری")
                     self.lbl_status_energy.setToolTip(f"کسری کل انرژی نسبت به هدف ماکروها: {abs(cal_diff):,} کیلوکالری")
                     self.lbl_status_energy.setStyleSheet("font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 4px; background-color: #1E3A8A; color: #93C5FD; border: none;")
                 elif abs(cal_diff) <= 50:
-                    self.lbl_status_energy.setText("\u200f✅ بالانس کامل انرژی")
+                    self.lbl_status_energy.setText("\u200f✅ بالانس کامل")
                     self.lbl_status_energy.setToolTip("کل کیلوکالری دریافتی روزانه با مجموع کیلوکالری ماکروها منطبق است.")
                     self.lbl_status_energy.setStyleSheet("font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 4px; background-color: #065F46; color: #A7F3D0; border: none;")
                 else:
-                    self.lbl_status_energy.setText(f"\u200f📈 +{cal_diff:,} کیلوکالری مازاد")
+                    self.lbl_status_energy.setText(f"\u200f📈 +{cal_diff:,} مازاد")
                     self.lbl_status_energy.setToolTip(f"مازاد کل انرژی نسبت به هدف ماکروها: {cal_diff:,} کیلوکالری")
                     self.lbl_status_energy.setStyleSheet("font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 4px; background-color: #78350F; color: #FDE68A; border: none;")
 
@@ -1176,7 +1178,7 @@ class NutritionEditorView(QWidget):
 
     def _setup_macro_cards(self, layout_form: QVBoxLayout):
         self.row_macros = QHBoxLayout()
-        self.row_macros.setSpacing(6)
+        self.row_macros.setSpacing(4)
 
         # Get initial factors from goal
         goal_key = self.combo_goal.currentData() if hasattr(self, "combo_goal") else "muscle_gain"
@@ -1186,17 +1188,17 @@ class NutritionEditorView(QWidget):
         self.card_protein = QFrame()
         self.card_protein.setObjectName("card_macro_protein")
         layout_p = QVBoxLayout(self.card_protein)
-        layout_p.setContentsMargins(8, 5, 8, 5)
-        layout_p.setSpacing(3)
+        layout_p.setContentsMargins(6, 4, 6, 4)
+        layout_p.setSpacing(2)
 
         p_top = QHBoxLayout()
-        p_top.setSpacing(4)
+        p_top.setSpacing(2)
         lbl_p_title = QLabel("🥩 پروتئین:")
-        lbl_p_title.setStyleSheet("font-weight: bold; font-size: 11px; color: #60A5FA; border: none; background: transparent;")
+        lbl_p_title.setStyleSheet("font-weight: bold; font-size: 10px; color: #60A5FA; border: none; background: transparent;")
         self.txt_target_p = QLineEdit("0")
         self.txt_target_p.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.txt_target_p.setFixedWidth(44)
-        self.txt_target_p.setFixedHeight(22)
+        self.txt_target_p.setFixedWidth(34)
+        self.txt_target_p.setFixedHeight(20)
         self.txt_target_p.setStyleSheet("font-weight: bold; font-size: 10px; color: #60A5FA; background-color: #0F172A; border: 1px solid #3B82F6; border-radius: 3px; padding: 1px 2px;")
         self.txt_target_p.setToolTip("هدف کل پروتئین روزانه (گرم) — قابل ویرایش دستی\nفرمول: وزن شاگرد (kg) × عدد گرم بر کیلوگرم | هر گرم پروتئین = ۴ کیلوکالری ثابت")
         self.txt_target_p.textEdited.connect(lambda: self._on_target_macro_edited("protein"))
@@ -1206,8 +1208,8 @@ class NutritionEditorView(QWidget):
         
         self.txt_factor_p = QLineEdit(f"{init_factors['protein']:.1f}")
         self.txt_factor_p.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.txt_factor_p.setFixedWidth(38)
-        self.txt_factor_p.setFixedHeight(22)
+        self.txt_factor_p.setFixedWidth(28)
+        self.txt_factor_p.setFixedHeight(20)
         self.txt_factor_p.setStyleSheet("font-weight: bold; font-size: 10px; color: #93C5FD; background-color: #1E293B; border: 1px solid #3B82F6; border-radius: 3px; padding: 1px 2px;")
         self.txt_factor_p.setToolTip("گرم پروتئین به ازای هر ۱ کیلوگرم وزن بدن فرد (g/kg)")
         self.txt_factor_p.textEdited.connect(lambda: self._on_factor_edited("protein"))
@@ -1215,8 +1217,8 @@ class NutritionEditorView(QWidget):
         lbl_f_p_unit = QLabel("g/kg")
         lbl_f_p_unit.setStyleSheet("font-size: 9px; color: #94A3B8; border: none; background: transparent;")
 
-        self.lbl_target_p_kcal = QLabel("(۰ کیلوکالری)")
-        self.lbl_target_p_kcal.setStyleSheet("font-size: 9.5px; color: #94A3B8; border: none; background: transparent;")
+        self.lbl_target_p_kcal = QLabel("(۰ کالری)")
+        self.lbl_target_p_kcal.setStyleSheet("font-size: 8px; color: #94A3B8; border: none; background: transparent;")
         
         p_top.addWidget(lbl_p_title)
         p_top.addWidget(self.txt_target_p)
@@ -1228,15 +1230,15 @@ class NutritionEditorView(QWidget):
         layout_p.addLayout(p_top)
 
         p_bot = QHBoxLayout()
-        p_bot.setSpacing(4)
+        p_bot.setSpacing(2)
         self.lbl_actual_p = QLabel("مصرفی: ۰ گرم")
-        self.lbl_actual_p.setStyleSheet("font-size: 11px; font-weight: bold; color: #E2E8F0; border: none; background: transparent;")
+        self.lbl_actual_p.setStyleSheet("font-size: 9.5px; font-weight: bold; color: #E2E8F0; border: none; background: transparent;")
         self.lbl_status_p = QLabel("۰ گرم باقیمانده")
         self.lbl_status_p.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.lbl_status_p.setFixedHeight(20)
-        self.lbl_status_p.setStyleSheet("font-size: 10px; font-weight: bold; padding: 1px 6px; border-radius: 3px; background-color: #1E293B; color: #94A3B8; border: none;")
+        self.lbl_status_p.setFixedHeight(18)
+        self.lbl_status_p.setStyleSheet("font-size: 8.5px; font-weight: bold; padding: 1px 3px; border-radius: 3px; background-color: #1E293B; color: #94A3B8; border: none;")
         self.btn_suggest_p = QPushButton("💡 پیشنهاد")
-        self.btn_suggest_p.setFixedHeight(20)
+        self.btn_suggest_p.setFixedHeight(18)
         self.btn_suggest_p.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_suggest_p.setStyleSheet("""
             QPushButton {
@@ -1267,17 +1269,17 @@ class NutritionEditorView(QWidget):
         self.card_carbs = QFrame()
         self.card_carbs.setObjectName("card_macro_carbs")
         layout_c = QVBoxLayout(self.card_carbs)
-        layout_c.setContentsMargins(8, 5, 8, 5)
-        layout_c.setSpacing(3)
+        layout_c.setContentsMargins(6, 4, 6, 4)
+        layout_c.setSpacing(2)
 
         c_top = QHBoxLayout()
-        c_top.setSpacing(4)
+        c_top.setSpacing(2)
         lbl_c_title = QLabel("🍞 کربوهیدرات:")
-        lbl_c_title.setStyleSheet("font-weight: bold; font-size: 11px; color: #FBBF24; border: none; background: transparent;")
+        lbl_c_title.setStyleSheet("font-weight: bold; font-size: 10px; color: #FBBF24; border: none; background: transparent;")
         self.txt_target_c = QLineEdit("0")
         self.txt_target_c.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.txt_target_c.setFixedWidth(44)
-        self.txt_target_c.setFixedHeight(22)
+        self.txt_target_c.setFixedWidth(34)
+        self.txt_target_c.setFixedHeight(20)
         self.txt_target_c.setStyleSheet("font-weight: bold; font-size: 10px; color: #FBBF24; background-color: #0F172A; border: 1px solid #F59E0B; border-radius: 3px; padding: 1px 2px;")
         self.txt_target_c.setToolTip("هدف کل کربوهیدرات روزانه (گرم) — قابل ویرایش دستی\nفرمول: وزن شاگرد (kg) × عدد گرم بر کیلوگرم | هر گرم کربوهیدرات = ۴ کیلوکالری ثابت")
         self.txt_target_c.textEdited.connect(lambda: self._on_target_macro_edited("carbs"))
@@ -1287,8 +1289,8 @@ class NutritionEditorView(QWidget):
 
         self.txt_factor_c = QLineEdit(f"{init_factors['carbs']:.1f}")
         self.txt_factor_c.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.txt_factor_c.setFixedWidth(38)
-        self.txt_factor_c.setFixedHeight(22)
+        self.txt_factor_c.setFixedWidth(28)
+        self.txt_factor_c.setFixedHeight(20)
         self.txt_factor_c.setStyleSheet("font-weight: bold; font-size: 10px; color: #FDE68A; background-color: #1E293B; border: 1px solid #D97706; border-radius: 3px; padding: 1px 2px;")
         self.txt_factor_c.setToolTip("گرم کربوهیدرات به ازای هر ۱ کیلوگرم وزن بدن فرد (g/kg)")
         self.txt_factor_c.textEdited.connect(lambda: self._on_factor_edited("carbs"))
@@ -1296,8 +1298,8 @@ class NutritionEditorView(QWidget):
         lbl_f_c_unit = QLabel("g/kg")
         lbl_f_c_unit.setStyleSheet("font-size: 9px; color: #94A3B8; border: none; background: transparent;")
 
-        self.lbl_target_c_kcal = QLabel("(۰ کیلوکالری)")
-        self.lbl_target_c_kcal.setStyleSheet("font-size: 9.5px; color: #94A3B8; border: none; background: transparent;")
+        self.lbl_target_c_kcal = QLabel("(۰ کالری)")
+        self.lbl_target_c_kcal.setStyleSheet("font-size: 8px; color: #94A3B8; border: none; background: transparent;")
 
         c_top.addWidget(lbl_c_title)
         c_top.addWidget(self.txt_target_c)
@@ -1309,15 +1311,15 @@ class NutritionEditorView(QWidget):
         layout_c.addLayout(c_top)
 
         c_bot = QHBoxLayout()
-        c_bot.setSpacing(4)
+        c_bot.setSpacing(2)
         self.lbl_actual_c = QLabel("مصرفی: ۰ گرم")
-        self.lbl_actual_c.setStyleSheet("font-size: 11px; font-weight: bold; color: #E2E8F0; border: none; background: transparent;")
+        self.lbl_actual_c.setStyleSheet("font-size: 9.5px; font-weight: bold; color: #E2E8F0; border: none; background: transparent;")
         self.lbl_status_c = QLabel("۰ گرم باقیمانده")
         self.lbl_status_c.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.lbl_status_c.setFixedHeight(20)
-        self.lbl_status_c.setStyleSheet("font-size: 10px; font-weight: bold; padding: 1px 6px; border-radius: 3px; background-color: #1E293B; color: #94A3B8; border: none;")
+        self.lbl_status_c.setFixedHeight(18)
+        self.lbl_status_c.setStyleSheet("font-size: 8.5px; font-weight: bold; padding: 1px 3px; border-radius: 3px; background-color: #1E293B; color: #94A3B8; border: none;")
         self.btn_suggest_c = QPushButton("💡 پیشنهاد")
-        self.btn_suggest_c.setFixedHeight(20)
+        self.btn_suggest_c.setFixedHeight(18)
         self.btn_suggest_c.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_suggest_c.setStyleSheet("""
             QPushButton {
@@ -1345,17 +1347,17 @@ class NutritionEditorView(QWidget):
         self.card_fat = QFrame()
         self.card_fat.setObjectName("card_macro_fat")
         layout_f = QVBoxLayout(self.card_fat)
-        layout_f.setContentsMargins(8, 5, 8, 5)
-        layout_f.setSpacing(3)
+        layout_f.setContentsMargins(6, 4, 6, 4)
+        layout_f.setSpacing(2)
 
         f_top = QHBoxLayout()
-        f_top.setSpacing(4)
+        f_top.setSpacing(2)
         lbl_f_title = QLabel("🥑 چربی مفید:")
-        lbl_f_title.setStyleSheet("font-weight: bold; font-size: 11px; color: #34D399; border: none; background: transparent;")
+        lbl_f_title.setStyleSheet("font-weight: bold; font-size: 10px; color: #34D399; border: none; background: transparent;")
         self.txt_target_f = QLineEdit("0")
         self.txt_target_f.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.txt_target_f.setFixedWidth(44)
-        self.txt_target_f.setFixedHeight(22)
+        self.txt_target_f.setFixedWidth(34)
+        self.txt_target_f.setFixedHeight(20)
         self.txt_target_f.setStyleSheet("font-weight: bold; font-size: 10px; color: #34D399; background-color: #0F172A; border: 1px solid #10B981; border-radius: 3px; padding: 1px 2px;")
         self.txt_target_f.setToolTip("هدف کل چربی مفید روزانه (گرم) — قابل ویرایش دستی\nفرمول: وزن شاگرد (kg) × عدد گرم بر کیلوگرم | هر گرم چربی = ۹ کیلوکالری ثابت")
         self.txt_target_f.textEdited.connect(lambda: self._on_target_macro_edited("fat"))
@@ -1365,8 +1367,8 @@ class NutritionEditorView(QWidget):
 
         self.txt_factor_f = QLineEdit(f"{init_factors['fat']:.1f}")
         self.txt_factor_f.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.txt_factor_f.setFixedWidth(38)
-        self.txt_factor_f.setFixedHeight(22)
+        self.txt_factor_f.setFixedWidth(28)
+        self.txt_factor_f.setFixedHeight(20)
         self.txt_factor_f.setStyleSheet("font-weight: bold; font-size: 10px; color: #A7F3D0; background-color: #1E293B; border: 1px solid #059669; border-radius: 3px; padding: 1px 2px;")
         self.txt_factor_f.setToolTip("گرم چربی مفید به ازای هر ۱ کیلوگرم وزن بدن فرد (g/kg)")
         self.txt_factor_f.textEdited.connect(lambda: self._on_factor_edited("fat"))
@@ -1374,8 +1376,8 @@ class NutritionEditorView(QWidget):
         lbl_f_fat_unit = QLabel("g/kg")
         lbl_f_fat_unit.setStyleSheet("font-size: 9px; color: #94A3B8; border: none; background: transparent;")
 
-        self.lbl_target_f_kcal = QLabel("(۰ کیلوکالری)")
-        self.lbl_target_f_kcal.setStyleSheet("font-size: 9.5px; color: #94A3B8; border: none; background: transparent;")
+        self.lbl_target_f_kcal = QLabel("(۰ کالری)")
+        self.lbl_target_f_kcal.setStyleSheet("font-size: 8px; color: #94A3B8; border: none; background: transparent;")
 
         f_top.addWidget(lbl_f_title)
         f_top.addWidget(self.txt_target_f)
@@ -1387,15 +1389,15 @@ class NutritionEditorView(QWidget):
         layout_f.addLayout(f_top)
 
         f_bot = QHBoxLayout()
-        f_bot.setSpacing(4)
+        f_bot.setSpacing(2)
         self.lbl_actual_f = QLabel("مصرفی: ۰ گرم")
-        self.lbl_actual_f.setStyleSheet("font-size: 11px; font-weight: bold; color: #E2E8F0; border: none; background: transparent;")
+        self.lbl_actual_f.setStyleSheet("font-size: 9.5px; font-weight: bold; color: #E2E8F0; border: none; background: transparent;")
         self.lbl_status_f = QLabel("۰ گرم باقیمانده")
         self.lbl_status_f.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.lbl_status_f.setFixedHeight(20)
-        self.lbl_status_f.setStyleSheet("font-size: 10px; font-weight: bold; padding: 1px 6px; border-radius: 3px; background-color: #1E293B; color: #94A3B8; border: none;")
+        self.lbl_status_f.setFixedHeight(18)
+        self.lbl_status_f.setStyleSheet("font-size: 8.5px; font-weight: bold; padding: 1px 3px; border-radius: 3px; background-color: #1E293B; color: #94A3B8; border: none;")
         self.btn_suggest_f = QPushButton("💡 پیشنهاد")
-        self.btn_suggest_f.setFixedHeight(20)
+        self.btn_suggest_f.setFixedHeight(18)
         self.btn_suggest_f.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_suggest_f.setStyleSheet("""
             QPushButton {
@@ -1423,18 +1425,18 @@ class NutritionEditorView(QWidget):
         self.card_energy = QFrame()
         self.card_energy.setObjectName("card_macro_energy")
         layout_e = QVBoxLayout(self.card_energy)
-        layout_e.setContentsMargins(8, 5, 8, 5)
-        layout_e.setSpacing(3)
+        layout_e.setContentsMargins(6, 4, 6, 4)
+        layout_e.setSpacing(2)
 
         e_top = QHBoxLayout()
-        e_top.setSpacing(4)
+        e_top.setSpacing(2)
         lbl_e_title = QLabel("🔥 انرژی هدف:")
-        lbl_e_title.setStyleSheet("font-weight: bold; font-size: 11px; color: #F43F5E; border: none; background: transparent;")
-        self.lbl_target_energy = QLabel("۰ کیلوکالری")
-        self.lbl_target_energy.setStyleSheet("font-weight: bold; font-size: 11px; color: #FBBF24; border: none; background: transparent;")
+        lbl_e_title.setStyleSheet("font-weight: bold; font-size: 10px; color: #F43F5E; border: none; background: transparent;")
+        self.lbl_target_energy = QLabel("۰ کالری")
+        self.lbl_target_energy.setStyleSheet("font-weight: bold; font-size: 10px; color: #FBBF24; border: none; background: transparent;")
         
         self.btn_sync_tdee = QPushButton("🎯 اعمال به TDEE")
-        self.btn_sync_tdee.setFixedHeight(20)
+        self.btn_sync_tdee.setFixedHeight(18)
         self.btn_sync_tdee.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_sync_tdee.setStyleSheet("""
             QPushButton {
@@ -1443,8 +1445,8 @@ class NutritionEditorView(QWidget):
                 border: 1px solid #6366F1;
                 border-radius: 3px;
                 font-weight: bold;
-                font-size: 9px;
-                padding: 0 5px;
+                font-size: 8.5px;
+                padding: 0 3px;
             }
             QPushButton:hover {
                 background-color: #6366F1;
@@ -1461,13 +1463,13 @@ class NutritionEditorView(QWidget):
         layout_e.addLayout(e_top)
 
         e_bot = QHBoxLayout()
-        e_bot.setSpacing(4)
-        self.lbl_actual_energy = QLabel("مصرفی: ۰ کیلوکالری")
-        self.lbl_actual_energy.setStyleSheet("font-size: 11px; font-weight: bold; color: #E2E8F0; border: none; background: transparent;")
-        self.lbl_status_energy = QLabel("⚖️ بدون اختلاف")
+        e_bot.setSpacing(2)
+        self.lbl_actual_energy = QLabel("مصرفی: ۰ کالری")
+        self.lbl_actual_energy.setStyleSheet("font-size: 9.5px; font-weight: bold; color: #E2E8F0; border: none; background: transparent;")
+        self.lbl_status_energy = QLabel("⚖️ نامشخص")
         self.lbl_status_energy.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.lbl_status_energy.setFixedHeight(20)
-        self.lbl_status_energy.setStyleSheet("font-size: 10px; font-weight: bold; padding: 1px 6px; border-radius: 3px; background-color: #1E293B; color: #94A3B8; border: none;")
+        self.lbl_status_energy.setFixedHeight(18)
+        self.lbl_status_energy.setStyleSheet("font-size: 8.5px; font-weight: bold; padding: 1px 3px; border-radius: 3px; background-color: #1E293B; color: #94A3B8; border: none;")
         e_bot.addWidget(self.lbl_actual_energy)
         e_bot.addWidget(self.lbl_status_energy, 1)
         layout_e.addLayout(e_bot)

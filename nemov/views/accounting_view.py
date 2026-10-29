@@ -481,7 +481,6 @@ class AccountingView(QWidget):
     def _on_theme_changed(self, theme_key: str):
         self._highlight_quick_btn(self.current_filter_key)
         self._refresh_stat_cards_theming()
-        self.load_data()
 
     def _refresh_stat_cards_theming(self):
         try:

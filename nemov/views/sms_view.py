@@ -662,9 +662,25 @@ class SmsView(QWidget):
 
         # 3. Recipients Selector
         recip_head = QHBoxLayout()
+        recip_head.setSpacing(8)
         lbl_recip = QLabel("👥 انتخاب دریافت‌کنندگان پیامک:")
         lbl_recip.setStyleSheet("font-weight: bold; font-size: 13px; color: #FFFFFF;")
         recip_head.addWidget(lbl_recip)
+
+        self.lbl_selection_summary = QLabel("")
+        self.lbl_selection_summary.setStyleSheet("""
+            QLabel {
+                font-size: 12px;
+                font-weight: bold;
+                color: #F59E0B;
+                background-color: #27221A;
+                border: 1px solid #78350F;
+                border-radius: 9px;
+                padding: 1px 8px;
+            }
+        """)
+        self.lbl_selection_summary.setVisible(False)
+        recip_head.addWidget(self.lbl_selection_summary)
 
         # Filter buttons
         self.rb_all = QRadioButton("تمام ورزشکاران")
@@ -718,7 +734,7 @@ class SmsView(QWidget):
         self.input_search_member.textChanged.connect(self.search_members_table)
         right_panel.addWidget(self.input_search_member)
 
-        # Members Selection Table (Spacious with compact row height for maximum athlete visibility)
+        # Members Selection Table (Expanded height for maximum athlete visibility)
         self.table_members = QTableWidget()
         self.table_members.setColumnCount(4)
         self.table_members.setHorizontalHeaderLabels(["انتخاب", "نام و نام خانوادگی", "شماره تماس", "وضعیت عضویت"])
@@ -729,42 +745,9 @@ class SmsView(QWidget):
         self.table_members.verticalHeader().setVisible(False)
         self.table_members.verticalHeader().setDefaultSectionSize(32)
         self.table_members.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
-        self.table_members.setMinimumHeight(185)
-        self.table_members.setMaximumHeight(205)
+        self.table_members.setMinimumHeight(250)
+        self.table_members.setMaximumHeight(300)
         right_panel.addWidget(self.table_members, 1)
-
-        # 4. Action Bar
-        action_bar = QHBoxLayout()
-        action_bar.setSpacing(12)
-
-        self.lbl_selection_summary = QLabel("تعداد دریافت‌کنندگان: ۰ نفر")
-        self.lbl_selection_summary.setStyleSheet("font-size: 12px; color: #F59E0B; font-weight: bold;")
-        action_bar.addWidget(self.lbl_selection_summary)
-        action_bar.addStretch()
-
-        self.btn_send_broadcast = QPushButton("🚀  ارسال پیامک به دریافت‌کنندگان")
-        self.btn_send_broadcast.setObjectName("primary_button")
-        self.btn_send_broadcast.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_send_broadcast.setStyleSheet("padding: 10px 24px; font-size: 14px;")
-        self.btn_send_broadcast.clicked.connect(self.execute_broadcast_send)
-        action_bar.addWidget(self.btn_send_broadcast)
-        right_panel.addLayout(action_bar)
-
-        self.progress_bar = QProgressBar()
-        self.progress_bar.setVisible(False)
-        self.progress_bar.setStyleSheet("""
-            QProgressBar {
-                background-color: #27272A;
-                border-radius: 6px;
-                height: 8px;
-                text-align: center;
-            }
-            QProgressBar::chunk {
-                background-color: #10B981;
-                border-radius: 6px;
-            }
-        """)
-        right_panel.addWidget(self.progress_bar)
 
         layout.addLayout(right_panel, 2)
 
@@ -777,13 +760,14 @@ class SmsView(QWidget):
 
         lbl_phone_title = QLabel("📱 پیش‌نمایش در صفحه گوشی شاگرد:")
         lbl_phone_title.setStyleSheet("font-size: 13px; font-weight: bold; color: #E4E4E7;")
+        lbl_phone_title.setFixedHeight(24)
         phone_container.addWidget(lbl_phone_title)
 
         # Mock Smartphone Frame
         self.phone_mockup = QFrame()
-        self.phone_mockup.setFixedWidth(290)
-        self.phone_mockup.setMinimumHeight(350)
-        self.phone_mockup.setMaximumHeight(375)
+        self.phone_mockup.setFixedWidth(280)
+        self.phone_mockup.setFixedHeight(490)
+
         self.phone_mockup.setStyleSheet("""
             QFrame {
                 background-color: #0A0A0C;
@@ -842,6 +826,35 @@ class SmsView(QWidget):
         mock_layout.addWidget(home_bar, alignment=Qt.AlignmentFlag.AlignCenter)
 
         phone_container.addWidget(self.phone_mockup)
+
+        # Send Broadcast Button (placed directly under phone preview frame)
+        self.btn_send_broadcast = QPushButton("🚀  ارسال پیامک به دریافت‌کنندگان")
+        self.btn_send_broadcast.setObjectName("primary_button")
+        self.btn_send_broadcast.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_send_broadcast.setFixedWidth(280)
+        self.btn_send_broadcast.setFixedHeight(44)
+        self.btn_send_broadcast.setStyleSheet("padding: 10px 16px; font-size: 13px; font-weight: bold; border-radius: 8px;")
+        self.btn_send_broadcast.clicked.connect(self.execute_broadcast_send)
+        phone_container.addWidget(self.btn_send_broadcast)
+
+        self.progress_bar = QProgressBar()
+        self.progress_bar.setVisible(False)
+        self.progress_bar.setFixedWidth(280)
+        self.progress_bar.setStyleSheet("""
+            QProgressBar {
+                background-color: #27272A;
+                border-radius: 4px;
+                height: 8px;
+                text-align: center;
+            }
+            QProgressBar::chunk {
+                background-color: #10B981;
+                border-radius: 4px;
+            }
+        """)
+        phone_container.addWidget(self.progress_bar)
+
+        phone_container.addStretch()
         layout.addLayout(phone_container, 1)
 
         self.tab_broadcast.setWidget(container)
@@ -1309,12 +1322,15 @@ class SmsView(QWidget):
                 if chk and chk.isChecked():
                     selected_count += 1
 
-        self.lbl_selection_summary.setText(f"تعداد دریافت‌کنندگان: {selected_count} نفر")
         if selected_count > 0:
+            self.lbl_selection_summary.setText(f"{selected_count} نفر")
+            self.lbl_selection_summary.setVisible(True)
             self.btn_send_broadcast.setText(f"🚀  ارسال پیامک گروهی به {selected_count} ورزشکار")
             self.btn_send_broadcast.setEnabled(True)
         else:
-            self.btn_send_broadcast.setText("🚀  ارسال پیامک گروهی (۰ ورزشکار انتخاب شده)")
+            self.lbl_selection_summary.setText("")
+            self.lbl_selection_summary.setVisible(False)
+            self.btn_send_broadcast.setText("🚀  ارسال پیامک گروهی")
             self.btn_send_broadcast.setEnabled(False)
 
     def search_members_table(self, query):

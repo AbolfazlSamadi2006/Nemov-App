@@ -557,5 +557,5 @@ class MemberListView(QWidget):
             QMessageBox.critical(self, "خطا", f"خطایی رخ داد: {str(e)}")
 
     def _on_theme_changed(self, theme_key: str):
-        self.load_members()
+        pass
 

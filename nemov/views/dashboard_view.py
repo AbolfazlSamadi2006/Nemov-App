@@ -294,7 +294,6 @@ class DashboardView(QWidget):
 
     def _on_theme_changed(self, theme_key: str):
         self._apply_theme_style()
-        self.refresh_dashboard()
 
     def _apply_theme_style(self):
         try:

@@ -479,16 +479,20 @@ class BackupView(QWidget):
         self.btn_remove_photo.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_remove_photo.setStyleSheet("""
             QPushButton {
-                background-color: transparent;
-                color: #EF4444;
-                border: 1px solid #7F1D1D;
+                background-color: #DC2626;
+                color: #FFFFFF;
+                border: 1px solid #B91C1C;
                 border-radius: 4px;
                 font-size: 11px;
+                font-weight: bold;
                 padding: 2px 6px;
             }
             QPushButton:hover {
-                background-color: #DC2626;
+                background-color: #B91C1C;
                 color: #FFFFFF;
+            }
+            QPushButton:pressed {
+                background-color: #991B1B;
             }
         """)
         self.btn_remove_photo.clicked.connect(self.remove_trainer_photo)
@@ -541,14 +545,24 @@ class BackupView(QWidget):
 
         EYE_STYLE = """
             QPushButton {
+                background-color: #DC2626;
+                color: #FFFFFF;
+                border: 1px solid #B91C1C;
+                border-radius: 6px;
                 font-size: 16px;
                 font-family: "Segoe UI Emoji", "Noto Color Emoji", "Apple Color Emoji", sans-serif;
                 padding: 0px;
+                margin: 0px;
+            }
+            QPushButton:hover {
+                background-color: #B91C1C;
+            }
+            QPushButton:pressed {
+                background-color: #991B1B;
             }
         """
 
         btn_eye_pass = QPushButton("👁️")
-        btn_eye_pass.setObjectName("secondary_button")
         btn_eye_pass.setFixedSize(42, 36)
         btn_eye_pass.setCursor(Qt.CursorShape.PointingHandCursor)
         btn_eye_pass.setStyleSheet(EYE_STYLE)
@@ -564,7 +578,6 @@ class BackupView(QWidget):
         self.txt_recovery_code.setPlaceholderText("رمز ریکاوری مخفی مربی")
 
         btn_eye_rec = QPushButton("👁️")
-        btn_eye_rec.setObjectName("secondary_button")
         btn_eye_rec.setFixedSize(42, 36)
         btn_eye_rec.setCursor(Qt.CursorShape.PointingHandCursor)
         btn_eye_rec.setStyleSheet(EYE_STYLE)
@@ -656,16 +669,19 @@ class BackupView(QWidget):
         btn_del_account.setCursor(Qt.CursorShape.PointingHandCursor)
         btn_del_account.setStyleSheet("""
             QPushButton {
-                background-color: transparent;
-                color: #EF4444;
-                border: 1px solid #DC2626;
+                background-color: #DC2626;
+                color: #FFFFFF;
+                border: 1px solid #B91C1C;
                 border-radius: 6px;
                 font-weight: bold;
                 padding: 0 16px;
             }
             QPushButton:hover {
-                background-color: #DC2626;
+                background-color: #B91C1C;
                 color: #FFFFFF;
+            }
+            QPushButton:pressed {
+                background-color: #991B1B;
             }
         """)
         btn_del_account.clicked.connect(self.delete_current_trainer_account)
@@ -1551,63 +1567,37 @@ class BackupView(QWidget):
             QMessageBox.critical(self, "خطا", f"بازنشانی لوگو با خطا مواجه شد:\n{e}")
 
     def _on_theme_card_clicked(self, theme_id: str):
-        """Handles selection of a theme palette card with Liquid Circular Ripple & Neon Glow Ring transition."""
+        """Handles selection of a theme palette card with instant, rock-solid switching."""
         try:
+            from nemov.utils.theme_manager import ThemeManager
             from nemov.services.branding_service import BrandingService
-            current_theme = BrandingService.get_selected_theme_id()
-            if current_theme == theme_id:
-                return
 
-            win = self.window()
-            card = self.theme_cards.get(theme_id) if hasattr(self, "theme_cards") else None
-
-            # 1. Capture click origin from card center in window coordinates
-            if card and win:
-                origin = card.mapTo(win, card.rect().center())
-            elif win:
-                origin = win.rect().center()
-            else:
-                origin = QPoint(0, 0)
-
-            # 2. Grab old window snapshot before applying new theme
-            old_pixmap = win.grab() if win else None
-            card_accent = getattr(card, "accent_color", "#10B981") if card else "#10B981"
-
-            # 3. Save and apply new theme
-            BrandingService.save_selected_theme_id(theme_id)
-
-            try:
-                from nemov.utils.theme_manager import ThemeManager
-                ThemeManager.apply_theme(theme_id)
-                if hasattr(self, "lbl_logo_preview"):
-                    p = ThemeManager.get_current_palette()
-                    self.lbl_logo_preview.setStyleSheet(f"""
-                        QLabel#logo_preview_box {{
-                            background-color: {p.bg_surface};
-                            border: 2px dashed {p.border_light};
-                            border-radius: 12px;
-                            color: {p.text_muted};
-                            font-size: 26px;
-                        }}
-                    """)
-            except Exception:
-                pass
-
+            # 1. Update card selection badges immediately
             if hasattr(self, "theme_cards"):
-                for cid, c in self.theme_cards.items():
-                    c.set_selected(cid == theme_id)
+                for cid, c_card in self.theme_cards.items():
+                    c_card.set_selected(cid == theme_id)
 
+            # 2. Apply theme live to QApplication and all open windows
+            ThemeManager.apply_theme(theme_id)
+
+            # 3. Update logo preview box if present
+            if hasattr(self, "lbl_logo_preview"):
+                p = ThemeManager.get_current_palette()
+                self.lbl_logo_preview.setStyleSheet(f"""
+                    QLabel#logo_preview_box {{
+                        background-color: {p.bg_surface};
+                        border: 2px dashed {p.border_light};
+                        border-radius: 12px;
+                        color: {p.text_muted};
+                        font-size: 26px;
+                    }}
+                """)
+
+            # 4. Save selected theme to database and notify system
+            BrandingService.save_selected_theme_id(theme_id)
             self.branding_changed_signal.emit()
 
-            # 4. Grab new snapshot and launch Liquid Circular Ripple & Neon Glow Ring Overlay
-            if win and old_pixmap and not old_pixmap.isNull():
-                win.repaint()
-                QApplication.processEvents()
-                new_pixmap = win.grab()
-                if new_pixmap and not new_pixmap.isNull():
-                    from nemov.views.components.theme_ripple_overlay import ThemeRippleOverlay
-                    ThemeRippleOverlay(win, old_pixmap, new_pixmap, origin, card_accent, duration_ms=750)
-        except Exception:
+        except Exception as e:
             pass
 
     def load_notification_history(self):
