@@ -137,10 +137,10 @@ DATABASE_URI = f"sqlite:///{DB_PATH}"
 
 
 # App Details
-APP_NAME = "نِمُو"
-APP_TITLE = "نرم‌افزار مدیریت ورزشی نِمُو"
+APP_NAME = "نِمو"
+APP_TITLE = "نرم‌افزار مدیریت ورزشی نِمو"
 APP_ENGLISH_NAME = "Nemov"
-APP_VERSION = "v3.4.1"
+APP_VERSION = "v3.4.2"
 APP_USER_MODEL_ID = "nemov.sports.management.desktop.v3"
 GYM_ADDRESS = "باشگاه بدنسازی یلدا | مازندران، قائمشهر، خیابان کوچکسرا، نبش شقایق ۳"
 
@@ -171,7 +171,7 @@ CLOUD_BACKUP_SECRET_KEY = os.environ.get("NEMOV_CLOUD_SECRET", "nemov_cloud_secu
 SUPPORT_EMAIL_ADDRESS = "gymassistantapp.support@gmail.com"
 SUPPORT_EMAIL_DISPLAY_ADDRESS = "support@nemovapp.ir"
 SUPPORT_EMAIL_APP_PASSWORD = "bfiwutjzroelfpow"
-SUPPORT_EMAIL_SENDER_NAME = "پشتیبانی نرم‌افزار مدیریت ورزشی نِمُو (Nemov)"
+SUPPORT_EMAIL_SENDER_NAME = "پشتیبانی نرم‌افزار مدیریت ورزشی نِمو (Nemov)"
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT_SSL = 465
 SMTP_PORT_TLS = 587

@@ -5,7 +5,7 @@ Unicode True
 
 !define PRODUCT_NAME "Nemov"
 !define PRODUCT_NAME_EN "Nemov"
-!define PRODUCT_VERSION "3.4.1"
+!define PRODUCT_VERSION "3.4.2"
 !define PRODUCT_PUBLISHER "Abolfazl Samadi"
 !define PRODUCT_WEB_SITE "https://github.com/AbolfazlSamadi2006/Nemov-App"
 !define PRODUCT_EXE "Nemov.exe"
@@ -43,7 +43,7 @@ SetCompressorDictSize 64
 ; English UI (Default)
 !insertmacro MUI_LANGUAGE "English"
 
-VIProductVersion "3.4.0.0"
+VIProductVersion "3.4.2.0"
 VIAddVersionKey "ProductName" "${PRODUCT_NAME}"
 VIAddVersionKey "CompanyName" "${PRODUCT_PUBLISHER}"
 VIAddVersionKey "LegalCopyright" "Copyright (c) 2026 Abolfazl Samadi. All rights reserved."

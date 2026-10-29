@@ -168,12 +168,14 @@ class Sidebar(QFrame):
         self.title_lbl = QLabel(config.APP_NAME)
         self.title_lbl.setObjectName("sidebarBrandTitle")
 
-        header.addWidget(self.logo_lbl, 0, Qt.AlignmentFlag.AlignVCenter)
-        header.addWidget(self.title_lbl, 0, Qt.AlignmentFlag.AlignVCenter)
+        # In RTL visual flow: Empty space on far left, Title in front, Logo on the far right
         header.addStretch()
+        header.addWidget(self.title_lbl, 0, Qt.AlignmentFlag.AlignVCenter)
+        header.addWidget(self.logo_lbl, 0, Qt.AlignmentFlag.AlignVCenter)
         layout.addLayout(header)
 
         self.sub_lbl = QLabel("نرم‌افزار مدیریت ورزشی")
+        self.sub_lbl.setAlignment(Qt.AlignmentFlag.AlignRight)
         layout.addWidget(self.sub_lbl)
 
         # Scrollable Navigation Container (prevents bottom overlap on any screen height)
@@ -454,10 +456,60 @@ class Sidebar(QFrame):
                     btn.clicked.connect(lambda _, m_id=member.id: self.member_expiration_clicked.emit(m_id))
                     self.notif_items_layout.addWidget(btn)
 
+            # --- 3. Update Available Notification ---
+            update_count = 0
+            try:
+                from nemov.services.update_service import UpdateService
+                if UpdateService.is_notification_pending():
+                    info = UpdateService.get_latest_info()
+                    new_tag = info.get("tag_name", "جدید")
+                    update_count = 1
+                    raw_text = f"🚀 نسخه جدید نِمو \u200E({new_tag})\u200E"
+                    tooltip_text = f"نسخه جدید {new_tag} منتشر شده است.\n(جهت مشاهده تغییرات و دریافت کلیک فرمایید)"
+
+                    btn = SidebarNotifButton(scroll_area=self.notif_inner_scroll)
+                    btn.setFixedHeight(34)
+                    btn.setCursor(Qt.CursorShape.PointingHandCursor)
+                    if palette and not palette.is_dark:
+                        up_bg = "#ECFDF5"
+                        up_text = "#065F46"
+                        up_border = "#10B981"
+                        up_hover = "#D1FAE5"
+                        up_hover_border = "#059669"
+                    else:
+                        up_bg = "#064E3B"
+                        up_text = "#A7F3D0"
+                        up_border = "#10B981"
+                        up_hover = "#065F46"
+                        up_hover_border = "#34D399"
+
+                    btn.setStyleSheet(f"""
+                        QPushButton {{
+                            background-color: {up_bg};
+                            color: {up_text};
+                            border: 1px solid {up_border};
+                            border-radius: 6px;
+                            padding: 4px 6px;
+                            font-size: 11px;
+                            font-weight: bold;
+                            text-align: right;
+                        }}
+                        QPushButton:hover {{
+                            background-color: {up_hover};
+                            border: 1px solid {up_hover_border};
+                            color: #FFFFFF;
+                        }}
+                    """)
+                    btn.set_full_text(raw_text, tooltip_text)
+                    btn.clicked.connect(self._on_update_notif_clicked)
+                    self.notif_items_layout.addWidget(btn)
+            except Exception:
+                pass
+
         except Exception:
             pass
 
-        total_notifs = upcoming_count + exp_count
+        total_notifs = upcoming_count + exp_count + update_count
         self._total_notifs = total_notifs
 
         fa_count = str(total_notifs).translate(str.maketrans('0123456789', '۰۱۲۳۴۵۶۷۸۹'))
@@ -904,7 +956,23 @@ class Sidebar(QFrame):
         self._apply_theme_style()
         self.refresh_notifications()
 
+    def _on_update_notif_clicked(self):
+        try:
+            from nemov.services.update_service import UpdateService
+            UpdateService.mark_notification_seen()
+        except Exception:
+            pass
+        self.refresh_notifications()
+        self.navigate("developer")
+
     def navigate(self, nav_id: str):
+        if nav_id == "developer":
+            try:
+                from nemov.services.update_service import UpdateService
+                UpdateService.mark_notification_seen()
+                QTimer.singleShot(50, self.refresh_notifications)
+            except Exception:
+                pass
 
         self.set_active(nav_id)
         self.page_changed.emit(nav_id)

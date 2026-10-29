@@ -1,7 +1,7 @@
 from PyQt6.QtWidgets import (
     QMainWindow, QWidget, QHBoxLayout, QStackedWidget, QMessageBox, QDialog
 )
-from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtCore import Qt, pyqtSignal, QTimer
 from PyQt6.QtGui import QIcon
 import config
 from nemov.views.components.sidebar import Sidebar
@@ -94,6 +94,13 @@ class MainWindow(QMainWindow):
             AutoSaveManager.get_instance().start()
         except Exception as e:
             print(f"Error starting AutoSaveManager: {e}")
+
+        # Start non-blocking background update check
+        QTimer.singleShot(3500, self._start_background_update_check)
+        self._bg_update_timer = QTimer(self)
+        self._bg_update_timer.setInterval(15 * 60 * 1000)  # 15 minutes
+        self._bg_update_timer.timeout.connect(self._on_periodic_update_check)
+        self._bg_update_timer.start()
 
     @property
     def view_members(self):
@@ -396,3 +403,32 @@ class MainWindow(QMainWindow):
                 event.ignore()
         else:
             event.accept()
+
+    def _start_background_update_check(self):
+        try:
+            from nemov.services.update_service import UpdateCheckWorker
+            self._bg_update_worker = UpdateCheckWorker()
+            self._bg_update_worker.finished_signal.connect(self._on_bg_update_check_finished)
+            self._bg_update_worker.start()
+        except Exception:
+            pass
+
+    def _on_bg_update_check_finished(self, has_update: bool, info: dict, error_msg: str):
+        if not error_msg:
+            try:
+                from nemov.services.update_service import UpdateService
+                UpdateService.set_check_result(has_update, info)
+                if has_update and hasattr(self, "sidebar") and self.sidebar:
+                    self.sidebar.refresh_notifications()
+            except Exception:
+                pass
+
+    def _on_periodic_update_check(self):
+        try:
+            from nemov.services.update_service import UpdateService
+            # If an update is already detected and known, skip checking to save network requests
+            if UpdateService.has_update_available():
+                return
+            self._start_background_update_check()
+        except Exception:
+            pass

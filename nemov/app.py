@@ -25,6 +25,19 @@ class NemovApplication:
         self.app = QApplication(sys.argv)
         self.app.setApplicationName(config.APP_NAME)
 
+        # Load and register embedded fonts to guarantee crisp Persian rendering across all systems
+        try:
+            from PyQt6.QtGui import QFontDatabase, QFont
+            fonts_dir = config.BASE_DIR / "resources" / "fonts"
+            if fonts_dir.exists():
+                for font_name in ["Vazirmatn-Regular.ttf", "Vazirmatn-Bold.ttf", "BKoodakBd.ttf", "BTitrBd.ttf", "segoeui.ttf"]:
+                    f_p = fonts_dir / font_name
+                    if f_p.exists():
+                        QFontDatabase.addApplicationFont(str(f_p))
+            self.app.setFont(QFont("Vazirmatn", 11))
+        except Exception:
+            pass
+
         # Set Global Application & Taskbar Icon with multi-resolution .ico support
         from nemov.utils.image_utils import get_app_icon, apply_windows_taskbar_icon
         self.app_icon = get_app_icon()
