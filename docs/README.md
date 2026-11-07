@@ -9,7 +9,7 @@
 * **نام محصول**: نرم‌افزار مدیریت ورزشی و بدنسازی نِمُو (Nemov)
 * **دامنه رسمی وب**: [https://nemovapp.ir](https://nemovapp.ir)
 * **ریپازیتوری پروژه**: [https://github.com/AbolfazlSamadi2006/Nemov-App](https://github.com/AbolfazlSamadi2006/Nemov-App)
-* **استاد درس**: مهندسی نرم‌افزار / تحلیل و طراحی نرم‌افزار
+* **استاد درس**: دکتر مهدی عمادی
 * **منتور پروژه**: `aminupy` ([پروفایل گیت‌هاب](https://github.com/aminupy))
 
 ---
