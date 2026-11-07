@@ -5,7 +5,7 @@
 
 ---
 
-## 📌 مشخصات پروژه و تیم
+## 📌 مشخصات پروژه
 * **نام محصول**: نرم‌افزار مدیریت ورزشی و بدنسازی نِمُو (Nemov)
 * **دامنه رسمی وب**: [https://nemovapp.ir](https://nemovapp.ir)
 * **ریپازیتوری پروژه**: [https://github.com/AbolfazlSamadi2006/Nemov-App](https://github.com/AbolfazlSamadi2006/Nemov-App)
@@ -21,18 +21,18 @@
 ```text
 docs/
 ├── README.md                                 # معرفی ساختار مستندات و نقشه راه کلی پروژه
-├── phase-1_mvp-and-user-stories/             # [۹ تا ۱۵ آبان] تعریف MVP، پرسونای کاربران و داستان‌های کاربری MoSCoW
-├── phase-2_diagrams-and-system-design/       # [۱۶ تا ۲۰ آبان] دیاگرام‌های Use Case، Activity، معماری سیستم و ERD
-├── phase-3_prototype-and-api-specs/          # [۲۱ تا ۲۴ آبان] پروتوتایپ کلیک‌پذیر، قرارداد APIها، انتخاب پشته و هاستینگ
-├── phase-4_presentation-1/                   # [۲۵ تا ۲۶ آبان] اسلایدها و گزارش دفاع مرحله اول (ارزیابی تحلیل و طراحی)
-├── phase-5_core-integration/                 # [۲۷ آبان تا ۷ آذر] ستاپ کد پایه، دیتابیس، API و اولین یکپارچه‌سازی فرانت به بک‌اند
-├── phase-6_auth-and-workflow/                # [۸ تا ۱۴ آذر] پیاده‌سازی لاگین، سطوح دسترسی (RBAC) و جریان کاری اصلی
-├── phase-7_integration-testing/              # [۱۵ تا ۲۲ آذر] تست‌های یکپارچگی، تست سناریوهای خطا و آماده‌سازی دمو
-├── phase-8_presentation-2/                   # [۲۳ تا ۲۴ آذر] گزارش و دموی پیشرفت توسعه (ارزیابی مرحله دوم)
-├── phase-9_must-have-features/               # [۲۵ آذر تا ۱۷ دی] تکمیل تمامی قابلیت‌های الزامی (Must-Have Scope)
-├── phase-10_deployment-and-qa/               # [۱۸ تا ۲۴ دی] دیپلوی آنلاین، رفع باگ‌ها و تست سناریوهای اصلی
-├── phase-11_final-freeze-and-docs/           # [۲۵ تا ۳۰ دی] تثبیت کد (Code Freeze) و نهایی‌سازی مستندات
-└── phase-12_final-mvp-defense/               # [۱ تا ۶ بهمن] دفاع نهایی از MVP و ارزیابی مهندسی
+├── phase-1_mvp-and-user-stories/             # تعریف MVP، پرسونای کاربران و داستان‌های کاربری MoSCoW
+├── phase-2_diagrams-and-system-design/       # دیاگرام‌های Use Case، Activity، معماری سیستم و ERD
+├── phase-3_prototype-and-api-specs/          # پروتوتایپ کلیک‌پذیر، قرارداد APIها، انتخاب پشته و هاستینگ
+├── phase-4_presentation-1/                   # اسلایدها و گزارش دفاع مرحله اول (ارزیابی تحلیل و طراحی)
+├── phase-5_core-integration/                 # ستاپ کد پایه، دیتابیس، API و اولین یکپارچه‌سازی فرانت به بک‌اند
+├── phase-6_auth-and-workflow/                # پیاده‌سازی لاگین، سطوح دسترسی (RBAC) و جریان کاری اصلی
+├── phase-7_integration-testing/              # تست‌های یکپارچگی، تست سناریوهای خطا و آماده‌سازی دمو
+├── phase-8_presentation-2/                   # گزارش و دموی پیشرفت توسعه (ارزیابی مرحله دوم)
+├── phase-9_must-have-features/               # تکمیل تمامی قابلیت‌های الزامی (Must-Have Scope)
+├── phase-10_deployment-and-qa/               # دیپلوی آنلاین، رفع باگ‌ها و تست سناریوهای اصلی
+├── phase-11_final-freeze-and-docs/           # تثبیت کد (Code Freeze) و نهایی‌سازی مستندات
+└── phase-12_final-mvp-defense/               # دفاع نهایی از MVP و ارزیابی مهندسی
 ```
 
 ---
