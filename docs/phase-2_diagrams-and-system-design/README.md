@@ -6,36 +6,38 @@
 ---
 
 ## ۱. دیاگرام موارد کاربرد (UML Use Case Diagram)
-این دیاگرام اکترهای اصلی سامانه نِمُو (مدیر باشگاه، مربی و سیستم ابری) و تعامل آن‌ها با قابلیت‌های هسته MVP را نشان می‌دهد.
+این دیاگرام اکترهای اصلی برنامه نِمُو (مدیر باشگاه، مربی و سرور ابری/لایسنس) و تعامل آن‌ها با قابلیت‌های هسته MVP را نشان می‌دهد.
 
 ```mermaid
 flowchart LR
     subgraph Actors [اکترهای سیستم]
         Admin((مدیر باشگاه))
         Coach((مربی ورزشی))
-        Cloud((سرویس ابری نِمُو))
+        Cloud((سرور ابری و لایسنس نِمُو))
     end
 
-    subgraph Nemov_MVP [مرز سامانه نِمُو - MVP Boundary]
-        UC1([ورود و احراز هویت امن])
-        UC2([ثبت و مدیریت پرونده اعضا])
-        UC3([ثبت و تخصیص دوره شهریه])
-        UC4([جستجو و فیلتر بانک حرکات ورزشی])
-        UC5([تدوین و صدور برنامه تمرینی])
-        UC6([مشاهده وضعیت و قلق‌های ضدآسیب])
-        UC7([پشتیبان‌گیری رمزنگاری‌شده ابری])
-        UC8([همگام‌سازی ویدیوها و فایل‌ها])
+    subgraph Nemov_App [مرز برنامه نِمُو - App Boundary]
+        UC1([ورود امن با رمز عبور هش‌شده])
+        UC2([ثبت و مدیریت پرونده شاگردان])
+        UC3([ثبت و پیگیری دوره‌های شهریه])
+        UC4([کاوش در بانک حرکات و قلق‌های ضدآسیب])
+        UC5([طراحی و صدور PDF برنامه تمرینی])
+        UC6([تعریف مربی و تعلیق دسترسی - بدون افشای رمز])
+        UC7([ورود توکن لایسنس و اعتبارسنجی انقضا])
+        UC8([پشتیبان‌گیری رمزنگاری‌شده ابری])
     end
 
     Admin --> UC1
     Admin --> UC2
     Admin --> UC3
+    Admin --> UC6
     Admin --> UC7
+    Admin --> UC8
 
     Coach --> UC1
+    Coach --> UC2
     Coach --> UC4
     Coach --> UC5
-    Coach --> UC6
 
     Cloud -.-> UC7
     Cloud -.-> UC8
@@ -44,102 +46,100 @@ flowchart LR
 ---
 
 ## ۲. دیاگرام فعالیت فرآیند اصلی (UML Activity Diagram)
-فرآیند کلیدی انتخاب‌شده: **ثبت‌نام عضو جدید، تخصیص شهریه و صدور برنامه تمرینی اولیه** (همراه با مسیرهای شکست اعتبارسنجی و موفقیت).
+فرآیند کلیدی انتخاب‌شده: **اعتبارسنجی لایسنس، احراز هویت، انتخاب شاگرد و تدوین و صدور PDF برنامه تمرینی** (همراه با مسیرهای شکست اعتبارسنجی و موفقیت).
 
 ```mermaid
 flowchart TD
-    Start([شروع فرآیند]) --> EnterData[ورود اطلاعات عضو و کد ملی]
-    EnterData --> CheckNationalCode{کد ملی تکراری است؟}
+    Start([شروع کار با برنامه]) --> CheckLicense{آیا لایسنس فعال و معتبر است؟}
     
-    CheckNationalCode -- بله --> ShowErrorDuplicate[نمایش خطای کد ملی تکراری]
-    ShowErrorDuplicate --> EnterData
-
-    CheckNationalCode -- خیر --> SaveMember[ذخیره مشخصات در دیتابیس پایدار]
-    SaveMember --> PromptTuition[درخواست ثبت دوره شهریه]
+    CheckLicense -- خیر / منقضی --> LockScreen[قفل برنامه و نمایش پنجره فعال‌سازی]
+    LockScreen --> EnterLicenseToken[دریافت و وارد کردن توکن لایسنس جدید]
+    EnterLicenseToken --> ValidateToken{امضای کریپتوگرافیک توکن معتبر است؟}
+    ValidateToken -- خیر --> ShowLicenseError[نمایش خطای لایسنس نامعتبر]
+    ShowLicenseError --> EnterLicenseToken
+    ValidateToken -- بله --> UnlockApp[فعال‌سازی و بازگشایی امکانات]
     
-    PromptTuition --> CheckTuitionPayment{مبلغ و تاریخ معتبر است؟}
-    CheckTuitionPayment -- خیر --> FixTuition[اصلاح مقادیر شهریه]
-    FixTuition --> PromptTuition
+    CheckLicense -- بله --> LoginStep[ورود کاربر با نام‌کاربری و رمز عبور]
+    UnlockApp --> LoginStep
     
-    CheckTuitionPayment -- بله --> ActivateSubscription[ثبت شهریه و فعال‌سازی اشتراک عضو]
-    ActivateSubscription --> SelectExercises[انتخاب حرکات از بانک ورزشی با فیلتر عضلانی]
-    SelectExercises --> ValidateWorkout{حداقل یک ست/تکرار مشخص شده؟}
+    LoginStep --> CheckRole{احراز هویت و تعیین نقش}
+    CheckRole -- مدیر --> AdminDashboard[داشبورد مدیریت: اعضا، شهریه، مربیان و مالی]
+    CheckRole -- مربی --> CoachDashboard[داشبورد مربیگری: شاگردان، بانک حرکات و تمرینات]
     
-    ValidateWorkout -- خیر --> WarningEmpty[اخطار: برنامه نمی‌تواند خالی باشد]
-    WarningEmpty --> SelectExercises
-    
-    ValidateWorkout -- بله --> SavePlan[تخصیص و ذخیره نهایی برنامه تمرینی]
-    SavePlan --> CloudSync[ارسال متادیتا جهت همگام‌سازی ابری]
-    CloudSync --> End([پایان موفقیت‌آمیز فرآیند])
+    CoachDashboard --> SelectMember[انتخاب شاگرد و بررسی سوابق آسیب‌دیدگی]
+    SelectMember --> AddExercises[انتخاب حرکات و اعمال قلق‌های ایمنی]
+    AddExercises --> ExportPDF[تولید و چاپ فایل PDF برنامه تمرینی]
+    ExportPDF --> End([پایان موفقیت‌آمیز فرآیند])
 ```
 
 ---
 
 ## ۳. دیاگرام معماری سیستم (System Architecture Diagram)
-نمایش لایه‌های چهارگانه نرم‌افزار، نحوه تبادل داده و پلتفرم‌های میزبانی:
+نمایش لایه‌های چهارگانه نرم‌افزار، نحوه تبادل داده، پلتفرم‌های میزبانی و سرویس لایسنس:
 
 ```mermaid
 graph TD
-    subgraph ClientLayer [لایه کاربری و ارائه - Client UI]
-        DesktopApp[نرم‌افزار دسکتاپ نِمُو - PyQt6 / Python 3.12]
-        WebPortal[پورتال وب و لندینگ پیج ریسپانسیو - HTML5/CSS/JS]
+    subgraph ClientLayer [لایه کاربری دسکتاپ - Desktop Client UI]
+        AdminUI[پنل مدیریت باشگاه - PyQt6]
+        CoachUI[پنل مربیگری و طراحی برنامه - PyQt6]
     end
 
-    subgraph ServiceLayer [لایه منطق تجاری و اعتبارسنجی - Business Logic]
-        AuthService[سرویس احراز هویت و توکن‌های نشست]
-        MemberService[سرویس اعتبارسنجی و مدیریت اعضا]
-        WorkoutService[سرویس طراحی و نسخه‌نویسی تمرین]
-        SyncService[سرویس همگام‌سازی پس‌زمینه و بکاپ]
+    subgraph ServiceLayer [لایه منطق تجاری و اعتبارسنجی - Core Services]
+        AuthService[سرویس احراز هویت و امنیت رمزها]
+        LicenseManager[سرویس اعتبارسنجی قفل سخت‌افزاری HWID]
+        MemberService[سرویس پرونده اعضا و شهریه‌ها]
+        WorkoutService[سرویس تدوین برنامه و موتور صدور PDF]
     end
 
-    subgraph APILayer [لایه واسط برنامه‌نویسی - Cloud Edge API]
-        CloudflareWorker[Cloudflare Workers API Gateway / REST Endpoints]
-    end
-
-    subgraph PersistenceLayer [لایه داده و ذخیره‌سازی ابری - Persistence & Storage]
+    subgraph PersistenceLayer [لایه داده محلی پایدار - Local Storage]
         LocalDB[(پایگاه‌داده محلی SQLite - nemov.db)]
-        CloudR2[(مخزن رسانه‌ای ابری Cloudflare R2 - ویدیوهای آموزشی)]
-        CloudKV[(مخزن ابری Cloudflare KV - سشن‌ها و لاگ‌ها)]
     end
 
-    DesktopApp --> ServiceLayer
-    WebPortal --> APILayer
+    subgraph CloudLayer [لایه ابری و سرور توسعه‌دهنده - Cloud & Vendor Edge]
+        CloudAPI[Cloudflare Workers API Gateway]
+        LicenseBot[ربات تلگرام / سرور صدور توکن لایسنس نِمُو]
+        MediaStorage[(Cloudflare R2 Storage - ویدیوهای آموزشی)]
+    end
+
+    AdminUI --> ServiceLayer
+    CoachUI --> ServiceLayer
     ServiceLayer --> LocalDB
-    ServiceLayer --> APILayer
-    APILayer --> CloudR2
-    APILayer --> CloudKV
+    ServiceLayer --> CloudAPI
+    LicenseManager -.-> LicenseBot
+    CloudAPI --> MediaStorage
 ```
 
 ---
 
 ## ۴. دیاگرام مدل داده و روابط موجودیت‌ها (ERD - Entity-Relationship Diagram)
+در این ساختار، فیلد `is_active` برای جدول مربیان لحاظ شده تا درصورت نیاز، تعلیق شود.
 
 ```mermaid
 erDiagram
-    USERS ||--o{ MEMBERS : registers
+    USERS ||--o{ MEMBERS : manages
     USERS ||--o{ WORKOUT_PLANS : authors
-    MEMBERS ||--o{ TUITIONS : pays
-    MEMBERS ||--o{ WORKOUT_PLANS : receives
+    MEMBERS ||--o{ TUITIONS : has
+    MEMBERS ||--o{ WORKOUT_PLANS : assigned_to
     WORKOUT_PLANS ||--|{ WORKOUT_ITEMS : contains
     EXERCISES ||--o{ WORKOUT_ITEMS : references
 
     USERS {
         int id PK
         string username UK
-        string password_hash
-        string role "Admin / Trainer"
+        string password_hash "هش یک‌طرفه امن"
+        string role "admin / trainer"
         string full_name
-        datetime created_at
+        string phone
+        boolean is_active "تعلیق همکاری در صورت نیاز"
     }
 
     MEMBERS {
         int id PK
-        string national_id UK
+        int assigned_trainer_id FK
         string full_name
-        string phone_number
-        string medical_history
+        string phone
+        string medical_history "آسیب‌دیدگی‌های پزشکی"
         datetime registered_at
-        boolean is_active
     }
 
     TUITIONS {
@@ -148,7 +148,7 @@ erDiagram
         numeric amount
         date start_date
         date end_date
-        string payment_status "Active / Expired"
+        string status "active / expired"
     }
 
     EXERCISES {
@@ -156,8 +156,8 @@ erDiagram
         string name_fa
         string primary_muscle
         string equipment
-        string contraindications
-        string description "قلق اجرایی و منع آسیب"
+        string contraindications "منع آسیب‌دیدگی"
+        string description "قلق اجرایی و ایمنی"
         string video_url
     }
 
@@ -176,6 +176,5 @@ erDiagram
         int day_number
         int sets
         string reps
-        int rest_seconds
     }
 ```
