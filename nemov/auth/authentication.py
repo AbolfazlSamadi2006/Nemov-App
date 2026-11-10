@@ -56,57 +56,64 @@ def is_app_license_active() -> bool:
     Checks if the application license is Active AND cryptographically bound to the current computer's hardware.
     If the project folder was copied to a different PC, the hardware signature will not match,
     returning False and locking the application for non-admin users.
-    If this machine was previously activated, installer updates retain active status automatically.
+    If this machine was previously activated, cold reboots, power shutdowns, and installer updates retain active status automatically.
     """
     from nemov.utils.hardware_security import HardwareSecurity
     session = get_session()
     try:
         setting = session.query(SystemSetting).filter(SystemSetting.key == "app_license_active").first()
         sig_setting = session.query(SystemSetting).filter(SystemSetting.key == "app_license_hwid_signature").first()
+        hwid_setting = session.query(SystemSetting).filter(SystemSetting.key == "app_license_hwid").first()
+
+        current_hwid = HardwareSecurity.get_machine_hwid()
 
         # Check 1: Normal valid database binding
         if setting and setting.value and setting.value.lower() == "true" and sig_setting and sig_setting.value:
-            if HardwareSecurity.verify_machine_license(sig_setting.value):
-                # Ensure persistent storage is also up-to-date on this machine
-                HardwareSecurity.save_machine_license_persistent(HardwareSecurity.get_machine_hwid(), sig_setting.value)
+            if HardwareSecurity.verify_machine_license(sig_setting.value, current_hwid):
+                # Ensure persistent storage is also up-to-date across all locations on this machine
+                HardwareSecurity.save_machine_license_persistent(current_hwid, sig_setting.value)
                 return True
 
-        # Check 2: If DB license was missing, inactive, or mismatched due to an installer update,
+        # Check 2: If DB license was missing, inactive, or mismatched due to cold boot or installer update,
         # verify if THIS PHYSICAL MACHINE has a valid persistent activation on disk/registry!
         if HardwareSecurity.is_machine_permanently_activated():
-            current_hwid = HardwareSecurity.get_machine_hwid()
-            sig = HardwareSecurity.generate_activation_signature(current_hwid)
-            if not setting:
-                setting = SystemSetting(key="app_license_active", value="true")
-                session.add(setting)
-            else:
-                setting.value = "true"
+            sig = HardwareSecurity.get_persistent_machine_signature()
+            if sig:
+                active_hwid = HardwareSecurity.get_persistent_machine_hwid() or current_hwid
+                if not setting:
+                    setting = SystemSetting(key="app_license_active", value="true")
+                    session.add(setting)
+                else:
+                    setting.value = "true"
 
-            if not sig_setting:
-                sig_setting = SystemSetting(key="app_license_hwid_signature", value=sig)
-                session.add(sig_setting)
-            else:
-                sig_setting.value = sig
+                if not sig_setting:
+                    sig_setting = SystemSetting(key="app_license_hwid_signature", value=sig)
+                    session.add(sig_setting)
+                else:
+                    sig_setting.value = sig
 
-            hwid_setting = session.query(SystemSetting).filter(SystemSetting.key == "app_license_hwid").first()
-            if not hwid_setting:
-                hwid_setting = SystemSetting(key="app_license_hwid", value=current_hwid)
-                session.add(hwid_setting)
-            else:
-                hwid_setting.value = current_hwid
+                if not hwid_setting:
+                    hwid_setting = SystemSetting(key="app_license_hwid", value=active_hwid)
+                    session.add(hwid_setting)
+                else:
+                    hwid_setting.value = active_hwid
 
-            session.commit()
-            return True
+                session.commit()
+                # Re-sync all persistent locations
+                HardwareSecurity.save_machine_license_persistent(active_hwid, sig)
+                return True
 
         # Check 3: First run migration: auto-bind existing active license to this current machine
         if setting and setting.value and setting.value.lower() == "true" and (not sig_setting or not sig_setting.value):
-            current_hwid = HardwareSecurity.get_machine_hwid()
             sig = HardwareSecurity.generate_activation_signature(current_hwid)
             new_sig_entry = SystemSetting(key="app_license_hwid_signature", value=sig)
             session.add(new_sig_entry)
 
-            hwid_entry = SystemSetting(key="app_license_hwid", value=current_hwid)
-            session.add(hwid_entry)
+            if not hwid_setting:
+                hwid_entry = SystemSetting(key="app_license_hwid", value=current_hwid)
+                session.add(hwid_entry)
+            else:
+                hwid_setting.value = current_hwid
             session.commit()
             HardwareSecurity.save_machine_license_persistent(current_hwid, sig)
             return True
