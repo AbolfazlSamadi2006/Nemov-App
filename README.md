@@ -6,7 +6,7 @@
 
 <br/>
 
-[![Version](https://img.shields.io/badge/نسخه-v3.4.2-brightgreen.svg?style=for-the-badge&logo=github)](https://github.com/AbolfazlSamadi2006/Nemov-App/releases/tag/v3.4.2)
+[![Version](https://img.shields.io/badge/نسخه-v3.4.3-brightgreen.svg?style=for-the-badge&logo=github)](https://github.com/AbolfazlSamadi2006/Nemov-App/releases/tag/v3.4.3)
 [![Platform](https://img.shields.io/badge/پلتفرم-Windows%2010%20%7C%2011%20(64--bit)-blue.svg?style=for-the-badge&logo=windows)](https://github.com/AbolfazlSamadi2006/Nemov-App/releases/latest)
 [![Python](https://img.shields.io/badge/Python-3.13-3776AB.svg?style=for-the-badge&logo=python)](https://python.org)
 [![PyQt6](https://img.shields.io/badge/GUI-PyQt6-41CD52.svg?style=for-the-badge&logo=qt)](https://www.riverbankcomputing.com/software/pyqt/)
@@ -14,8 +14,8 @@
 
 <br/><br/>
 
-<a href="https://github.com/AbolfazlSamadi2006/Nemov-App/releases/download/v3.4.2/Nemov_Setup_v3.4.2.exe">
-  <img src="resources/github_assets/download_btn_v3_3_0.png" width="840" alt="دانلود مستقیم فایل نصاب نسخه ۳.۴.۲ (Nemov_Setup_v3.4.2.exe)" />
+<a href="https://github.com/AbolfazlSamadi2006/Nemov-App/releases/download/v3.4.3/Nemov_Setup_v3.4.3.exe">
+  <img src="resources/github_assets/download_btn_v3_3_0.png" width="840" alt="دانلود مستقیم فایل نصاب نسخه ۳.۴.۳ (Nemov_Setup_v3.4.3.exe)" />
 </a>
 
 <br/><br/>
@@ -82,7 +82,7 @@
 ## 💻 راهنمای نصب و راه‌اندازی
 
 1. فایل نصاب آخرین نسخه را از بخش **[Releases](https://github.com/AbolfazlSamadi2006/Nemov-App/releases/latest)** دانلود نمایید:
-   - فایل: `Nemov_Setup_v3.4.2.exe`
+   - فایل: `Nemov_Setup_v3.4.3.exe`
 2. فایل ستاپ را اجرا کرده و مسیر نصب دلخواه را انتخاب کنید.
 3. پس از اتمام نصب، آیکون نرم‌افزار روی دسکتاپ و منوی استارت ایجاد شده و برنامه آماده استفاده خواهد بود.
 
@@ -100,8 +100,8 @@
 
 <div align="center">
 
-<a href="https://github.com/AbolfazlSamadi2006/Nemov-App/releases/download/v3.4.2/Nemov_Setup_v3.4.2.exe">
-  <img src="resources/github_assets/download_btn_v3_3_0.png" width="840" alt="دانلود مستقیم فایل نصاب نسخه ۳.۴.۲ (Nemov_Setup_v3.4.2.exe)" />
+<a href="https://github.com/AbolfazlSamadi2006/Nemov-App/releases/download/v3.4.3/Nemov_Setup_v3.4.3.exe">
+  <img src="resources/github_assets/download_btn_v3_3_0.png" width="840" alt="دانلود مستقیم فایل نصاب نسخه ۳.۴.۳ (Nemov_Setup_v3.4.3.exe)" />
 </a>
 
 <br/><br/>
