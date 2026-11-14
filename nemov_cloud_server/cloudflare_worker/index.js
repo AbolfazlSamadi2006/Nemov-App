@@ -2381,7 +2381,7 @@ const SHARED_FONT_CSS = `
 // ============================================================================
 // Landing Page Caching & Security Header Configuration
 // ============================================================================
-const LANDING_PAGE_ETAG = 'W/"landing-v3.4.6-nemov-support-email"';
+const LANDING_PAGE_ETAG = 'W/"landing-v3.4.7-v343-release"';
 const LANDING_HEADERS = {
   "Content-Type": "text/html; charset=utf-8",
   "Cache-Control":
@@ -2448,11 +2448,11 @@ function renderLandingPage() {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
-    <title>نرم‌افزار مدیریت ورزشی نِمُو | نسخه ۳.۴.۱</title>
+    <title>نرم‌افزار مدیریت ورزشی نِمُو | نسخه ۳.۴.۳</title>
     
     <!-- SEO Semantic Meta Tags -->
     <meta name="description" content="نرم‌افزار مدیریت ورزشی نِمُو. پرونده سلامت فیزیکی، بانک ویدیو حرکات، رژیم غذایی و کالری‌شماری هوشمند، حسابداری مالی و صدور شناسنامه چاپی بدون نیاز به اینترنت با پشتیبان‌گیری ابری.">
-    <meta name="keywords" content="نمو, Nemov, نرم افزار مدیریت ورزشی نمو, نرم افزار مدیریت باشگاه, نرم افزار بدنسازی, برنامه تمرینی, برنامه غذایی بدنسازی, مدیریت باشگاه بدنسازی, باشگاه بدنسازی یلدا, محراب حاجی پور, ابوالفضل صمدی, Nemov App">
+    <meta name="keywords" content="نمو, Nemov, نرم افزار مدیریت ورزشی نمو, نرم افزار مدیریت باشگاه, نرم افزار بدنسازی, برنامه تمرینی, برنامه غذایی بدنسازی, مدیریت باشگاه بدنسازی, مربیگری بدنسازی, ابوالفضل صمدی, Nemov App">
     <link rel="canonical" href="https://nemovapp.ir/">
     <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
     <meta name="author" content="مهندس ابوالفضل صمدی کوچکسرائی">
@@ -2464,7 +2464,7 @@ function renderLandingPage() {
     <!-- Open Graph Meta Tags (Telegram, WhatsApp, Social Cards) -->
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="نرم‌افزار مدیریت ورزشی نِمُو | Nemov">
-    <meta property="og:title" content="نرم‌افزار مدیریت ورزشی نِمُو | نسخه ۳.۴.۱">
+    <meta property="og:title" content="نرم‌افزار مدیریت ورزشی نِمُو | نسخه ۳.۴.۳">
     <meta property="og:description" content="سامانه یکپارچه مربیگری و اتوماسیون باشگاه؛ پرونده سلامت، بانک حرکات با ویدیو، طراحی تخصصی رژیم غذایی، حسابداری مالی و صدور شناسنامه چاپی.">
     <meta property="og:url" content="https://nemovapp.ir/">
     <meta property="og:image" content="https://nemovapp.ir/images/nemov_logo.png">
@@ -2477,7 +2477,7 @@ function renderLandingPage() {
 
     <!-- Twitter Card Meta Tags -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="نرم‌افزار مدیریت ورزشی نِمُو | نسخه ۳.۴.۱">
+    <meta name="twitter:title" content="نرم‌افزار مدیریت ورزشی نِمُو | نسخه ۳.۴.۳">
     <meta name="twitter:description" content="سامانه یکپارچه مربیگری و اتوماسیون باشگاه؛ پرونده سلامت، بانک حرکات با ویدیو، طراحی تخصصی رژیم غذایی، حسابداری مالی و صدور شناسنامه چاپی.">
     <meta name="twitter:image" content="https://nemovapp.ir/images/nemov_logo.png">
     <meta name="twitter:image:alt" content="نرم‌افزار مدیریت ورزشی نِمُو">
@@ -2504,8 +2504,8 @@ function renderLandingPage() {
           "description": "نرم‌افزار مدیریت ورزشی نِمُو؛ شامل پرونده سلامت، طراحی تمرین با ویدیو، رژیم غذایی و کالری‌شماری، حسابداری و صدور شناسنامه ورزشی چاپی.",
           "url": "https://nemovapp.ir/",
           "image": "https://nemovapp.ir/images/nemov_logo.png",
-          "version": "3.4.1",
-          "softwareVersion": "3.4.1",
+          "version": "3.4.3",
+          "softwareVersion": "3.4.3",
           "offers": {
             "@type": "Offer",
             "price": "0",
@@ -4471,7 +4471,7 @@ function renderLandingPage() {
                             </div>
                             <div class="window-title-text">
                                 <img src="/images/nemov_logo.png" alt="" class="win-logo-mini" width="18" height="18">
-                                <span>نرم‌افزار مدیریت ورزشی نِمُو - نسخه ۳.۴.۱ [پایگاه داده آفلاین فعال]</span>
+                                <span>نرم‌افزار مدیریت ورزشی نِمُو - نسخه ۳.۴.۳ [پایگاه داده آفلاین فعال]</span>
                             </div>
                             <div class="window-status-pill">
                                 <span class="live-dot"></span>

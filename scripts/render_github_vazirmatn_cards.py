@@ -187,12 +187,12 @@ def build_download_button() -> QWidget:
     lay.setSpacing(4)
 
     t1 = QLabel()
-    t1.setText("<div align='center'>📥 دانلود مستقیم فایل نصاب نسخه ۳.۳.۰ (Nemov_Setup_v3.3.0.exe)</div>")
+    t1.setText("<div align='center'>📥 دانلود مستقیم فایل نصاب نسخه ۳.۴.۳ (Nemov_Setup_v3.4.3.exe)</div>")
     t1.setAlignment(Qt.AlignmentFlag.AlignCenter)
     t1.setStyleSheet(f"color: #FFFFFF; font-family: '{FONT_FAMILY}'; font-size: 18px; font-weight: bold; background: transparent; border: none;")
 
     t2 = QLabel()
-    t2.setText("<div align='center'>نصب خودکار به همراه تمامی پیش‌نیازها و فونت‌های فارسی  •  حجم: ۱۰۵ مگابایت  •  ویندوز ۱۰ و ۱۱ (۶۴ بیتی)</div>")
+    t2.setText("<div align='center'>نصب خودکار به همراه تمامی پیش‌نیازها و فونت‌های فارسی  •  حجم: ۹۹.۹ مگابایت  •  ویندوز ۱۰ و ۱۱ (۶۴ بیتی)</div>")
     t2.setAlignment(Qt.AlignmentFlag.AlignCenter)
     t2.setStyleSheet(f"color: #FEE2E2; font-family: '{FONT_FAMILY}'; font-size: 12.5px; background: transparent; border: none;")
 
@@ -223,7 +223,7 @@ def build_hero_box(is_release: bool = False) -> QFrame:
     lbl_title.setStyleSheet(f"color: #FFFFFF; font-family: '{FONT_FAMILY}'; font-size: 22px; font-weight: bold; background: transparent; border: none;")
 
     lbl_en = QLabel()
-    lbl_en.setText("<div align='center'>Nemov Sports & Gym Management Suite — v3.3.0</div>")
+    lbl_en.setText("<div align='center'>Nemov Sports & Gym Management Suite — v3.4.3</div>")
     lbl_en.setAlignment(Qt.AlignmentFlag.AlignCenter)
     lbl_en.setStyleSheet(f"color: #F87171; font-family: '{FONT_FAMILY}'; font-size: 14px; font-weight: bold; background: transparent; border: none;")
 
@@ -237,7 +237,7 @@ def build_hero_box(is_release: bool = False) -> QFrame:
     row1 = QHBoxLayout()
     row1.setSpacing(10)
     row1.addStretch()
-    row1.addWidget(make_badge("🔥 نسخه ۳.۳.۰ (Latest Release)", "#7F1D1D", "#FECACA", "#DC2626"))
+    row1.addWidget(make_badge("🔥 نسخه ۳.۴.۳ (Latest Release)", "#7F1D1D", "#FECACA", "#DC2626"))
     row1.addWidget(make_badge("💻 ویندوز ۱۰ و ۱۱ (۶۴ بیتی)", "#1E3A8A", "#BFDBFE", "#3B82F6"))
     row1.addWidget(make_badge("🎨 ۱۷ پالت رنگی دارک و لایت", "#4C1D95", "#DDD6FE", "#8B5CF6"))
     row1.addStretch()
@@ -325,7 +325,7 @@ def build_steps_box() -> QFrame:
     lay.setSpacing(8)
 
     steps = [
-        "۱. فایل نصاب برنامه (Nemov_Setup_v3.3.0.exe) را از دکمه قرمز بالا یا بخش Assets در انتهای همین صفحه دریافت کنید.",
+        "۱. فایل نصاب برنامه (Nemov_Setup_v3.4.3.exe) را از دکمه قرمز بالا یا بخش Assets در انتهای همین صفحه دریافت کنید.",
         "۲. فایل نصاب را اجرا کنید؛ تمامی پیش‌نیازها و فونت‌ها خودکار نصب شده و آیکون نِمُو روی دسکتاپ قرار می‌گیرد.",
         "۳. اگر نسخه قبلی را روی سیستم دارید، نیازی به حذف آن نیست؛ همه پرونده‌ها، اطلاعات شاگردان و تنظیمات شما پس از آپدیت دست‌نخورده باقی می‌ماند.",
     ]
@@ -356,7 +356,7 @@ def build_release_showcase() -> QWidget:
     vlay.setSpacing(16)
 
     vlay.addWidget(build_hero_box(is_release=True))
-    vlay.addWidget(make_section_header("🔥 تازه‌های نسخه ۳.۳.۰ (Release Highlights)"))
+    vlay.addWidget(make_section_header("🔥 تازه‌های نسخه ۳.۴.۳ (Release Highlights)"))
     vlay.addWidget(make_feature_table(HIGHLIGHTS_ROWS_V3_3_0))
     vlay.addWidget(make_section_header("📥 راهنمای دانلود و نصب سریع (بدون نیاز به پیش‌نیاز)"))
     vlay.addWidget(build_steps_box())
@@ -452,7 +452,7 @@ def build_readme_showcase() -> QWidget:
     ilay.addWidget(it2)
     vlay.addWidget(intro)
 
-    vlay.addWidget(make_section_header("🔥 تازه‌های نسخه ۳.۳.۰ (Release Highlights)"))
+    vlay.addWidget(make_section_header("🔥 تازه‌های نسخه ۳.۴.۳ (Release Highlights)"))
     vlay.addWidget(make_feature_table(HIGHLIGHTS_ROWS_V3_3_0))
 
     vlay.addWidget(make_section_header("💎 امکانات جامع نرم‌افزار در یک نگاه"))
@@ -542,10 +542,11 @@ def save_widget_png(w: QWidget, out_path: Path, qa_path: Path):
 
 
 btn_w = build_download_button()
+save_widget_png(btn_w, OUT_DIR / "download_btn_v3_4_3.png", BRAIN_DIR / "qa_download_btn_v3_4_3.png")
 save_widget_png(btn_w, OUT_DIR / "download_btn_v3_3_0.png", BRAIN_DIR / "qa_download_btn_v3_3_0.png")
 
 rel_w = build_release_showcase()
-save_widget_png(rel_w, OUT_DIR / "release_v3_3_0_showcase.png", BRAIN_DIR / "qa_release_v3_3_0_showcase.png")
+save_widget_png(rel_w, OUT_DIR / "release_v3_4_3_showcase.png", BRAIN_DIR / "qa_release_v3_4_3_showcase.png")
 
 rdm_w = build_readme_showcase()
 save_widget_png(rdm_w, OUT_DIR / "readme_full_showcase.png", BRAIN_DIR / "qa_readme_full_showcase.png")

@@ -10,12 +10,13 @@
 [![Platform](https://img.shields.io/badge/پلتفرم-Windows%2010%20%7C%2011%20(64--bit)-blue.svg?style=for-the-badge&logo=windows)](https://github.com/AbolfazlSamadi2006/Nemov-App/releases/latest)
 [![Python](https://img.shields.io/badge/Python-3.13-3776AB.svg?style=for-the-badge&logo=python)](https://python.org)
 [![PyQt6](https://img.shields.io/badge/GUI-PyQt6-41CD52.svg?style=for-the-badge&logo=qt)](https://www.riverbankcomputing.com/software/pyqt/)
+[![SSAD](https://img.shields.io/badge/مستندات%20مهندسی-SSAD%20Docs-blueviolet.svg?style=for-the-badge)](docs/README.md)
 [![License](https://img.shields.io/badge/لایسنس-تخصصی%20مربیان-orange.svg?style=for-the-badge)](#)
 
 <br/><br/>
 
 <a href="https://github.com/AbolfazlSamadi2006/Nemov-App/releases/download/v3.4.3/Nemov_Setup_v3.4.3.exe">
-  <img src="resources/github_assets/download_btn_v3_3_0.png" width="840" alt="دانلود مستقیم فایل نصاب نسخه ۳.۴.۳ (Nemov_Setup_v3.4.3.exe)" />
+  <img src="resources/github_assets/download_btn_v3_4_3.png" width="840" alt="دانلود مستقیم فایل نصاب نسخه ۳.۴.۳ (Nemov_Setup_v3.4.3.exe)" />
 </a>
 
 <br/><br/>
@@ -36,7 +37,7 @@
 
 ## 🚀 مهم‌ترین قابلیت‌ها و امکانات کلیدی:
 
-### ۱. 🔄 سیستم به‌روزرسانی هوشمند و درون‌برنامه‌ای (جدید در نسخه ۳.۴.۲)
+### ۱. 🔄 سیستم به‌روزرسانی هوشمند و درون‌برنامه‌ای (جدید در نسخه ۳.۴.۳)
 - اتصال پایدار به مخزن رسمی گیت‌هاب و بررسی لحظه‌ای آخرین نسخه‌ها.
 - بررسی خودکار پس‌زمینه بدون افت سرعت یا فریز رابط کاربری (Background Multi-Threading).
 - امکان دانلود نسخه جدید مستقیماً داخل نرم‌افزار با نوار پیشرفت زنده و اعمال خودکار به‌روزرسانی تنها با یک کلیک.
@@ -101,10 +102,25 @@
 <div align="center">
 
 <a href="https://github.com/AbolfazlSamadi2006/Nemov-App/releases/download/v3.4.3/Nemov_Setup_v3.4.3.exe">
-  <img src="resources/github_assets/download_btn_v3_3_0.png" width="840" alt="دانلود مستقیم فایل نصاب نسخه ۳.۴.۳ (Nemov_Setup_v3.4.3.exe)" />
+  <img src="resources/github_assets/download_btn_v3_4_3.png" width="840" alt="دانلود مستقیم فایل نصاب نسخه ۳.۴.۳ (Nemov_Setup_v3.4.3.exe)" />
 </a>
 
 <br/><br/>
+
+<details>
+<summary><b>🎓 مستندات تحلیل و طراحی مهندسی نرم‌افزار (پروژه درس SSAD - ویژه ارزیابی دانشگاهی)</b></summary>
+<br/>
+
+> این پروژه طبق متدولوژی مهندسی نرم‌افزار و متناسب با Work-Plan درس تحلیل و طراحی سیستم‌های نرم‌افزاری (SSAD) تحت هدایت جناب آقای دکتر مهدی عمادی توسعه یافته است:
+> 
+> * 📌 **[پوشه مرجع مستندات مهندسی نرم‌افزار](docs/README.md)**
+> * 📑 **[فاز ۱: تعریف MVP، مرزهای محصول، پرسوناها و داستان‌های کاربری اولویت‌بندی شده MoSCoW](docs/phase-1_mvp-and-user-stories/README.md)**
+> * 📐 **[فاز ۲: دیدگاه‌های چهارگانه طراحی (Use Case، نمودار فعالیت، معماری سیستم ۴ لایه و مدل داده‌ها ERD)](docs/phase-2_diagrams-and-system-design/README.md)**
+> * 🔌 **[فاز ۳: قرارداد APIها، انتخاب پشته فنی، توجیه هاستینگ ابری و پروتوتایپ کلیک‌پذیر](docs/phase-3_prototype-and-api-specs/README.md)**
+> * 🎨 **[پروتوتایپ تعاملی و رفتار کاربری در فیگما (Figma Prototype)](https://www.figma.com/design/bxozUbyh4zZVSQXlJFVxeF)**
+</details>
+
+<br/>
 <b>تمامی حقوق مادی و معنوی این نرم‌افزار متعلق به مهندس ابوالفضل صمدی کوچکسرائی می‌باشد © ۲۰۲۶</b>
 </div>
 
