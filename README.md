@@ -117,6 +117,7 @@
 > * 📑 **[فاز ۱: تعریف MVP، مرزهای محصول، پرسوناها و داستان‌های کاربری اولویت‌بندی شده MoSCoW](docs/phase-1_mvp-and-user-stories/README.md)**
 > * 📐 **[فاز ۲: دیدگاه‌های چهارگانه طراحی (Use Case، نمودار فعالیت، معماری سیستم ۴ لایه و مدل داده‌ها ERD)](docs/phase-2_diagrams-and-system-design/README.md)**
 > * 🔌 **[فاز ۳: قرارداد APIها، انتخاب پشته فنی، توجیه هاستینگ ابری و پروتوتایپ کلیک‌پذیر](docs/phase-3_prototype-and-api-specs/README.md)**
+> * 📊 **[فاز ۴: اسلایدهای دفاعیه و ارائه اول مهندسی و فایل رسمی پاورپوینت](docs/phase-4_presentation-1/README.md)**
 > * 🎨 **[پروتوتایپ تعاملی و رفتار کاربری در فیگما (Figma Prototype)](https://www.figma.com/design/bxozUbyh4zZVSQXlJFVxeF)**
 </details>
 

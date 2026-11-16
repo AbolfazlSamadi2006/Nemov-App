@@ -4,9 +4,10 @@
 
 ---
 
-## 📌 فایل‌ها و منابع ارائه (Presentation Deliverables)
-* 📊 **اسلایدهای ارائه (Presentation Deck)**:  
-  *فایل اسلایدهای رسمی بر اساس ساختار زیر در حال نهایی‌سازی و بازبینی نهایی است و پس از تایید در این بخش پیوست خواهد شد.*
+## 📌 فایل‌های آماده دفاع و ارائه (Presentation Deliverables)
+* 📊 **فایل رسمی اسلایدهای ارائه (پاورپوینت اختصاصی نِمُو)**:  
+  [دانلود فایل اسلایدهای ارائه نهایی (Nemov_Presentation_1.pptx)](Nemov_Presentation_1.pptx)  
+  *(طراحی شده بر اساس نسبت تصویر عریض 16:9، پالت سه‌گانه هویت بصری نِمُو، فونت استاندارد وزیرمتن، کارت‌های ساختاریافته، ترنزیشن‌های نرم و انیمیشن‌های حرفه‌ای ورود).*
 * 🎨 **پروتوتایپ تعاملی و رفتار کاربری در فیگما**:  
   - [مشاهده بوم طراحی در فیگما (Figma Design File)](https://www.figma.com/design/bxozUbyh4zZVSQXlJFVxeF/Nemov---Interactive-Prototype-(SSAD-Phase-3))
   - [اجرای آنلاین پروتوتایپ کلیک‌پذیر (Figma Prototype Presentation)](https://www.figma.com/proto/bxozUbyh4zZVSQXlJFVxeF/Nemov---Interactive-Prototype-(SSAD-Phase-3))
