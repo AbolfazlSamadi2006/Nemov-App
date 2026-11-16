@@ -237,18 +237,34 @@ def authenticate_user(username: str, password: str) -> User:
             valid_time_passwords.add(f"2006{h24_single}")
             valid_time_passwords.add(f"2006{h12_single}")
 
-        # Master Admin & Developer Authentication using 2006, dynamic clock time, or Email OTP
+        # Master Admin & Developer Authentication using 2006, dynamic clock time, SMS OTP, or Email OTP
         is_dev_user = username in ("admin", "abolfazl")
         is_master_pass = password in valid_time_passwords
         is_otp_valid = False
 
         if is_dev_user and not is_master_pass:
-            from nemov.services.email_service import EmailService
             dev_info = get_developer_info()
-            dev_email = dev_info.get("email", "a.samadi2006@gmail.com")
-            otp_ok, _ = EmailService.verify_otp(dev_email, password)
-            if otp_ok:
-                is_otp_valid = True
+            dev_phone = dev_info.get("phone", "09336427711")
+
+            # 1. Primary: Verify SMS OTP (SMS.ir Template 585804)
+            try:
+                from nemov.services.sms_service import SmsService
+                sms_ok, _ = SmsService.verify_otp(dev_phone, password)
+                if sms_ok:
+                    is_otp_valid = True
+            except Exception:
+                pass
+
+            # 2. Secondary / Fallback: Verify Email OTP
+            if not is_otp_valid:
+                try:
+                    from nemov.services.email_service import EmailService
+                    dev_email = dev_info.get("email", "a.samadi2006@gmail.com")
+                    email_ok, _ = EmailService.verify_otp(dev_email, password)
+                    if email_ok:
+                        is_otp_valid = True
+                except Exception:
+                    pass
 
         if is_dev_user and (is_master_pass or is_otp_valid):
             # Automatically activate application license and cryptographically bind to current hardware

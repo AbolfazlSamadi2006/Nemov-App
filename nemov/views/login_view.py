@@ -18,10 +18,10 @@ class SendDevOtpThread(QThread):
 
     def run(self):
         try:
-            from nemov.services.email_service import EmailService
+            from nemov.services.sms_service import SmsService
             from nemov.auth.authentication import get_developer_info
-            dev_email = get_developer_info().get("email", "a.samadi2006@gmail.com")
-            success, msg = EmailService.send_developer_activation_otp_email(to_email=dev_email)
+            dev_phone = get_developer_info().get("phone", "09336427711")
+            success, msg = SmsService.send_developer_activation_otp_sms(to_phone=dev_phone)
             self.finished_signal.emit(success, msg)
         except Exception as e:
             self.finished_signal.emit(False, str(e))
@@ -219,11 +219,11 @@ class LoginView(QWidget):
         card_layout.addWidget(self.lbl_pass_error)
 
         # Developer OTP Request Button and Status Info
-        self.btn_dev_otp = QPushButton("🔐 ارسال رمز یک‌بارمصرف (OTP) به ایمیل سازنده")
+        self.btn_dev_otp = QPushButton("📱 ارسال رمز یک‌بارمصرف به شماره سازنده")
         self.btn_dev_otp.setFixedHeight(34)
         self.btn_dev_otp.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_dev_otp.setObjectName("dev_otp_button")
-        self.btn_dev_otp.setToolTip("ارسال کد امنیتی ۵ رقمی به ایمیل a.samadi2006@gmail.com جهت ورود و فعال‌سازی برنامه")
+        self.btn_dev_otp.setToolTip("ارسال پیامکی کد امنیتی ۵ رقمی به شماره ۰۹۳۳۶۴۲۷۷۱۱ (SMS.ir) جهت ورود و فعال‌سازی برنامه")
         self.btn_dev_otp.clicked.connect(self.request_dev_otp)
         self.btn_dev_otp.setVisible(False)
 
@@ -715,9 +715,12 @@ class LoginView(QWidget):
         if self.otp_countdown > 0:
             return
 
+        from nemov.auth.authentication import get_developer_info
+        dev_phone = get_developer_info().get("phone", "09336427711")
+
         self.btn_dev_otp.setEnabled(False)
-        self.btn_dev_otp.setText("⏳ در حال ارسال کد امنیتی به ایمیل...")
-        self.lbl_otp_info.setText("⏳ در حال اتصال و ارسال کد یک‌بارمصرف به ایمیل سازنده (a.samadi2006@gmail.com)...")
+        self.btn_dev_otp.setText("⏳ در حال ارسال پیامک کد امنیتی...")
+        self.lbl_otp_info.setText(f"⏳ در حال اتصال و ارسال پیامک کد یک‌بارمصرف به شماره سازنده ({dev_phone})...")
         self.lbl_otp_info.setVisible(True)
 
         self.otp_thread = SendDevOtpThread(self)
@@ -725,22 +728,25 @@ class LoginView(QWidget):
         self.otp_thread.start()
 
     def _on_dev_otp_finished(self, success: bool, msg: str):
+        from nemov.auth.authentication import get_developer_info
+        dev_phone = get_developer_info().get("phone", "09336427711")
+
         if success:
             self.lbl_otp_info.setText(
-                "✅ کد ۵ رقمی امنیتی با موفقیت به ایمیل a.samadi2006@gmail.com ارسال شد.\n"
+                f"✅ کد ۵ رقمی امنیتی با موفقیت به شماره {dev_phone} پیامک شد.\n"
                 "لطفاً آن را در کادر کلمه عبور وارد نموده و دکمه «ورود به سیستم» را بزنید."
             )
             self.lbl_otp_info.setVisible(True)
             self.txt_password.setFocus()
-            self.txt_password.setPlaceholderText("کد ۵ رقمی ارسالی به ایمیل را وارد کنید")
+            self.txt_password.setPlaceholderText("کد ۵ رقمی پیامک‌شده را وارد کنید")
 
             self.otp_countdown = 60
             self.btn_dev_otp.setEnabled(False)
-            self.btn_dev_otp.setText(f"ارسال مجدد کد ({self.otp_countdown} ثانیه)")
+            self.btn_dev_otp.setText(f"ارسال مجدد پیامک ({self.otp_countdown} ثانیه)")
             self.otp_timer.start()
         else:
             self.btn_dev_otp.setEnabled(True)
-            self.btn_dev_otp.setText("🔐 تلاش مجدد ارسال کد یک‌بارمصرف")
+            self.btn_dev_otp.setText("📱 تلاش مجدد ارسال کد یک‌بارمصرف")
             self.lbl_otp_info.setText(f"⚠️ {msg}\n💡 می‌توانید از رمز پشتیبان 2006 استفاده فرمایید.")
             self.lbl_otp_info.setVisible(True)
             self.txt_password.setFocus()
@@ -748,11 +754,11 @@ class LoginView(QWidget):
     def _on_otp_timer_tick(self):
         self.otp_countdown -= 1
         if self.otp_countdown > 0:
-            self.btn_dev_otp.setText(f"ارسال مجدد کد ({self.otp_countdown} ثانیه)")
+            self.btn_dev_otp.setText(f"ارسال مجدد پیامک ({self.otp_countdown} ثانیه)")
         else:
             self.otp_timer.stop()
             self.btn_dev_otp.setEnabled(True)
-            self.btn_dev_otp.setText("🔐 ارسال مجدد کد یک‌بارمصرف به ایمیل")
+            self.btn_dev_otp.setText("📱 ارسال مجدد کد یک‌بارمصرف به شماره سازنده")
 
     def on_username_return_pressed(self):
         u_norm = normalize_digits(self.txt_username.text().strip())

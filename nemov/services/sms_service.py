@@ -1,5 +1,7 @@
 import json
 import logging
+import time
+import secrets
 import urllib.request
 import urllib.error
 import urllib.parse
@@ -53,6 +55,14 @@ DEFAULT_SMS_TEMPLATES = {
         "pattern": "ورزشکار محترم، زمان‌بندی جدید سانس‌های باشگاه ورزشی #GYM#:\nروزها: #DAYS#\nبانوان: #WOMEN#\nآقایان: #MEN#\nتوضیحات: #NOTE#",
         "variables": ["GYM", "DAYS", "WOMEN", "MEN", "NOTE"],
         "description": "اطلاع‌رسانی تغییر زمان‌بندی سانس‌های ورزشی بانوان و آقایان"
+    },
+    "otp": {
+        "id": "otp",
+        "title": "🔐 رمز یکبار مصرف",
+        "template_id": 585804,
+        "pattern": "کد یکبار مصرف: #CODE#",
+        "variables": ["OTP", "CODE"],
+        "description": "ارسال کد امنیتی یک‌بارمصرف جهت احراز هویت و ورود توسعه‌دهنده و مدیریت"
     }
 }
 
@@ -63,6 +73,9 @@ class SmsService:
     Zero SMS.ir API key is stored locally; all credit verification and delivery
     is proxied and centrally deducted via the serverless Cloudflare Worker.
     """
+
+    # In-memory OTP cache for SMS: {phone: {"code": "12345", "expires_at": timestamp, "attempts": 0}}
+    _otp_cache: Dict[str, Dict[str, Any]] = {}
 
     @classmethod
     def _get_base_url(cls) -> str:
@@ -467,3 +480,103 @@ class SmsService:
             return False, str(e)
         finally:
             session.close()
+
+    # =========================================================================
+    # Developer & Master OTP Service (SMS.ir Template 585804)
+    # =========================================================================
+
+    @classmethod
+    def generate_and_store_otp(cls, phone: str, expiry_minutes: int = 5) -> str:
+        """
+        Generates a cryptographically secure 5-digit OTP code and stores it with an expiry timestamp.
+        """
+        clean_phone = cls.normalize_phone_number(phone)
+        otp = str(secrets.randbelow(90000) + 10000)
+        cls._otp_cache[clean_phone] = {
+            "code": otp,
+            "expires_at": time.time() + (expiry_minutes * 60),
+            "attempts": 0
+        }
+        return otp
+
+    @classmethod
+    def verify_otp(cls, phone: str, entered_code: str) -> Tuple[bool, str]:
+        """
+        Verifies the entered OTP code against the cached SMS OTP record.
+        """
+        clean_phone = cls.normalize_phone_number(phone)
+        record = cls._otp_cache.get(clean_phone)
+
+        if not record:
+            return False, "هیچ کد تاییدی برای این شماره تماس صادر نشده است یا منقضی گردیده است."
+
+        # Check expiry
+        if time.time() > record["expires_at"]:
+            del cls._otp_cache[clean_phone]
+            return False, "کد تایید منقضی شده است. لطفاً مجدداً درخواست ارسال کد پیامکی دهید."
+
+        # Check max attempts (rate limiting against brute force)
+        record["attempts"] += 1
+        if record["attempts"] > 5:
+            del cls._otp_cache[clean_phone]
+            return False, "تعداد تلاش‌های ناموفق بیش از حد مجاز بود. لطفاً کد جدیدی دریافت کنید."
+
+        # Normalize digits for Persian/Arabic input
+        norm_entered = "".join(
+            str("۰۱۲۳۴۵۶۷۸۹".index(ch)) if ch in "۰۱۲۳۴۵۶۷۸۹"
+            else str("٠١٢٣٤٥٦٧٨٩".index(ch)) if ch in "٠١٢٣٤٥٦٧٨٩"
+            else ch for ch in str(entered_code).strip()
+        )
+
+        if norm_entered == record["code"]:
+            del cls._otp_cache[clean_phone]
+            return True, "کد تایید پیامکی با موفقیت تایید شد."
+
+        remaining = 5 - record["attempts"]
+        return False, f"کد وارد شده صحیح نمی‌باشد. (تعداد شانس باقی‌مانده: {remaining})"
+
+    @classmethod
+    def send_developer_activation_otp_sms(
+        cls,
+        to_phone: str = "09336427711",
+        otp_code: str = None
+    ) -> Tuple[bool, str]:
+        """
+        Sends an ultra-fast verification OTP code via SMS.ir Fast-Send (template 585804)
+        specifically for developer/admin activation and login authentication.
+        """
+        clean_phone = cls.normalize_phone_number(to_phone)
+        if not clean_phone:
+            return False, "شماره تماس مربی/توسعه‌دهنده نامعتبر است."
+
+        if not otp_code:
+            otp_code = cls.generate_and_store_otp(clean_phone, expiry_minutes=5)
+
+        # Log OTP code locally so developer has offline visibility if device is offline
+        try:
+            from nemov.utils.logger import log_info
+            log_info(f"Developer Activation SMS OTP generated for {clean_phone}: {otp_code}")
+        except Exception:
+            pass
+
+        # Send OTP, CODE, Code, and Otp parameters to guarantee template parameter matching in SMS.ir
+        parameters = [
+            {"name": "OTP", "value": otp_code},
+            {"name": "CODE", "value": otp_code},
+            {"name": "Code", "value": otp_code},
+            {"name": "Otp", "value": otp_code}
+        ]
+
+        ok, msg, rem = cls.send_single_sms(
+            recipient_phone=clean_phone,
+            template_id=DEFAULT_SMS_TEMPLATES["otp"]["template_id"],
+            parameters=parameters,
+            message_text=f"کد یکبار مصرف: {otp_code}",
+            member_name="ابوالفضل صمدی",
+            message_type="otp",
+            trainer_phone=clean_phone,
+            trainer_name="ابوالفضل صمدی"
+        )
+        if ok:
+            return True, f"کد ۵ رقمی امنیتی با موفقیت به شماره {clean_phone} پیامک شد."
+        return False, msg
