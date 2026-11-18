@@ -15,8 +15,8 @@
 
 <br/><br/>
 
-<a href="https://github.com/AbolfazlSamadi2006/Nemov-App/releases/download/v3.4.3/Nemov_Setup_v3.4.3.exe">
-  <img src="resources/github_assets/download_btn_v3_4_3.png" width="840" alt="دانلود مستقیم فایل نصاب نسخه ۳.۴.۳ (Nemov_Setup_v3.4.3.exe)" />
+<a href="https://github.com/AbolfazlSamadi2006/Nemov-App/releases/download/v3.4.4/Nemov_Setup_v3.4.4.exe">
+  <img src="resources/github_assets/download_btn_v3_4_3.png" width="840" alt="دانلود مستقیم فایل نصاب نسخه ۳.۴.۴ (Nemov_Setup_v3.4.4.exe)" />
 </a>
 
 <br/><br/>
@@ -37,7 +37,12 @@
 
 ## 🚀 مهم‌ترین قابلیت‌ها و امکانات کلیدی:
 
-### ۱. 🔄 سیستم به‌روزرسانی هوشمند و درون‌برنامه‌ای (جدید در نسخه ۳.۴.۳)
+### ۱. 📱 احراز هویت پیامکی فوق‌سریع و ورود دومرحله‌ای (جدید در نسخه ۳.۴.۴)
+- انتقال کامل سامانه ارسال رمز یکبار مصرف (OTP) از ایمیل به سرویس پیامک ملی و الگوهای خدماتی (SMS.ir Pattern).
+- ارسال کد تایید ۵ رقمی به صورت آنی و زیر ۳ ثانیه به تلفن همراه سازنده/مربی بدون تاخیر و بدون نیاز به اینترنت بین‌الملل.
+- رابط کاربری بهینه‌شده و یکدست ورود جهت تجربه کاربری سریع و بدون خطا.
+
+### ۲. 🔄 سیستم به‌روزرسانی هوشمند و درون‌برنامه‌ای
 - اتصال پایدار به مخزن رسمی گیت‌هاب و بررسی لحظه‌ای آخرین نسخه‌ها.
 - بررسی خودکار پس‌زمینه بدون افت سرعت یا فریز رابط کاربری (Background Multi-Threading).
 - امکان دانلود نسخه جدید مستقیماً داخل نرم‌افزار با نوار پیشرفت زنده و اعمال خودکار به‌روزرسانی تنها با یک کلیک.
@@ -101,8 +106,8 @@
 
 <div align="center">
 
-<a href="https://github.com/AbolfazlSamadi2006/Nemov-App/releases/download/v3.4.3/Nemov_Setup_v3.4.3.exe">
-  <img src="resources/github_assets/download_btn_v3_4_3.png" width="840" alt="دانلود مستقیم فایل نصاب نسخه ۳.۴.۳ (Nemov_Setup_v3.4.3.exe)" />
+<a href="https://github.com/AbolfazlSamadi2006/Nemov-App/releases/download/v3.4.4/Nemov_Setup_v3.4.4.exe">
+  <img src="resources/github_assets/download_btn_v3_4_3.png" width="840" alt="دانلود مستقیم فایل نصاب نسخه ۳.۴.۴ (Nemov_Setup_v3.4.4.exe)" />
 </a>
 
 <br/><br/>
