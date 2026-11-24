@@ -53,6 +53,7 @@ class FoodLibraryView(QWidget):
         self.combo_cat.addItem("میوه و سبزیجات", "fruits")
         self.combo_cat.addItem("مغزها و چربی‌های مفید", "nuts")
         self.combo_cat.addItem("مکمل‌های ورزشی", "supplements")
+        self.combo_cat.addItem("چای و نوشیدنی", "beverages")
         self.combo_cat.currentIndexChanged.connect(self.load_foods)
 
         self.chk_select_all = QCheckBox("انتخاب همه")
@@ -128,7 +129,7 @@ class FoodLibraryView(QWidget):
         cat_map = {
             "rice": "برنج و نان", "meat": "پروتئین‌ها", "legumes": "حبوبات",
             "dairy": "لبنیات", "fruits": "میوه و سبزیجات", "nuts": "مغزها",
-            "supplements": "مکمل‌ها"
+            "supplements": "مکمل‌ها", "beverages": "چای و نوشیدنی"
         }
 
         self.chk_select_all.blockSignals(True)

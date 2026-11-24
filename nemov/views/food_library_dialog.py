@@ -13,7 +13,7 @@ class FoodFormDialog(QDialog):
         self.food_data = food_data
         self.setWindowTitle("ویرایش ماده غذایی" if food_data else "افزودن ماده غذایی جدید")
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
-        self.setFixedSize(500, 390)
+        self.setFixedSize(560, 400)
         self.init_ui()
 
     def init_ui(self):
@@ -31,28 +31,45 @@ class FoodFormDialog(QDialog):
         self.combo_cat.addItem("میوه و سبزیجات", "fruits")
         self.combo_cat.addItem("مغزها و چربی‌های مفید", "nuts")
         self.combo_cat.addItem("مکمل‌های ورزشی", "supplements")
+        self.combo_cat.addItem("چای و نوشیدنی", "beverages")
 
         self.txt_unit = QLineEdit("100 گرم")
+
+        spin_style = """
+            QDoubleSpinBox {
+                padding-left: 24px;
+                padding-right: 4px;
+                padding-top: 2px;
+                padding-bottom: 2px;
+                font-size: 13px;
+                font-weight: bold;
+                min-width: 76px;
+            }
+        """
 
         self.spin_cal = QDoubleSpinBox()
         self.spin_cal.setRange(0, 2000)
         self.spin_cal.setValue(150)
         self.spin_cal.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.spin_cal.setStyleSheet(spin_style)
 
         self.spin_protein = QDoubleSpinBox()
         self.spin_protein.setRange(0, 100)
         self.spin_protein.setValue(20)
         self.spin_protein.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.spin_protein.setStyleSheet(spin_style)
 
         self.spin_carbs = QDoubleSpinBox()
         self.spin_carbs.setRange(0, 100)
         self.spin_carbs.setValue(10)
         self.spin_carbs.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.spin_carbs.setStyleSheet(spin_style)
 
         self.spin_fat = QDoubleSpinBox()
         self.spin_fat.setRange(0, 100)
         self.spin_fat.setValue(2)
         self.spin_fat.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.spin_fat.setStyleSheet(spin_style)
 
         layout.addWidget(QLabel("نام ماده غذایی:"))
         layout.addWidget(self.txt_name)
@@ -60,6 +77,7 @@ class FoodFormDialog(QDialog):
         layout.addWidget(self.combo_cat)
         
         row_unit = QHBoxLayout()
+        row_unit.setSpacing(10)
         row_unit.addWidget(QLabel("واحد اندازه‌گیری:"))
         row_unit.addWidget(self.txt_unit)
         row_unit.addWidget(QLabel("کالری (kcal):"))
@@ -67,6 +85,7 @@ class FoodFormDialog(QDialog):
         layout.addLayout(row_unit)
 
         row_macros = QHBoxLayout()
+        row_macros.setSpacing(8)
         row_macros.addWidget(QLabel("پروتئین (g):"))
         row_macros.addWidget(self.spin_protein)
         row_macros.addWidget(QLabel("کربوهیدرات (g):"))
@@ -204,8 +223,8 @@ class FoodLibraryDialog(QDialog):
     def load_foods(self):
         foods = NutritionService.get_all_foods()
         cat_map = {
-            "rice": "برنج و نان", "meat": "پروتئین‌ها", "dairy": "لبنیات",
-            "fruits": "میوه و سبزیجات", "nuts": "مغزها", "supplements": "مکمل‌ها"
+            "rice": "برنج و نان", "meat": "پروتئین‌ها", "legumes": "حبوبات", "dairy": "لبنیات",
+            "fruits": "میوه و سبزیجات", "nuts": "مغزها", "supplements": "مکمل‌ها", "beverages": "چای و نوشیدنی"
         }
 
         self.table.setRowCount(len(foods))

@@ -45,6 +45,11 @@ class NutritionService:
             session.close()
 
     @staticmethod
+    def create_food(data: dict) -> FoodItem:
+        """Create a new food item in the food library."""
+        return NutritionService.add_custom_food(data)
+
+    @staticmethod
     def update_food(food_id: int, data: dict) -> FoodItem:
         session = get_session()
         try:
