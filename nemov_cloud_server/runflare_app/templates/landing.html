@@ -1,0 +1,2693 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <title>نرم‌افزار مدیریت ورزشی نِمُو | نسخه ۳.۴.۳</title>
+    
+    <!-- SEO Semantic Meta Tags -->
+    <meta name="description" content="نرم‌افزار مدیریت ورزشی نِمُو. پرونده سلامت فیزیکی، بانک ویدیو حرکات، رژیم غذایی و کالری‌شماری هوشمند، حسابداری مالی و صدور شناسنامه چاپی بدون نیاز به اینترنت با پشتیبان‌گیری ابری.">
+    <meta name="keywords" content="نمو, Nemov, نرم افزار مدیریت ورزشی نمو, نرم افزار مدیریت باشگاه, نرم افزار بدنسازی, برنامه تمرینی, برنامه غذایی بدنسازی, مدیریت باشگاه بدنسازی, مربیگری بدنسازی, ابوالفضل صمدی, Nemov App">
+    <link rel="canonical" href="https://nemovapp.ir/">
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+    <meta name="author" content="مهندس ابوالفضل صمدی کوچکسرائی">
+    <meta name="publisher" content="نرم‌افزار مدیریت ورزشی نِمُو">
+    <meta name="application-name" content="نِمُو">
+    <meta name="theme-color" content="#090A0E">
+    <meta name="msapplication-TileColor" content="#DC2626">
+
+    <!-- Open Graph Meta Tags (Telegram, WhatsApp, Social Cards) -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="نرم‌افزار مدیریت ورزشی نِمُو | Nemov">
+    <meta property="og:title" content="نرم‌افزار مدیریت ورزشی نِمُو | نسخه ۳.۴.۳">
+    <meta property="og:description" content="سامانه یکپارچه مربیگری و اتوماسیون باشگاه؛ پرونده سلامت، بانک حرکات با ویدیو، طراحی تخصصی رژیم غذایی، حسابداری مالی و صدور شناسنامه چاپی.">
+    <meta property="og:url" content="https://nemovapp.ir/">
+    <meta property="og:image" content="https://nemovapp.ir/images/nemov_logo.png">
+    <meta property="og:image:secure_url" content="https://nemovapp.ir/images/nemov_logo.png">
+    <meta property="og:image:type" content="image/png">
+    <meta property="og:image:width" content="512">
+    <meta property="og:image:height" content="512">
+    <meta property="og:image:alt" content="نرم‌افزار مدیریت ورزشی نِمُو">
+    <meta property="og:locale" content="fa_IR">
+
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="نرم‌افزار مدیریت ورزشی نِمُو | نسخه ۳.۴.۳">
+    <meta name="twitter:description" content="سامانه یکپارچه مربیگری و اتوماسیون باشگاه؛ پرونده سلامت، بانک حرکات با ویدیو، طراحی تخصصی رژیم غذایی، حسابداری مالی و صدور شناسنامه چاپی.">
+    <meta name="twitter:image" content="https://nemovapp.ir/images/nemov_logo.png">
+    <meta name="twitter:image:alt" content="نرم‌افزار مدیریت ورزشی نِمُو">
+
+    <!-- Preload Critical Above-The-Fold Assets -->
+    <link rel="preload" href="/images/nemov_logo.png" as="image" type="image/png">
+    <link rel="preload" href="/fonts/bkoodak.woff2" as="font" type="font/woff2" crossorigin>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="/images/nemov_logo.png">
+
+    <!-- Structured Data JSON-LD Schema.org (SoftwareApplication, SportsActivityLocation, Person) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "SoftwareApplication",
+          "@id": "https://nemovapp.ir/#software",
+          "name": "نرم‌افزار مدیریت ورزشی نِمُو",
+          "alternateName": ["Nemov", "Nemov Sports Management Software", "همیار باشگاه"],
+          "applicationCategory": "SportsApplication",
+          "operatingSystem": "Windows 10, Windows 11",
+          "description": "نرم‌افزار مدیریت ورزشی نِمُو؛ شامل پرونده سلامت، طراحی تمرین با ویدیو، رژیم غذایی و کالری‌شماری، حسابداری و صدور شناسنامه ورزشی چاپی.",
+          "url": "https://nemovapp.ir/",
+          "image": "https://nemovapp.ir/images/nemov_logo.png",
+          "version": "3.4.3",
+          "softwareVersion": "3.4.3",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "IRR",
+            "availability": "https://schema.org/InStock"
+          },
+          "author": {
+            "@type": "Person",
+            "@id": "https://nemovapp.ir/#author",
+            "name": "مهندس ابوالفضل صمدی کوچکسرائی",
+            "alternateName": "Abolfazl Samadi",
+            "image": "https://nemovapp.ir/images/developer_photo.jpg",
+            "email": "support@nemovapp.ir",
+            "url": "https://t.me/AqaSamadi"
+          },
+          "featureList": [
+            "پرونده سلامت و فیزیک ورزشکار",
+            "طراحی تمرین و بانک حرکات با ویدیو",
+            "طراحی تخصصی برنامه غذایی و کالری‌شماری",
+            "موتور صدور شناسنامه و PDF چاپی حرفه‌ای",
+            "حسابداری، صندوق و مدیریت شهریه",
+            "سامانه اطلاع‌رسانی پیامکی هوشمند",
+            "امنیت ۱۰۰٪ آفلاین با همگام‌سازی ابری"
+          ]
+        },
+        {
+          "@type": ["SportsActivityLocation", "ExerciseGym"],
+          "@id": "https://nemovapp.ir/#yalda-gym",
+          "name": "باشگاه بدنسازی یلدا",
+          "alternateName": "Yalda Gym",
+          "image": "https://nemovapp.ir/images/yalda_logo.jpg",
+          "url": "https://nemovapp.ir/#partner-gyms",
+          "address": {
+            "@type": "PostalAddress",
+            "streetAddress": "خیابان کوچکسرا، نبش شقایق ۳",
+            "addressLocality": "قائمشهر",
+            "addressRegion": "مازندران",
+            "addressCountry": "IR"
+          },
+          "founder": {
+            "@type": "Person",
+            "name": "محراب حاجی‌پور",
+            "jobTitle": "مدیریت باشگاه بدنسازی یلدا"
+          },
+          "openingHoursSpecification": [
+            {
+              "@type": "OpeningHoursSpecification",
+              "dayOfWeek": ["Saturday", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday"],
+              "opens": "08:00",
+              "closes": "12:00",
+              "description": "سانس صبح بانوان"
+            },
+            {
+              "@type": "OpeningHoursSpecification",
+              "dayOfWeek": ["Saturday", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday"],
+              "opens": "15:00",
+              "closes": "19:00",
+              "description": "سانس عصر بانوان"
+            },
+            {
+              "@type": "OpeningHoursSpecification",
+              "dayOfWeek": ["Saturday", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday"],
+              "opens": "12:00",
+              "closes": "15:00",
+              "description": "سانس ظهر آقایان"
+            },
+            {
+              "@type": "OpeningHoursSpecification",
+              "dayOfWeek": ["Saturday", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday"],
+              "opens": "19:00",
+              "closes": "23:00",
+              "description": "سانس شب آقایان"
+            }
+          ]
+        },
+        {
+          "@type": "Person",
+          "@id": "https://nemovapp.ir/#author",
+          "name": "مهندس ابوالفضل صمدی کوچکسرائی",
+          "alternateName": "Abolfazl Samadi",
+          "image": "https://nemovapp.ir/images/developer_photo.jpg",
+          "jobTitle": "Software Developer & Architect",
+          "email": "support@nemovapp.ir",
+          "url": "https://t.me/AqaSamadi"
+        }
+      ]
+    }
+    </script>
+
+    <style>
+        /* Shared Fonts: B Koodak with fallback to system fonts */
+        @font-face {
+            font-family: 'B Koodak';
+            font-style: normal;
+            font-weight: normal;
+            font-display: swap;
+            src: local('B Koodak'), local('BKoodak'), local('B-Koodak'),
+                 url('/fonts/bkoodak.woff2') format('woff2');
+            unicode-range: U+0600-06FF, U+FB50-FDFF, U+FE70-FEFF, U+0750-077F, U+08A0-08FF, U+200C, U+200D;
+        }
+        @font-face {
+            font-family: 'B Koodak';
+            font-style: normal;
+            font-weight: 700 800;
+            font-display: swap;
+            src: local('B Koodak Bold'), local('BKoodak Bold'), local('B-Koodak Bold'),
+                 local('B Koodak'), local('BKoodak'), local('B-Koodak'),
+                 url('/fonts/bkoodak.woff2') format('woff2');
+            unicode-range: U+0600-06FF, U+FB50-FDFF, U+FE70-FEFF, U+0750-077F, U+08A0-08FF, U+200C, U+200D;
+        }
+
+        :root {
+            --bg-base: #090A0E;
+            --bg-card: rgba(18, 21, 30, 0.78);
+            --bg-card-hover: rgba(26, 30, 42, 0.95);
+            --border-subtle: rgba(255, 255, 255, 0.08);
+            --border-glow: rgba(220, 38, 38, 0.4);
+            --crimson: #DC2626;
+            --crimson-light: #EF4444;
+            --crimson-dark: #991B1B;
+            --text-main: #FFFFFF;
+            --text-sub: #E2E8F0;
+            --text-muted: #94A3B8;
+            --text-dim: #94A3B8;
+            --accent-gold: #F59E0B;
+            --accent-green: #10B981;
+            --font-main: 'B Koodak', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, 'Vazirmatn', Tahoma, Arial, sans-serif;
+        }
+
+        /* Accessibility Skip Link */
+        .skip-link {
+            position: absolute;
+            top: -100px;
+            right: 20px;
+            background: var(--crimson);
+            color: #FFFFFF;
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-weight: 700;
+            z-index: 9999;
+            text-decoration: none;
+            transition: top 0.2s ease;
+        }
+        .skip-link:focus {
+            top: 15px;
+            outline: 2px solid #FFFFFF;
+        }
+
+        /* Reset & Base Setup */
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            max-width: 100%;
+        }
+
+        html {
+            scroll-behavior: smooth;
+            scroll-padding-top: 80px;
+            background: var(--bg-base);
+            color: var(--text-main);
+            font-family: var(--font-main);
+            overflow-x: hidden;
+            width: 100%;
+        }
+
+        :focus-visible {
+            outline: 2px solid var(--crimson-light);
+            outline-offset: 3px;
+        }
+
+        body {
+            background: var(--bg-base);
+            color: var(--text-main);
+            font-family: var(--font-main);
+            line-height: 1.65;
+            direction: rtl;
+            overflow-x: hidden;
+            width: 100%;
+            position: relative;
+        }
+
+        /* Ambient Glow Layer */
+        .ambient-glow {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 500px;
+            background: radial-gradient(circle at 50% 10%, rgba(220, 38, 38, 0.12), transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        /* Navbar */
+        .navbar {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            background: rgba(9, 10, 14, 0.92);
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 12px 24px;
+            width: 100%;
+        }
+
+        .nav-container {
+            max-width: 1240px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            width: 100%;
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: inherit;
+            flex-shrink: 0;
+        }
+
+        .brand-logo-img {
+            width: 44px;
+            height: 44px;
+            object-fit: contain;
+            border-radius: 10px;
+            flex-shrink: 0;
+            filter: drop-shadow(0 4px 10px rgba(220, 38, 38, 0.35));
+        }
+
+        .brand-icon-box {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, rgba(220, 38, 38, 0.25), rgba(153, 27, 27, 0.4));
+            border: 1px solid rgba(220, 38, 38, 0.45);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+            flex-shrink: 0;
+        }
+
+        .brand-text-box {
+            display: flex;
+            flex-direction: column;
+            text-align: right;
+        }
+
+        .brand-title {
+            font-size: 18px;
+            font-weight: 800;
+            letter-spacing: -0.3px;
+            color: #FFFFFF;
+            line-height: 1.2;
+            white-space: nowrap;
+        }
+
+        .brand-subtitle {
+            font-size: 11px;
+            color: var(--crimson-light);
+            font-weight: 600;
+            letter-spacing: 0.2px;
+            white-space: nowrap;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            list-style: none;
+        }
+
+        .nav-link {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 14px;
+            padding: 8px 14px;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        .nav-link:hover {
+            color: #FFFFFF;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .nav-cta {
+            background: linear-gradient(135deg, var(--crimson), var(--crimson-dark));
+            color: #FFFFFF !important;
+            padding: 8px 18px;
+            border-radius: 10px;
+            font-size: 13.5px;
+            font-weight: 700;
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            box-shadow: 0 4px 14px rgba(220, 38, 38, 0.35);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.25s ease;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .nav-cta:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(220, 38, 38, 0.55);
+            background: linear-gradient(135deg, var(--crimson-light), var(--crimson));
+        }
+
+        /* Section Layouts */
+        .section {
+            position: relative;
+            z-index: 1;
+            padding: 70px 20px;
+            max-width: 1240px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .section-header {
+            text-align: center;
+            max-width: 800px;
+            margin: 0 auto 48px;
+        }
+
+        .section-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 5px 14px;
+            border-radius: 30px;
+            background: rgba(220, 38, 38, 0.12);
+            border: 1px solid rgba(220, 38, 38, 0.32);
+            color: #FCA5A5;
+            font-size: 12.5px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .section-title {
+            font-size: clamp(22px, 3.8vw, 36px);
+            font-weight: 800;
+            color: #FFFFFF;
+            line-height: 1.35;
+            margin-bottom: 14px;
+        }
+
+        .section-subtitle {
+            font-size: clamp(13.5px, 2vw, 16.5px);
+            color: var(--text-muted);
+            line-height: 1.7;
+        }
+
+        /* Hero Section */
+        .hero {
+            text-align: center;
+            padding: 70px 20px 40px;
+            position: relative;
+            z-index: 1;
+            width: 100%;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 6px 16px;
+            border-radius: 30px;
+            background: rgba(220, 38, 38, 0.12);
+            border: 1px solid rgba(220, 38, 38, 0.35);
+            color: #FCA5A5;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 24px;
+            line-height: 1.45;
+            text-align: center;
+            max-width: 100%;
+            word-break: break-word;
+            flex-wrap: wrap;
+        }
+
+        .hero-badge span:last-child {
+            word-break: break-word;
+        }
+
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--crimson-light);
+            box-shadow: 0 0 10px var(--crimson-light);
+            animation: pulseAnimation 2s infinite;
+            flex-shrink: 0;
+        }
+
+        @keyframes pulseAnimation {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.4); opacity: 0.6; }
+        }
+
+        .hero-title {
+            font-size: clamp(26px, 5.2vw, 56px);
+            font-weight: 800;
+            color: #FFFFFF;
+            line-height: 1.3;
+            margin-bottom: 16px;
+            letter-spacing: -0.5px;
+            word-break: break-word;
+        }
+
+        .hero-title-gradient {
+            background: linear-gradient(135deg, #EF4444 0%, #F87171 50%, #FCA5A5 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: inline-block;
+        }
+
+        .hero-tagline {
+            font-size: clamp(15px, 2.4vw, 22px);
+            color: var(--text-sub);
+            font-weight: 600;
+            max-width: 900px;
+            margin: 0 auto 18px;
+            line-height: 1.55;
+        }
+
+        .hero-desc {
+            font-size: clamp(13px, 1.7vw, 16px);
+            color: var(--text-muted);
+            max-width: 860px;
+            margin: 0 auto 34px;
+            line-height: 1.8;
+        }
+
+        .hero-buttons {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+            flex-wrap: wrap;
+            margin-bottom: 48px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--crimson) 0%, var(--crimson-dark) 100%);
+            color: #FFFFFF;
+            padding: 13px 26px;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 700;
+            text-decoration: none;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 10px 24px rgba(220, 38, 38, 0.4);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.25s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 14px 30px rgba(220, 38, 38, 0.6);
+            background: linear-gradient(135deg, var(--crimson-light) 0%, var(--crimson) 100%);
+        }
+
+        .btn-secondary {
+            background: rgba(22, 26, 36, 0.85);
+            color: var(--text-sub);
+            padding: 13px 24px;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            text-decoration: none;
+            border: 1px solid var(--border-subtle);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.25s ease;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(30, 36, 50, 0.95);
+            border-color: rgba(255, 255, 255, 0.2);
+            color: #FFFFFF;
+            transform: translateY(-2px);
+        }
+
+        /* Highlights Grid */
+        .highlights-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 14px;
+            max-width: 1140px;
+            margin: 0 auto;
+            text-align: right;
+            width: 100%;
+        }
+
+        .highlight-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            padding: 18px 16px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            position: relative;
+            overflow: hidden;
+            transform-style: preserve-3d;
+            transition: all 0.25s ease;
+        }
+
+        .highlight-card:hover {
+            border-color: var(--border-glow);
+            background: var(--bg-card-hover);
+            transform: translateY(-2px);
+        }
+
+        .highlight-icon {
+            font-size: 24px;
+            flex-shrink: 0;
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
+            background: rgba(220, 38, 38, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .highlight-text h3 {
+            font-size: 14.5px;
+            font-weight: 700;
+            color: #FFFFFF;
+            margin-bottom: 3px;
+        }
+
+        .highlight-text p {
+            font-size: 12px;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        /* 8 Features Grid (Symmetric 4x2 or 2x4) */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            width: 100%;
+        }
+
+        .feature-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 18px;
+            padding: 24px 20px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--border-glow);
+            box-shadow: 0 16px 36px rgba(0, 0, 0, 0.5), 0 0 25px rgba(220, 38, 38, 0.18);
+            background: var(--bg-card-hover);
+        }
+
+        .feature-top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .feature-icon-wrapper {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, rgba(220, 38, 38, 0.22), rgba(153, 27, 27, 0.35));
+            border: 1px solid rgba(220, 38, 38, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: 0 4px 14px rgba(220, 38, 38, 0.25);
+            flex-shrink: 0;
+        }
+
+        .feature-module-badge {
+            font-size: 11px;
+            font-weight: 700;
+            color: #FCA5A5;
+            background: rgba(220, 38, 38, 0.15);
+            border: 1px solid rgba(220, 38, 38, 0.3);
+            padding: 3px 10px;
+            border-radius: 20px;
+            letter-spacing: 0.2px;
+        }
+
+        .feature-title {
+            font-size: 17.5px;
+            font-weight: 800;
+            color: #FFFFFF;
+            margin-bottom: 14px;
+            line-height: 1.35;
+        }
+
+        .feature-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: auto;
+        }
+
+        .feature-item {
+            font-size: 13px;
+            color: var(--text-muted);
+            line-height: 1.6;
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+        }
+
+        .feature-item::before {
+            content: "•";
+            color: var(--crimson-light);
+            font-size: 18px;
+            line-height: 1;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+
+        /* Partner Gyms Section */
+        .partner-gyms-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 22px;
+            width: 100%;
+        }
+
+        .gym-card {
+            background: linear-gradient(155deg, rgba(22, 26, 36, 0.95) 0%, rgba(13, 15, 22, 0.98) 100%);
+            border: 1px solid rgba(220, 38, 38, 0.35);
+            border-radius: 20px;
+            padding: 26px 22px;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55), 0 0 30px rgba(220, 38, 38, 0.12);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .gym-status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            background: rgba(16, 185, 129, 0.12);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: #6EE7B7;
+            font-size: 11.5px;
+            font-weight: 700;
+            margin-bottom: 18px;
+            align-self: flex-start;
+        }
+
+        .gym-status-badge::before {
+            content: "";
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #10B981;
+            box-shadow: 0 0 6px #10B981;
+        }
+
+        .gym-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 18px;
+        }
+
+        .gym-logo-frame {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            border: 2px solid var(--crimson);
+            box-shadow: 0 0 16px rgba(220, 38, 38, 0.5);
+            overflow: hidden;
+            flex-shrink: 0;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .gym-logo-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .gym-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .gym-name {
+            font-size: 20px;
+            font-weight: 800;
+            color: #FFFFFF;
+            line-height: 1.25;
+        }
+
+        .gym-name-en {
+            font-size: 11.5px;
+            color: var(--text-dim);
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .gym-manager {
+            font-size: 13px;
+            color: var(--accent-gold);
+            font-weight: 700;
+            margin-top: 3px;
+        }
+
+        .gym-address-box {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            border-radius: 10px;
+            padding: 10px 12px;
+            margin-bottom: 18px;
+            font-size: 12.5px;
+            color: var(--text-sub);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            line-height: 1.5;
+        }
+
+        .shifts-section-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .shifts-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 18px;
+        }
+
+        .shift-card {
+            border-radius: 10px;
+            padding: 10px 8px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .shift-card-female {
+            background: rgba(236, 72, 153, 0.08);
+            border: 1px solid rgba(236, 72, 153, 0.25);
+        }
+
+        .shift-card-male {
+            background: rgba(59, 130, 246, 0.08);
+            border: 1px solid rgba(59, 130, 246, 0.25);
+        }
+
+        .shift-label {
+            font-size: 11.5px;
+            font-weight: 700;
+        }
+
+        .shift-card-female .shift-label { color: #F472B6; }
+        .shift-card-male .shift-label { color: #60A5FA; }
+
+        .shift-time {
+            font-size: 12px;
+            font-weight: 700;
+            color: #FFFFFF;
+            direction: rtl;
+        }
+
+        .gym-features-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: auto;
+        }
+
+        .gym-feature-pill {
+            font-size: 11px;
+            color: var(--text-sub);
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 3px 8px;
+            border-radius: 6px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* Prospective Gym Card */
+        .gym-join-card {
+            background: var(--bg-card);
+            border: 2px dashed rgba(220, 38, 38, 0.35);
+            border-radius: 20px;
+            padding: 28px 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            transform-style: preserve-3d;
+            transition: all 0.3s ease;
+        }
+
+        .gym-join-card:hover {
+            border-color: var(--crimson-light);
+            background: var(--bg-card-hover);
+            transform: translateY(-4px);
+        }
+
+        .join-icon-box {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: rgba(220, 38, 38, 0.12);
+            border: 1px solid rgba(220, 38, 38, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            margin-bottom: 16px;
+        }
+
+        .join-title {
+            font-size: 18px;
+            font-weight: 800;
+            color: #FFFFFF;
+            margin-bottom: 8px;
+        }
+
+        .join-desc {
+            font-size: 13px;
+            color: var(--text-muted);
+            max-width: 380px;
+            margin-bottom: 20px;
+            line-height: 1.65;
+        }
+
+        /* Security & Architecture Section */
+        .security-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 18px;
+            width: 100%;
+        }
+
+        .security-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            padding: 24px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            position: relative;
+            overflow: hidden;
+            transform-style: preserve-3d;
+            transition: all 0.25s ease;
+        }
+
+        .security-card:hover {
+            border-color: var(--border-glow);
+            transform: translateY(-3px);
+            background: var(--bg-card-hover);
+        }
+
+        .security-icon-box {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            background: rgba(220, 38, 38, 0.14);
+            border: 1px solid rgba(220, 38, 38, 0.28);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            margin-bottom: 2px;
+        }
+
+        .security-card h3 {
+            font-size: 16.5px;
+            font-weight: 800;
+            color: #FFFFFF;
+        }
+
+        .security-card p {
+            font-size: 13px;
+            color: var(--text-muted);
+            line-height: 1.65;
+        }
+
+        /* Developer & Support Section */
+        .developer-card {
+            background: linear-gradient(145deg, rgba(22, 26, 36, 0.9) 0%, rgba(14, 16, 24, 0.95) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 32px 24px;
+            max-width: 820px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+            position: relative;
+            overflow: hidden;
+            transform-style: preserve-3d;
+            width: 100%;
+        }
+
+        .developer-avatar-box {
+            width: 88px;
+            height: 88px;
+            border-radius: 50%;
+            border: 3px solid var(--crimson-light);
+            box-shadow: 0 0 28px rgba(220, 38, 38, 0.45), 0 8px 20px rgba(0, 0, 0, 0.6);
+            margin-bottom: 16px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #11141c;
+            flex-shrink: 0;
+            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+        }
+
+        .developer-avatar-box:hover {
+            transform: scale(1.05);
+            border-color: #EF4444;
+            box-shadow: 0 0 36px rgba(239, 68, 68, 0.6), 0 10px 24px rgba(0, 0, 0, 0.7);
+        }
+
+        .developer-avatar-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center 20%;
+            display: block;
+            border-radius: 50%;
+        }
+
+        .developer-avatar {
+            width: 88px;
+            height: 88px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .developer-name {
+            font-size: 22px;
+            font-weight: 800;
+            color: #FFFFFF;
+            margin-bottom: 4px;
+        }
+
+        .developer-role {
+            font-size: 13.5px;
+            color: var(--crimson-light);
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .developer-bio {
+            font-size: 13.5px;
+            color: var(--text-muted);
+            max-width: 620px;
+            line-height: 1.7;
+            margin-bottom: 24px;
+        }
+
+        .contact-links-grid {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            width: 100%;
+        }
+
+        .contact-btn {
+            padding: 11px 20px;
+            border-radius: 10px;
+            font-size: 13.5px;
+            font-weight: 700;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.25s ease;
+            direction: ltr;
+            word-break: break-all;
+        }
+
+        .contact-btn-email {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #FFFFFF;
+        }
+
+        .contact-btn-email:hover {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .contact-btn-telegram {
+            background: linear-gradient(135deg, #0088cc, #006699);
+            border: 1px solid rgba(0, 136, 204, 0.4);
+            color: #FFFFFF;
+            box-shadow: 0 6px 18px rgba(0, 136, 204, 0.35);
+        }
+
+        .contact-btn-telegram:hover {
+            background: linear-gradient(135deg, #0099e6, #0077b3);
+            box-shadow: 0 8px 24px rgba(0, 136, 204, 0.5);
+            transform: translateY(-2px);
+        }
+
+        /* Footer */
+        .footer {
+            background: #060709;
+            border-top: 1px solid var(--border-subtle);
+            padding: 36px 16px;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+            width: 100%;
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .footer-brand {
+            font-size: 16px;
+            font-weight: 800;
+            color: #FFFFFF;
+        }
+
+        .footer-copy {
+            font-size: 12.5px;
+            color: var(--text-muted);
+            line-height: 1.6;
+            max-width: 680px;
+        }
+
+        .footer-badges {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 6px;
+        }
+
+        .footer-badge {
+            font-size: 11px;
+            color: var(--text-dim);
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            padding: 4px 10px;
+            border-radius: 6px;
+        }
+
+        /* Responsive Breakpoints */
+        @media (max-width: 1100px) {
+            .nav-links { display: none; }
+            .features-grid { grid-template-columns: repeat(2, 1fr); }
+            .partner-gyms-grid { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 768px) {
+            .section { padding: 45px 14px; }
+            .hero { padding: 45px 14px 30px; }
+            .shifts-grid { grid-template-columns: 1fr; }
+            .gym-header { flex-direction: column; text-align: center; }
+            .gym-info { align-items: center; }
+            .gym-status-badge { align-self: center; }
+            .contact-links-grid { flex-direction: column; width: 100%; }
+            .contact-btn { width: 100%; justify-content: center; }
+            .feature-card { padding: 20px 16px; }
+            .gym-card { padding: 20px 16px; }
+            .developer-card { padding: 24px 16px; }
+        }
+
+        @media (max-width: 640px) {
+            .navbar { padding: 8px 10px; }
+            .nav-container { gap: 6px; }
+            .nav-brand { min-width: 0; flex-shrink: 1; gap: 6px; }
+            .brand-logo-img { width: 30px; height: 30px; border-radius: 6px; }
+            .brand-icon-box { width: 28px; height: 28px; font-size: 14px; border-radius: 6px; }
+            .brand-text-box { min-width: 0; }
+            .brand-title { font-size: 12px; max-width: 170px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+            .brand-subtitle { display: none; }
+            .nav-cta { padding: 6px 9px; font-size: 11px; gap: 3px; border-radius: 8px; flex-shrink: 0; }
+            .hero { padding: 35px 10px 24px; }
+            .hero-logo-3d-wrapper { width: 95px; height: 95px; margin: 0 auto 14px auto; }
+            .hero-logo-3d { width: 88px; height: 88px; }
+            .hero-badge { font-size: 11px; padding: 5px 12px; border-radius: 20px; }
+            .hero-title { font-size: 23px; line-height: 1.35; }
+            .hero-tagline { font-size: 13.5px; margin-bottom: 12px; }
+            .hero-desc { font-size: 12px; margin-bottom: 22px; }
+            .hero-buttons { flex-direction: column; width: 100%; gap: 10px; margin-bottom: 30px; }
+            .btn-primary, .btn-secondary { width: 100%; justify-content: center; padding: 11px 16px; font-size: 13.5px; }
+            .section { padding: 35px 10px; }
+            .section-title { font-size: 20px; }
+            .section-subtitle { font-size: 12px; }
+            .features-grid { grid-template-columns: 1fr; }
+            .partner-gyms-grid { grid-template-columns: 1fr; }
+            .highlights-grid { grid-template-columns: 1fr; }
+            .security-grid { grid-template-columns: 1fr; }
+            .shifts-grid { grid-template-columns: 1fr; }
+            .gym-card { padding: 18px 12px; }
+            .gym-name { font-size: 17.5px; }
+            .gym-status-badge { font-size: 11px; padding: 3px 8px; white-space: normal; text-align: center; }
+            .developer-card { padding: 20px 12px; }
+            .developer-avatar-box { width: 78px; height: 78px; margin-bottom: 14px; }
+            .developer-name { font-size: 19px; }
+            .contact-btn { font-size: 12px; padding: 10px 14px; }
+            .join-title { font-size: 17px; }
+            .join-desc { font-size: 12px; }
+            .btn-join { width: 100%; justify-content: center; font-size: 13px !important; padding: 11px 16px !important; }
+        }
+
+        /* ==========================================================================
+           Package 2: Modern 3D Mockup, Infinite Frosted Marquee, 3D Tilt & Scroll
+           ========================================================================== */
+        
+        /* Global Overflow-X Protection */
+        html, body {
+            overflow-x: clip !important;
+            max-width: 100% !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+        }
+        #main-content {
+            overflow-x: clip;
+            width: 100%;
+            max-width: 100%;
+        }
+
+        /* Top Scroll Progress Bar */
+        .scroll-progress-bar {
+            position: fixed;
+            top: 0;
+            right: 0;
+            height: 3.5px;
+            width: 0%;
+            background: linear-gradient(90deg, #FCA5A5 0%, #EF4444 40%, #DC2626 70%, #991B1B 100%);
+            z-index: 9999;
+            box-shadow: 0 0 14px rgba(239, 68, 68, 0.8), 0 0 4px rgba(252, 165, 165, 0.6);
+            transition: width 0.08s ease-out;
+            pointer-events: none;
+        }
+
+        /* 3D Continuous Rotating Nemov Logo (Hardware-Accelerated & Ultra-Fluid 60fps) */
+        .hero-logo-3d-wrapper {
+            perspective: 1000px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px auto;
+            width: 140px;
+            height: 140px;
+            position: relative;
+        }
+
+        .hero-logo-3d-wrapper::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 115%;
+            height: 115%;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(220, 38, 38, 0.42) 0%, rgba(220, 38, 38, 0.12) 55%, transparent 75%);
+            filter: blur(14px);
+            pointer-events: none;
+            z-index: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .hero-logo-3d-wrapper:hover::before {
+            background: radial-gradient(circle, rgba(239, 68, 68, 0.65) 0%, rgba(220, 38, 38, 0.22) 58%, transparent 78%);
+        }
+
+        .hero-logo-3d {
+            width: 130px;
+            height: 130px;
+            object-fit: contain;
+            image-rendering: -webkit-optimize-contrast;
+            transform-style: preserve-3d;
+            animation: rotateLogo3D 8s linear infinite !important;
+            will-change: transform;
+            cursor: pointer;
+            position: relative;
+            z-index: 1;
+            filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.55));
+            backface-visibility: visible;
+        }
+
+        .hero-logo-3d:hover {
+            animation-play-state: running !important;
+        }
+
+        @keyframes rotateLogo3D {
+            0% {
+                transform: perspective(1000px) rotateY(0deg);
+            }
+            100% {
+                transform: perspective(1000px) rotateY(360deg);
+            }
+        }
+
+        /* 3D Perspective App Mockup in Hero */
+        .hero-mockup-container {
+            perspective: 1200px;
+            max-width: 840px;
+            margin: 36px auto 44px;
+            position: relative;
+            padding: 10px;
+            width: 100%;
+        }
+
+        .mockup-perspective-wrapper {
+            position: relative;
+            transform-style: preserve-3d;
+            transform: rotateX(6deg) rotateY(-2deg) rotateZ(0.5deg);
+            transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.6s ease;
+            animation: heroFloat 6s ease-in-out infinite alternate;
+        }
+
+        @keyframes heroFloat {
+            0% {
+                transform: rotateX(6deg) rotateY(-2deg) rotateZ(0.5deg) translateY(0);
+            }
+            100% {
+                transform: rotateX(8deg) rotateY(-1deg) rotateZ(0.8deg) translateY(-10px);
+            }
+        }
+
+        .app-window-frame {
+            background: linear-gradient(165deg, rgba(22, 27, 40, 0.98) 0%, rgba(12, 14, 22, 0.99) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            border-radius: 18px;
+            box-shadow: 0 30px 70px rgba(0, 0, 0, 0.75), 0 0 45px rgba(220, 38, 38, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+            overflow: hidden;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            text-align: right;
+        }
+
+        .window-titlebar {
+            background: #141824;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+            padding: 11px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .window-controls {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            direction: ltr;
+        }
+
+        .win-btn {
+            width: 11px;
+            height: 11px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .win-close { background: #EF4444; box-shadow: 0 0 6px rgba(239, 68, 68, 0.6); }
+        .win-min { background: #F59E0B; box-shadow: 0 0 6px rgba(245, 158, 11, 0.5); }
+        .win-max { background: #10B981; box-shadow: 0 0 6px rgba(16, 185, 129, 0.5); }
+
+        .window-title-text {
+            font-size: 12.5px;
+            color: #FFFFFF;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 700;
+        }
+
+        .win-logo-mini {
+            width: 18px;
+            height: 18px;
+            border-radius: 4px;
+        }
+
+        .window-status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 3px 10px;
+            border-radius: 20px;
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(16, 185, 129, 0.35);
+            color: #6EE7B7;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .live-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #10B981;
+            box-shadow: 0 0 6px #10B981;
+            animation: pulseAnimation 2s infinite;
+        }
+
+        .window-content-grid {
+            display: grid;
+            grid-template-columns: 190px 1fr;
+            min-height: 290px;
+        }
+
+        .mock-sidebar {
+            background: #0E111A;
+            border-left: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 16px 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .mock-nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 12px;
+            border-radius: 8px;
+            font-size: 12.5px;
+            color: #CBD5E1;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .mock-nav-item.active {
+            background: rgba(220, 38, 38, 0.25);
+            border: 1px solid rgba(239, 68, 68, 0.5);
+            color: #FFFFFF;
+            font-weight: 700;
+        }
+
+        .mock-workspace {
+            padding: 18px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .mock-stats-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        .mock-stat-card {
+            background: rgba(26, 32, 48, 0.75);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 12px;
+            padding: 12px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .mock-stat-card.highlight-card-mock {
+            background: rgba(220, 38, 38, 0.16);
+            border-color: rgba(239, 68, 68, 0.4);
+        }
+
+        .mock-stat-num {
+            font-size: 20px;
+            font-weight: 800;
+            color: #FFFFFF;
+            line-height: 1.1;
+        }
+
+        .mock-stat-label {
+            font-size: 11.5px;
+            color: #CBD5E1;
+            font-weight: 600;
+        }
+
+        .mock-dashboard-body {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .mock-panel {
+            background: rgba(22, 27, 40, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 14px 16px;
+        }
+
+        .mock-panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .mock-panel-title {
+            font-size: 13px;
+            font-weight: 800;
+            color: #FFFFFF;
+        }
+
+        .mock-tag-active {
+            font-size: 11px;
+            font-weight: 700;
+            color: #FCA5A5;
+            background: rgba(220, 38, 38, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            padding: 3px 9px;
+            border-radius: 6px;
+        }
+
+        .mock-rows {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .mock-data-row {
+            background: rgba(30, 37, 54, 0.75);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            padding: 9px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            font-size: 12px;
+        }
+
+        .row-name {
+            color: #FFFFFF;
+            font-weight: 600;
+            margin-left: auto;
+        }
+
+        .row-badge {
+            padding: 3px 9px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .badge-green {
+            background: rgba(16, 185, 129, 0.2);
+            border: 1px solid rgba(16, 185, 129, 0.4);
+            color: #6EE7B7;
+        }
+
+        .badge-crimson {
+            background: rgba(220, 38, 38, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            color: #FCA5A5;
+        }
+
+        /* Floating Glass Widgets with Blur Effect (Strictly Outside Window Frame) */
+        .floating-glass-widget {
+            position: absolute;
+            z-index: 25;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 11px 18px;
+            border-radius: 14px;
+            background: rgba(22, 28, 42, 0.94);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            border: 1.5px solid rgba(239, 68, 68, 0.55);
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.75), 0 0 25px rgba(220, 38, 38, 0.35);
+            transform: translateZ(40px);
+            pointer-events: none;
+            text-align: right;
+            white-space: nowrap;
+            box-sizing: border-box;
+        }
+
+        .widget-icon-glow {
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .widget-headline {
+            display: block;
+            font-size: 13px;
+            font-weight: 800;
+            color: #FFFFFF;
+            line-height: 1.25;
+        }
+
+        .widget-subline {
+            display: block;
+            font-size: 11px;
+            color: #CBD5E1;
+        }
+
+        /* Desktop Coordinates (> 1340px): Completely outside the mockup window frame */
+        .widget-bmr {
+            top: 25px;
+            left: calc(100% + 24px);
+            right: auto;
+            bottom: auto;
+            animation: floatWidget1 5s ease-in-out infinite alternate;
+        }
+
+        .widget-sms {
+            bottom: 25px;
+            left: calc(100% + 24px);
+            right: auto;
+            top: auto;
+            animation: floatWidget2 5.5s ease-in-out infinite alternate;
+        }
+
+        .widget-cloud {
+            top: 25px;
+            right: calc(100% + 24px);
+            left: auto;
+            bottom: auto;
+            animation: floatWidget3 6s ease-in-out infinite alternate;
+        }
+
+        .widget-pdf {
+            bottom: 25px;
+            right: calc(100% + 24px);
+            left: auto;
+            top: auto;
+            animation: floatWidget4 5.2s ease-in-out infinite alternate;
+        }
+
+        @keyframes floatWidget1 {
+            0% { transform: translateZ(40px) translateY(0); }
+            100% { transform: translateZ(40px) translateY(-8px); }
+        }
+
+        @keyframes floatWidget2 {
+            0% { transform: translateZ(40px) translateY(0); }
+            100% { transform: translateZ(40px) translateY(8px); }
+        }
+
+        @keyframes floatWidget3 {
+            0% { transform: translateZ(40px) translateY(0); }
+            100% { transform: translateZ(40px) translateY(9px); }
+        }
+
+        @keyframes floatWidget4 {
+            0% { transform: translateZ(40px) translateY(0); }
+            100% { transform: translateZ(40px) translateY(-7px); }
+        }
+
+        /* Responsive Breakpoint for Medium Screens (769px to 1340px):
+           Dock 2 above the window frame and 2 below the window frame (100% outside) */
+        @media (max-width: 1340px) and (min-width: 769px) {
+            .widget-bmr {
+                bottom: calc(100% + 14px);
+                right: 20px;
+                top: auto;
+                left: auto;
+            }
+            .widget-cloud {
+                bottom: calc(100% + 14px);
+                left: 20px;
+                top: auto;
+                right: auto;
+            }
+            .widget-sms {
+                top: calc(100% + 14px);
+                right: 20px;
+                bottom: auto;
+                left: auto;
+            }
+            .widget-pdf {
+                top: calc(100% + 14px);
+                left: 20px;
+                bottom: auto;
+                right: auto;
+            }
+        }
+
+        /* Infinite Moving Marquee with Frosted Glass Cards (کادرهای با پس‌زمینه تار) */
+        .marquee-section {
+            position: relative;
+            z-index: 2;
+            padding: 24px 0;
+            margin: 10px 0 35px;
+            width: 100%;
+            overflow: hidden;
+            direction: ltr; /* Guarantees 100% smooth uniform continuous animation */
+            mask-image: linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%);
+            -webkit-mask-image: linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%);
+        }
+
+        .marquee-track {
+            max-width: none !important;
+            display: flex !important;
+            flex-direction: row !important;
+            flex-wrap: nowrap !important;
+            gap: 0 !important;
+            width: max-content !important;
+            min-width: max-content !important;
+            will-change: transform;
+            animation: marqueeScroll 45s linear infinite;
+        }
+
+        .marquee-section:hover .marquee-track {
+            animation-play-state: paused;
+        }
+
+        @keyframes marqueeScroll {
+            0% { transform: translate3d(0, 0, 0); }
+            100% { transform: translate3d(-50%, 0, 0); }
+        }
+
+        .marquee-group {
+            max-width: none !important;
+            display: flex !important;
+            flex-direction: row !important;
+            flex-wrap: nowrap !important;
+            align-items: center !important;
+            gap: 16px !important;
+            padding-right: 16px !important;
+            flex: 0 0 auto !important;
+            min-width: max-content !important;
+            box-sizing: border-box !important;
+        }
+
+        .marquee-card {
+            direction: rtl;
+            max-width: none !important;
+            display: inline-flex !important;
+            flex-direction: row !important;
+            align-items: center !important;
+            gap: 12px !important;
+            padding: 12px 20px !important;
+            border-radius: 16px !important;
+            background: rgba(22, 28, 42, 0.75);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            white-space: nowrap !important;
+            flex: 0 0 auto !important;
+            min-width: max-content !important;
+            margin: 0 !important;
+            box-sizing: border-box !important;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            cursor: default;
+        }
+
+        .marquee-card:hover {
+            background: rgba(32, 40, 58, 0.95);
+            border-color: rgba(239, 68, 68, 0.55);
+            box-shadow: 0 12px 28px rgba(220, 38, 38, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+            transform: translateY(-3px);
+        }
+
+        .marquee-card-icon {
+            font-size: 22px;
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: rgba(220, 38, 38, 0.16);
+            border: 1px solid rgba(239, 68, 68, 0.35);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .marquee-card-text {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            text-align: right;
+        }
+
+        .marquee-card-title {
+            font-size: 13.5px;
+            font-weight: 800;
+            color: #FFFFFF;
+            line-height: 1.3;
+        }
+
+        .marquee-card-desc {
+            font-size: 11px;
+            color: #CBD5E1;
+            font-weight: 500;
+        }
+
+        /* 3D Tilt Effect & Dynamic Light Glare */
+        .tilt-enabled {
+            transition: transform 0.22s cubic-bezier(0.2, 0, 0.2, 1), box-shadow 0.22s ease, border-color 0.22s ease;
+            will-change: transform;
+            transform-style: preserve-3d;
+            position: relative;
+        }
+
+        .tilt-glare-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: inherit;
+            background: radial-gradient(circle 240px at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(220, 38, 38, 0.18), transparent 80%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        .tilt-enabled:hover .tilt-glare-overlay {
+            opacity: 1;
+        }
+
+        /* Scroll Reveal (ScrollTrigger Equivalent) - Default is visible so no blank layout */
+        .reveal-on-scroll {
+            transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1), filter 0.6s ease;
+            will-change: opacity, transform, filter;
+        }
+
+        .reveal-pending {
+            opacity: 0 !important;
+            transform: translateY(26px) !important;
+            filter: blur(4px) !important;
+        }
+
+        .reveal-pending.revealed {
+            opacity: 1 !important;
+            transform: translateY(0) !important;
+            filter: blur(0) !important;
+        }
+
+        /* Staggered cascading entry for the 8 features */
+        .features-grid .feature-card:nth-child(1) { transition-delay: 0.04s; }
+        .features-grid .feature-card:nth-child(2) { transition-delay: 0.08s; }
+        .features-grid .feature-card:nth-child(3) { transition-delay: 0.12s; }
+        .features-grid .feature-card:nth-child(4) { transition-delay: 0.16s; }
+        .features-grid .feature-card:nth-child(5) { transition-delay: 0.20s; }
+        .features-grid .feature-card:nth-child(6) { transition-delay: 0.24s; }
+        .features-grid .feature-card:nth-child(7) { transition-delay: 0.28s; }
+        .features-grid .feature-card:nth-child(8) { transition-delay: 0.32s; }
+
+        @media (max-width: 768px) {
+            .window-content-grid { grid-template-columns: 1fr; }
+            .mock-sidebar { display: none; }
+            .floating-glass-widget { display: none; }
+            .mockup-perspective-wrapper {
+                transform: rotateX(2deg) rotateY(0deg) !important;
+                animation: none;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .hero-badge { white-space: normal; text-align: center; max-width: 95%; font-size: 11px; padding: 6px 12px; }
+            .hero-title { font-size: 20px !important; line-height: 1.35; word-break: normal; }
+            .hero-title-gradient { display: inline !important; }
+            .hero-tagline { font-size: 13px; line-height: 1.5; }
+            .hero-desc { font-size: 11.5px; line-height: 1.7; }
+            .hero-mockup-container { margin: 24px auto 30px; padding: 0; width: 100%; max-width: 100%; overflow: hidden; box-sizing: border-box; }
+            .mockup-perspective-wrapper { transform: none !important; width: 100%; max-width: 100%; box-sizing: border-box; }
+            .app-window-frame { width: 100%; max-width: 100%; box-sizing: border-box; border-radius: 12px; }
+            .window-titlebar { padding: 8px 10px; flex-wrap: wrap; gap: 8px; }
+            .window-title-text { font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px; }
+            .window-status-pill { padding: 2px 8px; font-size: 10px; }
+            .mock-workspace { padding: 12px 10px; width: 100%; box-sizing: border-box; }
+            .mock-stats-row { grid-template-columns: 1fr; gap: 8px; }
+            .mock-data-row { flex-wrap: wrap; gap: 6px; padding: 8px 10px; font-size: 11px; }
+            .row-name { width: 100%; }
+            .marquee-card { padding: 10px 14px; gap: 8px; border-radius: 12px; }
+            .marquee-card-icon { width: 32px; height: 32px; font-size: 17px; }
+            .marquee-card-title { font-size: 12px; }
+            .marquee-card-desc { font-size: 10px; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .reveal-pending {
+                opacity: 1 !important;
+                transform: none !important;
+                filter: none !important;
+                transition: none !important;
+            }
+            .marquee-track {
+                animation: none !important;
+            }
+            .mockup-perspective-wrapper {
+                animation: none !important;
+                transform: none !important;
+            }
+            .floating-glass-widget {
+                animation: none !important;
+            }
+        }
+
+    </style>
+</head>
+<body>
+    <div id="scroll-progress-bar" class="scroll-progress-bar" aria-hidden="true"></div>
+    <a href="#main-content" class="skip-link">پرش به محتوای اصلی</a>
+    <div class="ambient-glow" aria-hidden="true"></div>
+
+    <!-- Sticky Navigation Bar (Confidential: Strictly No Admin Login Button) -->
+    <header class="navbar" role="banner">
+        <div class="nav-container">
+            <a href="#" class="nav-brand" aria-label="نرم‌افزار مدیریت ورزشی نِمُو - صفحه اصلی">
+                <img src="/images/nemov_logo.png" alt="لوگوی نرم‌افزار مدیریت ورزشی نِمُو" class="brand-logo-img" width="44" height="44">
+                <div class="brand-text-box">
+                    <span class="brand-title">نرم‌افزار مدیریت ورزشی نِمُو</span>
+                    <span class="brand-subtitle">Nemov</span>
+                </div>
+            </a>
+            <nav role="navigation" aria-label="ناوبری اصلی">
+                <ul class="nav-links">
+                    <li><a href="#features" class="nav-link">ماژول‌ها و امکانات</a></li>
+                    <li><a href="#partner-gyms" class="nav-link">باشگاه‌های عضو</a></li>
+                    <li><a href="#security" class="nav-link">امنیت و پایداری</a></li>
+                    <li><a href="#contact" class="nav-link">ارتباط با توسعه‌دهنده</a></li>
+                </ul>
+            </nav>
+            <a href="#features" class="nav-cta" aria-label="مشاهده امکانات و ماژول‌های نرم‌افزار">مشاهده امکانات 📋</a>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <main id="main-content">
+        <section class="hero" aria-labelledby="hero-heading">
+            <!-- Continuous 3D Rotating Nemov Logo (Never pauses on hover) -->
+            <div class="hero-logo-3d-wrapper" aria-hidden="true">
+                <img src="/images/nemov_logo.png" alt="لوگوی سه‌بعدی چرخان نرم‌افزار مدیریت ورزشی نِمُو" class="hero-logo-3d" width="130" height="130">
+            </div>
+            <div class="hero-badge">
+                <span class="pulse-dot"></span>
+                <span>🏆 سامانه جامع مدیریت هوشمند و مربیگری باشگاه‌های ورزشی | Nemov</span>
+            </div>
+            <h1 id="hero-heading" class="hero-title">
+                <span class="hero-title-gradient">نرم‌افزار مدیریت ورزشی نِمُو</span>
+            </h1>
+            <p class="hero-tagline">
+                راهکار یکپارچه و پیشرفته برای مربیان حرفه‌ای و مدیران باشگاه‌های بدنسازی
+            </p>
+            <p class="hero-desc">
+                طراحی‌شده بر پایه کارکرد ۱۰۰٪ مستقل و آفلاین روی ویندوز همراه با امنیت و همگام‌سازی ابری؛ مجهز به پرونده الکترونیک سلامت، بانک جامع ویدیوهای تمرینی، طراحی هوشمند رژیم غذایی و کالری‌شماری، حسابداری و صندوق، و صدور فوری شناسنامه چاپی بدون نیاز به اینترنت.
+            </p>
+            <div class="hero-buttons">
+                <a href="#features" class="btn-primary" aria-label="مشاهده امکانات و ماژول‌ها">مشاهده امکانات و ماژول‌ها 📋</a>
+                <a href="#partner-gyms" class="btn-secondary" aria-label="مشاهده باشگاه‌های عضو سامانه">باشگاه‌های عضو سامانه 🏋️‍♂️</a>
+            </div>
+
+            <!-- 3D Perspective App Mockup with Floating Sports Widgets -->
+            <div class="hero-mockup-container">
+                <div class="mockup-perspective-wrapper">
+                    <!-- 4 Floating Glass Widgets (Strictly Outside Window Frame) -->
+                    <!-- Widget 1: Top-Right Outer (BMR Calculation) -->
+                    <div class="floating-glass-widget widget-bmr" aria-hidden="true">
+                        <div class="widget-icon-glow">🟢</div>
+                        <div class="widget-text">
+                            <span class="widget-headline">محاسبه خودکار BMR</span>
+                            <span class="widget-subline">ارزیابی ترکیب بدنی و کالری</span>
+                        </div>
+                    </div>
+
+                    <!-- Widget 2: Bottom-Right Outer (SMS Notification System) -->
+                    <div class="floating-glass-widget widget-sms" aria-hidden="true">
+                        <div class="widget-icon-glow">📩</div>
+                        <div class="widget-text">
+                            <span class="widget-headline">سامانه پیامکی هوشمند</span>
+                            <span class="widget-subline">تحویل آنی بدون بلک‌لیست</span>
+                        </div>
+                    </div>
+
+                    <!-- Widget 3: Top-Left Outer (Cloud Sync & Backup) -->
+                    <div class="floating-glass-widget widget-cloud" aria-hidden="true">
+                        <div class="widget-icon-glow">☁️</div>
+                        <div class="widget-text">
+                            <span class="widget-headline">همگام‌سازی ابری</span>
+                            <span class="widget-subline">پشتیبان خودکار در سرور</span>
+                        </div>
+                    </div>
+
+                    <!-- Widget 4: Bottom-Left Outer (Instant Offline PDF Print) -->
+                    <div class="floating-glass-widget widget-pdf" aria-hidden="true">
+                        <div class="widget-icon-glow">⚡</div>
+                        <div class="widget-text">
+                            <span class="widget-headline">صدور فوری PDF چاپی</span>
+                            <span class="widget-subline">سربرگ اختصاصی بدون اینترنت</span>
+                        </div>
+                    </div>
+
+                    <!-- Main 3D App Window Frame -->
+                    <div class="app-window-frame">
+                        <!-- Window Titlebar -->
+                        <div class="window-titlebar">
+                            <div class="window-controls">
+                                <span class="win-btn win-close"></span>
+                                <span class="win-btn win-min"></span>
+                                <span class="win-btn win-max"></span>
+                            </div>
+                            <div class="window-title-text">
+                                <img src="/images/nemov_logo.png" alt="" class="win-logo-mini" width="18" height="18">
+                                <span>نرم‌افزار مدیریت ورزشی نِمُو - نسخه ۳.۴.۳ [پایگاه داده آفلاین فعال]</span>
+                            </div>
+                            <div class="window-status-pill">
+                                <span class="live-dot"></span>
+                                <span>۱۰۰٪ آماده و آفلاین</span>
+                            </div>
+                        </div>
+
+                        <!-- Window Content (Mockup Dashboard) -->
+                        <div class="window-content-grid">
+                            <!-- Mini Sidebar -->
+                            <aside class="mock-sidebar">
+                                <div class="mock-nav-item active"><span class="mock-nav-icon">📊</span><span>داشبورد</span></div>
+                                <div class="mock-nav-item"><span class="mock-nav-icon">👥</span><span>ورزشکاران</span></div>
+                                <div class="mock-nav-item"><span class="mock-nav-icon">🏋️‍♂️</span><span>برنامه تمرین</span></div>
+                                <div class="mock-nav-item"><span class="mock-nav-icon">🥗</span><span>رژیم غذایی</span></div>
+                                <div class="mock-nav-item"><span class="mock-nav-icon">💰</span><span>حسابداری</span></div>
+                                <div class="mock-nav-item"><span class="mock-nav-icon">⚙️</span><span>تنظیمات تم</span></div>
+                            </aside>
+
+                            <!-- Mock Main Workspace -->
+                            <div class="mock-workspace">
+                                <!-- Top Stat Cards in Mockup -->
+                                <div class="mock-stats-row">
+                                    <div class="mock-stat-card">
+                                        <span class="mock-stat-num">۴۸</span>
+                                        <span class="mock-stat-label">ورزشکار فعال در دوره</span>
+                                    </div>
+                                    <div class="mock-stat-card">
+                                        <span class="mock-stat-num">۱۰۰٪</span>
+                                        <span class="mock-stat-label">پایداری بدون اینترنت</span>
+                                    </div>
+                                    <div class="mock-stat-card highlight-card-mock">
+                                        <span class="mock-stat-num">۱۷ تم</span>
+                                        <span class="mock-stat-label">شخصی‌سازی برندینگ</span>
+                                    </div>
+                                </div>
+
+                                <!-- Mock Content Preview: Workout & Health Card -->
+                                <div class="mock-dashboard-body">
+                                    <div class="mock-panel mock-workout-panel">
+                                        <div class="mock-panel-header">
+                                            <span class="mock-panel-title">📋 آخرین پرونده‌های ارزیابی فیزیک و BMR</span>
+                                            <span class="mock-tag-active">تایید مربی</span>
+                                        </div>
+                                        <div class="mock-rows">
+                                            <div class="mock-data-row">
+                                                <span class="row-avatar">👤</span>
+                                                <span class="row-name">علی رضایی (دوره هایپرتروفی)</span>
+                                                <span class="row-badge badge-green">BMR: 1840 kcal</span>
+                                                <span class="row-badge badge-crimson">PDF صادر شد</span>
+                                            </div>
+                                            <div class="mock-data-row">
+                                                <span class="row-avatar">👤</span>
+                                                <span class="row-name">محمد حسینی (کاهش چربی)</span>
+                                                <span class="row-badge badge-green">چربی: 14.2%</span>
+                                                <span class="row-badge badge-crimson">پیامک ارسال شد</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Highlights -->
+            <div class="highlights-grid">
+                <div class="highlight-card reveal-on-scroll">
+                    <div class="tilt-glare-overlay" aria-hidden="true"></div>
+                    <div class="highlight-icon">⚡</div>
+                    <div class="highlight-text">
+                        <h3>کارکرد ۱۰۰٪ آفلاین</h3>
+                        <p>پایداری مطلق در سالن ورزشی و چاپ برنامه‌ها بدون وابستگی به اینترنت</p>
+                    </div>
+                </div>
+                <div class="highlight-card reveal-on-scroll">
+                    <div class="tilt-glare-overlay" aria-hidden="true"></div>
+                    <div class="highlight-icon">🛡️</div>
+                    <div class="highlight-text">
+                        <h3>پشتیبان‌گیری ابری</h3>
+                        <p>همگام‌سازی رمزنگاری‌شده با سرورهای امن در پس‌زمینه</p>
+                    </div>
+                </div>
+                <div class="highlight-card reveal-on-scroll">
+                    <div class="tilt-glare-overlay" aria-hidden="true"></div>
+                    <div class="highlight-icon">📄</div>
+                    <div class="highlight-text">
+                        <h3>شناسنامه چاپی شکیل</h3>
+                        <p>تولید سریع و استاندارد PDF فارسی برای ارزیابی فیزیک و برنامه‌ها</p>
+                    </div>
+                </div>
+                <div class="highlight-card reveal-on-scroll">
+                    <div class="tilt-glare-overlay" aria-hidden="true"></div>
+                    <div class="highlight-icon">💰</div>
+                    <div class="highlight-text">
+                        <h3>مدیریت مالی و شهریه</h3>
+                        <p>کنترل دوره‌ها، صندوق، تراز مالی و یادآوری هوشمند سررسید اعضا</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Infinite Moving Marquee with Frosted Glass Cards (کادرهای با پس‌زمینه تار) -->
+        <section class="marquee-section" aria-label="خلاصه امکانات و قابلیت‌های برجسته نرم‌افزار نِمُو">
+            <div class="marquee-track">
+                <!-- Group 1 -->
+                <div class="marquee-group">
+                    <div class="marquee-card">
+                        <span class="marquee-card-icon">📋</span>
+                        <div class="marquee-card-text">
+                            <strong class="marquee-card-title">پرونده سلامت فیزیکی</strong>
+                            <span class="marquee-card-desc">ترکیب بدنی، BMR و غربالگری</span>
+                        </div>
+                    </div>
+                    <div class="marquee-card">
+                        <span class="marquee-card-icon">🏋️‍♂️</span>
+                        <div class="marquee-card-text">
+                            <strong class="marquee-card-title">طراحی هوشمند تمرین</strong>
+                            <span class="marquee-card-desc">بانک ویدیویی و آناتومی عضلات</span>
+                        </div>
+                    </div>
+                    <div class="marquee-card">
+                        <span class="marquee-card-icon">🥗</span>
+                        <div class="marquee-card-text">
+                            <strong class="marquee-card-title">برنامه غذایی و کالری‌شماری</strong>
+                            <span class="marquee-card-desc">محاسبه درشت‌مغذی‌ها و TDEE</span>
+                        </div>
+                    </div>
+                    <div class="marquee-card">
+                        <span class="marquee-card-icon">📄</span>
+                        <div class="marquee-card-text">
+                            <strong class="marquee-card-title">موتور صدور PDF چاپی</strong>
+                            <span class="marquee-card-desc">شناسنامه ورزشی با لوگوی باشگاه</span>
+                        </div>
+                    </div>
+                    <div class="marquee-card">
+                        <span class="marquee-card-icon">💰</span>
+                        <div class="marquee-card-text">
+                            <strong class="marquee-card-title">حسابداری و مدیریت شهریه</strong>
+                            <span class="marquee-card-desc">کنترل صندوق و یادآوری سررسید</span>
+                        </div>
+                    </div>
+                    <div class="marquee-card">
+                        <span class="marquee-card-icon">📩</span>
+                        <div class="marquee-card-text">
+                            <strong class="marquee-card-title">سامانه پیامکی هوشمند</strong>
+                            <span class="marquee-card-desc">تحویل آنی بدون بلک‌لیست</span>
+                        </div>
+                    </div>
+                    <div class="marquee-card">
+                        <span class="marquee-card-icon">⚡</span>
+                        <div class="marquee-card-text">
+                            <strong class="marquee-card-title">کارکرد ۱۰۰٪ آفلاین</strong>
+                            <span class="marquee-card-desc">پایداری مطلق روی سیستم ویندوز</span>
+                        </div>
+                    </div>
+                    <div class="marquee-card">
+                        <span class="marquee-card-icon">☁️</span>
+                        <div class="marquee-card-text">
+                            <strong class="marquee-card-title">پشتیبان‌گیری خودکار ابری</strong>
+                            <span class="marquee-card-desc">همگام‌سازی امن با سرور</span>
+                        </div>
+                    </div>
+                    <div class="marquee-card">
+                        <span class="marquee-card-icon">🎨</span>
+                        <div class="marquee-card-text">
+                            <strong class="marquee-card-title">۱۷ تم رنگی اختصاصی</strong>
+                            <span class="marquee-card-desc">۱۲ تم دارک و ۵ تم لایت لوکس</span>
+                        </div>
+                    </div>
+                    <div class="marquee-card">
+                        <span class="marquee-card-icon">🛡️</span>
+                        <div class="marquee-card-text">
+                            <strong class="marquee-card-title">امنیت و حریم خصوصی داده‌ها</strong>
+                            <span class="marquee-card-desc">پایگاه داده محلی رمزنگاری‌شده</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Group 2 (Duplicate for Seamless Infinite Loop) -->
+                <div class="marquee-group" aria-hidden="true">
+                    <div class="marquee-card">
+                        <span class="marquee-card-icon">📋</span>
+                        <div class="marquee-card-text">
+                            <strong class="marquee-card-title">پرونده سلامت فیزیکی</strong>
+                            <span class="marquee-card-desc">ترکیب بدنی، BMR و غربالگری</span>
+                        </div>
+                    </div>
+                    <div class="marquee-card">
+                        <span class="marquee-card-icon">🏋️‍♂️</span>
+                        <div class="marquee-card-text">
+                            <strong class="marquee-card-title">طراحی هوشمند تمرین</strong>
+                            <span class="marquee-card-desc">بانک ویدیویی و آناتومی عضلات</span>
+                        </div>
+                    </div>
+                    <div class="marquee-card">
+                        <span class="marquee-card-icon">🥗</span>
+                        <div class="marquee-card-text">
+                            <strong class="marquee-card-title">برنامه غذایی و کالری‌شماری</strong>
+                            <span class="marquee-card-desc">محاسبه درشت‌مغذی‌ها و TDEE</span>
+                        </div>
+                    </div>
+                    <div class="marquee-card">
+                        <span class="marquee-card-icon">📄</span>
+                        <div class="marquee-card-text">
+                            <strong class="marquee-card-title">موتور صدور PDF چاپی</strong>
+                            <span class="marquee-card-desc">شناسنامه ورزشی با لوگوی باشگاه</span>
+                        </div>
+                    </div>
+                    <div class="marquee-card">
+                        <span class="marquee-card-icon">💰</span>
+                        <div class="marquee-card-text">
+                            <strong class="marquee-card-title">حسابداری و مدیریت شهریه</strong>
+                            <span class="marquee-card-desc">کنترل صندوق و یادآوری سررسید</span>
+                        </div>
+                    </div>
+                    <div class="marquee-card">
+                        <span class="marquee-card-icon">📩</span>
+                        <div class="marquee-card-text">
+                            <strong class="marquee-card-title">سامانه پیامکی هوشمند</strong>
+                            <span class="marquee-card-desc">تحویل آنی بدون بلک‌لیست</span>
+                        </div>
+                    </div>
+                    <div class="marquee-card">
+                        <span class="marquee-card-icon">⚡</span>
+                        <div class="marquee-card-text">
+                            <strong class="marquee-card-title">کارکرد ۱۰۰٪ آفلاین</strong>
+                            <span class="marquee-card-desc">پایداری مطلق روی سیستم ویندوز</span>
+                        </div>
+                    </div>
+                    <div class="marquee-card">
+                        <span class="marquee-card-icon">☁️</span>
+                        <div class="marquee-card-text">
+                            <strong class="marquee-card-title">پشتیبان‌گیری خودکار ابری</strong>
+                            <span class="marquee-card-desc">همگام‌سازی امن با سرور</span>
+                        </div>
+                    </div>
+                    <div class="marquee-card">
+                        <span class="marquee-card-icon">🎨</span>
+                        <div class="marquee-card-text">
+                            <strong class="marquee-card-title">۱۷ تم رنگی اختصاصی</strong>
+                            <span class="marquee-card-desc">۱۲ تم دارک و ۵ تم لایت لوکس</span>
+                        </div>
+                    </div>
+                    <div class="marquee-card">
+                        <span class="marquee-card-icon">🛡️</span>
+                        <div class="marquee-card-text">
+                            <strong class="marquee-card-title">امنیت و حریم خصوصی داده‌ها</strong>
+                            <span class="marquee-card-desc">پایگاه داده محلی رمزنگاری‌شده</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 8 Main Modules Grid (Symmetric Layout) -->
+        <section id="features" class="section" role="region" aria-labelledby="features-heading">
+            <div class="section-header">
+                <div class="section-pill">معماری جامع و ماژولار</div>
+                <h2 id="features-heading" class="section-title">ویترین کامل قابلیت‌ها و ماژول‌های سیستم</h2>
+                <p class="section-subtitle">
+                    هشت ماژول تخصصی و کاملاً یکپارچه، طراحی‌شده بر اساس نیازهای میدانی مدیران باشگاه‌ها و مربیان ورزشی
+                </p>
+            </div>
+
+            <div class="features-grid">
+                <!-- Module 1 -->
+                <article class="feature-card reveal-on-scroll" aria-labelledby="module-title-1">
+                    <div class="feature-top-bar">
+                        <div class="feature-icon-wrapper" aria-hidden="true">📋</div>
+                        <span class="feature-module-badge">ماژول ۱</span>
+                    </div>
+                    <h3 id="module-title-1" class="feature-title">پرونده سلامت و فیزیک ورزشکار</h3>
+                    <div class="tilt-glare-overlay" aria-hidden="true"></div>
+                    <ul class="feature-list">
+                        <li class="feature-item">ارزیابی ترکیب بدنی و شاخص‌های آنتروپومتریک شامل BMR، درصد چربی، توده عضلانی و نسبت دور کمر به باسن (WHR).</li>
+                        <li class="feature-item">تست‌های تخصصی غربالگری ناهنجاری‌های اسکلتی و قامتی (لوردوز، کیفوز، اسکولیوز، افتادگی شانه، پای پرانتزی و ضربدری).</li>
+                        <li class="feature-item">آلبوم تصویری پیشرفت فیزیکی با قابلیت مقایسه دوره‌ای عکس‌های قبل و بعد ورزشکار در زوایای استاندارد.</li>
+                        <li class="feature-item">بایگانی دائمی سوابق پزشکی، تاریخچه آسیب‌های ورزشی، بیماری‌ها و منع‌های تمرینی.</li>
+                    </ul>
+                </article>
+
+                <!-- Module 2 -->
+                <article class="feature-card reveal-on-scroll" aria-labelledby="module-title-2">
+                    <div class="feature-top-bar">
+                        <div class="feature-icon-wrapper" aria-hidden="true">🏋️‍♂️</div>
+                        <span class="feature-module-badge">ماژول ۲</span>
+                    </div>
+                    <h3 id="module-title-2" class="feature-title">طراحی تمرین و بانک حرکات با ویدیو</h3>
+                    <div class="tilt-glare-overlay" aria-hidden="true"></div>
+                    <ul class="feature-list">
+                        <li class="feature-item">کتابخانه غنی حرکات ورزشی تفکیک‌شده بر اساس گروه‌های عضلانی هدف و تجهیزات تمرینی باشگاه.</li>
+                        <li class="feature-item">پخش ویدیوی تکنیک صحیح اجرای حرکت و بررسی زوایای آناتومیکی جهت پیشگیری از آسیب و اجرای استاندارد.</li>
+                        <li class="feature-item">طراحی هوشمند جلسات تمرینی شامل تعداد ست‌ها، دامنه‌های تکرار، زمان استراحت، سوپرست و دراپ‌ست.</li>
+                        <li class="feature-item">قابلیت ایجاد، ویرایش و ذخیره الگوهای تمرینی آماده برای سطوح مبتدی، متوسط و پیشرفته.</li>
+                    </ul>
+                </article>
+
+                <!-- Module 3 -->
+                <article class="feature-card reveal-on-scroll" aria-labelledby="module-title-3">
+                    <div class="feature-top-bar">
+                        <div class="feature-icon-wrapper" aria-hidden="true">🥗</div>
+                        <span class="feature-module-badge">ماژول ۳</span>
+                    </div>
+                    <h3 id="module-title-3" class="feature-title">طراحی تخصصی برنامه غذایی و کالری‌شماری</h3>
+                    <div class="tilt-glare-overlay" aria-hidden="true"></div>
+                    <ul class="feature-list">
+                        <li class="feature-item">بانک جامع غذاهای سنتی و مدرن ایرانی همراه با جدول ارزش غذایی دقیق و میزان پروتئین و کالری.</li>
+                        <li class="feature-item">محاسبه‌گر خودکار نرخ متابولیسم پایه (BMR) و کل انرژی مصرفی روزانه (TDEE) متناسب با تیپ بدنی.</li>
+                        <li class="feature-item">تفکیک هوشمند درشت‌مغذی‌ها (پروتئین، کربوهیدرات، چربی مفید) برای وعده‌ها و میان‌وعده‌های روزانه.</li>
+                        <li class="feature-item">ماژول اختصاصی تجویز، زمان‌بندی و دوز بهینه مصرف مکمل‌های ورزشی مجاز و نوشیدنی‌های ورزشی.</li>
+                    </ul>
+                </article>
+
+                <!-- Module 4 -->
+                <article class="feature-card reveal-on-scroll" aria-labelledby="module-title-4">
+                    <div class="feature-top-bar">
+                        <div class="feature-icon-wrapper" aria-hidden="true">📄</div>
+                        <span class="feature-module-badge">ماژول ۴</span>
+                    </div>
+                    <h3 id="module-title-4" class="feature-title">موتور صدور شناسنامه و PDF چاپی حرفه‌ای</h3>
+                    <div class="tilt-glare-overlay" aria-hidden="true"></div>
+                    <ul class="feature-list">
+                        <li class="feature-item">صدور شناسنامه سلامت فیزیکی و ورزشی بسیار شکیل و فشرده در قالب‌های استاندارد A4 و A5.</li>
+                        <li class="feature-item">خروجی چاپی برنامه‌های تمرینی و غذایی با سربرگ و لوگوی اختصاصی باشگاه.</li>
+                        <li class="feature-item">تولید ۱۰۰٪ آفلاین و آنی بدون وابستگی به اینترنت یا نرم‌افزارهای جانبی.</li>
+                        <li class="feature-item">طراحی تایپوگرافی اصیل با فونت فارسی بهینه، عدم به هم ریختگی فونت و خوانایی عالی در چاپ.</li>
+                    </ul>
+                </article>
+
+                <!-- Module 5 -->
+                <article class="feature-card reveal-on-scroll" aria-labelledby="module-title-5">
+                    <div class="feature-top-bar">
+                        <div class="feature-icon-wrapper" aria-hidden="true">💰</div>
+                        <span class="feature-module-badge">ماژول ۵</span>
+                    </div>
+                    <h3 id="module-title-5" class="feature-title">حسابداری، صندوق و مدیریت شهریه</h3>
+                    <div class="tilt-glare-overlay" aria-hidden="true"></div>
+                    <ul class="feature-list">
+                        <li class="feature-item">ثبت و مدیریت دوره‌ها، پکیج‌های عضویت ماهانه، فصلی، سالانه و سانس‌های خصوصی مربیگری.</li>
+                        <li class="feature-item">سیستم صندوق و ثبت روش‌های مختلف پرداخت (نقدی، کارت‌خوان، کارت‌به‌کارت و تخفیف‌ها).</li>
+                        <li class="feature-item">گزارش‌گیری جامع از دریافتی‌ها، تراز سود و زیان و بررسی لیست اعضای بدهکار در چند ثانیه.</li>
+                        <li class="feature-item">یادآوری هوشمند تاریخ تمدید دوره‌ها و شناسایی خودکار اعضای با عضویت رو به پایان.</li>
+                    </ul>
+                </article>
+
+                <!-- Module 6 -->
+                <article class="feature-card reveal-on-scroll" aria-labelledby="module-title-6">
+                    <div class="feature-top-bar">
+                        <div class="feature-icon-wrapper" aria-hidden="true">📩</div>
+                        <span class="feature-module-badge">ماژول ۶</span>
+                    </div>
+                    <h3 id="module-title-6" class="feature-title">سامانه اطلاع‌رسانی پیامکی هوشمند</h3>
+                    <div class="tilt-glare-overlay" aria-hidden="true"></div>
+                    <ul class="feature-list">
+                        <li class="feature-item">ارسال پیامک از خطوط خدماتی بدون تداخل با بلک‌لیست مخابراتی برای اطمینان از تحویل ۱۰۰٪ پیام‌ها.</li>
+                        <li class="feature-item">تبریک خودکار سالروز تولد ورزشکاران جهت ارتقای تعامل، حس وفاداری و رضایت ورزشکار.</li>
+                        <li class="feature-item">یادآوری خودکار سررسید شهریه، پیامک‌های خوش‌آمدگویی و تایید ثبت‌نام در سامانه.</li>
+                        <li class="feature-item">ارسال پیامک‌های گروهی سریع برای اعلام رویدادها، تغییر ساعات کاری و تعطیلی‌های باشگاه.</li>
+                    </ul>
+                </article>
+
+                <!-- Module 7 -->
+                <article class="feature-card reveal-on-scroll" aria-labelledby="module-title-7">
+                    <div class="feature-top-bar">
+                        <div class="feature-icon-wrapper" aria-hidden="true">🛡️</div>
+                        <span class="feature-module-badge">ماژول ۷</span>
+                    </div>
+                    <h3 id="module-title-7" class="feature-title">امنیت ۱۰۰٪ آفلاین با همگام‌سازی ابری</h3>
+                    <div class="tilt-glare-overlay" aria-hidden="true"></div>
+                    <ul class="feature-list">
+                        <li class="feature-item">کارکرد کاملاً مستقل روی سیستم‌عامل ویندوز بدون وابستگی به اینترنت در سالن ورزشی.</li>
+                        <li class="feature-item">پایگاه داده محلی سریع و ایمن با رمزنگاری قوی برای حفاظت از حریم خصوصی ورزشکاران.</li>
+                        <li class="feature-item">پشتیبان‌گیری خودکار و هوشمند در پایان روز کاری روی سرورهای ابری کلودفلر.</li>
+                        <li class="feature-item">قابلیت بازیابی آنی اطلاعات در صورت آسیب سیستم یا تعویض رایانه باشگاه بدون فوت وقت.</li>
+                    </ul>
+                </article>
+
+                <!-- Module 8 -->
+                <article class="feature-card reveal-on-scroll" aria-labelledby="module-title-8">
+                    <div class="feature-top-bar">
+                        <div class="feature-icon-wrapper" aria-hidden="true">🎨</div>
+                        <span class="feature-module-badge">ماژول ۸</span>
+                    </div>
+                    <h3 id="module-title-8" class="feature-title">شخصی‌سازی، تم‌ها و برندینگ باشگاه</h3>
+                    <div class="tilt-glare-overlay" aria-hidden="true"></div>
+                    <ul class="feature-list">
+                        <li class="feature-item">موتور تم اختصاصی با کلکسیون ۱۷ پالت رنگی مدرن (۱۲ تم دارک و ۵ تم لایت) متناسب با سلیقه مربی.</li>
+                        <li class="feature-item">بارگذاری لوگو و نام اختصاصی باشگاه ورزشی با بازنشانی آنی به لوگوی پیش‌فرض نِمُو در صورت تمایل.</li>
+                        <li class="feature-item">درج خودکار لوگو و نام باشگاه در سربرگ و واترمارک برنامه‌های تمرینی و تغذیه PDF.</li>
+                        <li class="feature-item">انعکاس نام اختصاصی باشگاه در تمامی پیامک‌های خودکار ارسالی به ورزشکاران جهت تثبیت برند مجموعه.</li>
+                    </ul>
+                </article>
+            </div>
+        </section>
+
+        <!-- Partner Gyms Section -->
+        <section id="partner-gyms" class="section" role="region" aria-labelledby="partner-gyms-heading">
+            <div class="section-header">
+                <div class="section-pill">شبکه باشگاه‌های پیشرو</div>
+                <h2 id="partner-gyms-heading" class="section-title">باشگاه‌های مجهز به نرم‌افزار نِمُو</h2>
+                <p class="section-subtitle">
+                    مجموعه‌های ورزشی ممتازی که با تجهیز به این سامانه، بالاترین استاندارد مربیگری و رضایت ورزشکاران را به ارمغان آورده‌اند
+                </p>
+            </div>
+
+            <div class="partner-gyms-grid">
+                <!-- Gym 1: Yalda Gym (باشگاه بدنسازی یلدا) -->
+                <article class="gym-card reveal-on-scroll" aria-labelledby="gym-name-yalda">
+                    <div class="tilt-glare-overlay" aria-hidden="true"></div>
+                    <div class="gym-status-badge">باشگاه برتر عضو سامانه • استان مازندران</div>
+                    
+                    <div class="gym-header">
+                        <div class="gym-logo-frame">
+                            <img src="/images/yalda_logo.jpg" alt="لوگوی رسمی باشگاه بدنسازی یلدا" class="gym-logo-img" loading="lazy" width="72" height="72">
+                        </div>
+                        <div class="gym-info">
+                            <h3 id="gym-name-yalda" class="gym-name">باشگاه بدنسازی یلدا</h3>
+                            <span class="gym-name-en">Yalda Gym • Since 2006</span>
+                            <span class="gym-manager">مدیریت: جناب آقای محراب حاجی‌پور</span>
+                        </div>
+                    </div>
+
+                    <div class="gym-address-box">
+                        <span>📍</span>
+                        <span>مازندران، قائمشهر، خیابان کوچکسرا، نبش شقایق ۳</span>
+                    </div>
+
+                    <div class="shifts-section-title">
+                        <span>⏰</span>
+                        <span>ساعات دقیق سانس‌ها و شیفت‌های کاری مجموعه:</span>
+                    </div>
+
+                    <div class="shifts-grid" role="region" aria-label="ساعات دقیق سانس‌ها و شیفت‌های کاری مجموعه">
+                        <div class="shift-card shift-card-female">
+                            <span class="shift-label">👩 سانس بانوان (صبح)</span>
+                            <span class="shift-time">۸:۰۰ صبح الی ۱۲:۰۰ ظهر</span>
+                        </div>
+                        <div class="shift-card shift-card-female">
+                            <span class="shift-label">👩 سانس بانوان (عصر)</span>
+                            <span class="shift-time">۱۵:۰۰ الی ۱۹:۰۰ (۳ تا ۷ غروب)</span>
+                        </div>
+                        <div class="shift-card shift-card-male">
+                            <span class="shift-label">👨 سانس آقایان (ظهر)</span>
+                            <span class="shift-time">۱۲:۰۰ ظهر الی ۱۵:۰۰ (۳ بعدازظهر)</span>
+                        </div>
+                        <div class="shift-card shift-card-male">
+                            <span class="shift-label">👨 سانس آقایان (شب)</span>
+                            <span class="shift-time">۱۹:۰۰ الی ۲۳:۰۰ (۷ غروب تا ۱۱ شب)</span>
+                        </div>
+                    </div>
+
+                    <div class="gym-features-badges">
+                        <span class="gym-feature-pill">✓ پرونده الکترونیک سلامت</span>
+                        <span class="gym-feature-pill">✓ تمرینات ویدیویی</span>
+                        <span class="gym-feature-pill">✓ رژیم و کالری‌شماری</span>
+                        <span class="gym-feature-pill">✓ اطلاع‌رسانی پیامکی</span>
+                        <span class="gym-feature-pill">✓ پشتیبان‌گیری ابری فعال</span>
+                    </div>
+                </article>
+
+                <!-- Modular Prospective Card: Join Platform -->
+                <article class="gym-join-card" aria-labelledby="join-heading">
+                    <div class="tilt-glare-overlay" aria-hidden="true"></div>
+                    <div class="join-icon-box" aria-hidden="true">🏆</div>
+                    <h3 id="join-heading" class="join-title">باشگاه خود را مجهز کنید</h3>
+                    <p class="join-desc">
+                        آیا مایلید مجموعه ورزشی شما نیز به نرم‌افزار مدیریت ورزشی نِمُو مجهز شده و از اتوماسیون مربیگری، ارزیابی بدنی و پشتیبان‌گیری ابری بهره‌مند شود؟
+                    </p>
+                    <a href="https://t.me/AqaSamadi" target="_blank" rel="noopener noreferrer" class="btn-primary btn-join" aria-label="مشاوره و درخواست تجهیز باشگاه در تلگرام (باز شدن در تب جدید)">
+                        مشاوره و درخواست تجهیز باشگاه 🚀
+                    </a>
+                </article>
+            </div>
+        </section>
+
+        <!-- Security & Architecture Section -->
+        <section id="security" class="section" role="region" aria-labelledby="security-heading">
+            <div class="section-header">
+                <div class="section-pill">معماری پایدار و امن</div>
+                <h2 id="security-heading" class="section-title">عملکرد ۱۰۰٪ مستقل و امنیت در تراز صنعتی</h2>
+                <p class="section-subtitle">
+                    خیال شما از بابت قطعی اینترنت، سرعت نرم‌افزار و حفظ اطلاعات محرمانه ورزشکاران برای همیشه راحت خواهد بود
+                </p>
+            </div>
+
+            <div class="security-grid">
+                <div class="security-card reveal-on-scroll">
+                    <div class="tilt-glare-overlay" aria-hidden="true"></div>
+                    <div class="security-icon-box" aria-hidden="true">💻</div>
+                    <h3>استقلال ۱۰۰٪ از اینترنت در باشگاه</h3>
+                    <p>
+                        تمام فرایندهای اصلی سامانه شامل ثبت‌نام ورزشکار، ارزیابی فیزیک، طراحی برنامه و صدور PDF چاپی به صورت ۱۰۰٪ آفلاین و محلی روی سیستم باشگاه اجرا می‌شود.
+                    </p>
+                </div>
+                <div class="security-card reveal-on-scroll">
+                    <div class="tilt-glare-overlay" aria-hidden="true"></div>
+                    <div class="security-icon-box" aria-hidden="true">🔒</div>
+                    <h3>حفظ حریم خصوصی و رمزنگاری داده‌ها</h3>
+                    <p>
+                        پرونده‌های پزشکی، اندازه‌گیری‌های بدنی و تصاویر پیشرفت ورزشکاران روی پایگاه داده محلی ایمن و غیرقابل دسترسی توسط افراد غیرمجاز حفاظت می‌شوند.
+                    </p>
+                </div>
+                <div class="security-card reveal-on-scroll">
+                    <div class="tilt-glare-overlay" aria-hidden="true"></div>
+                    <div class="security-icon-box" aria-hidden="true">☁️</div>
+                    <h3>پشتیبان‌گیری ابری خودکار در سرور</h3>
+                    <p>
+                        با اتصال به اینترنت، بکاپ‌های امنیتی به صورت خودکار به فضای ابری امن سرور ارسال می‌شوند تا در صورت نقص سخت‌افزاری، اطلاعات بلافاصله بازیابی شوند.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Developer Profile & Official Support Section -->
+        <section id="contact" class="section" role="region" aria-labelledby="contact-heading">
+            <div class="section-header">
+                <div class="section-pill">پشتیبانی و توسعه رسمی</div>
+                <h2 id="contact-heading" class="section-title">توسعه‌دهنده نرم‌افزار نِمُو</h2>
+                <p class="section-subtitle">
+                    راه‌های ارتباطی رسمی جهت مشاوره، پشتیبانی فنی و تجهیز باشگاه‌های ورزشی
+                </p>
+            </div>
+
+            <div class="developer-card reveal-on-scroll">
+                <div class="tilt-glare-overlay" aria-hidden="true"></div>
+                <div class="developer-avatar-box">
+                    <img src="/images/developer_photo.jpg" alt="مهندس ابوالفضل صمدی کوچکسرائی - توسعه‌دهنده نرم‌افزار مدیریت ورزشی نِمُو" class="developer-avatar-img" width="88" height="88" loading="lazy">
+                </div>
+                <h3 class="developer-name">مهندس ابوالفضل صمدی کوچکسرائی</h3>
+                <span class="developer-role">توسعه‌دهنده و طراح نرم‌افزار | Software Developer & Architect</span>
+                <p class="developer-bio">
+                    دانشجوی رشته مهندسی کامپیوتر دانشگاه صنعتی نوشیروانی بابل
+                </p>
+
+                <div class="contact-links-grid">
+                    <a href="mailto:support@nemovapp.ir" class="contact-btn contact-btn-email" aria-label="ارسال ایمیل به پشتیبانی رسمی نرم‌افزار نِمُو">
+                        <span aria-hidden="true">📧</span>
+                        <span>support@nemovapp.ir</span>
+                    </a>
+                    <a href="https://t.me/AqaSamadi" target="_blank" rel="noopener noreferrer" class="contact-btn contact-btn-telegram" aria-label="ارتباط در تلگرام با مهندس ابوالفضل صمدی (باز شدن در تب جدید)">
+                        <span aria-hidden="true">✈️</span>
+                        <span>Telegram: @AqaSamadi</span>
+                    </a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer (Strictly No Admin Login Link) -->
+    <footer class="footer" role="contentinfo">
+        <div class="footer-content">
+            <div class="footer-brand">نرم‌افزار مدیریت ورزشی نِمُو • Nemov</div>
+            <p class="footer-copy">
+                تمامی حقوق مادی و معنوی این وب‌سایت و سامانه مدیریت ورزشی نِمُو محفوظ است © ۲۰۲۶ • توسعه‌دهنده: مهندس ابوالفضل صمدی کوچکسرائی
+            </p>
+        </div>
+    </footer>
+    <!-- Interactive Enhancements: ScrollTrigger / Reveal, 3D Tilt & Progress -->
+    <script>
+        (function() {
+            // 1. Scroll Progress Bar
+            var progressBar = document.getElementById('scroll-progress-bar');
+            if (progressBar) {
+                window.addEventListener('scroll', function() {
+                    var docH = document.documentElement.scrollHeight - window.innerHeight;
+                    var scrolled = docH > 0 ? (window.scrollY / docH) * 100 : 0;
+                    progressBar.style.width = scrolled + '%';
+                }, { passive: true });
+            }
+
+            // 2. ScrollTrigger / Reveal Animations with Intelligent Below-Fold Logic
+            var revealElements = document.querySelectorAll('.reveal-on-scroll');
+            var vh = window.innerHeight || document.documentElement.clientHeight || 800;
+
+            // Only elements below the fold start hidden
+            revealElements.forEach(function(el) {
+                var rect = el.getBoundingClientRect();
+                if (rect.top > vh * 0.92) {
+                    el.classList.add('reveal-pending');
+                }
+            });
+
+            if ('IntersectionObserver' in window) {
+                var observer = new IntersectionObserver(function(entries, obs) {
+                    entries.forEach(function(entry) {
+                        if (entry.isIntersecting) {
+                            entry.target.classList.add('revealed');
+                            obs.unobserve(entry.target);
+                        }
+                    });
+                }, {
+                    threshold: 0.05,
+                    rootMargin: '0px 0px 40px 0px'
+                });
+                revealElements.forEach(function(el) { observer.observe(el); });
+            } else {
+                // Fallback for legacy browsers lacking IntersectionObserver
+                var ticking = false;
+                function checkScrollReveals() {
+                    var currentVh = window.innerHeight || document.documentElement.clientHeight || 800;
+                    document.querySelectorAll('.reveal-pending:not(.revealed)').forEach(function(el) {
+                        var rect = el.getBoundingClientRect();
+                        if (rect.top <= currentVh * 0.95 && rect.bottom >= 0) {
+                            el.classList.add('revealed');
+                        }
+                    });
+                }
+                function onScrollCheck() {
+                    if (!ticking) {
+                        requestAnimationFrame(function() {
+                            checkScrollReveals();
+                            ticking = false;
+                        });
+                        ticking = true;
+                    }
+                }
+                window.addEventListener('scroll', onScrollCheck, { passive: true });
+                window.addEventListener('resize', onScrollCheck, { passive: true });
+            }
+
+            // 3. 3D Tilt Effect strictly for Desktop Fine-Pointer Devices (Bypassed entirely on touch/mobile)
+            var isDesktopFinePointer = false;
+            try {
+                isDesktopFinePointer = window.matchMedia && 
+                                       window.matchMedia('(hover: hover) and (pointer: fine)').matches &&
+                                       !('ontouchstart' in window) &&
+                                       navigator.maxTouchPoints <= 1;
+            } catch(e) {
+                isDesktopFinePointer = false;
+            }
+
+            if (isDesktopFinePointer) {
+                var tiltCards = document.querySelectorAll('.feature-card, .highlight-card, .gym-card, .gym-join-card, .security-card, .developer-card');
+                tiltCards.forEach(function(card) {
+                    card.classList.add('tilt-enabled');
+                    var rafId = null;
+                    card.addEventListener('mousemove', function(e) {
+                        if (rafId) cancelAnimationFrame(rafId);
+                        rafId = requestAnimationFrame(function() {
+                            var rect = card.getBoundingClientRect();
+                            var x = e.clientX - rect.left;
+                            var y = e.clientY - rect.top;
+                            var centerX = rect.width / 2;
+                            var centerY = rect.height / 2;
+                            var rotateX = ((y - centerY) / centerY) * -6;
+                            var rotateY = ((x - centerX) / centerX) * 6;
+
+                            card.style.transform = 'perspective(1000px) rotateX(' + rotateX + 'deg) rotateY(' + rotateY + 'deg) translateY(-5px)';
+                            card.style.setProperty('--mouse-x', ((x / rect.width) * 100) + '%');
+                            card.style.setProperty('--mouse-y', ((y / rect.height) * 100) + '%');
+                        });
+                    }, { passive: true });
+                    card.addEventListener('mouseleave', function() {
+                        if (rafId) cancelAnimationFrame(rafId);
+                        card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) translateY(0)';
+                    });
+                });
+            }
+        })();
+    </script>
+</body>
+</html>

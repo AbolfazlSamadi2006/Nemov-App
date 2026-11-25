@@ -1,0 +1,268 @@
+{
+  "sms_accounts": [
+    {
+      "trainer_name": "مربی باشگاه",
+      "phone": "09111234567",
+      "remaining": 0,
+      "total_credited": 0,
+      "total_used": 0,
+      "last_recharge_shamsi": "-",
+      "status": "pending"
+    },
+    {
+      "trainer_name": "محمد صمدی",
+      "phone": "09119267746",
+      "remaining": 0,
+      "total_credited": 0,
+      "total_used": 0,
+      "last_recharge_shamsi": "-",
+      "status": "pending"
+    },
+    {
+      "trainer_name": "محراب حاجی پور",
+      "phone": "09336427711",
+      "remaining": 92,
+      "total_credited": 100,
+      "total_used": 8,
+      "last_recharge_shamsi": "1405/08/24 05:28",
+      "status": "active"
+    },
+    {
+      "trainer_name": "محراب حاجی پور",
+      "phone": "09112239616",
+      "remaining": 93,
+      "total_credited": 100,
+      "total_used": 7,
+      "last_recharge_shamsi": "1405/07/10 08:02",
+      "status": "active"
+    },
+    {
+      "trainer_name": "مریم اسلامی",
+      "phone": "09112236569",
+      "remaining": 98,
+      "total_credited": 101,
+      "total_used": 3,
+      "last_recharge_shamsi": "1405/07/07 09:10",
+      "status": "active"
+    }
+  ],
+  "sms_logs": [
+    {
+      "id": "seed_sms_1",
+      "trainer_name": "ابوالفضل صمدی",
+      "trainer_phone": "09336427711",
+      "type": "custom",
+      "member_name": "ابوالفضل صمدی",
+      "recipient": "09336427711",
+      "date_shamsi": "1405/08/27 16:58",
+      "detail": "ارسال موفق از طریق الگوی خدماتی SMS.ir"
+    },
+    {
+      "id": "seed_sms_2",
+      "trainer_name": "ابوالفضل صمدی",
+      "trainer_phone": "09336427711",
+      "type": "custom",
+      "member_name": "ابوالفضل صمدی",
+      "recipient": "09336427711",
+      "date_shamsi": "1405/08/25 14:55",
+      "detail": "ارسال موفق از طریق الگوی خدماتی SMS.ir"
+    },
+    {
+      "id": "seed_sms_3",
+      "trainer_name": "ابوالفضل صمدی",
+      "trainer_phone": "09336427711",
+      "type": "custom",
+      "member_name": "ابوالفضل صمدی",
+      "recipient": "09336427711",
+      "date_shamsi": "1405/08/25 14:42",
+      "detail": "ارسال موفق از طریق الگوی خدماتی SMS.ir"
+    },
+    {
+      "id": "seed_sms_4",
+      "trainer_name": "ابوالفضل صمدی",
+      "trainer_phone": "09336427711",
+      "type": "custom",
+      "member_name": "ابوالفضل صمدی",
+      "recipient": "09336427711",
+      "date_shamsi": "1405/08/25 14:03",
+      "detail": "ارسال موفق از طریق الگوی خدماتی SMS.ir"
+    },
+    {
+      "id": "seed_sms_5",
+      "trainer_name": "ابوالفضل صمدی",
+      "trainer_phone": "09336427711",
+      "type": "custom",
+      "member_name": "ابوالفضل صمدی",
+      "recipient": "09336427711",
+      "date_shamsi": "1405/08/25 13:37",
+      "detail": "ارسال موفق از طریق الگوی خدماتی SMS.ir"
+    },
+    {
+      "id": "seed_sms_6",
+      "trainer_name": "محراب حاجی پور",
+      "trainer_phone": "09112239616",
+      "type": "custom",
+      "member_name": "ورزشکار",
+      "recipient": "09336427711",
+      "date_shamsi": "1405/08/25 13:33",
+      "detail": "ارسال موفق از طریق الگوی خدماتی SMS.ir"
+    },
+    {
+      "id": "seed_sms_7",
+      "trainer_name": "محراب حاجی پور",
+      "trainer_phone": "09112239616",
+      "type": "custom",
+      "member_name": "ورزشکار",
+      "recipient": "09336427711",
+      "date_shamsi": "1405/08/25 13:30",
+      "detail": "ارسال موفق از طریق الگوی خدماتی SMS.ir"
+    },
+    {
+      "id": "seed_sms_8",
+      "trainer_name": "محراب حاجی پور",
+      "trainer_phone": "09112239616",
+      "type": "custom",
+      "member_name": "توسعه دهنده",
+      "recipient": "09336427711",
+      "date_shamsi": "1405/08/25 13:27",
+      "detail": "ارسال موفق از طریق الگوی خدماتی SMS.ir"
+    },
+    {
+      "id": "seed_sms_9",
+      "trainer_name": "محراب حاجی پور",
+      "trainer_phone": "09112239616",
+      "type": "custom",
+      "member_name": "توسعه دهنده",
+      "recipient": "09336427711",
+      "date_shamsi": "1405/08/25 13:26",
+      "detail": "ارسال موفق از طریق الگوی خدماتی SMS.ir"
+    },
+    {
+      "id": "seed_sms_10",
+      "trainer_name": "محراب حاجی پور",
+      "trainer_phone": "09112239616",
+      "type": "custom",
+      "member_name": "ورزشکار",
+      "recipient": "09336427711",
+      "date_shamsi": "1405/08/25 13:24",
+      "detail": "ارسال موفق از طریق الگوی خدماتی SMS.ir"
+    },
+    {
+      "id": "seed_sms_11",
+      "trainer_name": "محراب حاجی پور",
+      "trainer_phone": "09112239616",
+      "type": "custom",
+      "member_name": "عرشیا احمدی",
+      "recipient": "09022261164",
+      "date_shamsi": "1405/08/25 05:36",
+      "detail": "ارسال موفق از طریق الگوی خدماتی SMS.ir"
+    },
+    {
+      "id": "seed_sms_12",
+      "trainer_name": "ابوالفضل صمدی (مدیر سیستم)",
+      "trainer_phone": "09336427711",
+      "type": "custom",
+      "member_name": "ابوالفضل صمدی",
+      "recipient": "09336427711",
+      "date_shamsi": "1405/08/24 05:30",
+      "detail": "ارسال موفق از طریق الگوی خدماتی SMS.ir"
+    },
+    {
+      "id": "seed_sms_13",
+      "trainer_name": "مریم اسلامی",
+      "trainer_phone": "09112239616",
+      "type": "custom",
+      "member_name": "هانیه صمدی",
+      "recipient": "09380551779",
+      "date_shamsi": "1405/07/20 10:56",
+      "detail": "ارسال موفق از طریق الگوی خدماتی SMS.ir"
+    },
+    {
+      "id": "seed_sms_14",
+      "trainer_name": "محراب حاجی پور",
+      "trainer_phone": "09112239616",
+      "type": "custom",
+      "member_name": "ابوالفضل صمدی",
+      "recipient": "09336427711",
+      "date_shamsi": "1405/07/10 08:26",
+      "detail": "ارسال موفق از طریق الگوی خدماتی SMS.ir"
+    },
+    {
+      "id": "seed_sms_15",
+      "trainer_name": "محراب حاجی پور",
+      "trainer_phone": "09112239616",
+      "type": "custom",
+      "member_name": "تستی تبت",
+      "recipient": "09119267746",
+      "date_shamsi": "1405/07/10 08:16",
+      "detail": "ارسال موفق از طریق الگوی خدماتی SMS.ir"
+    },
+    {
+      "id": "seed_sms_16",
+      "trainer_name": "محراب حاجی پور",
+      "trainer_phone": "09112239616",
+      "type": "custom",
+      "member_name": "ابوالفضل صمدی",
+      "recipient": "09336427711",
+      "date_shamsi": "1405/07/10 08:03",
+      "detail": "ارسال موفق از طریق الگوی خدماتی SMS.ir"
+    },
+    {
+      "id": "seed_sms_17",
+      "trainer_name": "مریم اسلامی",
+      "trainer_phone": "09112239616",
+      "type": "custom",
+      "member_name": "هانیه صمدی",
+      "recipient": "09380551779",
+      "date_shamsi": "1405/07/07 09:11",
+      "detail": "ارسال آزمایشی موفق (شبیه‌ساز پیامک فعال است)"
+    },
+    {
+      "id": "seed_sms_18",
+      "trainer_name": "مریم اسلامی",
+      "trainer_phone": "09112239616",
+      "type": "custom",
+      "member_name": "هانیه صمدی",
+      "recipient": "09380551779",
+      "date_shamsi": "1405/07/07 09:09",
+      "detail": "ارسال آزمایشی موفق (شبیه‌ساز پیامک فعال است)"
+    }
+  ],
+  "backups": [
+    {
+      "trainer_name": "محراب حاجی پور",
+      "phone": "09112239616",
+      "last_backup_shamsi": "1405/07/10 08:19",
+      "file_size_mb": 0.25,
+      "filename": "nemov.db"
+    },
+    {
+      "trainer_name": "محمد صمدی",
+      "phone": "09119267746",
+      "last_backup_shamsi": "1405/07/06 19:17",
+      "file_size_mb": 0.45,
+      "filename": "nemov.db"
+    },
+    {
+      "trainer_name": "تست مقاومت شبکه",
+      "phone": "09123456789",
+      "last_backup_shamsi": "1405/07/06 08:16",
+      "file_size_mb": 0.45,
+      "filename": "nemov.db"
+    },
+    {
+      "trainer_name": "مریم اسلامی",
+      "phone": "09112236569",
+      "last_backup_shamsi": "1405/06/26 11:39",
+      "file_size_mb": 0.38,
+      "filename": "nemov.db"
+    },
+    {
+      "trainer_name": "ابوالفضل صمدی کوچکسرائی",
+      "phone": "09336427711",
+      "last_backup_shamsi": "1405/05/31 06:23",
+      "file_size_mb": 0.11,
+      "filename": "nemov.db"
+    }
+  ]
+}
