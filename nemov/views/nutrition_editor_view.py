@@ -12,7 +12,6 @@ from nemov.views.components.field_validator import (
 from nemov.views.components.day_management_dialogs import DaySelectionReductionDialog, DayIncreaseChoiceDialog
 from nemov.views.components.unregistered_items_dialog import UnregisteredItemsDialog
 from nemov.views.components.animated_accordion import AnimatedAccordionCurtain
-from nemov.views.components.undo_delete_banner import UndoDeleteBanner
 
 class NutritionEditorView(QWidget):
     manage_templates_requested = pyqtSignal()
@@ -321,9 +320,6 @@ class NutritionEditorView(QWidget):
         self.form_details_curtain = AnimatedAccordionCurtain(self.form_details_widget, form_box, duration_ms=340)
         layout_form.addWidget(self.form_details_curtain)
         layout.addWidget(form_box)
-
-        self.undo_banner = UndoDeleteBanner(self)
-        layout.addWidget(self.undo_banner)
 
         # Tabs for Meals
         self.tabs = QTabWidget()
@@ -1961,42 +1957,14 @@ class NutritionEditorView(QWidget):
         self.update_dynamic_calories()
         self._snapshot_change()
 
-    def _restore_deleted_row_state(self, state: dict):
-        if not state:
-            return
-        self._restore_state(state)
-        self._last_state = state
-        if self._undo_stack:
-            self._undo_stack.pop()
-        self._redo_stack.clear()
-        self._update_undo_redo_ui()
-
     def remove_food_row(self, table: QTableWidget, btn: QPushButton):
-        target_row = -1
-        food_name = "این ماده غذایی"
         for r in range(table.rowCount()):
             if table.cellWidget(r, 4) == btn:
-                target_row = r
-                combo_f = table.cellWidget(r, 0)
-                if combo_f and combo_f.currentText().strip():
-                    food_name = combo_f.currentText().strip()
+                self._snapshot_change()
+                table.removeRow(r)
+                self.update_dynamic_calories()
+                self._snapshot_change()
                 break
-        if target_row < 0:
-            return
-
-        prev_state = self._capture_state()
-        table.removeRow(target_row)
-        self.update_dynamic_calories()
-        self._snapshot_change()
-
-        self.undo_banner.start_countdown(
-            item_count=1,
-            pending_items=[prev_state],
-            on_commit=lambda _items: None,
-            on_undo=lambda items: self._restore_deleted_row_state(items[0]) if items else None,
-            item_label=f"«{food_name}»",
-            duration_seconds=5,
-        )
 
     def _create_meal_widget(self, meal_key: str, meal_title: str, foods_list: list) -> QWidget:
         widget = QWidget()

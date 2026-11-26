@@ -11,7 +11,6 @@ from nemov.views.components.field_validator import (
 )
 from nemov.views.components.day_management_dialogs import DaySelectionReductionDialog, DayIncreaseChoiceDialog
 from nemov.views.components.unregistered_items_dialog import UnregisteredItemsDialog
-from nemov.views.components.undo_delete_banner import UndoDeleteBanner
 from nemov.utils.theme_manager import ThemeManager
 
 class ExerciseNotesDialog(QDialog):
@@ -278,9 +277,6 @@ class WorkoutEditorView(QWidget):
         layout_form.addLayout(row1)
 
         layout.addWidget(form_box)
-
-        self.undo_banner = UndoDeleteBanner(self)
-        layout.addWidget(self.undo_banner)
 
         # Tabs for Training Days
         self.tabs = QTabWidget()
@@ -961,41 +957,13 @@ class WorkoutEditorView(QWidget):
         self._create_exercise_row_widgets(table, row, exercises_list)
         self._snapshot_change()
 
-    def _restore_deleted_row_state(self, state: dict):
-        if not state:
-            return
-        self._restore_state(state)
-        self._last_state = state
-        if self._undo_stack:
-            self._undo_stack.pop()
-        self._redo_stack.clear()
-        self._update_undo_redo_ui()
-
     def remove_exercise_row(self, table: QTableWidget, btn: QPushButton):
-        target_row = -1
-        ex_name = "این حرکت"
         for r in range(table.rowCount()):
             if table.cellWidget(r, 7) == btn:
-                target_row = r
-                combo_ex = table.cellWidget(r, 0)
-                if combo_ex and combo_ex.currentText().strip():
-                    ex_name = combo_ex.currentText().strip()
+                self._snapshot_change()
+                table.removeRow(r)
+                self._snapshot_change()
                 break
-        if target_row < 0:
-            return
-
-        prev_state = self._capture_state()
-        table.removeRow(target_row)
-        self._snapshot_change()
-
-        self.undo_banner.start_countdown(
-            item_count=1,
-            pending_items=[prev_state],
-            on_commit=lambda _items: None,
-            on_undo=lambda items: self._restore_deleted_row_state(items[0]) if items else None,
-            item_label=f"حرکت «{ex_name}»",
-            duration_seconds=5,
-        )
 
     def get_plan_data(self):
         title = self.txt_title.text().strip() or "برنامه تمرینی سفارشی"
