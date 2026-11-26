@@ -984,16 +984,6 @@ class WorkoutEditorView(QWidget):
         if target_row < 0:
             return
 
-        reply = QMessageBox.question(
-            self,
-            "تایید حذف حرکت",
-            f"آیا از حذف حرکت «{ex_name}» از این روز تمرینی اطمینان دارید؟\n\nنکته: پس از تایید، ۵ ثانیه فرصت بازگردانی (Undo) خواهید داشت.",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            QMessageBox.StandardButton.No
-        )
-        if reply != QMessageBox.StandardButton.Yes:
-            return
-
         prev_state = self._capture_state()
         table.removeRow(target_row)
         self._snapshot_change()

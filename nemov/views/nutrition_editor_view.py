@@ -375,7 +375,7 @@ class NutritionEditorView(QWidget):
             if m_id != getattr(self, "_last_synced_member_id", None):
                 self._sync_member_combos(m_id)
 
-    def _sync_member_combos(self, member_id):
+    def _sync_member_combos(self, member_id, recalculate_macros: bool = True):
         self._last_synced_member_id = member_id
         for cmb in (self.combo_member, self.combo_member_top):
             cmb.blockSignals(True)
@@ -388,7 +388,7 @@ class NutritionEditorView(QWidget):
             else:
                 cmb.set_empty()
             cmb.blockSignals(False)
-        self.update_member_tdee_display(member_id)
+        self.update_member_tdee_display(member_id, recalculate_macros=recalculate_macros)
 
     def _on_bottom_member_changed(self, _index: int):
         member_id = self.combo_member.currentData()
@@ -419,7 +419,7 @@ class NutritionEditorView(QWidget):
         self.update_dynamic_calories()
         self._snapshot_change()
 
-    def update_member_tdee_display(self, member_id=None):
+    def update_member_tdee_display(self, member_id=None, recalculate_macros: bool = True):
         if member_id is None:
             member_id = self.combo_member.currentData()
         if not member_id:
@@ -427,7 +427,8 @@ class NutritionEditorView(QWidget):
             self._current_member_weight_kg = 0.0
             self.txt_member_tdee.setText("0")
             self.txt_member_tdee.setToolTip("با انتخاب ورزشکار، مقدار TDEE ایشان به صورت خودکار محاسبه و درج می‌شود.")
-            self._recalculate_target_macros_from_weight()
+            if recalculate_macros:
+                self._recalculate_target_macros_from_weight()
             self.update_dynamic_calories()
             return
 
@@ -437,7 +438,8 @@ class NutritionEditorView(QWidget):
             self._current_member_tdee = 0
             self._current_member_weight_kg = 0.0
             self.txt_member_tdee.setText("0")
-            self._recalculate_target_macros_from_weight()
+            if recalculate_macros:
+                self._recalculate_target_macros_from_weight()
             self.update_dynamic_calories()
             return
 
@@ -456,7 +458,8 @@ class NutritionEditorView(QWidget):
                 pass
 
         self._current_member_weight_kg = w_kg
-        self._recalculate_target_macros_from_weight()
+        if recalculate_macros:
+            self._recalculate_target_macros_from_weight()
 
         age = calculate_age_from_shamsi(member.birth_date_shamsi)
         act_level = getattr(member, "activity_level", None) or "moderately_active"
@@ -495,7 +498,7 @@ class NutritionEditorView(QWidget):
             else:
                 cmb.set_empty()
             cmb.blockSignals(False)
-        self.update_member_tdee_display(cur)
+        self.update_member_tdee_display(cur, recalculate_macros=False)
 
     def set_selected_member(self, member_id: int):
         self.load_members_dropdown()
@@ -934,7 +937,7 @@ class NutritionEditorView(QWidget):
 
             # Restore athlete selection
             st_member_id = state.get("member_id")
-            self._sync_member_combos(st_member_id)
+            self._sync_member_combos(st_member_id, recalculate_macros=False)
 
             # Restore TDEE
             if "tdee" in state:
@@ -1979,16 +1982,6 @@ class NutritionEditorView(QWidget):
                     food_name = combo_f.currentText().strip()
                 break
         if target_row < 0:
-            return
-
-        reply = QMessageBox.question(
-            self,
-            "تایید حذف ماده غذایی",
-            f"آیا از حذف «{food_name}» از این وعده غذایی اطمینان دارید؟\n\nنکته: پس از تایید، ۵ ثانیه فرصت بازگردانی (Undo) خواهید داشت.",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            QMessageBox.StandardButton.No
-        )
-        if reply != QMessageBox.StandardButton.Yes:
             return
 
         prev_state = self._capture_state()
