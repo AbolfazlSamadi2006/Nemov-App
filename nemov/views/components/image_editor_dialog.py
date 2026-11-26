@@ -396,10 +396,13 @@ class ImageEditorDialog(QDialog):
 
         # Right sidebar: Editing controls inside a clean scroll area
         scroll = QScrollArea()
+        scroll.setObjectName("image_editor_scroll")
         scroll.setWidgetResizable(True)
         scroll.setFrameShape(QScrollArea.Shape.NoFrame)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        scroll.setStyleSheet("background: transparent;")
+        scroll.setStyleSheet("QScrollArea#image_editor_scroll { background: transparent; border: none; }")
+        scroll.viewport().setObjectName("image_editor_viewport")
+        scroll.viewport().setStyleSheet("QWidget#image_editor_viewport { background: transparent; }")
 
         panel_widget = QWidget()
         panel_layout = QVBoxLayout(panel_widget)

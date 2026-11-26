@@ -1,10 +1,15 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import (
     Column, Integer, String, Float, Boolean, Text, DateTime, ForeignKey
 )
 from sqlalchemy.orm import declarative_base, relationship
 
 Base = declarative_base()
+
+
+def _utc_now_naive() -> datetime:
+    """Timezone-aware UTC converted to naive UTC for SQLite DateTime compatibility."""
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 class SystemSetting(Base):
     __tablename__ = "system_settings"
@@ -29,7 +34,7 @@ class User(Base):
     recovery_code = Column(String(100), nullable=True)
     role = Column(String(20), nullable=False, default="trainer")  # 'admin', 'trainer', 'member'
     is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=_utc_now_naive)
 
     # Relationships
     memberships_assigned = relationship("WorkoutAssignment", back_populates="assigned_by_user")
@@ -71,7 +76,7 @@ class Member(Base):
     status = Column(String(20), default="active", index=True)  # 'active', 'expired', 'archived'
     notes = Column(Text, nullable=True)
     export_folder_path = Column(String(500), nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=_utc_now_naive)
 
     # Relationships
     trainer = relationship("User", foreign_keys=[user_id])
@@ -115,7 +120,7 @@ class Member(Base):
                 from nemov.database.connection import get_session
                 session = get_session()
                 try:
-                    user = session.query(User).get(self.user_id)
+                    user = session.get(User, self.user_id)
                     if user:
                         return user.display_name
                 finally:
@@ -149,7 +154,7 @@ class HealthRecord(Base):
 
     exercise_limitations = Column(Text, nullable=True)
     trainer_notes = Column(Text, nullable=True)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at = Column(DateTime, default=_utc_now_naive, onupdate=_utc_now_naive)
 
     member = relationship("Member", back_populates="health_record")
 
@@ -162,7 +167,7 @@ class MedicalDocument(Base):
     file_path = Column(Text, nullable=False)
     created_at_shamsi = Column(String(10), nullable=True)
     notes = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=_utc_now_naive)
 
     member = relationship("Member", back_populates="medical_documents")
 
@@ -196,7 +201,7 @@ class PhysicalAssessment(Base):
     before_photo_path = Column(String(255), nullable=True)
     after_photo_path = Column(String(255), nullable=True)
     notes = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=_utc_now_naive)
 
     member = relationship("Member", back_populates="assessments")
 
@@ -233,7 +238,7 @@ class WorkoutPlan(Base):
     notes = Column(Text, nullable=True)
     version = Column(Integer, default=1)
     created_by_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=_utc_now_naive)
 
     days = relationship("WorkoutDay", back_populates="plan", cascade="all, delete-orphan", order_by="WorkoutDay.day_number")
     assignments = relationship("WorkoutAssignment", back_populates="plan", cascade="all, delete-orphan")
@@ -310,7 +315,7 @@ class NutritionPlan(Base):
     target_fat = Column(Float, nullable=False, default=60.0)
     notes = Column(Text, nullable=True)
     created_by_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=_utc_now_naive)
 
     meals = relationship("MealPlan", back_populates="plan", cascade="all, delete-orphan", order_by="MealPlan.order_index")
     assignments = relationship("NutritionAssignment", back_populates="plan", cascade="all, delete-orphan")
@@ -363,7 +368,7 @@ class BackupRecord(Base):
     file_path = Column(String(255), nullable=False)
     backup_date_shamsi = Column(String(10), nullable=False)
     backup_size_mb = Column(Float, default=0.0)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=_utc_now_naive)
 
 class ClubExpense(Base):
     __tablename__ = "club_expenses"
@@ -375,7 +380,7 @@ class ClubExpense(Base):
     amount = Column(Float, nullable=False)
     expense_date_shamsi = Column(String(10), nullable=False)
     description = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=_utc_now_naive)
 
     user = relationship("User")
 
@@ -389,7 +394,7 @@ class TuitionPayment(Base):
     payment_date_shamsi = Column(String(10), nullable=False)
     payment_type = Column(String(50), default="شهریه دوره ماهانه")
     notes = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=_utc_now_naive)
 
     member = relationship("Member", back_populates="tuition_payments")
     trainer = relationship("User")
@@ -409,5 +414,5 @@ class NotificationHistory(Base):
     notif_key = Column(String(150), unique=True, nullable=False, index=True)
     is_read = Column(Boolean, default=False)
     is_deleted = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=_utc_now_naive)
 

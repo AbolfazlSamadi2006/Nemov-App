@@ -1,7 +1,7 @@
 import jdatetime
 from datetime import datetime
 
-PERSIAN_TO_ENG = str.maketrans('۰۱۲۳۴۵۶۷۸۹', '0123456789')
+PERSIAN_TO_ENG = str.maketrans('۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩', '01234567890123456789')
 
 def normalize_digits(s: str) -> str:
     if not s:

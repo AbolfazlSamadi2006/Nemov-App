@@ -439,18 +439,27 @@ class SmsView(QWidget):
         right_panel.addLayout(tpl_row)
 
         # 2. Dynamic Input Fields for template
-        self.dynamic_frame = QFrame()
-        self.dynamic_frame.setObjectName("card")
-        self.dyn_layout = QVBoxLayout(self.dynamic_frame)
-        self.dyn_layout.setContentsMargins(12, 8, 12, 8)
-        self.dyn_layout.setSpacing(8)
-
         try:
             from nemov.utils.theme_manager import ThemeManager
             _pal = ThemeManager.get_current_palette()
         except Exception:
             _pal = None
+        _dyn_bg = _pal.bg_base if _pal else "#0F0F12"
+        _dyn_border = _pal.border if _pal else "#27272A"
         _chip_hover_border = _pal.primary if _pal else "#DC2626"
+
+        self.dynamic_frame = QFrame()
+        self.dynamic_frame.setObjectName("sms_dynamic_card")
+        self.dynamic_frame.setStyleSheet(f"""
+            QFrame#sms_dynamic_card {{
+                background-color: {_dyn_bg};
+                border: 1px solid {_dyn_border};
+                border-radius: 8px;
+            }}
+        """)
+        self.dyn_layout = QVBoxLayout(self.dynamic_frame)
+        self.dyn_layout.setContentsMargins(14, 12, 14, 12)
+        self.dyn_layout.setSpacing(8)
 
         chip_btn_style = f"""
             QPushButton {{
@@ -472,6 +481,8 @@ class SmsView(QWidget):
         # Panel 1: Holiday
         # ---------------------------------------------------------------------
         self.panel_holiday = QWidget()
+        self.panel_holiday.setObjectName("sms_panel_holiday")
+        self.panel_holiday.setStyleSheet("QWidget#sms_panel_holiday { background: transparent; }")
         l_hol = QVBoxLayout(self.panel_holiday)
         l_hol.setContentsMargins(0, 0, 0, 0)
         l_hol.setSpacing(8)
@@ -533,6 +544,8 @@ class SmsView(QWidget):
         # Panel 2: Working Hours (Template ID: 385003)
         # ---------------------------------------------------------------------
         self.panel_hours = QWidget()
+        self.panel_hours.setObjectName("sms_panel_hours")
+        self.panel_hours.setStyleSheet("QWidget#sms_panel_hours { background: transparent; }")
         l_hours = QVBoxLayout(self.panel_hours)
         l_hours.setContentsMargins(0, 0, 0, 0)
         l_hours.setSpacing(8)

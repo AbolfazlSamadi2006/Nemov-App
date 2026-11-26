@@ -75,55 +75,54 @@ class ThemeRippleOverlay(QWidget):
         self.update()
 
     def paintEvent(self, event):
+        if not self.old_pixmap or self.old_pixmap.isNull():
+            return
+
+        painter = QPainter(self)
         try:
-            if not self.old_pixmap or self.old_pixmap.isNull():
-                return
+            painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+            painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform, True)
 
-            painter = QPainter(self)
-        painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
-        painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform, True)
+            r = self._radius
+            max_r = max(self.max_radius, 1.0)
+            progress = r / max_r
 
-        r = self._radius
-        max_r = max(self.max_radius, 1.0)
-        progress = r / max_r
+            # 1. Draw old snapshot as the outer background
+            painter.drawPixmap(0, 0, self.old_pixmap)
 
-        # 1. Draw old snapshot as the outer background
-        painter.drawPixmap(0, 0, self.old_pixmap)
+            # 2. Draw new snapshot inside the expanding circular ripple (paint pouring outward)
+            if self.new_pixmap and not self.new_pixmap.isNull() and r > 0.5:
+                painter.save()
+                circle_path = QPainterPath()
+                circle_path.addEllipse(QPointF(self.origin), r, r)
+                painter.setClipPath(circle_path)
+                painter.drawPixmap(0, 0, self.new_pixmap)
+                painter.restore()
 
-        # 2. Draw new snapshot inside the expanding circular ripple (paint pouring outward)
-        if self.new_pixmap and not self.new_pixmap.isNull() and r > 0.5:
-            painter.save()
-            circle_path = QPainterPath()
-            circle_path.addEllipse(QPointF(self.origin), r, r)
-            painter.setClipPath(circle_path)
-            painter.drawPixmap(0, 0, self.new_pixmap)
-            painter.restore()
+            # 3. Draw Neon Glow Wave Rings along the expanding wavefront
+            if progress < 0.98 and r > 2.0:
+                # Smoothly fade glow alpha as wave approaches outer boundaries
+                fade = 1.0 if progress < 0.75 else (1.0 - (progress - 0.75) / 0.23)
+                fade = max(0.0, min(1.0, fade))
+                origin_pt = QPointF(self.origin)
 
-        # 3. Draw Neon Glow Wave Rings along the expanding wavefront
-        if progress < 0.98 and r > 2.0:
-            # Smoothly fade glow alpha as wave approaches outer boundaries
-            fade = 1.0 if progress < 0.75 else (1.0 - (progress - 0.75) / 0.23)
-            fade = max(0.0, min(1.0, fade))
-            origin_pt = QPointF(self.origin)
+                # Outer soft atmospheric glow ring
+                c_glow_outer = QColor(self.accent_color)
+                c_glow_outer.setAlpha(int(70 * fade))
+                painter.setPen(QPen(c_glow_outer, 14.0))
+                painter.setBrush(Qt.BrushStyle.NoBrush)
+                painter.drawEllipse(origin_pt, r, r)
 
-            # Outer soft atmospheric glow ring
-            c_glow_outer = QColor(self.accent_color)
-            c_glow_outer.setAlpha(int(70 * fade))
-            painter.setPen(QPen(c_glow_outer, 14.0))
-            painter.setBrush(Qt.BrushStyle.NoBrush)
-            painter.drawEllipse(origin_pt, r, r)
+                # Mid vibrant neon accent ring
+                c_glow_mid = QColor(self.accent_color)
+                c_glow_mid.setAlpha(int(190 * fade))
+                painter.setPen(QPen(c_glow_mid, 5.0))
+                painter.drawEllipse(origin_pt, r, r)
 
-            # Mid vibrant neon accent ring
-            c_glow_mid = QColor(self.accent_color)
-            c_glow_mid.setAlpha(int(190 * fade))
-            painter.setPen(QPen(c_glow_mid, 5.0))
-            painter.drawEllipse(origin_pt, r, r)
-
-            # Core specular bright water-crest wave line
-            c_crest = QColor(255, 255, 255, int(240 * fade))
-            painter.setPen(QPen(c_crest, 2.0))
-            painter.drawEllipse(origin_pt, r, r)
-
-            painter.end()
-        except Exception:
-            pass
+                # Core specular bright water-crest wave line
+                c_crest = QColor(255, 255, 255, int(240 * fade))
+                painter.setPen(QPen(c_crest, 2.0))
+                painter.drawEllipse(origin_pt, r, r)
+        finally:
+            if painter.isActive():
+                painter.end()

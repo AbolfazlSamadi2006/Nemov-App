@@ -384,29 +384,6 @@ class BackupService:
             db.commit()
 
     @staticmethod
-    def record_email_backup(trainer_email: str, filename: str = "", size_mb: float = 0.0) -> None:
-        """Records a successful email backup in the database history."""
-        now = datetime.now()
-        shamsi_date = gregorian_to_shamsi(now.date()).replace("/", "-")
-        time_str = now.strftime("%H-%M-%S")
-        if not filename:
-            filename = f"yalda_backup_{shamsi_date}_{time_str}.db"
-        shamsi_display = f"{gregorian_to_shamsi(now.date())} {now.strftime('%H:%M:%S')}"
-        if size_mb <= 0.0 and config.DB_PATH.exists():
-            size_mb = round(os.path.getsize(config.DB_PATH) / (1024 * 1024), 2)
-
-        with SessionLocal() as db:
-            record = BackupRecord(
-                file_name=filename,
-                file_path=f"📧 ایمیل مربی ({trainer_email})",
-                backup_size_mb=round(size_mb, 2),
-                backup_date_shamsi=shamsi_display,
-                created_at=now
-            )
-            db.add(record)
-            db.commit()
-
-    @staticmethod
     def delete_backup(backup_id: int) -> bool:
         with SessionLocal() as db:
             record = db.query(BackupRecord).filter(BackupRecord.id == backup_id).first()

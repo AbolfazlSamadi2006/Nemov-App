@@ -897,7 +897,8 @@ class VideoRecorderAndEditorDialog(QDialog):
         sidebar_scroll.setStyleSheet("QScrollArea { border: none; background: transparent; }")
 
         sidebar_container = QWidget()
-        sidebar_container.setStyleSheet("background: transparent;")
+        sidebar_container.setObjectName("video_sidebar_container")
+        sidebar_container.setStyleSheet("QWidget#video_sidebar_container { background: transparent; }")
         sidebar = QVBoxLayout(sidebar_container)
         sidebar.setContentsMargins(4, 2, 4, 2)
         sidebar.setSpacing(6)

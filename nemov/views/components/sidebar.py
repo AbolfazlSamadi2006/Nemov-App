@@ -290,7 +290,7 @@ class Sidebar(QFrame):
 
         self.notif_items_container = QWidget()
         self.notif_items_container.setObjectName("notifItemsContainer")
-        self.notif_items_container.setStyleSheet("background: transparent;")
+        self.notif_items_container.setStyleSheet("QWidget#notifItemsContainer { background: transparent; }")
         self.notif_items_layout = QVBoxLayout(self.notif_items_container)
         self.notif_items_layout.setContentsMargins(6, 2, 4, 2)
         self.notif_items_layout.setSpacing(4)

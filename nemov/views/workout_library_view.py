@@ -226,7 +226,8 @@ class ExerciseFormDialog(QDialog):
         scroll_form.setStyleSheet("QScrollArea { background: transparent; border: none; }")
 
         form_container = QWidget()
-        form_container.setStyleSheet("background: transparent;")
+        form_container.setObjectName("exercise_form_container")
+        form_container.setStyleSheet("QWidget#exercise_form_container { background: transparent; }")
         vlay_form_fields = QVBoxLayout(form_container)
         vlay_form_fields.setContentsMargins(6, 0, 6, 0)
         vlay_form_fields.setSpacing(7)

@@ -9,15 +9,16 @@ def normalize_digits(s: str) -> str:
     return s.translate(persian_to_eng)
 
 def hash_password(password: str) -> str:
-    """Hashes a password using SHA-256 with a random salt."""
+    """Hashes a password (with Persian/Arabic digits normalized to ASCII) using SHA-256 and a random salt."""
+    normalized = normalize_digits(password or "")
     salt = secrets.token_hex(16)
-    pwd_bytes = (password + salt).encode('utf-8')
+    pwd_bytes = (normalized + salt).encode('utf-8')
     h = hashlib.sha256(pwd_bytes).hexdigest()
     return f"{salt}:{h}"
 
 def verify_password(password: str, hashed_str: str) -> bool:
     """Verifies a password against a stored salt:hash string."""
-    if not hashed_str or ":" not in hashed_str:
+    if password is None or not hashed_str or ":" not in hashed_str:
         return False
     try:
         salt, stored_hash = hashed_str.split(":", 1)

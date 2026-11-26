@@ -123,11 +123,8 @@ class TrainerDetailsDialog(QDialog):
                     background-color: {palette.bg_input}; border: 1px solid {palette.border}; border-radius: 6px; padding: 4px 10px; font-weight: bold; color: {palette.primary};
                 }}
             """)
-            btn_eye_pass = QPushButton("👁️")
-            btn_eye_pass.setFixedSize(38, 34)
-            btn_eye_pass.setCursor(Qt.CursorShape.PointingHandCursor)
-            btn_eye_pass.setObjectName("secondary_button")
-            btn_eye_pass.clicked.connect(lambda: self._toggle_eye(self.txt_display_pass, btn_eye_pass))
+            self.btn_eye_pass = self._create_eye_button(self.txt_display_pass, palette, height=34)
+            btn_eye_pass = self.btn_eye_pass
             pass_box.addWidget(self.txt_display_pass)
             pass_box.addWidget(btn_eye_pass)
         else:
@@ -135,8 +132,9 @@ class TrainerDetailsDialog(QDialog):
             pass_box.addWidget(self.txt_display_pass)
 
         pass_widget = QFrame()
+        pass_widget.setObjectName("trainer_pass_row")
         pass_widget.setLayout(pass_box)
-        pass_widget.setStyleSheet("background: transparent; border: none;")
+        pass_widget.setStyleSheet("QFrame#trainer_pass_row { background: transparent; border: none; }")
         add_row(1, "رمز عبور (ورود):", pass_widget)
 
         # Row 2: Phone
@@ -172,17 +170,15 @@ class TrainerDetailsDialog(QDialog):
             }}
         """)
 
-        btn_eye_rec = QPushButton("👁️")
-        btn_eye_rec.setFixedSize(38, 34)
-        btn_eye_rec.setCursor(Qt.CursorShape.PointingHandCursor)
-        btn_eye_rec.setObjectName("secondary_button")
-        btn_eye_rec.clicked.connect(lambda: self._toggle_eye(self.txt_display_rec, btn_eye_rec))
+        self.btn_eye_rec = self._create_eye_button(self.txt_display_rec, palette, height=34)
+        btn_eye_rec = self.btn_eye_rec
 
         rec_box.addWidget(self.txt_display_rec)
         rec_box.addWidget(btn_eye_rec)
         rec_widget = QFrame()
+        rec_widget.setObjectName("trainer_rec_row")
         rec_widget.setLayout(rec_box)
-        rec_widget.setStyleSheet("background: transparent; border: none;")
+        rec_widget.setStyleSheet("QFrame#trainer_rec_row { background: transparent; border: none; }")
         add_row(6, "رمز ریکاوری مخفی:", rec_widget)
 
         card_layout.addLayout(grid)
@@ -197,7 +193,8 @@ class TrainerDetailsDialog(QDialog):
         # 3. Password Security & Admin Password Reset
         # ----------------------------------------------------
         pass_card = QFrame()
-        pass_card.setStyleSheet(f"background-color: {palette.bg_surface}; border: 1px solid {palette.border}; border-radius: 8px; padding: 10px;")
+        pass_card.setObjectName("trainer_pass_card")
+        pass_card.setStyleSheet(f"QFrame#trainer_pass_card {{ background-color: {palette.bg_surface}; border: 1px solid {palette.border}; border-radius: 8px; padding: 10px; }}")
         pass_layout = QVBoxLayout(pass_card)
         pass_layout.setSpacing(8)
 
@@ -215,7 +212,8 @@ class TrainerDetailsDialog(QDialog):
 
         # Expandable Reset Password Box
         self.reset_pass_box = QFrame()
-        self.reset_pass_box.setStyleSheet("background: transparent; border: none;")
+        self.reset_pass_box.setObjectName("trainer_reset_pass_box")
+        self.reset_pass_box.setStyleSheet("QFrame#trainer_reset_pass_box { background: transparent; border: none; }")
         reset_layout = QVBoxLayout(self.reset_pass_box)
         reset_layout.setContentsMargins(0, 4, 0, 0)
         reset_layout.setSpacing(8)
@@ -229,11 +227,8 @@ class TrainerDetailsDialog(QDialog):
         self.txt_admin_new_pass.setEchoMode(QLineEdit.EchoMode.Password)
         self.txt_admin_new_pass.setPlaceholderText("کلمه عبور جدید را وارد کنید...")
 
-        btn_eye_new = QPushButton("👁️")
-        btn_eye_new.setFixedSize(38, 36)
-        btn_eye_new.setCursor(Qt.CursorShape.PointingHandCursor)
-        btn_eye_new.setObjectName("secondary_button")
-        btn_eye_new.clicked.connect(lambda: self._toggle_eye(self.txt_admin_new_pass, btn_eye_new))
+        self.btn_eye_new = self._create_eye_button(self.txt_admin_new_pass, palette, height=36)
+        btn_eye_new = self.btn_eye_new
 
         row_new_pass.addWidget(self.txt_admin_new_pass)
         row_new_pass.addWidget(btn_eye_new)
@@ -261,6 +256,34 @@ class TrainerDetailsDialog(QDialog):
         btn_close.setObjectName("secondary_button")
         btn_close.clicked.connect(self.accept)
         layout.addWidget(btn_close, alignment=Qt.AlignmentFlag.AlignCenter)
+
+    def _create_eye_button(self, field: QLineEdit, palette, height: int = 34) -> QPushButton:
+        """Creates a compact eye toggle button without #secondary_button padding clipping."""
+        btn = QPushButton("👁️")
+        btn.setObjectName("eye_button")
+        btn.setFixedSize(44, height)
+        btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        btn.setToolTip("نمایش / پنهان‌سازی")
+        btn.setAutoDefault(False)
+        btn.setDefault(False)
+        btn.setStyleSheet(f"""
+            QPushButton#eye_button {{
+                background-color: {palette.bg_input};
+                color: {palette.text_primary};
+                border: 1px solid {palette.border};
+                border-radius: 6px;
+                font-size: 16px;
+                font-family: "Segoe UI Emoji", "Noto Color Emoji", "Apple Color Emoji", sans-serif;
+                padding: 0px;
+                margin: 0px;
+            }}
+            QPushButton#eye_button:hover {{
+                background-color: {palette.bg_surface};
+                border: 1px solid {palette.primary};
+            }}
+        """)
+        btn.clicked.connect(lambda: self._toggle_eye(field, btn))
+        return btn
 
     def _toggle_eye(self, field: QLineEdit, btn: QPushButton):
         if field.echoMode() == QLineEdit.EchoMode.Password:

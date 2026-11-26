@@ -151,11 +151,8 @@ class TrainerRegisterDialog(QDialog):
         self.txt_password.setEchoMode(QLineEdit.EchoMode.Password)
         self.txt_password.setPlaceholderText("کلمه عبور جدید")
 
-        btn_eye1 = QPushButton("👁️")
-        btn_eye1.setFixedSize(42, 38)
-        btn_eye1.setCursor(Qt.CursorShape.PointingHandCursor)
-        btn_eye1.setObjectName("secondary_button")
-        btn_eye1.clicked.connect(lambda: self.toggle_eye(self.txt_password, btn_eye1))
+        self.btn_eye1 = self._create_eye_button(self.txt_password, palette)
+        btn_eye1 = self.btn_eye1
 
         pass1_box.addWidget(self.txt_password)
         pass1_box.addWidget(btn_eye1)
@@ -169,11 +166,8 @@ class TrainerRegisterDialog(QDialog):
         self.txt_password_confirm.setEchoMode(QLineEdit.EchoMode.Password)
         self.txt_password_confirm.setPlaceholderText("تکرار کلمه عبور")
 
-        btn_eye2 = QPushButton("👁️")
-        btn_eye2.setFixedSize(42, 38)
-        btn_eye2.setCursor(Qt.CursorShape.PointingHandCursor)
-        btn_eye2.setObjectName("secondary_button")
-        btn_eye2.clicked.connect(lambda: self.toggle_eye(self.txt_password_confirm, btn_eye2))
+        self.btn_eye2 = self._create_eye_button(self.txt_password_confirm, palette)
+        btn_eye2 = self.btn_eye2
 
         pass2_box.addWidget(self.txt_password_confirm)
         pass2_box.addWidget(btn_eye2)
@@ -195,11 +189,8 @@ class TrainerRegisterDialog(QDialog):
         self.txt_recovery_code.setEchoMode(QLineEdit.EchoMode.Password)
         self.txt_recovery_code.setPlaceholderText("یک رمز مخفی یا PIN چند رقمی یادداشت کنید")
 
-        btn_eye3 = QPushButton("👁️")
-        btn_eye3.setFixedSize(42, 38)
-        btn_eye3.setCursor(Qt.CursorShape.PointingHandCursor)
-        btn_eye3.setObjectName("secondary_button")
-        btn_eye3.clicked.connect(lambda: self.toggle_eye(self.txt_recovery_code, btn_eye3))
+        self.btn_eye3 = self._create_eye_button(self.txt_recovery_code, palette)
+        btn_eye3 = self.btn_eye3
 
         rec1_box.addWidget(self.txt_recovery_code)
         rec1_box.addWidget(btn_eye3)
@@ -213,11 +204,8 @@ class TrainerRegisterDialog(QDialog):
         self.txt_recovery_confirm.setEchoMode(QLineEdit.EchoMode.Password)
         self.txt_recovery_confirm.setPlaceholderText("تکرار رمز مخفی")
 
-        btn_eye4 = QPushButton("👁️")
-        btn_eye4.setFixedSize(42, 38)
-        btn_eye4.setCursor(Qt.CursorShape.PointingHandCursor)
-        btn_eye4.setObjectName("secondary_button")
-        btn_eye4.clicked.connect(lambda: self.toggle_eye(self.txt_recovery_confirm, btn_eye4))
+        self.btn_eye4 = self._create_eye_button(self.txt_recovery_confirm, palette)
+        btn_eye4 = self.btn_eye4
 
         rec2_box.addWidget(self.txt_recovery_confirm)
         rec2_box.addWidget(btn_eye4)
@@ -258,6 +246,34 @@ class TrainerRegisterDialog(QDialog):
         if dlg.exec() == QDialog.DialogCode.Accepted:
             self.registration_success.emit()
             self.accept()
+
+    def _create_eye_button(self, field: QLineEdit, palette) -> QPushButton:
+        """Creates a compact eye toggle button without #secondary_button padding clipping."""
+        btn = QPushButton("👁️")
+        btn.setObjectName("eye_button")
+        btn.setFixedSize(44, 38)
+        btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        btn.setToolTip("نمایش / پنهان‌سازی کلمه عبور")
+        btn.setAutoDefault(False)
+        btn.setDefault(False)
+        btn.setStyleSheet(f"""
+            QPushButton#eye_button {{
+                background-color: {palette.bg_input};
+                color: {palette.text_primary};
+                border: 1px solid {palette.border};
+                border-radius: 6px;
+                font-size: 16px;
+                font-family: "Segoe UI Emoji", "Noto Color Emoji", "Apple Color Emoji", sans-serif;
+                padding: 0px;
+                margin: 0px;
+            }}
+            QPushButton#eye_button:hover {{
+                background-color: {palette.bg_surface};
+                border: 1px solid {palette.primary};
+            }}
+        """)
+        btn.clicked.connect(lambda: self.toggle_eye(field, btn))
+        return btn
 
     def toggle_eye(self, field: QLineEdit, btn: QPushButton):
         if field.echoMode() == QLineEdit.EchoMode.Password:

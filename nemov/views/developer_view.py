@@ -80,7 +80,8 @@ class DeveloperView(QWidget):
         scroll.setStyleSheet("QScrollArea { background: transparent; border: none; }")
 
         container = QWidget()
-        container.setStyleSheet("background: transparent;")
+        container.setObjectName("dev_app_scroll_container")
+        container.setStyleSheet("QWidget#dev_app_scroll_container { background: transparent; }")
         layout = QVBoxLayout(container)
         layout.setContentsMargins(14, 12, 14, 16)
         layout.setSpacing(16)
@@ -204,8 +205,9 @@ class DeveloperView(QWidget):
 
         # Dynamic Status Container
         self.update_status_card = QFrame()
+        self.update_status_card.setObjectName("dev_update_status_card")
         self.update_status_card.setStyleSheet("""
-            QFrame {
+            QFrame#dev_update_status_card {
                 background-color: #1A202C;
                 border: 1px solid #2D3748;
                 border-radius: 8px;
@@ -224,6 +226,8 @@ class DeveloperView(QWidget):
 
         # 2. Changelog Section (Visible when update is found)
         self.changelog_container = QWidget()
+        self.changelog_container.setObjectName("dev_changelog_container")
+        self.changelog_container.setStyleSheet("QWidget#dev_changelog_container { background: transparent; }")
         v_cl = QVBoxLayout(self.changelog_container)
         v_cl.setContentsMargins(0, 4, 0, 4)
         v_cl.setSpacing(6)
@@ -254,6 +258,8 @@ class DeveloperView(QWidget):
 
         # 3. Download Progress Panel
         self.download_panel = QWidget()
+        self.download_panel.setObjectName("dev_download_panel")
+        self.download_panel.setStyleSheet("QWidget#dev_download_panel { background: transparent; }")
         v_dl = QVBoxLayout(self.download_panel)
         v_dl.setContentsMargins(0, 4, 0, 4)
         v_dl.setSpacing(6)
@@ -414,7 +420,8 @@ class DeveloperView(QWidget):
         scroll.setStyleSheet("QScrollArea { background: transparent; border: none; }")
 
         container = QWidget()
-        container.setStyleSheet("background: transparent;")
+        container.setObjectName("dev_info_scroll_container")
+        container.setStyleSheet("QWidget#dev_info_scroll_container { background: transparent; }")
         layout = QVBoxLayout(container)
         layout.setContentsMargins(14, 12, 14, 16)
         layout.setSpacing(16)

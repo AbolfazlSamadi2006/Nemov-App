@@ -135,7 +135,8 @@ class BackupView(QWidget):
         scroll.setStyleSheet("QScrollArea { background-color: transparent; border: none; }")
 
         container = QWidget()
-        container.setStyleSheet("background: transparent;")
+        container.setObjectName("appearance_scroll_container")
+        container.setStyleSheet("QWidget#appearance_scroll_container { background: transparent; }")
         layout = QVBoxLayout(container)
         layout.setContentsMargins(12, 12, 12, 12)
         layout.setSpacing(16)
@@ -361,7 +362,8 @@ class BackupView(QWidget):
         scroll.setStyleSheet("QScrollArea { background-color: transparent; border: none; }")
 
         container = QWidget()
-        container.setStyleSheet("background: transparent;")
+        container.setObjectName("profile_scroll_container")
+        container.setStyleSheet("QWidget#profile_scroll_container { background: transparent; }")
         layout = QVBoxLayout(container)
         layout.setContentsMargins(8, 8, 8, 8)
         layout.setSpacing(14)
@@ -728,9 +730,9 @@ class BackupView(QWidget):
         header_prog.addStretch()
 
         self.btn_prog_close = QPushButton("✕")
-        self.btn_prog_close.setFixedSize(24, 24)
+        self.btn_prog_close.setFixedSize(26, 26)
         self.btn_prog_close.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_prog_close.setStyleSheet("background: transparent; color: #9CA3AF; border: none; font-size: 13px; font-weight: bold;")
+        self.btn_prog_close.setStyleSheet("QPushButton { background: transparent; color: #9CA3AF; border: none; font-size: 13px; font-weight: bold; padding: 0px; margin: 0px; } QPushButton:hover { color: #FFFFFF; }")
         self.btn_prog_close.clicked.connect(lambda: self.progress_card.setVisible(False))
         self.btn_prog_close.setVisible(False)
         header_prog.addWidget(self.btn_prog_close)

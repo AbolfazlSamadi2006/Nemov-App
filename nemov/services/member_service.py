@@ -1,6 +1,6 @@
 from nemov.database.connection import get_session, mark_data_changed
 from nemov.models.database_models import Member, HealthRecord, MedicalDocument
-from nemov.utils.jalali_date import get_today_shamsi, is_membership_active
+from nemov.utils.jalali_date import get_today_shamsi, is_membership_active, normalize_digits
 from sqlalchemy import or_
 
 class MemberService:
@@ -86,16 +86,23 @@ class MemberService:
             h_val = float(data.get("height_cm")) if data.get("height_cm") is not None and float(data.get("height_cm", 0)) > 0 else None
             w_val = float(data.get("initial_weight_kg")) if data.get("initial_weight_kg") is not None and float(data.get("initial_weight_kg", 0)) > 0 else None
             
-            exp_date = data.get("membership_expire_shamsi")
-            start_date = data.get("membership_start_shamsi")
+            reg_date = (data.get("registration_date_shamsi") or "").strip() or get_today_shamsi()
+            raw_exp = (data.get("membership_expire_shamsi") or "").strip()
+            raw_start = (data.get("membership_start_shamsi") or "").strip()
             requested_status = data.get("status", "active")
 
-            if requested_status == "archived" or not start_date or not str(start_date).strip():
+            if requested_status == "archived" or not raw_start:
                 status_val = "archived"
-            elif exp_date and not is_membership_active(exp_date):
+            elif raw_exp and not is_membership_active(raw_exp):
                 status_val = "expired"
             else:
                 status_val = "active"
+
+            # Satisfy NOT NULL constraints in DB even when creating an archived member without dates
+            start_date = raw_start or reg_date
+            exp_date = raw_exp or start_date
+            raw_phone = data.get("phone")
+            phone_val = normalize_digits(str(raw_phone)).strip() if raw_phone is not None else ""
 
             from nemov.auth.authentication import CurrentUser
             curr_user_id = data.get("user_id") or CurrentUser.get_id()
@@ -104,14 +111,14 @@ class MemberService:
                 user_id=curr_user_id,
                 first_name=data.get("first_name"),
                 last_name=data.get("last_name"),
-                phone=data.get("phone"),
+                phone=phone_val,
                 gender=data.get("gender", "male"),
                 job=data.get("job"),
                 birth_date_shamsi=data.get("birth_date_shamsi"),
                 height_cm=h_val,
                 initial_weight_kg=w_val,
                 activity_level=data.get("activity_level", "moderately_active"),
-                registration_date_shamsi=data.get("registration_date_shamsi") or get_today_shamsi(),
+                registration_date_shamsi=reg_date,
                 insurance_date_shamsi=data.get("insurance_date_shamsi"),
                 tuition_fee=float(data.get("tuition_fee", 0.0) or 0.0) if data.get("tuition_fee") is not None else None,
                 membership_type=data.get("membership_type", "12_sessions"),
@@ -150,6 +157,8 @@ class MemberService:
             
             for key, val in data.items():
                 if hasattr(member, key):
+                    if key == "phone" and val is not None:
+                        val = normalize_digits(str(val)).strip()
                     setattr(member, key, val)
             
             if member.status == "archived" or not member.membership_start_shamsi or not member.membership_start_shamsi.strip():

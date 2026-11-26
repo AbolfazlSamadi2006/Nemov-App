@@ -108,12 +108,16 @@ class PasswordRecoveryDialog(QDialog):
 
         # Stacked Container for the 2 Modes
         self.stack = AutoResizingStackedWidget()
+        self.stack.setObjectName("recovery_stack")
+        self.stack.setStyleSheet("QStackedWidget#recovery_stack { background: transparent; border: none; }")
         self.stack.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum)
 
         # ========================================================
         # PAGE 0: SMS OTP Mode (Online via SMS.ir)
         # ========================================================
         page_sms = QFrame()
+        page_sms.setObjectName("recovery_page_sms")
+        page_sms.setStyleSheet("QFrame#recovery_page_sms { background: transparent; border: none; }")
         page_sms_layout = QVBoxLayout(page_sms)
         page_sms_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         page_sms_layout.setContentsMargins(0, 4, 0, 0)
@@ -180,6 +184,8 @@ class PasswordRecoveryDialog(QDialog):
         # PAGE 1: Secret Recovery Code Mode (Offline)
         # ========================================================
         page_secret = QFrame()
+        page_secret.setObjectName("recovery_page_secret")
+        page_secret.setStyleSheet("QFrame#recovery_page_secret { background: transparent; border: none; }")
         page_secret_layout = QVBoxLayout(page_secret)
         page_secret_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         page_secret_layout.setContentsMargins(0, 4, 0, 0)
@@ -206,11 +212,8 @@ class PasswordRecoveryDialog(QDialog):
         self.txt_recovery_code.setEchoMode(QLineEdit.EchoMode.Password)
         self.txt_recovery_code.setPlaceholderText("رمز ریکاوری مخفی خود را وارد کنید")
 
-        btn_eye_rec = QPushButton("👁️")
-        btn_eye_rec.setFixedSize(42, 38)
-        btn_eye_rec.setCursor(Qt.CursorShape.PointingHandCursor)
-        btn_eye_rec.setObjectName("secondary_button")
-        btn_eye_rec.clicked.connect(lambda: self.toggle_eye(self.txt_recovery_code, btn_eye_rec))
+        self.btn_eye_rec = self._create_eye_button(self.txt_recovery_code, palette)
+        btn_eye_rec = self.btn_eye_rec
 
         pass_rec_box.addWidget(self.txt_recovery_code)
         pass_rec_box.addWidget(btn_eye_rec)
@@ -255,11 +258,8 @@ class PasswordRecoveryDialog(QDialog):
         self.txt_new_password.setEchoMode(QLineEdit.EchoMode.Password)
         self.txt_new_password.setPlaceholderText("کلمه عبور جدید را وارد کنید")
 
-        btn_eye_new = QPushButton("👁️")
-        btn_eye_new.setFixedSize(42, 38)
-        btn_eye_new.setCursor(Qt.CursorShape.PointingHandCursor)
-        btn_eye_new.setObjectName("secondary_button")
-        btn_eye_new.clicked.connect(lambda: self.toggle_eye(self.txt_new_password, btn_eye_new))
+        self.btn_eye_new = self._create_eye_button(self.txt_new_password, palette)
+        btn_eye_new = self.btn_eye_new
 
         pass_new_box.addWidget(self.txt_new_password)
         pass_new_box.addWidget(btn_eye_new)
@@ -443,6 +443,32 @@ class PasswordRecoveryDialog(QDialog):
         else:
             self.btn_tab_sms.setStyleSheet(f"background-color: {palette.bg_surface}; color: {palette.text_secondary}; border: 1px solid {palette.border}; border-radius: 6px;")
             self.btn_tab_secret.setStyleSheet(f"background-color: {palette.primary}; color: {palette.text_primary}; font-weight: bold; border-radius: 6px; border: none;")
+
+    def _create_eye_button(self, field: QLineEdit, palette) -> QPushButton:
+        """Creates a compact eye toggle button without #secondary_button padding clipping."""
+        btn = QPushButton("👁️")
+        btn.setObjectName("eye_button")
+        btn.setFixedSize(44, 38)
+        btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        btn.setToolTip("نمایش / پنهان‌سازی کلمه عبور")
+        btn.setStyleSheet(f"""
+            QPushButton#eye_button {{
+                background-color: {palette.bg_input};
+                color: {palette.text_primary};
+                border: 1px solid {palette.border};
+                border-radius: 6px;
+                font-size: 16px;
+                font-family: "Segoe UI Emoji", "Noto Color Emoji", "Apple Color Emoji", sans-serif;
+                padding: 0px;
+                margin: 0px;
+            }}
+            QPushButton#eye_button:hover {{
+                background-color: {palette.bg_surface};
+                border: 1px solid {palette.primary};
+            }}
+        """)
+        btn.clicked.connect(lambda: self.toggle_eye(field, btn))
+        return btn
 
     def toggle_eye(self, field: QLineEdit, btn: QPushButton):
         if field.echoMode() == QLineEdit.EchoMode.Password:
