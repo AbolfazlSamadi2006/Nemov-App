@@ -125,6 +125,19 @@ def check_and_migrate_db():
                 conn.execute(text("ALTER TABLE members ADD COLUMN export_folder_path VARCHAR(500);"))
             conn.commit()
 
+    if "health_records" in inspector.get_table_names():
+        hr_columns = [c["name"] for c in inspector.get_columns("health_records")]
+        with engine.connect() as conn:
+            if "has_allergy" not in hr_columns:
+                conn.execute(text("ALTER TABLE health_records ADD COLUMN has_allergy BOOLEAN DEFAULT 0;"))
+            if "has_medication_restriction" not in hr_columns:
+                conn.execute(text("ALTER TABLE health_records ADD COLUMN has_medication_restriction BOOLEAN DEFAULT 0;"))
+            if "allergy_details" not in hr_columns:
+                conn.execute(text("ALTER TABLE health_records ADD COLUMN allergy_details TEXT;"))
+            if "medication_restriction_details" not in hr_columns:
+                conn.execute(text("ALTER TABLE health_records ADD COLUMN medication_restriction_details TEXT;"))
+            conn.commit()
+
     # Automatically seed initial tuition records from existing members if empty
     if "tuition_payments" in inspector.get_table_names():
         from nemov.models.database_models import TuitionPayment, Member

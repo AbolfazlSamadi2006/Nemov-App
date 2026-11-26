@@ -9,7 +9,6 @@ class BackupDestinationDialog(QDialog):
 
     CHOICE_SYSTEM = "system"
     CHOICE_SERVER = "server"
-    CHOICE_EMAIL = "email"
     CHOICE_INSTALL_DIR = "install_dir"
 
     def __init__(self, parent=None):
@@ -64,19 +63,7 @@ class BackupDestinationDialog(QDialog):
         layout.addWidget(btn_server)
 
         # ----------------------------------------------------
-        # Option 3: Send directly to Coach Email
-        # ----------------------------------------------------
-        btn_email = self._create_option_button(
-            title="📧 ارسال به ایمیل مربی",
-            description="ارسال مستقیم و امن فایل پایگاه‌داده (.db) به آدرس ایمیل ثبت‌شده مربی باشگاه",
-            bg_color="#0D9488",
-            hover_color="#0F766E"
-        )
-        btn_email.clicked.connect(lambda: self._select_choice(self.CHOICE_EMAIL))
-        layout.addWidget(btn_email)
-
-        # ----------------------------------------------------
-        # Option 4: Save to Default Installation Directory
+        # Option 3: Save to Default Installation Directory
         # ----------------------------------------------------
         btn_install_dir = self._create_option_button(
             title="📁 ذخیره در مسیر نصب برنامه",
@@ -90,27 +77,6 @@ class BackupDestinationDialog(QDialog):
         layout.addSpacing(6)
 
         # ----------------------------------------------------
-        # Spam Guide Link
-        # ----------------------------------------------------
-        btn_help_spam = QPushButton("💡 راهنمای دریافت ایمیل در اینباکس (خروج از پوشه هرزنامه)")
-        btn_help_spam.setCursor(Qt.CursorShape.PointingHandCursor)
-        btn_help_spam.setStyleSheet("""
-            QPushButton {
-                background: transparent;
-                color: #38BDF8;
-                border: none;
-                font-size: 11px;
-                text-decoration: underline;
-                padding: 4px;
-            }
-            QPushButton:hover {
-                color: #7DD3FC;
-            }
-        """)
-        btn_help_spam.clicked.connect(self._open_spam_guide)
-        layout.addWidget(btn_help_spam, alignment=Qt.AlignmentFlag.AlignCenter)
-
-        # ----------------------------------------------------
         # Cancel Button
         # ----------------------------------------------------
         btn_cancel = QPushButton("انصراف و بستن")
@@ -119,10 +85,6 @@ class BackupDestinationDialog(QDialog):
         btn_cancel.setObjectName("secondary_button")
         btn_cancel.clicked.connect(self.reject)
         layout.addWidget(btn_cancel, alignment=Qt.AlignmentFlag.AlignCenter)
-
-    def _open_spam_guide(self):
-        from nemov.views.components.email_spam_guide_dialog import EmailSpamGuideDialog
-        EmailSpamGuideDialog(self).exec()
 
     def _create_option_button(self, title: str, description: str, bg_color: str, hover_color: str) -> QPushButton:
         btn = QPushButton()

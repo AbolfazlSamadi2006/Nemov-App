@@ -377,10 +377,29 @@ class HealthRecordView(QWidget):
         self.cb_hypertension = QCheckBox("فشار خون بالا")
         self.cb_diabetes = QCheckBox("دیابت")
         self.cb_heart = QCheckBox("مشکلات قلبی-عروقی")
+        self.cb_allergy = QCheckBox("آلرژی / حساسیت")
+        self.cb_medication_restriction = QCheckBox("محدودیت دارویی")
         row_cb.addWidget(self.cb_hypertension)
         row_cb.addWidget(self.cb_diabetes)
         row_cb.addWidget(self.cb_heart)
+        row_cb.addWidget(self.cb_allergy)
+        row_cb.addWidget(self.cb_medication_restriction)
         layout_med.addLayout(row_cb)
+
+        row_allergy_med = QHBoxLayout()
+        self.txt_allergy = QTextEdit()
+        self.txt_allergy.setPlaceholderText("مثلاً: حساسیت به لاکتوز، بادام‌زمینی، دارو یا گرده...")
+        self.txt_allergy.setMaximumHeight(55)
+
+        self.txt_medication_restriction = QTextEdit()
+        self.txt_medication_restriction.setPlaceholderText("مثلاً: منع مصرف کافئین/مکمل خاص، تداخل با دارو...")
+        self.txt_medication_restriction.setMaximumHeight(55)
+
+        row_allergy_med.addWidget(QLabel("جزئیات آلرژی:"))
+        row_allergy_med.addWidget(self.txt_allergy)
+        row_allergy_med.addWidget(QLabel("محدودیت دارویی:"))
+        row_allergy_med.addWidget(self.txt_medication_restriction)
+        layout_med.addLayout(row_allergy_med)
 
         layout_med.addWidget(QLabel("توضیحات سایر بیماری‌ها:"))
         self.txt_other_med = QTextEdit()
@@ -460,6 +479,13 @@ class HealthRecordView(QWidget):
         self.cb_hypertension.stateChanged.connect(self._check_dirty_state)
         self.cb_diabetes.stateChanged.connect(self._check_dirty_state)
         self.cb_heart.stateChanged.connect(self._check_dirty_state)
+        self.cb_allergy.stateChanged.connect(self._check_dirty_state)
+        self.cb_medication_restriction.stateChanged.connect(self._check_dirty_state)
+
+        self.txt_allergy.textChanged.connect(lambda: self._sync_checkbox_from_text(self.txt_allergy, self.cb_allergy))
+        self.txt_medication_restriction.textChanged.connect(
+            lambda: self._sync_checkbox_from_text(self.txt_medication_restriction, self.cb_medication_restriction)
+        )
 
         self.txt_other_med.textChanged.connect(self._check_dirty_state)
         self.txt_knee.textChanged.connect(self._check_dirty_state)
@@ -531,10 +557,17 @@ class HealthRecordView(QWidget):
         scroll_area.setWidget(container)
         main_layout.addWidget(scroll_area)
 
+    def _sync_checkbox_from_text(self, text_edit: QTextEdit, checkbox: QCheckBox):
+        if text_edit.toPlainText().strip() and not checkbox.isChecked():
+            checkbox.blockSignals(True)
+            checkbox.setChecked(True)
+            checkbox.blockSignals(False)
+        self._check_dirty_state()
+
     def _block_form_signals(self, block: bool):
-        for cb in (self.cb_hypertension, self.cb_diabetes, self.cb_heart):
+        for cb in (self.cb_hypertension, self.cb_diabetes, self.cb_heart, self.cb_allergy, self.cb_medication_restriction):
             cb.blockSignals(block)
-        for txt in (self.txt_other_med, self.txt_knee, self.txt_back, self.txt_shoulder, self.txt_wrist, self.txt_limitations):
+        for txt in (self.txt_allergy, self.txt_medication_restriction, self.txt_other_med, self.txt_knee, self.txt_back, self.txt_shoulder, self.txt_wrist, self.txt_limitations):
             txt.blockSignals(block)
 
     def _get_current_form_data(self) -> dict:
@@ -542,6 +575,10 @@ class HealthRecordView(QWidget):
             "has_hypertension": bool(self.cb_hypertension.isChecked()),
             "has_diabetes": bool(self.cb_diabetes.isChecked()),
             "has_heart_issue": bool(self.cb_heart.isChecked()),
+            "has_allergy": bool(self.cb_allergy.isChecked()),
+            "has_medication_restriction": bool(self.cb_medication_restriction.isChecked()),
+            "allergy_details": self.txt_allergy.toPlainText().strip(),
+            "medication_restriction_details": self.txt_medication_restriction.toPlainText().strip(),
             "other_medical": self.txt_other_med.toPlainText().strip(),
             "knee_injury": self.txt_knee.toPlainText().strip(),
             "back_injury": self.txt_back.toPlainText().strip(),
@@ -564,6 +601,10 @@ class HealthRecordView(QWidget):
             self.cb_hypertension.setChecked(bool(rec.has_hypertension) if rec else False)
             self.cb_diabetes.setChecked(bool(rec.has_diabetes) if rec else False)
             self.cb_heart.setChecked(bool(rec.has_heart_issue) if rec else False)
+            self.cb_allergy.setChecked(bool(getattr(rec, "has_allergy", False)) if rec else False)
+            self.cb_medication_restriction.setChecked(bool(getattr(rec, "has_medication_restriction", False)) if rec else False)
+            self.txt_allergy.setText((getattr(rec, "allergy_details", None) or "") if rec else "")
+            self.txt_medication_restriction.setText((getattr(rec, "medication_restriction_details", None) or "") if rec else "")
             self.txt_other_med.setText((rec.other_medical or "") if rec else "")
             self.txt_knee.setText((rec.knee_injury or "") if rec else "")
             self.txt_back.setText((rec.back_injury or "") if rec else "")
@@ -695,6 +736,8 @@ class HealthRecordView(QWidget):
                 lines.append(f"  • فشار خون بالا: {'بله' if rec and rec.has_hypertension else 'خیر'}")
                 lines.append(f"  • دیابت: {'بله' if rec and rec.has_diabetes else 'خیر'}")
                 lines.append(f"  • بیماری قلبی-عروقی: {'بله' if rec and rec.has_heart_issue else 'خیر'}")
+                lines.append(f"  • آلرژی / حساسیت: {'بله' if rec and getattr(rec, 'has_allergy', False) else 'خیر'} ({getattr(rec, 'allergy_details', None) or 'بدون توضیح'})")
+                lines.append(f"  • محدودیت دارویی: {'بله' if rec and getattr(rec, 'has_medication_restriction', False) else 'خیر'} ({getattr(rec, 'medication_restriction_details', None) or 'بدون توضیح'})")
                 lines.append(f"  • سایر بیماری‌ها، حساسیت‌ها یا داروهای خاص: {(rec.other_medical if rec and rec.other_medical else 'موردی ثبت نشده است')}")
                 lines.append("")
                 lines.append("◄ سوابق آسیب‌دیدگی‌های مفصلی و اسکلتی-عضلانی:")

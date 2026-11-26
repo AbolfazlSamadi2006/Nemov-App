@@ -8,7 +8,6 @@ from PyQt6.QtCore import Qt, pyqtSignal, QTimer, QThread, QPoint
 from PyQt6.QtGui import QPixmap, QColor, QBrush
 import config
 from nemov.services.backup_service import BackupService
-from nemov.services.email_service import EmailService
 from nemov.auth.authentication import (
     CurrentUser, update_trainer_profile, delete_trainer_account, get_all_trainers
 )
@@ -57,97 +56,6 @@ class CloudBackupThread(QThread):
                 self.finished_signal.emit(False, msg)
         except Exception as e:
             self.finished_signal.emit(False, str(e))
-
-
-class EmailBackupThread(QThread):
-    progress_signal = pyqtSignal(int, str)
-    finished_signal = pyqtSignal(bool, str, str, float)  # ok, msg, filename, size_mb
-
-    def __init__(self, email: str, trainer_name: str, trainer_id: int = None):
-        super().__init__()
-        self.email = email
-        self.trainer_name = trainer_name
-        self.trainer_id = trainer_id
-
-    def run(self):
-        try:
-            self.progress_signal.emit(15, "در حال ایجاد نسخه پشتیبان دیتابیس (.db)...")
-            from datetime import datetime
-            from nemov.utils.jalali_date import gregorian_to_shamsi
-
-            now = datetime.now()
-            shamsi_date = gregorian_to_shamsi(now.date()).replace("/", "-")
-            time_str = now.strftime("%H-%M-%S")
-            shamsi_display = f"{gregorian_to_shamsi(now.date())} {now.strftime('%H:%M:%S')}"
-
-            db_filename = f"yalda_backup_{shamsi_date}_{time_str}.db"
-            db_target_path = config.BACKUPS_DIR / db_filename
-            config.BACKUPS_DIR.mkdir(parents=True, exist_ok=True)
-
-            import shutil
-            shutil.copy2(config.DB_PATH, db_target_path)
-            size_mb = round(os.path.getsize(db_target_path) / (1024 * 1024), 2)
-
-            self.progress_signal.emit(45, "در حال اتصال امن به سرویس ایمیل (Gmail SSL/TLS)...")
-            time.sleep(0.3)
-            self.progress_signal.emit(75, f"در حال ارسال فایل دیتابیس ({size_mb} MB) به ایمیل مربی...")
-
-            metadata = {
-                "date": shamsi_display,
-                "size": f"{size_mb} MB",
-                "filename": db_filename,
-                "members_count": "-"
-            }
-            try:
-                from nemov.database.connection import SessionLocal
-                from nemov.models.database_models import Member, User
-                with SessionLocal() as db:
-                    resolved_id = self.trainer_id
-
-                    # 1. If trainer_id wasn't passed, resolve by email
-                    if not resolved_id and self.email:
-                        tr = db.query(User).filter(
-                            User.email.ilike(self.email.strip()),
-                            User.role != "admin"
-                        ).first()
-                        if tr:
-                            resolved_id = tr.id
-                            if not self.trainer_name or self.trainer_name == "مدیر باشگاه":
-                                self.trainer_name = tr.display_name or tr.full_name
-
-                    # 2. Resolve by trainer_name if still not resolved
-                    if not resolved_id and self.trainer_name and self.trainer_name != "مدیر باشگاه":
-                        tr = db.query(User).filter(
-                            (User.full_name == self.trainer_name.strip()) |
-                            ((User.first_name + " " + User.last_name) == self.trainer_name.strip()),
-                            User.role != "admin"
-                        ).first()
-                        if tr:
-                            resolved_id = tr.id
-
-                    if resolved_id:
-                        # Exactly count the students belonging to this specific trainer
-                        count = db.query(Member).filter(Member.user_id == resolved_id).count()
-                        metadata["members_count"] = str(count)
-                    else:
-                        metadata["members_count"] = str(db.query(Member).count())
-            except Exception:
-                pass
-
-            success, msg = EmailService.send_backup_email(
-                to_email=self.email,
-                trainer_name=self.trainer_name,
-                backup_filepath=str(db_target_path),
-                metadata=metadata
-            )
-
-            if success:
-                self.progress_signal.emit(100, "فایل پشتیبان با موفقیت به ایمیل مربی ارسال شد.")
-                self.finished_signal.emit(True, msg, db_filename, size_mb)
-            else:
-                self.finished_signal.emit(False, msg, db_filename, size_mb)
-        except Exception as e:
-            self.finished_signal.emit(False, str(e), "", 0.0)
 
 
 class BackupView(QWidget):
@@ -599,37 +507,10 @@ class BackupView(QWidget):
         # Row 4: Email Address
         self.txt_email = QLineEdit()
         self.txt_email.setFixedHeight(36)
-        self.txt_email.setPlaceholderText("ایمیل مربی (جهت بازیابی رمز و دریافت نسخه پشتیبان)")
-
-        btn_spam_guide = QPushButton("🛡️ راهنمای پوشه هرزنامه")
-        btn_spam_guide.setFixedHeight(36)
-        btn_spam_guide.setFixedWidth(155)
-        btn_spam_guide.setCursor(Qt.CursorShape.PointingHandCursor)
-        btn_spam_guide.setToolTip("راهنمای گام‌به‌گام خروج ایمیل‌های ارسالی برنامه از پوشه هرزنامه (Spam) جیمیل")
-        btn_spam_guide.setStyleSheet("""
-            QPushButton {
-                background-color: #1E293B;
-                color: #38BDF8;
-                border: 1px solid #0284C7;
-                border-radius: 6px;
-                font-weight: bold;
-                font-size: 11px;
-                padding: 0 12px;
-            }
-            QPushButton:hover {
-                background-color: #0284C7;
-                color: #FFFFFF;
-            }
-        """)
-        btn_spam_guide.clicked.connect(self.open_spam_guide_dialog)
-
-        email_row_box = QHBoxLayout()
-        email_row_box.setSpacing(8)
-        email_row_box.addWidget(self.txt_email, 1)
-        email_row_box.addWidget(btn_spam_guide)
+        self.txt_email.setPlaceholderText("ایمیل مربی (اختیاری)")
 
         grid_prof.addWidget(QLabel("ایمیل مربی:"), 4, 1)
-        grid_prof.addLayout(email_row_box, 4, 2, 1, 3)
+        grid_prof.addWidget(self.txt_email, 4, 2, 1, 3)
 
         layout_prof.addLayout(grid_prof)
 
@@ -841,28 +722,6 @@ class BackupView(QWidget):
         self.lbl_prog_title.setStyleSheet("font-weight: bold; font-size: 13px; color: #F87171; font-family: 'Segoe UI Emoji', 'Noto Color Emoji', 'Vazirmatn', sans-serif;")
         header_prog.addWidget(self.lbl_prog_title)
         header_prog.addStretch()
-
-        self.btn_prog_spam_guide = QPushButton("🛡️ راهنمای پوشه اسپم")
-        self.btn_prog_spam_guide.setFixedHeight(24)
-        self.btn_prog_spam_guide.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_prog_spam_guide.setStyleSheet("""
-            QPushButton {
-                background-color: #1E293B;
-                color: #38BDF8;
-                border: 1px solid #0284C7;
-                border-radius: 4px;
-                font-size: 11px;
-                font-weight: bold;
-                padding: 0 8px;
-            }
-            QPushButton:hover {
-                background-color: #0284C7;
-                color: #FFFFFF;
-            }
-        """)
-        self.btn_prog_spam_guide.clicked.connect(self.open_spam_guide_dialog)
-        self.btn_prog_spam_guide.setVisible(False)
-        header_prog.addWidget(self.btn_prog_spam_guide)
 
         self.btn_prog_close = QPushButton("✕")
         self.btn_prog_close.setFixedSize(24, 24)
@@ -2218,90 +2077,6 @@ class BackupView(QWidget):
 
             self._start_cloud_backup_async(phone, trainer_name, sync_videos=sync_videos)
 
-        elif choice == BackupDestinationDialog.CHOICE_EMAIL:
-            u = CurrentUser.get()
-            # 1. First priority: whatever is currently entered in the email field on screen
-            input_email = self.txt_email.text().strip()
-            system_support_emails = {
-                getattr(config, "SUPPORT_EMAIL_ADDRESS", "").lower(),
-                getattr(config, "SUPPORT_EMAIL_DISPLAY_ADDRESS", "").lower(),
-                "support@nemovapp.ir",
-                "gymassistantapp.support@gmail.com"
-            }
-            if input_email.lower() in system_support_emails:
-                input_email = ""
-
-            # 2. Second priority: email stored in trainer user record (excluding support email)
-            db_email = (u.email or "").strip() if u else ""
-            if db_email.lower() in system_support_emails:
-                db_email = ""
-
-            target_email = input_email or db_email
-
-            if not target_email:
-                email_input, ok = QInputDialog.getText(
-                    self,
-                    "ثبت ایمیل مربی",
-                    "آدرس ایمیل مربی جهت دریافت نسخه پشتیبان ثبت نشده است.\nلطفاً آدرس ایمیل خود را وارد نمایید:",
-                    QLineEdit.EchoMode.Normal,
-                    ""
-                )
-                if not ok or not email_input.strip():
-                    return
-                target_email = email_input.strip()
-
-            # Validate basic email structure
-            if "@" not in target_email or "." not in target_email:
-                QMessageBox.warning(
-                    self,
-                    "خطا در آدرس ایمیل",
-                    "لطفاً یک آدرس ایمیل معتبر (مانند user@example.com) وارد نمایید."
-                )
-                self.txt_email.setFocus()
-                return
-
-            self.txt_email.setText(target_email)
-
-            # 3. Always save & sync this email to the coach profile in database so it is recognized permanently
-            if u and (target_email != db_email):
-                try:
-                    update_trainer_profile(
-                        user_id=u.id,
-                        first_name=u.first_name,
-                        last_name=u.last_name,
-                        phone=u.phone,
-                        email=target_email,
-                        birth_date_shamsi=u.birth_date_shamsi,
-                        photo_path=u.photo_path,
-                        username=u.username
-                    )
-                    self.load_all_data()
-                except Exception as ex:
-                    print(f"Auto-sync email error: {ex}")
-
-            # Determine trainer identity and ID
-            trainer_id = None
-            if u and getattr(u, "role", "") != "admin":
-                trainer_id = u.id
-                trainer_name = u.display_name or u.full_name
-            else:
-                trainer_name = u.display_name if u else "مدیر باشگاه"
-                try:
-                    from nemov.database.connection import SessionLocal
-                    from nemov.models.database_models import User
-                    with SessionLocal() as db:
-                        tr = db.query(User).filter(
-                            User.email.ilike(target_email.strip()),
-                            User.role != "admin"
-                        ).first()
-                        if tr:
-                            trainer_id = tr.id
-                            trainer_name = tr.display_name or tr.full_name
-                except Exception:
-                    pass
-
-            self._start_email_backup_async(target_email, trainer_name, trainer_id=trainer_id)
-
         elif choice == BackupDestinationDialog.CHOICE_INSTALL_DIR:
             try:
                 filepath = BackupService.create_backup()
@@ -2329,8 +2104,6 @@ class BackupView(QWidget):
     def _start_cloud_backup_async(self, phone: str, trainer_name: str, sync_videos: bool = False):
         self.progress_card.setVisible(True)
         self.btn_prog_close.setVisible(False)
-        if hasattr(self, "btn_prog_spam_guide"):
-            self.btn_prog_spam_guide.setVisible(False)
         self.lbl_prog_title.setText("☁️ در حال ارسال نسخه پشتیبان به سرور...")
         self.lbl_prog_title.setStyleSheet("font-weight: bold; font-size: 13px; color: #F87171; font-family: 'Segoe UI Emoji', 'Noto Color Emoji', 'Vazirmatn', sans-serif;")
         self.lbl_prog_detail.setText("در حال برقراری ارتباط با سرور نِمُو...")
@@ -2349,30 +2122,6 @@ class BackupView(QWidget):
         self.cloud_worker.progress_signal.connect(self._on_backup_progress)
         self.cloud_worker.finished_signal.connect(lambda ok, msg: self._on_cloud_backup_finished(ok, msg, phone))
         self.cloud_worker.start()
-
-    def _start_email_backup_async(self, email: str, trainer_name: str, trainer_id: int = None):
-        self.progress_card.setVisible(True)
-        self.btn_prog_close.setVisible(False)
-        if hasattr(self, "btn_prog_spam_guide"):
-            self.btn_prog_spam_guide.setVisible(False)
-        self.lbl_prog_title.setText("📧 در حال آماده‌سازی و ارسال نسخه پشتیبان به ایمیل مربی...")
-        self.lbl_prog_title.setStyleSheet("font-weight: bold; font-size: 13px; color: #F87171; font-family: 'Segoe UI Emoji', 'Noto Color Emoji', 'Vazirmatn', sans-serif;")
-        self.lbl_prog_detail.setText(f"در حال ایجاد بسته و ارسال به نشانی {email}...")
-        self.backup_progress_bar.setValue(10)
-        self.backup_progress_bar.setStyleSheet("""
-            QProgressBar {
-                border: 1px solid #444444; border-radius: 6px; background-color: #18181B; text-align: center; color: #FFFFFF; font-weight: bold; font-size: 11px;
-            }
-            QProgressBar::chunk {
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #991B1B, stop:0.5 #DC2626, stop:1 #EF4444);
-                border-radius: 5px;
-            }
-        """)
-
-        self.email_worker = EmailBackupThread(email, trainer_name, trainer_id=trainer_id)
-        self.email_worker.progress_signal.connect(self._on_backup_progress)
-        self.email_worker.finished_signal.connect(lambda ok, msg, fn, sz: self._on_email_backup_finished(ok, msg, email, fn, sz))
-        self.email_worker.start()
 
     def _on_backup_progress(self, percent: int, detail_msg: str):
         self.backup_progress_bar.setValue(percent)
@@ -2419,32 +2168,6 @@ class BackupView(QWidget):
             self.lbl_prog_title.setText("❌ خطا در پشتیبان‌گیری ابری")
             self.lbl_prog_title.setStyleSheet("font-weight: bold; font-size: 13px; color: #EF4444; font-family: 'Segoe UI Emoji', 'Noto Color Emoji', 'Vazirmatn', sans-serif;")
             self.lbl_prog_detail.setText(f"خطا: {msg}")
-
-    def _on_email_backup_finished(self, success: bool, msg: str, email: str, filename: str, size_mb: float):
-        self.btn_prog_close.setVisible(True)
-        if success:
-            BackupService.record_email_backup(email, filename, size_mb)
-            self.load_backups()
-            self.lbl_prog_title.setText("✅ نسخه پشتیبان با موفقیت به ایمیل مربی ارسال شد!")
-            self.lbl_prog_title.setStyleSheet("font-weight: bold; font-size: 13px; color: #10B981; font-family: 'Segoe UI Emoji', 'Noto Color Emoji', 'Vazirmatn', sans-serif;")
-            self.lbl_prog_detail.setText(f"فایل {filename} ({size_mb} MB) به نشانی {email} فرستاده شد. (در صورت عدم مشاهده در اینباکس، پوشه Spam را بررسی فرمایید)")
-            self.backup_progress_bar.setValue(100)
-            self.backup_progress_bar.setStyleSheet("""
-                QProgressBar { border: 1px solid #059669; border-radius: 6px; background-color: #18181B; text-align: center; color: #FFFFFF; font-weight: bold; font-size: 11px; }
-                QProgressBar::chunk { background-color: #10B981; border-radius: 5px; }
-            """)
-            if hasattr(self, "btn_prog_spam_guide"):
-                self.btn_prog_spam_guide.setVisible(True)
-            QTimer.singleShot(15000, lambda: self.progress_card.setVisible(False))
-        else:
-            self.lbl_prog_title.setText("❌ خطا در ارسال ایمیل پشتیبان")
-            self.lbl_prog_title.setStyleSheet("font-weight: bold; font-size: 13px; color: #EF4444; font-family: 'Segoe UI Emoji', 'Noto Color Emoji', 'Vazirmatn', sans-serif;")
-            self.lbl_prog_detail.setText(f"خطا: {msg}")
-
-    def open_spam_guide_dialog(self):
-        from nemov.views.components.email_spam_guide_dialog import EmailSpamGuideDialog
-        dialog = EmailSpamGuideDialog(self)
-        dialog.exec()
 
     def open_cloud_restore_dialog(self):
         from nemov.views.cloud_restore_dialog import CloudRestoreDialog

@@ -38,17 +38,22 @@ class EditAssessmentDialog(QDialog):
             self.picker_date.setText(self.assessment.assessment_date_shamsi)
         grid.addWidget(self.picker_date, 0, 1)
 
+        from nemov.services.member_service import MemberService
+        member = MemberService.get_member_by_id(self.assessment.member_id)
+        default_h = self.assessment.height_cm if (self.assessment.height_cm and self.assessment.height_cm > 0) else (member.height_cm if (member and member.height_cm) else 0.0)
+        default_w = self.assessment.weight_kg if (self.assessment.weight_kg and self.assessment.weight_kg > 0) else (member.initial_weight_kg if (member and member.initial_weight_kg) else 0.0)
+
         grid.addWidget(QLabel("قد (cm):"), 0, 2)
         self.spin_height = QDoubleSpinBox()
         self.spin_height.setRange(0.0, 300.0)
         self.spin_height.setDecimals(0)
-        self.spin_height.setValue(self.assessment.height_cm or 0.0)
+        self.spin_height.setValue(float(default_h or 0.0))
         grid.addWidget(self.spin_height, 0, 3)
 
         grid.addWidget(QLabel("وزن (kg):"), 1, 0)
         self.spin_weight = QDoubleSpinBox()
         self.spin_weight.setRange(0.0, 300.0)
-        self.spin_weight.setValue(self.assessment.weight_kg or 0.0)
+        self.spin_weight.setValue(float(default_w or 0.0))
         grid.addWidget(self.spin_weight, 1, 1)
 
         grid.addWidget(QLabel("درصد چربی (%):"), 1, 2)
@@ -375,6 +380,8 @@ class AssessmentView(QWidget):
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
         self.before_photo_path = None
         self.after_photo_path = None
+        self._prefilled_height = 0.0
+        self._prefilled_weight = 0.0
 
         self.init_ui()
         self.load_history()
@@ -444,7 +451,7 @@ class AssessmentView(QWidget):
         self.spin_weight.valueChanged.connect(self.update_live_bmr)
         layout_form.addLayout(row1)
 
-        self.update_live_bmr()
+        self._prefill_member_height_weight()
 
         row2 = QHBoxLayout()
         row2.setSpacing(6)
@@ -704,9 +711,42 @@ class AssessmentView(QWidget):
         except Exception as e:
             QMessageBox.critical(self, "خطا", f"خطا در ذخیره ارزیابی: {str(e)}")
 
+    def _get_member_registered_hw(self):
+        from nemov.services.member_service import MemberService
+        member = MemberService.get_member_by_id(self.member_id)
+        h = float(member.height_cm) if (member and member.height_cm and member.height_cm > 0) else 0.0
+        w = float(member.initial_weight_kg) if (member and member.initial_weight_kg and member.initial_weight_kg > 0) else 0.0
+        return h, w
+
+    def _prefill_member_height_weight(self):
+        h, w = self._get_member_registered_hw()
+        self._prefilled_height = h
+        self._prefilled_weight = w
+        self.spin_height.blockSignals(True)
+        self.spin_weight.blockSignals(True)
+        self.spin_height.setValue(h)
+        self.spin_weight.setValue(w)
+        self.spin_height.blockSignals(False)
+        self.spin_weight.blockSignals(False)
+        self.update_live_bmr()
+
+    def refresh_member_defaults(self):
+        h, w = self._get_member_registered_hw()
+        self.spin_height.blockSignals(True)
+        self.spin_weight.blockSignals(True)
+        if self.spin_height.value() in (0.0, self._prefilled_height):
+            self.spin_height.setValue(h)
+            self._prefilled_height = h
+        if self.spin_weight.value() in (0.0, self._prefilled_weight):
+            self.spin_weight.setValue(w)
+            self._prefilled_weight = w
+        self.spin_height.blockSignals(False)
+        self.spin_weight.blockSignals(False)
+        self.update_live_bmr()
+        self.load_history()
+
     def reset_form(self):
-        self.spin_height.setValue(0.0)
-        self.spin_weight.setValue(0.0)
+        self._prefill_member_height_weight()
         self.spin_fat.setValue(0.0)
         self.spin_neck.setValue(0.0)
         self.spin_chest.setValue(0.0)

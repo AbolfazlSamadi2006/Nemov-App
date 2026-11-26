@@ -109,8 +109,8 @@ class TrainerRegisterDialog(QDialog):
         row_contact.addLayout(v4)
         form_layout.addLayout(row_contact)
 
-        # Email Field (Optional / Recommended for recovery and backup)
-        form_layout.addWidget(QLabel("آدرس ایمیل مربی (جهت بازیابی رمز و دریافت فایل پشتیبان):"))
+        # Email Field (Optional)
+        form_layout.addWidget(QLabel("آدرس ایمیل مربی (اختیاری):"))
         self.txt_email = QLineEdit()
         self.txt_email.setFixedHeight(38)
         self.txt_email.setPlaceholderText("مثال: coach@example.com (اختیاری اما توصیه‌شده)")

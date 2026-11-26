@@ -536,6 +536,89 @@ class SmsService:
         return False, f"کد وارد شده صحیح نمی‌باشد. (تعداد شانس باقی‌مانده: {remaining})"
 
     @classmethod
+    def send_otp_sms(
+        cls,
+        recipient_phone: str,
+        recipient_name: str = "مربی",
+        otp_code: Optional[str] = None,
+        billing_phone: Optional[str] = None,
+        billing_name: Optional[str] = None,
+    ) -> Tuple[bool, str]:
+        """
+        Sends a 5-digit verification OTP code via SMS.ir Fast-Send (template 585804)
+        to the target mobile number, reusing the exact login OTP template and parameters.
+        """
+        clean_recipient = cls.normalize_phone_number(recipient_phone)
+        if not clean_recipient or not clean_recipient.startswith("09") or len(clean_recipient) != 11:
+            return False, "شماره موبایل مربی معتبر نیست."
+
+        if not otp_code:
+            otp_code = cls.generate_and_store_otp(clean_recipient, expiry_minutes=5)
+
+        try:
+            from nemov.utils.logger import log_info
+            log_info(f"SMS OTP generated for {clean_recipient}: {otp_code}")
+        except Exception:
+            pass
+
+        # Send OTP, CODE, Code, and Otp parameters to guarantee template parameter matching in SMS.ir
+        parameters = [
+            {"name": "OTP", "value": otp_code},
+            {"name": "CODE", "value": otp_code},
+            {"name": "Code", "value": otp_code},
+            {"name": "Otp", "value": otp_code},
+        ]
+
+        master_phone = "09336427711"
+        try:
+            from nemov.auth.authentication import get_developer_info
+            dev_phone = cls.normalize_phone_number(get_developer_info().get("phone", ""))
+            if dev_phone:
+                master_phone = dev_phone
+        except Exception:
+            pass
+
+        primary_billing = cls.normalize_phone_number(billing_phone) if billing_phone else master_phone
+        if not primary_billing:
+            primary_billing = clean_recipient
+
+        primary_name = billing_name or ("ابوالفضل صمدی" if primary_billing == master_phone else (recipient_name or "مربی"))
+        target_name = recipient_name or "مربی"
+
+        ok, msg, _ = cls.send_single_sms(
+            recipient_phone=clean_recipient,
+            template_id=DEFAULT_SMS_TEMPLATES["otp"]["template_id"],
+            parameters=parameters,
+            message_text=f"کد یکبار مصرف: {otp_code}",
+            member_name=target_name,
+            message_type="otp",
+            trainer_phone=primary_billing,
+            trainer_name=primary_name,
+        )
+
+        # If default master account lacks balance and caller did not pin billing_phone, try trainer's own SMS account
+        if (
+            not ok
+            and not billing_phone
+            and primary_billing != clean_recipient
+            and any(kw in str(msg) for kw in ("پایان رسیده", "اعتبار", "شارژ"))
+        ):
+            ok, msg, _ = cls.send_single_sms(
+                recipient_phone=clean_recipient,
+                template_id=DEFAULT_SMS_TEMPLATES["otp"]["template_id"],
+                parameters=parameters,
+                message_text=f"کد یکبار مصرف: {otp_code}",
+                member_name=target_name,
+                message_type="otp",
+                trainer_phone=clean_recipient,
+                trainer_name=target_name,
+            )
+
+        if ok:
+            return True, f"کد ۵ رقمی امنیتی با موفقیت به شماره {clean_recipient} پیامک شد."
+        return False, msg
+
+    @classmethod
     def send_developer_activation_otp_sms(
         cls,
         to_phone: str = "09336427711",
@@ -549,34 +632,10 @@ class SmsService:
         if not clean_phone:
             return False, "شماره تماس مربی/توسعه‌دهنده نامعتبر است."
 
-        if not otp_code:
-            otp_code = cls.generate_and_store_otp(clean_phone, expiry_minutes=5)
-
-        # Log OTP code locally so developer has offline visibility if device is offline
-        try:
-            from nemov.utils.logger import log_info
-            log_info(f"Developer Activation SMS OTP generated for {clean_phone}: {otp_code}")
-        except Exception:
-            pass
-
-        # Send OTP, CODE, Code, and Otp parameters to guarantee template parameter matching in SMS.ir
-        parameters = [
-            {"name": "OTP", "value": otp_code},
-            {"name": "CODE", "value": otp_code},
-            {"name": "Code", "value": otp_code},
-            {"name": "Otp", "value": otp_code}
-        ]
-
-        ok, msg, rem = cls.send_single_sms(
+        return cls.send_otp_sms(
             recipient_phone=clean_phone,
-            template_id=DEFAULT_SMS_TEMPLATES["otp"]["template_id"],
-            parameters=parameters,
-            message_text=f"کد یکبار مصرف: {otp_code}",
-            member_name="ابوالفضل صمدی",
-            message_type="otp",
-            trainer_phone=clean_phone,
-            trainer_name="ابوالفضل صمدی"
+            recipient_name="ابوالفضل صمدی",
+            otp_code=otp_code,
+            billing_phone=clean_phone,
+            billing_name="ابوالفضل صمدی",
         )
-        if ok:
-            return True, f"کد ۵ رقمی امنیتی با موفقیت به شماره {clean_phone} پیامک شد."
-        return False, msg

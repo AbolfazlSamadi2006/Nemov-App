@@ -502,6 +502,8 @@ class MemberDetailView(QWidget):
                 dlg = MemberFormDialog(self, member_data=member)
                 if dlg.exec() == QDialog.DialogCode.Accepted:
                     self.load_member_info()
+                    if hasattr(self, "view_assessment") and self.view_assessment:
+                        self.view_assessment.refresh_member_defaults()
         except Exception as e:
             QMessageBox.critical(self, "خطا", f"خطایی رخ داد: {str(e)}")
 

@@ -135,6 +135,10 @@ class HealthRecord(Base):
     has_hypertension = Column(Boolean, default=False)
     has_diabetes = Column(Boolean, default=False)
     has_heart_issue = Column(Boolean, default=False)
+    has_allergy = Column(Boolean, default=False)
+    has_medication_restriction = Column(Boolean, default=False)
+    allergy_details = Column(Text, nullable=True)
+    medication_restriction_details = Column(Text, nullable=True)
     other_medical = Column(Text, nullable=True)
 
     knee_injury = Column(Text, nullable=True)

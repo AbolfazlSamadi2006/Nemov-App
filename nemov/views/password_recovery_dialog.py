@@ -5,7 +5,7 @@ from PyQt6.QtCore import Qt, pyqtSignal, QTimer, QThread, QStringListModel
 from nemov.auth.authentication import (
     verify_recovery_credentials, update_trainer_profile, CurrentUser, find_user_by_email_or_phone
 )
-from nemov.services.email_service import EmailService
+from nemov.services.sms_service import SmsService
 from nemov.utils.theme_manager import ThemeManager
 
 
@@ -26,15 +26,22 @@ class AutoResizingStackedWidget(QStackedWidget):
 class SendOtpThread(QThread):
     finished_signal = pyqtSignal(bool, str)
 
-    def __init__(self, email: str, trainer_name: str, otp_code: str):
+    def __init__(self, phone: str, trainer_name: str, otp_code: str):
         super().__init__()
-        self.email = email
+        self.phone = phone
         self.trainer_name = trainer_name
         self.otp_code = otp_code
 
     def run(self):
-        success, msg = EmailService.send_otp_email(self.email, self.trainer_name, self.otp_code)
-        self.finished_signal.emit(success, msg)
+        try:
+            success, msg = SmsService.send_otp_sms(
+                recipient_phone=self.phone,
+                recipient_name=self.trainer_name,
+                otp_code=self.otp_code,
+            )
+            self.finished_signal.emit(success, msg)
+        except Exception as e:
+            self.finished_signal.emit(False, str(e))
 
 
 class PasswordRecoveryDialog(QDialog):
@@ -48,6 +55,8 @@ class PasswordRecoveryDialog(QDialog):
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowType.WindowContextHelpButtonHint)
 
         self.matched_user = None
+        self.pending_user = None
+        self.pending_phone = ""
         self.resend_timer = QTimer(self)
         self.resend_timer.setInterval(1000)
         self.resend_timer.timeout.connect(self._update_resend_countdown)
@@ -82,18 +91,18 @@ class PasswordRecoveryDialog(QDialog):
         tab_box = QHBoxLayout()
         tab_box.setSpacing(8)
 
-        self.btn_tab_email = QPushButton("📧 ارسال کد به ایمیل (آنلاین)")
-        self.btn_tab_email.setFixedHeight(38)
-        self.btn_tab_email.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_tab_sms = QPushButton("📱 ارسال کد به موبایل (آنلاین)")
+        self.btn_tab_sms.setFixedHeight(38)
+        self.btn_tab_sms.setCursor(Qt.CursorShape.PointingHandCursor)
 
         self.btn_tab_secret = QPushButton("🔑 رمز ریکاوری مخفی (آفلاین)")
         self.btn_tab_secret.setFixedHeight(38)
         self.btn_tab_secret.setCursor(Qt.CursorShape.PointingHandCursor)
 
-        self.btn_tab_email.clicked.connect(lambda: self.switch_mode(0))
+        self.btn_tab_sms.clicked.connect(lambda: self.switch_mode(0))
         self.btn_tab_secret.clicked.connect(lambda: self.switch_mode(1))
 
-        tab_box.addWidget(self.btn_tab_email)
+        tab_box.addWidget(self.btn_tab_sms)
         tab_box.addWidget(self.btn_tab_secret)
         card_layout.addLayout(tab_box)
 
@@ -102,33 +111,33 @@ class PasswordRecoveryDialog(QDialog):
         self.stack.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum)
 
         # ========================================================
-        # PAGE 0: Email OTP Mode (Online)
+        # PAGE 0: SMS OTP Mode (Online via SMS.ir)
         # ========================================================
-        page_email = QFrame()
-        page_email_layout = QVBoxLayout(page_email)
-        page_email_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
-        page_email_layout.setContentsMargins(0, 4, 0, 0)
-        page_email_layout.setSpacing(6)
+        page_sms = QFrame()
+        page_sms_layout = QVBoxLayout(page_sms)
+        page_sms_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        page_sms_layout.setContentsMargins(0, 4, 0, 0)
+        page_sms_layout.setSpacing(6)
 
-        desc_email = QLabel("با وارد کردن ایمیل، شماره تماس یا نام کاربری، کد تایید ۵ رقمی به ایمیل شما فرستاده می‌شود:")
-        desc_email.setObjectName("muted_text")
-        desc_email.setWordWrap(True)
-        page_email_layout.addWidget(desc_email)
+        desc_sms = QLabel("با وارد کردن شماره همراه یا نام کاربری، کد تایید ۵ رقمی به موبایل شما پیامک می‌شود:")
+        desc_sms.setObjectName("muted_text")
+        desc_sms.setWordWrap(True)
+        page_sms_layout.addWidget(desc_sms)
 
-        page_email_layout.addWidget(QLabel("ایمیل، شماره همراه یا نام کاربری مربی:"))
-        self.txt_email_identity = QLineEdit()
-        self.txt_email_identity.setFixedHeight(38)
-        self.txt_email_identity.setPlaceholderText("مثال: coach@example.com یا 09123456789")
-        page_email_layout.addWidget(self.txt_email_identity)
-        self._setup_email_completer()
+        page_sms_layout.addWidget(QLabel("شماره همراه یا نام کاربری مربی:"))
+        self.txt_sms_identity = QLineEdit()
+        self.txt_sms_identity.setFixedHeight(38)
+        self.txt_sms_identity.setPlaceholderText("مثال: 09123456789 یا نام کاربری")
+        page_sms_layout.addWidget(self.txt_sms_identity)
+        self._setup_identity_completer()
 
         # Send Code Button
-        self.btn_send_otp = QPushButton("📩 دریافت کد تایید در ایمیل")
+        self.btn_send_otp = QPushButton("📱 دریافت کد تایید پیامکی")
         self.btn_send_otp.setFixedHeight(40)
         self.btn_send_otp.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_send_otp.setObjectName("primary_button")
-        self.btn_send_otp.clicked.connect(self.do_send_email_otp)
-        page_email_layout.addWidget(self.btn_send_otp)
+        self.btn_send_otp.clicked.connect(self.do_send_sms_otp)
+        page_sms_layout.addWidget(self.btn_send_otp)
 
         # OTP Verification Container (Hidden initially)
         self.otp_verify_box = QFrame()
@@ -142,7 +151,7 @@ class PasswordRecoveryDialog(QDialog):
         self.lbl_otp_sent_info.setWordWrap(True)
         otp_box_layout.addWidget(self.lbl_otp_sent_info)
 
-        otp_box_layout.addWidget(QLabel("کد تایید ۵ رقمی دریافتی:"))
+        otp_box_layout.addWidget(QLabel("کد تایید ۵ رقمی پیامک‌شده:"))
         self.txt_entered_otp = QLineEdit()
         self.txt_entered_otp.setFixedHeight(42)
         self.txt_entered_otp.setMaxLength(5)
@@ -159,19 +168,13 @@ class PasswordRecoveryDialog(QDialog):
         self.btn_confirm_otp.setFixedHeight(38)
         self.btn_confirm_otp.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_confirm_otp.setObjectName("primary_button")
-        self.btn_confirm_otp.clicked.connect(self.do_verify_email_otp)
+        self.btn_confirm_otp.clicked.connect(self.do_verify_sms_otp)
         otp_box_layout.addWidget(self.btn_confirm_otp)
 
-        self.btn_otp_spam_help = QPushButton("❓ کد تایید نیامد؟ راهنمای پوشه Spam (هرزنامه)")
-        self.btn_otp_spam_help.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_otp_spam_help.setObjectName("secondary_button")
-        self.btn_otp_spam_help.clicked.connect(self._open_spam_guide)
-        otp_box_layout.addWidget(self.btn_otp_spam_help, alignment=Qt.AlignmentFlag.AlignCenter)
-
-        page_email_layout.addWidget(self.otp_verify_box)
+        page_sms_layout.addWidget(self.otp_verify_box)
         self.otp_verify_box.setVisible(False)
 
-        self.stack.addWidget(page_email)
+        self.stack.addWidget(page_sms)
 
         # ========================================================
         # PAGE 1: Secret Recovery Code Mode (Offline)
@@ -277,8 +280,8 @@ class PasswordRecoveryDialog(QDialog):
 
         # Ensure buttons do not steal Enter key, and line edits trigger verification
         for btn in (
-            self.btn_tab_email, self.btn_tab_secret, self.btn_send_otp,
-            self.btn_confirm_otp, self.btn_otp_spam_help, btn_eye_rec,
+            self.btn_tab_sms, self.btn_tab_secret, self.btn_send_otp,
+            self.btn_confirm_otp, btn_eye_rec,
             self.btn_verify_secret, btn_eye_new, self.btn_reset_and_login
         ):
             btn.setAutoDefault(False)
@@ -286,40 +289,40 @@ class PasswordRecoveryDialog(QDialog):
 
         self.txt_phone.returnPressed.connect(self.do_verify_secret)
         self.txt_recovery_code.returnPressed.connect(self.do_verify_secret)
-        self.txt_email_identity.returnPressed.connect(self._on_email_return_pressed)
-        self.txt_entered_otp.returnPressed.connect(self.do_verify_email_otp)
+        self.txt_sms_identity.returnPressed.connect(self._on_identity_return_pressed)
+        self.txt_entered_otp.returnPressed.connect(self.do_verify_sms_otp)
         self.txt_new_password.returnPressed.connect(self.do_reset_and_login)
 
-        # Default to Email Mode
+        # Default to SMS OTP Mode
         self.switch_mode(0)
 
-    def _get_registered_emails(self) -> list[str]:
+    def _get_registered_identities(self) -> list[str]:
         try:
             from nemov.database.connection import get_session
             from nemov.models.database_models import User
             session = get_session()
             try:
-                results = session.query(User.email).filter(
-                    User.email.isnot(None),
-                    User.email != ""
+                results = session.query(User.phone).filter(
+                    User.phone.isnot(None),
+                    User.phone != ""
                 ).distinct().all()
-                emails = [r[0].strip() for r in results if r[0] and r[0].strip()]
-                return sorted(list(set(emails)))
+                phones = [r[0].strip() for r in results if r[0] and r[0].strip()]
+                return sorted(list(set(phones)))
             finally:
                 session.close()
         except Exception:
             return []
 
-    def _setup_email_completer(self):
-        emails = self._get_registered_emails()
-        self.email_completer = QCompleter(emails, self.txt_email_identity)
-        self.email_completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
-        self.email_completer.setFilterMode(Qt.MatchFlag.MatchStartsWith)
-        self.email_completer.setCompletionMode(QCompleter.CompletionMode.PopupCompletion)
-        self.email_completer.activated[str].connect(self._on_email_selected)
+    def _setup_identity_completer(self):
+        identities = self._get_registered_identities()
+        self.identity_completer = QCompleter(identities, self.txt_sms_identity)
+        self.identity_completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
+        self.identity_completer.setFilterMode(Qt.MatchFlag.MatchStartsWith)
+        self.identity_completer.setCompletionMode(QCompleter.CompletionMode.PopupCompletion)
+        self.identity_completer.activated[str].connect(self._on_identity_selected)
 
         palette = ThemeManager.get_current_palette()
-        popup = self.email_completer.popup()
+        popup = self.identity_completer.popup()
         popup.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
         popup.setStyleSheet(f"""
             QListView {{
@@ -346,36 +349,36 @@ class PasswordRecoveryDialog(QDialog):
                 color: {palette.text_primary};
             }}
         """)
-        self.txt_email_identity.setCompleter(self.email_completer)
-        self.txt_email_identity.textChanged.connect(self._on_email_text_changed)
+        self.txt_sms_identity.setCompleter(self.identity_completer)
+        self.txt_sms_identity.textChanged.connect(self._on_identity_text_changed)
 
-    def _on_email_selected(self, email: str):
-        self.txt_email_identity.setText(email)
-        self.txt_email_identity.setCursorPosition(len(email))
+    def _on_identity_selected(self, value: str):
+        self.txt_sms_identity.setText(value)
+        self.txt_sms_identity.setCursorPosition(len(value))
 
-    def _on_email_text_changed(self, text: str):
-        if hasattr(self, "email_completer") and self.email_completer.popup():
-            if not text.strip() or self.email_completer.completionModel().rowCount() == 0:
-                self.email_completer.popup().hide()
+    def _on_identity_text_changed(self, text: str):
+        if hasattr(self, "identity_completer") and self.identity_completer.popup():
+            if not text.strip() or self.identity_completer.completionModel().rowCount() == 0:
+                self.identity_completer.popup().hide()
 
-    def _on_email_return_pressed(self):
+    def _on_identity_return_pressed(self):
         if (
-            hasattr(self, "email_completer")
-            and self.email_completer.popup()
-            and self.email_completer.popup().isVisible()
-            and self.email_completer.completionModel().rowCount() > 0
+            hasattr(self, "identity_completer")
+            and self.identity_completer.popup()
+            and self.identity_completer.popup().isVisible()
+            and self.identity_completer.completionModel().rowCount() > 0
         ):
-            popup = self.email_completer.popup()
+            popup = self.identity_completer.popup()
             idx = popup.currentIndex()
             if idx.isValid():
-                self._on_email_selected(idx.data())
+                self._on_identity_selected(idx.data())
             else:
-                first_idx = self.email_completer.completionModel().index(0, 0)
+                first_idx = self.identity_completer.completionModel().index(0, 0)
                 if first_idx.isValid():
-                    self._on_email_selected(first_idx.data())
+                    self._on_identity_selected(first_idx.data())
             popup.hide()
             return
-        self.do_send_email_otp()
+        self.do_send_sms_otp()
 
     def keyPressEvent(self, event):
         if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
@@ -389,26 +392,26 @@ class PasswordRecoveryDialog(QDialog):
                 return
             elif self.stack.currentIndex() == 0:
                 if (
-                    hasattr(self, "email_completer")
-                    and self.email_completer.popup()
-                    and self.email_completer.popup().isVisible()
-                    and self.email_completer.completionModel().rowCount() > 0
+                    hasattr(self, "identity_completer")
+                    and self.identity_completer.popup()
+                    and self.identity_completer.popup().isVisible()
+                    and self.identity_completer.completionModel().rowCount() > 0
                 ):
-                    popup = self.email_completer.popup()
+                    popup = self.identity_completer.popup()
                     idx = popup.currentIndex()
                     if idx.isValid():
-                        self._on_email_selected(idx.data())
+                        self._on_identity_selected(idx.data())
                     else:
-                        first_idx = self.email_completer.completionModel().index(0, 0)
+                        first_idx = self.identity_completer.completionModel().index(0, 0)
                         if first_idx.isValid():
-                            self._on_email_selected(first_idx.data())
+                            self._on_identity_selected(first_idx.data())
                     popup.hide()
                     event.accept()
                     return
                 if self.otp_verify_box.isVisible():
-                    self.do_verify_email_otp()
+                    self.do_verify_sms_otp()
                 else:
-                    self.do_send_email_otp()
+                    self.do_send_sms_otp()
                 event.accept()
                 return
             super().keyPressEvent(event)
@@ -421,24 +424,24 @@ class PasswordRecoveryDialog(QDialog):
                 self.setFixedSize(540, 580)
             else:
                 if self.otp_verify_box.isVisible():
-                    self.setFixedSize(540, 680)
+                    self.setFixedSize(540, 640)
                 else:
                     self.setFixedSize(540, 580)
         else:
             if index == 1:
                 self.setFixedSize(540, 640)
             else:
-                self.setFixedSize(540, 730)
+                self.setFixedSize(540, 700)
 
         palette = ThemeManager.get_current_palette()
         if index == 0:
-            if hasattr(self, "email_completer") and self.email_completer.model():
-                emails = self._get_registered_emails()
-                self.email_completer.model().setStringList(emails)
-            self.btn_tab_email.setStyleSheet(f"background-color: {palette.primary}; color: {palette.text_primary}; font-weight: bold; border-radius: 6px; border: none;")
+            if hasattr(self, "identity_completer") and self.identity_completer.model():
+                identities = self._get_registered_identities()
+                self.identity_completer.model().setStringList(identities)
+            self.btn_tab_sms.setStyleSheet(f"background-color: {palette.primary}; color: {palette.text_primary}; font-weight: bold; border-radius: 6px; border: none;")
             self.btn_tab_secret.setStyleSheet(f"background-color: {palette.bg_surface}; color: {palette.text_secondary}; border: 1px solid {palette.border}; border-radius: 6px;")
         else:
-            self.btn_tab_email.setStyleSheet(f"background-color: {palette.bg_surface}; color: {palette.text_secondary}; border: 1px solid {palette.border}; border-radius: 6px;")
+            self.btn_tab_sms.setStyleSheet(f"background-color: {palette.bg_surface}; color: {palette.text_secondary}; border: 1px solid {palette.border}; border-radius: 6px;")
             self.btn_tab_secret.setStyleSheet(f"background-color: {palette.primary}; color: {palette.text_primary}; font-weight: bold; border-radius: 6px; border: none;")
 
     def toggle_eye(self, field: QLineEdit, btn: QPushButton):
@@ -449,58 +452,56 @@ class PasswordRecoveryDialog(QDialog):
             field.setEchoMode(QLineEdit.EchoMode.Password)
             btn.setText("👁️")
 
-    def _mask_email(self, email: str) -> str:
-        if "@" not in email:
-            return email
-        name, domain = email.split("@", 1)
-        if len(name) <= 2:
-            masked_name = name[0] + "*"
-        else:
-            masked_name = name[0] + ("*" * (len(name) - 2)) + name[-1]
-        return f"{masked_name}@{domain}"
+    def _mask_phone(self, phone: str) -> str:
+        clean = SmsService.normalize_phone_number(phone)
+        if len(clean) >= 8:
+            return f"{clean[:4]}***{clean[-4:]}"
+        return clean
 
-    def do_send_email_otp(self):
-        identity = self.txt_email_identity.text().strip()
+    def do_send_sms_otp(self):
+        identity = self.txt_sms_identity.text().strip()
         if not identity:
-            QMessageBox.warning(self, "خطا", "لطفاً ایمیل، شماره همراه یا نام کاربری خود را وارد کنید.")
+            QMessageBox.warning(self, "خطا", "لطفاً شماره همراه یا نام کاربری خود را وارد کنید.")
             return
 
         user = find_user_by_email_or_phone(identity)
         if not user:
-            if "@" in identity:
-                QMessageBox.critical(self, "یافت نشد", "حسابی با این ایمیل وجود ندارد.")
-            else:
-                QMessageBox.critical(self, "یافت نشد", "هیچ حسابی با این مشخصات یافت نشد.")
+            norm_ident = SmsService.normalize_phone_number(identity)
+            if norm_ident and norm_ident != identity:
+                user = find_user_by_email_or_phone(norm_ident)
+        if not user:
+            QMessageBox.critical(self, "یافت نشد", "هیچ حسابی با این مشخصات یافت نشد.")
             return
 
-        if not user.email:
+        clean_phone = SmsService.normalize_phone_number(getattr(user, "phone", "") or "")
+        if not clean_phone or not clean_phone.startswith("09") or len(clean_phone) != 11:
             QMessageBox.warning(
                 self,
-                "عدم وجود ایمیل ثبت‌شده",
-                "برای این حساب کاربری هیچ ایمیلی ثبت نشده است.\nلطفاً از تب «رمز ریکاوری مخفی (آفلاین)» استفاده کنید."
+                "عدم وجود شماره موبایل معتبر",
+                "برای این حساب کاربری شماره موبایل معتبری ثبت نشده است.\nلطفاً از تب «رمز ریکاوری مخفی (آفلاین)» استفاده کنید."
             )
             return
 
         self.pending_user = user
-        otp = EmailService.generate_and_store_otp(user.email)
+        self.pending_phone = clean_phone
+        otp = SmsService.generate_and_store_otp(clean_phone)
 
         self.btn_send_otp.setEnabled(False)
-        self.btn_send_otp.setText("در حال ارسال ایمیل...")
+        self.btn_send_otp.setText("در حال ارسال پیامک...")
 
-        self.otp_thread = SendOtpThread(user.email, user.display_name, otp)
+        self.otp_thread = SendOtpThread(clean_phone, user.display_name, otp)
         self.otp_thread.finished_signal.connect(self._on_otp_sent)
         self.otp_thread.start()
 
     def _on_otp_sent(self, success: bool, msg: str):
         if success:
-            masked = self._mask_email(self.pending_user.email)
+            masked = self._mask_phone(self.pending_phone)
             self.lbl_otp_sent_info.setText(
-                f"✅ کد تایید ۵ رقمی به ایمیل «{masked}» فرستاده شد.\n"
-                "💡 در صورت عدم مشاهده در Inbox، حتماً پوشه Spam (هرزنامه) را بررسی نمایید."
+                f"✅ کد تایید ۵ رقمی به شماره موبایل «\u202A{masked}\u202C» پیامک شد."
             )
             self.otp_verify_box.setVisible(True)
             self.stack.updateGeometry()
-            self.setFixedSize(540, 680)
+            self.setFixedSize(540, 640)
 
             # Start 60 second countdown timer
             self.countdown_seconds = 60
@@ -509,33 +510,30 @@ class PasswordRecoveryDialog(QDialog):
             self.resend_timer.start()
         else:
             self.btn_send_otp.setEnabled(True)
-            self.btn_send_otp.setText("📩 دریافت کد تایید در ایمیل")
-            QMessageBox.critical(self, "خطا در ارسال ایمیل", msg)
-
-    def _open_spam_guide(self):
-        from nemov.views.components.email_spam_guide_dialog import EmailSpamGuideDialog
-        EmailSpamGuideDialog(self).exec()
+            self.btn_send_otp.setText("📱 دریافت کد تایید پیامکی")
+            QMessageBox.critical(self, "خطا در ارسال پیامک", msg)
 
     def _update_resend_countdown(self):
         self.countdown_seconds -= 1
         if self.countdown_seconds <= 0:
             self.resend_timer.stop()
             self.btn_send_otp.setEnabled(True)
-            self.btn_send_otp.setText("📩 ارسال مجدد کد تایید")
+            self.btn_send_otp.setText("📱 ارسال مجدد کد تایید پیامکی")
         else:
             self.btn_send_otp.setText(f"ارسال مجدد ({self.countdown_seconds} ثانیه)")
 
-    def do_verify_email_otp(self):
-        if not hasattr(self, "pending_user") or not self.pending_user:
+    def do_verify_sms_otp(self):
+        if not getattr(self, "pending_user", None) or not getattr(self, "pending_phone", ""):
             return
 
         code = self.txt_entered_otp.text().strip()
         if not code:
-            QMessageBox.warning(self, "خطا", "لطفاً کد ۵ رقمی دریافتی در ایمیل را وارد کنید.")
+            QMessageBox.warning(self, "خطا", "لطفاً کد ۵ رقمی پیامک‌شده را وارد کنید.")
             return
 
-        success, msg = EmailService.verify_otp(self.pending_user.email, code)
+        success, msg = SmsService.verify_otp(self.pending_phone, code)
         if success:
+            self.resend_timer.stop()
             self._activate_step2(self.pending_user)
         else:
             QMessageBox.critical(self, "خطا در تایید کد", msg)
@@ -556,12 +554,13 @@ class PasswordRecoveryDialog(QDialog):
 
     def _activate_step2(self, user):
         self.matched_user = user
+        self.resend_timer.stop()
         self.lbl_matched_username.setText(f"✅ مربی تایید شد: {user.display_name} (نام کاربری: {user.username})")
 
         # Disable step 1 controls
-        self.btn_tab_email.setEnabled(False)
+        self.btn_tab_sms.setEnabled(False)
         self.btn_tab_secret.setEnabled(False)
-        self.txt_email_identity.setEnabled(False)
+        self.txt_sms_identity.setEnabled(False)
         self.btn_send_otp.setEnabled(False)
         self.txt_entered_otp.setEnabled(False)
         self.btn_confirm_otp.setEnabled(False)
@@ -571,7 +570,7 @@ class PasswordRecoveryDialog(QDialog):
 
         self.step2_frame.setVisible(True)
         if self.stack.currentIndex() == 0:
-            self.setFixedSize(540, 730)
+            self.setFixedSize(540, 700)
         else:
             self.setFixedSize(540, 640)
         self.txt_new_password.setFocus()

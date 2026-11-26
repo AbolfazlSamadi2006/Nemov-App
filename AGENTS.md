@@ -31,3 +31,7 @@
    - After completing each task/change and verifying QA, ALWAYS ask the user whether they want to commit and push the changes (including any newly generated setup installer if requested) to GitHub.
    - The default option/recommendation must always be Yes (بله).
 
+9. **Mandatory Post-Change Unit Testing & Installer Exclusion (تست واحد اجباری پس از هر تغییر و عدم درج در نصاب)**:
+   - After every code modification or new feature, ALWAYS write and execute unit tests under `tests/` covering normal, boundary, varied (Persian/English/empty/invalid), and edge-case inputs to guarantee every function and call path works error-free.
+   - Unit tests are strictly for developer verification and MUST NEVER be packaged into coach/end-user setup installers (`dist\Nemov` / `Nemov_Setup_v*.exe`); keep `'tests'` excluded in `Nemov.spec` and exclude `tests/` in installer packaging.
+
