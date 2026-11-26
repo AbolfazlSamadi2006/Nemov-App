@@ -824,7 +824,7 @@ class MemberDetailView(QWidget):
         fa_count = str(count).translate(str.maketrans('0123456789', '۰۱۲۳۴۵۶۷۸۹'))
         reply = QMessageBox.question(
             self, "تایید حذف گروهی برنامه‌های تمرینی",
-            f"آیا از حذف {fa_count} برنامه تمرینی انتخاب‌شده از بایگانی این ورزشکار اطمینان دارید؟\n\nنکته: پس از حذف، ۱۰ ثانیه فرصت بازگردانی (Undo) خواهید داشت.",
+            f"آیا از حذف {fa_count} برنامه تمرینی انتخاب‌شده از بایگانی این ورزشکار اطمینان دارید؟\n\nنکته: پس از تایید، ۵ ثانیه فرصت بازگردانی (Undo) خواهید داشت.",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No
         )
@@ -1129,7 +1129,7 @@ class MemberDetailView(QWidget):
         fa_count = str(count).translate(str.maketrans('0123456789', '۰۱۲۳۴۵۶۷۸۹'))
         reply = QMessageBox.question(
             self, "تایید حذف گروهی برنامه‌های غذایی",
-            f"آیا از حذف {fa_count} برنامه غذایی انتخاب‌شده از بایگانی این ورزشکار اطمینان دارید؟\n\nنکته: پس از حذف، ۱۰ ثانیه فرصت بازگردانی (Undo) خواهید داشت.",
+            f"آیا از حذف {fa_count} برنامه غذایی انتخاب‌شده از بایگانی این ورزشکار اطمینان دارید؟\n\nنکته: پس از تایید، ۵ ثانیه فرصت بازگردانی (Undo) خواهید داشت.",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No
         )
@@ -1172,7 +1172,7 @@ class MemberDetailView(QWidget):
     def delete_workout_plan(self, assignment_id: int, plan_title: str):
         reply = QMessageBox.warning(
             self, "⚠️ تایید حذف برنامه تمرینی",
-            f"آیا از حذف برنامه تمرینی «{plan_title}» از بایگانی این ورزشکار اطمینان دارید؟\n\nنکته: پس از تایید، ۱۰ ثانیه فرصت بازگردانی (Undo) خواهید داشت.",
+            f"آیا از حذف برنامه تمرینی «{plan_title}» از بایگانی این ورزشکار اطمینان دارید؟\n\nنکته: پس از تایید، ۵ ثانیه فرصت بازگردانی (Undo) خواهید داشت.",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No
         )
@@ -1203,7 +1203,7 @@ class MemberDetailView(QWidget):
     def delete_nutrition_plan(self, assignment_id: int, plan_title: str):
         reply = QMessageBox.warning(
             self, "⚠️ تایید حذف برنامه غذایی",
-            f"آیا از حذف برنامه غذایی «{plan_title}» از بایگانی این ورزشکار اطمینان دارید؟\n\nنکته: پس از تایید، ۱۰ ثانیه فرصت بازگردانی (Undo) خواهید داشت.",
+            f"آیا از حذف برنامه غذایی «{plan_title}» از بایگانی این ورزشکار اطمینان دارید؟\n\nنکته: پس از تایید، ۵ ثانیه فرصت بازگردانی (Undo) خواهید داشت.",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No
         )

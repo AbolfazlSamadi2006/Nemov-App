@@ -12,6 +12,7 @@ from nemov.services.accounting_service import AccountingService
 from nemov.views.components.expense_form_dialog import ExpenseFormDialog
 from nemov.views.components.tuition_payment_dialog import TuitionPaymentDialog
 from nemov.views.components.jalali_calendar_widget import JalaliDatePicker
+from nemov.views.components.undo_delete_banner import UndoDeleteBanner
 from nemov.utils.jalali_date import get_today_shamsi, get_now_shamsi_for_filename, is_valid_shamsi
 from nemov.pdf.pdf_generator import PDFGenerator
 from nemov.utils.excel_generator import ExcelGenerator
@@ -303,6 +304,9 @@ class AccountingView(QWidget):
         filter_frame.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
 
         main_layout.addWidget(filter_frame)
+
+        self.undo_banner = UndoDeleteBanner(self)
+        main_layout.addWidget(self.undo_banner)
 
         # ==========================================
         # 4. Transactions Table
@@ -655,6 +659,7 @@ class AccountingView(QWidget):
             # 0: Row Index
             fa_row = str(row + 1).translate(str.maketrans('0123456789', '۰۱۲۳۴۵۶۷۸۹'))
             it_idx = QTableWidgetItem(fa_row)
+            it_idx.setData(Qt.ItemDataRole.UserRole, (t["type"], t["id"]))
             it_idx.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             self.table.setItem(row, 0, it_idx)
 
@@ -780,35 +785,65 @@ class AccountingView(QWidget):
         if dlg.exec():
             self.load_data()
 
-    def delete_expense(self, tx):
+    def _hide_tx_row(self, tx_type: str, tx_id: int):
+        for r in range(self.table.rowCount() - 1, -1, -1):
+            it = self.table.item(r, 0)
+            if it and it.data(Qt.ItemDataRole.UserRole) == (tx_type, tx_id):
+                self.table.hideRow(r)
+
+    def _schedule_transaction_delete(self, tx: dict, dialog_title: str, prompt: str, is_income: bool):
         reply = QMessageBox.warning(
-            self, "تایید حذف هزینه",
-            f"آیا از حذف هزینه «{tx['title']}» به مبلغ {int(tx['amount']):,} تومان اطمینان دارید؟",
+            self, dialog_title,
+            f"{prompt}\n\nنکته: پس از تایید، ۵ ثانیه فرصت بازگردانی (Undo) خواهید داشت.",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No
         )
-        if reply == QMessageBox.StandardButton.Yes:
-            try:
-                AccountingService.delete_expense(tx["id"])
-                self.load_data()
-                QMessageBox.information(self, "موفقیت", "هزینه با موفقیت حذف شد.")
-            except Exception as e:
-                QMessageBox.critical(self, "خطا", f"خطا در حذف هزینه: {str(e)}")
+        if reply != QMessageBox.StandardButton.Yes:
+            return
+
+        tx_id = tx["id"]
+        tx_type = "income" if is_income else "expense"
+        self._hide_tx_row(tx_type, tx_id)
+
+        def commit_delete(items):
+            for tid in items:
+                try:
+                    if is_income:
+                        AccountingService.delete_tuition_payment(tid)
+                    else:
+                        AccountingService.delete_expense(tid)
+                except Exception as e:
+                    err_label = "پرداخت" if is_income else "هزینه"
+                    QMessageBox.critical(self, "خطا", f"خطا در حذف {err_label}: {str(e)}")
+            self.load_data()
+
+        def undo_delete(_items):
+            self.load_data()
+
+        self.undo_banner.start_countdown(
+            item_count=1,
+            pending_items=[tx_id],
+            on_commit=commit_delete,
+            on_undo=undo_delete,
+            item_label=f"«{tx['title']}»",
+            duration_seconds=5,
+        )
+
+    def delete_expense(self, tx):
+        self._schedule_transaction_delete(
+            tx=tx,
+            dialog_title="تایید حذف هزینه",
+            prompt=f"آیا از حذف هزینه «{tx['title']}» به مبلغ {int(tx['amount']):,} تومان اطمینان دارید؟",
+            is_income=False,
+        )
 
     def delete_tuition_payment(self, tx):
-        reply = QMessageBox.warning(
-            self, "تایید حذف پرداخت شهریه",
-            f"آیا از حذف پرداخت «{tx['title']}» به مبلغ {int(tx['amount']):,} تومان اطمینان دارید؟\nاین مورد از تراز درآمد کسر خواهد شد.",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            QMessageBox.StandardButton.No
+        self._schedule_transaction_delete(
+            tx=tx,
+            dialog_title="تایید حذف پرداخت شهریه",
+            prompt=f"آیا از حذف پرداخت «{tx['title']}» به مبلغ {int(tx['amount']):,} تومان اطمینان دارید؟\nاین مورد از تراز درآمد کسر خواهد شد.",
+            is_income=True,
         )
-        if reply == QMessageBox.StandardButton.Yes:
-            try:
-                AccountingService.delete_tuition_payment(tx["id"])
-                self.load_data()
-                QMessageBox.information(self, "موفقیت", "رکورد پرداخت شهریه با موفقیت حذف شد.")
-            except Exception as e:
-                QMessageBox.critical(self, "خطا", f"خطا در حذف پرداخت: {str(e)}")
 
     def export_pdf_report(self):
         start_date, end_date = self._get_active_date_range()

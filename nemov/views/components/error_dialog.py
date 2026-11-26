@@ -15,6 +15,7 @@ from nemov.utils.logger import (
     log_error, open_logs_folder, get_log_content, clear_logs, get_logs_dir,
     get_parsed_log_entries
 )
+from nemov.views.components.undo_delete_banner import UndoDeleteBanner
 
 
 class ErrorDialog(QDialog):
@@ -320,6 +321,9 @@ class LogViewerDialog(QDialog):
         self.browser.anchorClicked.connect(self.handle_link_clicked)
         layout.addWidget(self.browser, 1)
 
+        self.undo_banner = UndoDeleteBanner(self)
+        layout.addWidget(self.undo_banner)
+
         # Status toast label
         self.lbl_status = QLabel("")
         self.lbl_status.setStyleSheet("color: #10B981; font-weight: bold; font-size: 12px; min-height: 18px;")
@@ -569,13 +573,35 @@ class LogViewerDialog(QDialog):
         reply = QMessageBox.question(
             self,
             "تایید پاک‌سازی",
-            "آیا مطمئن هستید که می‌خواهید فایل‌های لاگ فعلی را پاک‌سازی کنید؟",
+            "آیا مطمئن هستید که می‌خواهید فایل‌های لاگ فعلی را پاک‌سازی کنید؟\n\nنکته: پس از تایید، ۵ ثانیه فرصت بازگردانی (Undo) خواهید داشت.",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No
         )
-        if reply == QMessageBox.StandardButton.Yes:
+        if reply != QMessageBox.StandardButton.Yes:
+            return
+
+        self.browser.clear()
+
+        def commit_clear(_items):
             clear_logs()
             self.load_logs()
+
+        def undo_clear(_items):
+            self.load_logs()
+
+        self.undo_banner.start_countdown(
+            item_count=1,
+            pending_items=["logs"],
+            on_commit=commit_clear,
+            on_undo=undo_clear,
+            item_label="فایل‌های لاگ سیستم",
+            duration_seconds=5,
+        )
+
+    def closeEvent(self, event):
+        if hasattr(self, "undo_banner") and self.undo_banner.timer.isActive():
+            self.undo_banner.commit_now()
+        super().closeEvent(event)
 
 
 def show_error_dialog(parent=None, message: str = "", technical_details: str = "", title: str = "خطای برنامه"):

@@ -259,7 +259,7 @@ class FoodLibraryView(QWidget):
         fa_count = str(count).translate(str.maketrans('0123456789', '۰۱۲۳۴۵۶۷۸۹'))
         reply = QMessageBox.question(
             self, "تایید حذف گروهی",
-            f"آیا از حذف {fa_count} ماده غذایی انتخاب‌شده اطمینان دارید؟\n\nنکته: پس از حذف، ۱۰ ثانیه فرصت بازگردانی (Undo) خواهید داشت.",
+            f"آیا از حذف {fa_count} ماده غذایی انتخاب‌شده اطمینان دارید؟\n\nنکته: پس از تایید، ۵ ثانیه فرصت بازگردانی (Undo) خواهید داشت.",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No
         )
@@ -294,7 +294,7 @@ class FoodLibraryView(QWidget):
     def delete_food(self, food):
         reply = QMessageBox.question(
             self, "تایید حذف ماده غذایی",
-            f"آیا از حذف ماده غذایی '{food.name_fa}' از بانک مطمئن هستید؟\n\nنکته: پس از حذف، ۱۰ ثانیه فرصت بازگردانی (Undo) خواهید داشت.",
+            f"آیا از حذف ماده غذایی '{food.name_fa}' از بانک مطمئن هستید؟\n\nنکته: پس از تایید، ۵ ثانیه فرصت بازگردانی (Undo) خواهید داشت.",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No
         )

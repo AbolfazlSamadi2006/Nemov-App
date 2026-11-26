@@ -12,6 +12,7 @@ from nemov.auth.authentication import (
     CurrentUser, update_trainer_profile, delete_trainer_account, get_all_trainers
 )
 from nemov.views.components.jalali_calendar_widget import JalaliDatePicker
+from nemov.views.components.undo_delete_banner import UndoDeleteBanner
 from nemov.utils.image_utils import get_circular_pixmap, resolve_image_path
 
 
@@ -106,6 +107,9 @@ class BackupView(QWidget):
         header_layout.addLayout(title_box, 1)
         header_layout.addStretch()
         main_layout.addWidget(header_frame)
+
+        self.undo_banner = UndoDeleteBanner(self)
+        main_layout.addWidget(self.undo_banner)
 
         # Tabs
         self.tabs = QTabWidget()
@@ -545,10 +549,10 @@ class BackupView(QWidget):
         self.txt_recovery_code.textChanged.connect(self.check_profile_dirty)
         self.txt_email.textChanged.connect(self.check_profile_dirty)
 
-        btn_del_account = QPushButton("🗑️ حذف حساب مربی و کلیه شاگردان")
-        btn_del_account.setFixedHeight(40)
-        btn_del_account.setCursor(Qt.CursorShape.PointingHandCursor)
-        btn_del_account.setStyleSheet("""
+        self.btn_del_account = QPushButton("🗑️ حذف حساب مربی و کلیه شاگردان")
+        self.btn_del_account.setFixedHeight(40)
+        self.btn_del_account.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_del_account.setStyleSheet("""
             QPushButton {
                 background-color: #DC2626;
                 color: #FFFFFF;
@@ -565,8 +569,8 @@ class BackupView(QWidget):
                 background-color: #991B1B;
             }
         """)
-        btn_del_account.clicked.connect(self.delete_current_trainer_account)
-        row_prof_actions.addWidget(btn_del_account)
+        self.btn_del_account.clicked.connect(self.delete_current_trainer_account)
+        row_prof_actions.addWidget(self.btn_del_account)
         row_prof_actions.addStretch()
 
         layout_prof.addLayout(row_prof_actions)
@@ -1163,7 +1167,7 @@ class BackupView(QWidget):
         reply = QMessageBox.question(
             self,
             "حذف عکس مربی",
-            "آیا از حذف عکس پروفایل مربی اطمینان دارید؟",
+            "آیا از حذف عکس پروفایل مربی اطمینان دارید؟\n\nنکته: پس از تایید، ۵ ثانیه فرصت بازگردانی (Undo) خواهید داشت.",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No
         )
@@ -1171,27 +1175,51 @@ class BackupView(QWidget):
             return
 
         u = CurrentUser.get()
-        if u:
+        if not u:
+            return
+
+        old_photo_path = getattr(self, "selected_photo_path", "") or getattr(u, "photo_path", "") or ""
+        self.selected_photo_path = ""
+        self.display_photo("")
+
+        def commit_remove(_items):
+            curr = CurrentUser.get()
+            if not curr:
+                return
             try:
                 update_trainer_profile(
-                    user_id=u.id,
-                    first_name=u.first_name,
-                    last_name=u.last_name,
-                    phone=u.phone,
-                    email=u.email,
-                    birth_date_shamsi=u.birth_date_shamsi,
+                    user_id=curr.id,
+                    first_name=curr.first_name,
+                    last_name=curr.last_name,
+                    phone=curr.phone,
+                    email=curr.email,
+                    birth_date_shamsi=curr.birth_date_shamsi,
                     photo_path="",
-                    username=u.username
+                    username=curr.username
                 )
-                u.photo_path = ""
+                curr.photo_path = ""
                 self.selected_photo_path = ""
                 if hasattr(self, "_baseline_profile"):
                     self._baseline_profile["photo_path"] = ""
                 self.display_photo("")
                 self.check_profile_dirty()
-                QMessageBox.information(self, "موفقیت", "عکس پروفایل مربی حذف گردید.")
             except Exception as ex:
                 QMessageBox.critical(self, "خطا", f"خطا در حذف عکس: {str(ex)}")
+
+        def undo_remove(items):
+            prev_path = items[0] if items else ""
+            self.selected_photo_path = prev_path
+            self.display_photo(prev_path)
+            self.check_profile_dirty()
+
+        self.undo_banner.start_countdown(
+            item_count=1,
+            pending_items=[old_photo_path],
+            on_commit=commit_remove,
+            on_undo=undo_remove,
+            item_label="عکس پروفایل مربی",
+            duration_seconds=5,
+        )
 
     def display_photo(self, photo_path: str):
         resolved = resolve_image_path(photo_path)
@@ -1408,20 +1436,42 @@ class BackupView(QWidget):
             QMessageBox.critical(self, "خطای بارگذاری", f"بارگذاری لوگو با خطا مواجه شد:\n{e}")
 
     def reset_to_default_logo_action(self):
-        """Restores official Nemov default logo and clears custom club logo."""
+        """Restores official Nemov default logo and clears custom club logo with 5s undo."""
         try:
             from nemov.services.branding_service import BrandingService
             reply = QMessageBox.question(
                 self,
                 "تایید بازنشانی لوگو",
-                "آیا مطمئن هستید که می‌خواهید لوگوی اختصاصی را حذف کرده و به لوگوی پیش‌فرض نِمُو بازگردید؟",
+                "آیا مطمئن هستید که می‌خواهید لوگوی اختصاصی را حذف کرده و به لوگوی پیش‌فرض نِمُو بازگردید؟\n\nنکته: پس از تایید، ۵ ثانیه فرصت بازگردانی (Undo) خواهید داشت.",
                 QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
                 QMessageBox.StandardButton.No
             )
-            if reply == QMessageBox.StandardButton.Yes:
-                BrandingService.reset_to_default_logo()
+            if reply != QMessageBox.StandardButton.Yes:
+                return
+
+            self.lbl_logo_status.setText("🛡️ لوگوی پیش‌فرض نِمُو در حال اعمال...")
+            self.lbl_logo_status.setStyleSheet("color: #93C5FD; font-weight: bold; font-size: 12px;")
+            self.btn_reset_logo.setEnabled(False)
+
+            def commit_reset(_items):
+                try:
+                    BrandingService.reset_to_default_logo()
+                    self._refresh_logo_preview()
+                    self.branding_changed_signal.emit()
+                except Exception as ex:
+                    QMessageBox.critical(self, "خطا", f"بازنشانی لوگو با خطا مواجه شد:\n{ex}")
+
+            def undo_reset(_items):
                 self._refresh_logo_preview()
-                self.branding_changed_signal.emit()
+
+            self.undo_banner.start_countdown(
+                item_count=1,
+                pending_items=["custom_logo"],
+                on_commit=commit_reset,
+                on_undo=undo_reset,
+                item_label="لوگوی اختصاصی باشگاه",
+                duration_seconds=5,
+            )
         except Exception as e:
             QMessageBox.critical(self, "خطا", f"بازنشانی لوگو با خطا مواجه شد:\n{e}")
 
@@ -1586,11 +1636,43 @@ class BackupView(QWidget):
         else:
             self.table_notif_history.clearSelection()
 
+    def _hide_table_rows_by_ids(self, table: QTableWidget, item_col: int, target_ids: list):
+        id_set = set(target_ids)
+        for r in range(table.rowCount() - 1, -1, -1):
+            it = table.item(r, item_col)
+            if it and it.data(Qt.ItemDataRole.UserRole) in id_set:
+                table.hideRow(r)
+
     def delete_single_notification(self, notif_id: int):
-        from nemov.services.notification_service import NotificationService
-        NotificationService.delete_by_ids([notif_id])
-        self.load_notification_history()
-        self.notifications_changed_signal.emit()
+        reply = QMessageBox.question(
+            self,
+            "تایید حذف اعلان",
+            "آیا از حذف این اعلان از تاریخچه اطمینان دارید؟\n\nنکته: پس از تایید، ۵ ثانیه فرصت بازگردانی (Undo) خواهید داشت.",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No
+        )
+        if reply != QMessageBox.StandardButton.Yes:
+            return
+
+        self._hide_table_rows_by_ids(self.table_notif_history, 1, [notif_id])
+
+        def commit_delete(ids):
+            from nemov.services.notification_service import NotificationService
+            NotificationService.delete_by_ids(ids)
+            self.load_notification_history()
+            self.notifications_changed_signal.emit()
+
+        def undo_delete(_ids):
+            self.load_notification_history()
+
+        self.undo_banner.start_countdown(
+            item_count=1,
+            pending_items=[notif_id],
+            on_commit=commit_delete,
+            on_undo=undo_delete,
+            item_label="اعلان",
+            duration_seconds=5,
+        )
 
     def delete_selected_notifications(self):
         ids = self._get_selected_notification_ids()
@@ -1601,15 +1683,32 @@ class BackupView(QWidget):
         reply = QMessageBox.question(
             self,
             "حذف اعلانات انتخاب‌شده",
-            f"آیا از حذف {fa_cnt} اعلان انتخاب‌شده از تاریخچه اطمینان دارید؟",
+            f"آیا از حذف {fa_cnt} اعلان انتخاب‌شده از تاریخچه اطمینان دارید؟\n\nنکته: پس از تایید، ۵ ثانیه فرصت بازگردانی (Undo) خواهید داشت.",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No
         )
-        if reply == QMessageBox.StandardButton.Yes:
+        if reply != QMessageBox.StandardButton.Yes:
+            return
+
+        self._hide_table_rows_by_ids(self.table_notif_history, 1, ids)
+
+        def commit_delete(del_ids):
             from nemov.services.notification_service import NotificationService
-            NotificationService.delete_by_ids(ids)
+            NotificationService.delete_by_ids(del_ids)
             self.load_notification_history()
             self.notifications_changed_signal.emit()
+
+        def undo_delete(_del_ids):
+            self.load_notification_history()
+
+        self.undo_banner.start_countdown(
+            item_count=len(ids),
+            pending_items=ids,
+            on_commit=commit_delete,
+            on_undo=undo_delete,
+            item_label="اعلان",
+            duration_seconds=5,
+        )
 
     def delete_all_notifications_history(self):
         checkboxes = getattr(self, "_notif_checkboxes", [])
@@ -1619,22 +1718,43 @@ class BackupView(QWidget):
         reply = QMessageBox.warning(
             self,
             "حذف همگانی تاریخچه اعلانات",
-            "آیا از پاک کردن تمامی اعلانات موجود در تاریخچه اطمینان دارید؟\nاین عمل قابل بازگشت نیست.",
+            "آیا از پاک کردن تمامی اعلانات موجود در تاریخچه اطمینان دارید؟\n\nنکته: پس از تایید، ۵ ثانیه فرصت بازگردانی (Undo) خواهید داشت.",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No
         )
-        if reply == QMessageBox.StandardButton.Yes:
+        if reply != QMessageBox.StandardButton.Yes:
+            return
+
+        total_count = len(checkboxes)
+        for r in range(self.table_notif_history.rowCount()):
+            self.table_notif_history.hideRow(r)
+
+        def commit_delete(_items):
             from nemov.services.notification_service import NotificationService
             NotificationService.delete_all_history()
             self.load_notification_history()
             self.notifications_changed_signal.emit()
+
+        def undo_delete(_items):
+            self.load_notification_history()
+
+        self.undo_banner.start_countdown(
+            item_count=total_count,
+            pending_items=["all_notifications"],
+            on_commit=commit_delete,
+            on_undo=undo_delete,
+            item_label="اعلان تاریخچه",
+            duration_seconds=5,
+        )
 
     def load_trainers_for_admin(self):
         trainers = get_all_trainers()
         self.table_trainers.setRowCount(len(trainers))
 
         for row, t in enumerate(trainers):
-            self.table_trainers.setItem(row, 0, QTableWidgetItem(str(row + 1)))
+            it_row_num = QTableWidgetItem(str(row + 1))
+            it_row_num.setData(Qt.ItemDataRole.UserRole, t["id"])
+            self.table_trainers.setItem(row, 0, it_row_num)
             self.table_trainers.setItem(row, 1, QTableWidgetItem(t["full_name"]))
             self.table_trainers.setItem(row, 2, QTableWidgetItem(t["username"]))
             
@@ -1727,17 +1847,34 @@ class BackupView(QWidget):
         reply2 = QMessageBox.critical(
             self,
             "🔴 تایید نهایی حذف",
-            f"تمامی اطلاعات مربی «{trainer_name}» از دیتابیس و فضای ابری پاک خواهد شد. آیا تایید می‌کنید؟",
+            f"تمامی اطلاعات مربی «{trainer_name}» از دیتابیس و فضای ابری پاک خواهد شد. آیا تایید می‌کنید؟\n\nنکته: پس از تایید، ۵ ثانیه فرصت بازگردانی (Undo) خواهید داشت.",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No
         )
-        if reply2 == QMessageBox.StandardButton.Yes:
-            try:
-                delete_trainer_account(trainer_id)
-                QMessageBox.information(self, "موفقیت", f"حساب مربی «{trainer_name}» و کلیه شاگردان ایشان با موفقیت حذف شدند.")
-                self.load_all_data()
-            except Exception as e:
-                QMessageBox.critical(self, "خطا", f"خطا در حذف مربی: {str(e)}")
+        if reply2 != QMessageBox.StandardButton.Yes:
+            return
+
+        self._hide_table_rows_by_ids(self.table_trainers, 0, [trainer_id])
+
+        def commit_delete(ids):
+            for tid in ids:
+                try:
+                    delete_trainer_account(tid)
+                except Exception as e:
+                    QMessageBox.critical(self, "خطا", f"خطا در حذف مربی: {str(e)}")
+            self.load_all_data()
+
+        def undo_delete(_ids):
+            self.load_trainers_for_admin()
+
+        self.undo_banner.start_countdown(
+            item_count=1,
+            pending_items=[trainer_id],
+            on_commit=commit_delete,
+            on_undo=undo_delete,
+            item_label=f"مربی «{trainer_name}»",
+            duration_seconds=5,
+        )
 
     def save_trainer_profile(self):
         u = CurrentUser.get()
@@ -1928,21 +2065,34 @@ class BackupView(QWidget):
         reply = QMessageBox.warning(
             self,
             "⚠️ حذف نسخه‌های پشتیبان انتخاب‌شده",
-            f"آیا از حذف {fa_cnt} نسخه پشتیبان انتخاب‌شده اطمینان دارید؟\nفایل‌های انتخاب‌شده به طور کامل از روی حافظه سیستم پاک خواهند شد.",
+            f"آیا از حذف {fa_cnt} نسخه پشتیبان انتخاب‌شده اطمینان دارید؟\nفایل‌های انتخاب‌شده از روی حافظه سیستم پاک خواهند شد.\n\nنکته: پس از تایید، ۵ ثانیه فرصت بازگردانی (Undo) خواهید داشت.",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No
         )
-        if reply == QMessageBox.StandardButton.Yes:
+        if reply != QMessageBox.StandardButton.Yes:
+            return
+
+        self._hide_table_rows_by_ids(self.table, 1, ids)
+
+        def commit_delete(del_ids):
             try:
-                deleted_cnt = 0
-                for bid in ids:
-                    if BackupService.delete_backup(bid):
-                        deleted_cnt += 1
+                for bid in del_ids:
+                    BackupService.delete_backup(bid)
                 self.load_backups()
-                fa_del = str(deleted_cnt).translate(str.maketrans("0123456789", "۰۱۲۳۴۵۶۷۸۹"))
-                QMessageBox.information(self, "موفقیت", f"{fa_del} نسخه پشتیبان با موفقیت حذف گردید.")
             except Exception as e:
                 QMessageBox.critical(self, "خطا", f"خطا در حذف نسخه‌های پشتیبان: {str(e)}")
+
+        def undo_delete(_del_ids):
+            self.load_backups()
+
+        self.undo_banner.start_countdown(
+            item_count=len(ids),
+            pending_items=ids,
+            on_commit=commit_delete,
+            on_undo=undo_delete,
+            item_label="نسخه پشتیبان",
+            duration_seconds=5,
+        )
 
     def delete_all_backups_history(self):
         checkboxes = getattr(self, "_backup_checkboxes", [])
@@ -1952,22 +2102,36 @@ class BackupView(QWidget):
         reply = QMessageBox.warning(
             self,
             "⚠️ حذف همگانی آرشیو پشتیبان",
-            "آیا از پاک کردن تمامی نسخه‌های پشتیبان موجود در آرشیو اطمینان دارید؟\nاین عمل فایل‌ها را از روی حافظه سیستم پاک کرده و قابل بازگشت نیست.",
+            "آیا از پاک کردن تمامی نسخه‌های پشتیبان موجود در آرشیو اطمینان دارید؟\n\nنکته: پس از تایید، ۵ ثانیه فرصت بازگردانی (Undo) خواهید داشت.",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No
         )
-        if reply == QMessageBox.StandardButton.Yes:
+        if reply != QMessageBox.StandardButton.Yes:
+            return
+
+        backup_ids = [b.id for b in BackupService.get_all_backups()]
+        for r in range(self.table.rowCount()):
+            self.table.hideRow(r)
+
+        def commit_delete(del_ids):
             try:
-                backups = BackupService.get_all_backups()
-                deleted_cnt = 0
-                for b in backups:
-                    if BackupService.delete_backup(b.id):
-                        deleted_cnt += 1
+                for bid in del_ids:
+                    BackupService.delete_backup(bid)
                 self.load_backups()
-                fa_del = str(deleted_cnt).translate(str.maketrans("0123456789", "۰۱۲۳۴۵۶۷۸۹"))
-                QMessageBox.information(self, "موفقیت", f"تمامی {fa_del} نسخه پشتیبان آرشیو با موفقیت حذف گردید.")
             except Exception as e:
                 QMessageBox.critical(self, "خطا", f"خطا در حذف همگانی نسخه‌های پشتیبان: {str(e)}")
+
+        def undo_delete(_del_ids):
+            self.load_backups()
+
+        self.undo_banner.start_countdown(
+            item_count=len(backup_ids) or len(checkboxes),
+            pending_items=backup_ids,
+            on_commit=commit_delete,
+            on_undo=undo_delete,
+            item_label="نسخه پشتیبان آرشیو",
+            duration_seconds=5,
+        )
 
     def open_backup_folder(self, filepath: str):
         if not filepath or filepath.startswith("☁️") or filepath.startswith("📧"):
@@ -1990,19 +2154,35 @@ class BackupView(QWidget):
         reply = QMessageBox.warning(
             self,
             "⚠️ تایید حذف نسخه پشتیبان",
-            f"آیا مطمئن هستید که می‌خواهید فایل پشتیبان «{file_name}» را حذف کنید؟\nاین فایل به طور کامل از روی حافظه سیستم پاک خواهد شد.",
+            f"آیا مطمئن هستید که می‌خواهید فایل پشتیبان «{file_name}» را حذف کنید؟\nاین فایل از روی حافظه سیستم پاک خواهد شد.\n\nنکته: پس از تایید، ۵ ثانیه فرصت بازگردانی (Undo) خواهید داشت.",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No
         )
-        if reply == QMessageBox.StandardButton.Yes:
+        if reply != QMessageBox.StandardButton.Yes:
+            return
+
+        self._hide_table_rows_by_ids(self.table, 1, [backup_id])
+
+        def commit_delete(ids):
             try:
-                if BackupService.delete_backup(backup_id):
-                    QMessageBox.information(self, "موفقیت", f"نسخه پشتیبان «{file_name}» با موفقیت حذف گردید.")
-                    self.load_backups()
-                else:
-                    QMessageBox.warning(self, "خطا", "یافتن یا حذف فایل پشتیبان با خطا مواجه شد.")
+                for bid in ids:
+                    if not BackupService.delete_backup(bid):
+                        QMessageBox.warning(self, "خطا", "یافتن یا حذف فایل پشتیبان با خطا مواجه شد.")
+                self.load_backups()
             except Exception as e:
                 QMessageBox.critical(self, "خطا", f"خطا در حذف فایل پشتیبان: {str(e)}")
+
+        def undo_delete(_ids):
+            self.load_backups()
+
+        self.undo_banner.start_countdown(
+            item_count=1,
+            pending_items=[backup_id],
+            on_commit=commit_delete,
+            on_undo=undo_delete,
+            item_label=f"فایل «{file_name}»",
+            duration_seconds=5,
+        )
 
     def create_backup(self):
         from nemov.views.components.backup_destination_dialog import BackupDestinationDialog
@@ -2236,16 +2416,39 @@ class BackupView(QWidget):
         reply2 = QMessageBox.critical(
             self,
             "🔴 تایید نهایی حذف",
-            "کلیه اطلاعات این مربی از حافظه سیستم و سرور پاک خواهد شد. آیا تایید نهایی را صادر می‌کنید؟",
+            "کلیه اطلاعات این مربی از حافظه سیستم و سرور پاک خواهد شد. آیا تایید نهایی را صادر می‌کنید؟\n\nنکته: پس از تایید، ۵ ثانیه فرصت بازگردانی (Undo) خواهید داشت.",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No
         )
-        if reply2 == QMessageBox.StandardButton.Yes:
-            try:
-                delete_trainer_account(u.id)
-                QMessageBox.information(self, "موفقیت", "حساب کاربری مربی و تمامی اطلاعات شاگردان با موفقیت حذف گردید.")
-                CurrentUser.logout()
-                self.account_deleted_signal.emit()
-            except Exception as e:
-                QMessageBox.critical(self, "خطا", f"خطا در حذف حساب کاربری: {str(e)}")
+        if reply2 != QMessageBox.StandardButton.Yes:
+            return
+
+        user_id = u.id
+        display_name = u.display_name
+        if hasattr(self, "btn_del_account"):
+            self.btn_del_account.setEnabled(False)
+
+        def commit_delete(ids):
+            for uid in ids:
+                try:
+                    delete_trainer_account(uid)
+                    CurrentUser.logout()
+                    self.account_deleted_signal.emit()
+                except Exception as e:
+                    if hasattr(self, "btn_del_account"):
+                        self.btn_del_account.setEnabled(True)
+                    QMessageBox.critical(self, "خطا", f"خطا در حذف حساب کاربری: {str(e)}")
+
+        def undo_delete(_ids):
+            if hasattr(self, "btn_del_account"):
+                self.btn_del_account.setEnabled(True)
+
+        self.undo_banner.start_countdown(
+            item_count=1,
+            pending_items=[user_id],
+            on_commit=commit_delete,
+            on_undo=undo_delete,
+            item_label=f"حساب مربی «{display_name}»",
+            duration_seconds=5,
+        )
 

@@ -323,6 +323,9 @@ class ExerciseFormDialog(QDialog):
         scroll_form.setWidget(form_container)
         vlay_form.addWidget(scroll_form, 1)
 
+        self.undo_banner = UndoDeleteBanner(self)
+        vlay_form.addWidget(self.undo_banner)
+
         btn_save = QPushButton("ذخیره تغییرات" if self.exercise_data else "ذخیره حرکت")
         btn_save.setFixedHeight(38)
         btn_save.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -496,24 +499,64 @@ class ExerciseFormDialog(QDialog):
         reply = QMessageBox.question(
             self,
             "حذف رسانه آموزشی حرکت",
-            "آیا از حذف عکس یا ویدیوی آموزشی این حرکت اطمینان دارید؟\n\nدر صورت ذخیره تغییرات، این حرکت فاقد رسانه آموزشی خواهد شد.",
+            "آیا از حذف عکس یا ویدیوی آموزشی این حرکت اطمینان دارید؟\n\nدر صورت ذخیره تغییرات، این حرکت فاقد رسانه آموزشی خواهد شد.\nنکته: پس از تایید، ۵ ثانیه فرصت بازگردانی (Undo) خواهید داشت.",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No
         )
-        if reply == QMessageBox.StandardButton.Yes:
-            self.media_path = None
-            self.media_type = "image"
-            self.thumbnail_path = None
-            self.video_cloud_url = None
-            current_url = self.txt_video_url.text().strip()
-            if "workers.dev" in current_url or "gymassistantapp.ir" in current_url or "nemovapp.ir" in current_url:
-                self.txt_video_url.clear()
-            self.lbl_media_status.setText("فایلی انتخاب نشده است")
-            self.lbl_media_status.setStyleSheet("color: #888888; font-size: 11px;")
-            self.btn_edit_media.hide()
-            self.btn_remove_media.hide()
+        if reply != QMessageBox.StandardButton.Yes:
+            return
+
+        snapshot = {
+            "media_path": self.media_path,
+            "media_type": self.media_type,
+            "thumbnail_path": self.thumbnail_path,
+            "video_cloud_url": self.video_cloud_url,
+            "video_url_text": self.txt_video_url.text(),
+            "lbl_text": self.lbl_media_status.text(),
+            "lbl_style": self.lbl_media_status.styleSheet(),
+            "edit_btn_text": self.btn_edit_media.text(),
+            "edit_btn_visible": self.btn_edit_media.isVisible(),
+        }
+
+        self.media_path = None
+        self.media_type = "image"
+        self.thumbnail_path = None
+        self.video_cloud_url = None
+        current_url = self.txt_video_url.text().strip()
+        if "workers.dev" in current_url or "gymassistantapp.ir" in current_url or "nemovapp.ir" in current_url:
+            self.txt_video_url.clear()
+        self.lbl_media_status.setText("فایلی انتخاب نشده است")
+        self.lbl_media_status.setStyleSheet("color: #888888; font-size: 11px;")
+        self.btn_edit_media.hide()
+        self.btn_remove_media.hide()
+
+        def undo_media(items):
+            if not items:
+                return
+            st = items[0]
+            self.media_path = st["media_path"]
+            self.media_type = st["media_type"]
+            self.thumbnail_path = st["thumbnail_path"]
+            self.video_cloud_url = st["video_cloud_url"]
+            self.txt_video_url.setText(st["video_url_text"])
+            self.lbl_media_status.setText(st["lbl_text"])
+            self.lbl_media_status.setStyleSheet(st["lbl_style"])
+            self.btn_edit_media.setText(st["edit_btn_text"])
+            self.btn_edit_media.setVisible(st["edit_btn_visible"] or bool(st["media_path"]))
+            self.btn_remove_media.setVisible(bool(st["media_path"]))
+
+        self.undo_banner.start_countdown(
+            item_count=1,
+            pending_items=[snapshot],
+            on_commit=lambda _: None,
+            on_undo=undo_media,
+            item_label="رسانه آموزشی حرکت",
+            duration_seconds=5,
+        )
 
     def save(self):
+        if hasattr(self, "undo_banner") and self.undo_banner.timer.isActive():
+            self.undo_banner.commit_now()
         name_fa = self.txt_name.text().strip()
         if not name_fa:
             QMessageBox.warning(self, "خطا", "لطفاً نام حرکت ورزشی را وارد کنید.")
@@ -1155,7 +1198,7 @@ class WorkoutLibraryView(QWidget):
         fa_count = str(count).translate(str.maketrans('0123456789', '۰۱۲۳۴۵۶۷۸۹'))
         reply = QMessageBox.question(
             self, "تایید حذف گروهی",
-            f"آیا از حذف {fa_count} حرکت ورزشی انتخاب‌شده اطمینان دارید؟\n\nنکته: پس از حذف، ۱۰ ثانیه فرصت بازگردانی (Undo) خواهید داشت.",
+            f"آیا از حذف {fa_count} حرکت ورزشی انتخاب‌شده اطمینان دارید؟\n\nنکته: پس از تایید، ۵ ثانیه فرصت بازگردانی (Undo) خواهید داشت.",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No
         )
@@ -1204,7 +1247,7 @@ class WorkoutLibraryView(QWidget):
     def delete_exercise(self, exercise):
         reply = QMessageBox.question(
             self, "تایید حذف حرکت",
-            f"آیا از حذف حرکت '{exercise.name_fa}' از بانک حرکات اطمینان دارید؟\n\nنکته: پس از حذف، ۱۰ ثانیه فرصت بازگردانی (Undo) خواهید داشت.",
+            f"آیا از حذف حرکت '{exercise.name_fa}' از بانک حرکات اطمینان دارید؟\n\nنکته: پس از تایید، ۵ ثانیه فرصت بازگردانی (Undo) خواهید داشت.",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No
         )

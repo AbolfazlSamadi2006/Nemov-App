@@ -6,6 +6,7 @@ import os
 import shutil
 import config
 from nemov.views.components.jalali_calendar_widget import JalaliDatePicker
+from nemov.views.components.undo_delete_banner import UndoDeleteBanner
 from nemov.views.components.field_validator import (
     MicroWarningLabel, validate_weight, validate_height, validate_body_fat, validate_limb_circ
 )
@@ -598,6 +599,9 @@ class AssessmentView(QWidget):
         row_hist.addWidget(btn_compare)
         layout.addLayout(row_hist)
 
+        self.undo_banner = UndoDeleteBanner(self)
+        layout.addWidget(self.undo_banner)
+
         self.table = QTableWidget()
         self.table.setColumnCount(14)
         self.table.setHorizontalHeaderLabels([
@@ -889,15 +893,39 @@ class AssessmentView(QWidget):
 
     def delete_assessment_confirm(self, assessment):
         reply = QMessageBox.question(
-            self, "تایید حذف", f"آیا از حذف ارزیابی مورخ {assessment.assessment_date_shamsi} اطمینان دارید؟",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+            self, "تایید حذف",
+            f"آیا از حذف ارزیابی مورخ {assessment.assessment_date_shamsi} اطمینان دارید؟\n\nنکته: پس از تایید، ۵ ثانیه فرصت بازگردانی (Undo) خواهید داشت.",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No
         )
-        if reply == QMessageBox.StandardButton.Yes:
-            if AssessmentService.delete_assessment(assessment.id):
-                self.load_history()
-                if hasattr(self.parent(), 'load_member_info'):
-                    self.parent().load_member_info()
-                QMessageBox.information(self, "حذف شد", "ارزیابی با موفقیت حذف گردید.")
+        if reply != QMessageBox.StandardButton.Yes:
+            return
+
+        for r, rec in enumerate(getattr(self, "records_list", [])):
+            if rec.id == assessment.id and r < self.table.rowCount():
+                self.table.hideRow(r)
+
+        def commit_delete(ids):
+            for aid in ids:
+                try:
+                    AssessmentService.delete_assessment(aid)
+                except Exception as e:
+                    QMessageBox.critical(self, "خطا", f"خطا در حذف ارزیابی: {str(e)}")
+            self.load_history()
+            if hasattr(self.parent(), 'load_member_info'):
+                self.parent().load_member_info()
+
+        def undo_delete(_ids):
+            self.load_history()
+
+        self.undo_banner.start_countdown(
+            item_count=1,
+            pending_items=[assessment.id],
+            on_commit=commit_delete,
+            on_undo=undo_delete,
+            item_label=f"ارزیابی مورخ {assessment.assessment_date_shamsi}",
+            duration_seconds=5,
+        )
 
     def view_progress_photos(self, date_str: str, photos_list: list):
         from nemov.views.health_record_view import MedicalDocumentViewerDialog

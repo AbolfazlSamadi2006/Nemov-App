@@ -481,7 +481,7 @@ class MemberListView(QWidget):
         fa_count = str(count).translate(str.maketrans('0123456789', '۰۱۲۳۴۵۶۷۸۹'))
         reply = QMessageBox.question(
             self, "تایید حذف گروهی اعضای باشگاه",
-            f"آیا از حذف کامل پرونده {fa_count} ورزشکار انتخاب‌شده اطمینان دارید؟ تمام سوابق پزشکی و برنامه‌های آنان نیز پاک خواهد شد.\n\nنکته: پس از حذف، ۱۰ ثانیه فرصت بازگردانی (Undo) خواهید داشت.",
+            f"آیا از حذف کامل پرونده {fa_count} ورزشکار انتخاب‌شده اطمینان دارید؟ تمام سوابق پزشکی و برنامه‌های آنان نیز پاک خواهد شد.\n\nنکته: پس از تایید، ۵ ثانیه فرصت بازگردانی (Undo) خواهید داشت.",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No
         )
@@ -512,7 +512,7 @@ class MemberListView(QWidget):
     def delete_member(self, member):
         reply = QMessageBox.question(
             self, "تایید حذف ورزشکار",
-            f"آیا از حذف کامل پرونده ورزشکار «{member.full_name}» اطمینان دارید؟ تمام سوابق پزشکی و برنامه‌های وی نیز پاک خواهد شد.\n\nنکته: پس از تایید، ۱۰ ثانیه فرصت بازگردانی (Undo) خواهید داشت.",
+            f"آیا از حذف کامل پرونده ورزشکار «{member.full_name}» اطمینان دارید؟ تمام سوابق پزشکی و برنامه‌های وی نیز پاک خواهد شد.\n\nنکته: پس از تایید، ۵ ثانیه فرصت بازگردانی (Undo) خواهید داشت.",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No
         )

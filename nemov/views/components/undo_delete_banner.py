@@ -5,7 +5,7 @@ from PyQt6.QtCore import Qt, QTimer, pyqtSignal
 
 class UndoDeleteBanner(QFrame):
     """
-    A 10-second countdown notification banner that allows coaches to Undo accidental deletions.
+    A 5-second countdown notification banner that allows coaches to Undo accidental deletions.
     If 'بازگردانی' is clicked within the countdown, the deletion is cancelled.
     If the countdown expires or 'تأیید فوری' is clicked, the deletion is permanently committed.
     """
@@ -15,8 +15,8 @@ class UndoDeleteBanner(QFrame):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
-        self.remaining_seconds = 10
-        self.total_seconds = 10
+        self.remaining_seconds = 5
+        self.total_seconds = 5
         self.pending_items = []
         self.on_commit_callback = None
         self.on_undo_callback = None
@@ -84,7 +84,7 @@ class UndoDeleteBanner(QFrame):
         layout.setSpacing(12)
 
         self.lbl_message = QLabel("🗑️ موارد انتخاب‌شده حذف شدند.")
-        self.lbl_countdown = QLabel("⏱️ فرصت بازگردانی: ۱۰ ثانیه")
+        self.lbl_countdown = QLabel("⏱️ فرصت بازگردانی: ۵ ثانیه")
         self.lbl_countdown.setStyleSheet("color: #FFA726; font-weight: bold;")
 
         self.btn_undo = QPushButton("↺ بازگردانی (Undo)")
@@ -95,7 +95,7 @@ class UndoDeleteBanner(QFrame):
         self.btn_dismiss = QPushButton("✕ تأیید فوری")
         self.btn_dismiss.setObjectName("btn_dismiss")
         self.btn_dismiss.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_dismiss.setToolTip("حذف دائمی بدون معطلی ۱۰ ثانیه‌ای")
+        self.btn_dismiss.setToolTip("حذف دائمی بدون معطلی ۵ ثانیه‌ای")
         self.btn_dismiss.clicked.connect(self.commit_now)
 
         layout.addWidget(self.lbl_message)
@@ -104,9 +104,9 @@ class UndoDeleteBanner(QFrame):
         layout.addWidget(self.btn_undo)
         layout.addWidget(self.btn_dismiss)
 
-    def start_countdown(self, item_count: int, pending_items: list, on_commit, on_undo, item_label: str = "مورد", duration_seconds: int = 10):
+    def start_countdown(self, item_count: int, pending_items: list, on_commit, on_undo, item_label: str = "مورد", duration_seconds: int = 5):
         """
-        Starts the 10-second undo countdown.
+        Starts the 5-second undo countdown.
         """
         # If there's an existing countdown running, commit it first
         if self.timer.isActive():

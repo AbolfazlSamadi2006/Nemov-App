@@ -7,6 +7,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtGui import QPixmap, QKeySequence, QShortcut
 from PyQt6.QtCore import Qt, QTimer
 from nemov.services.member_service import MemberService
+from nemov.views.components.undo_delete_banner import UndoDeleteBanner
 
 
 class ZoomableGraphicsView(QGraphicsView):
@@ -248,6 +249,10 @@ class AddMedicalDocumentDialog(QDialog):
         layout.addWidget(lbl_file)
         layout.addLayout(row_file_btn)
         layout.addWidget(self.table_pages)
+
+        self.undo_banner = UndoDeleteBanner(self)
+        layout.addWidget(self.undo_banner)
+
         layout.addWidget(lbl_notes)
         layout.addWidget(self.txt_notes)
 
@@ -322,11 +327,44 @@ class AddMedicalDocumentDialog(QDialog):
             self.table_pages.setCellWidget(row, 2, del_widget)
 
     def remove_file(self, filepath: str):
-        if filepath in self.selected_files:
-            self.selected_files.remove(filepath)
-            self.refresh_pages_table()
+        if filepath not in self.selected_files:
+            return
+        fname = os.path.basename(filepath)
+        reply = QMessageBox.question(
+            self,
+            "تایید حذف صفحه مدرک",
+            f"آیا از حذف صفحه «{fname}» از این مدرک اطمینان دارید؟\n\nنکته: پس از تایید، ۵ ثانیه فرصت بازگردانی (Undo) خواهید داشت.",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No
+        )
+        if reply != QMessageBox.StandardButton.Yes:
+            return
+
+        orig_idx = self.selected_files.index(filepath)
+        self.selected_files.remove(filepath)
+        self.refresh_pages_table()
+
+        def undo_restore(items):
+            if not items:
+                return
+            idx, path = items[0]
+            if path not in self.selected_files:
+                insert_pos = min(idx, len(self.selected_files))
+                self.selected_files.insert(insert_pos, path)
+                self.refresh_pages_table()
+
+        self.undo_banner.start_countdown(
+            item_count=1,
+            pending_items=[(orig_idx, filepath)],
+            on_commit=lambda _items: None,
+            on_undo=undo_restore,
+            item_label=f"صفحه «{fname}»",
+            duration_seconds=5,
+        )
 
     def save(self):
+        if hasattr(self, "undo_banner") and self.undo_banner.timer.isActive():
+            self.undo_banner.commit_now()
         title = self.txt_title.text().strip()
         if not title:
             QMessageBox.warning(self, "خطا", "لطفاً عنوان مدرک یا آزمایش را وارد کنید.")
@@ -534,6 +572,9 @@ class HealthRecordView(QWidget):
         row_docs_top.addWidget(btn_add_doc)
         layout_docs.addLayout(row_docs_top)
 
+        self.undo_banner = UndoDeleteBanner(self)
+        layout_docs.addWidget(self.undo_banner)
+
         # Table for Medical Documents
         self.table_docs = QTableWidget(0, 5)
         self.table_docs.setHorizontalHeaderLabels(["عنوان مدرک / آزمایش", "تاریخ ثبت", "توضیحات تکمیلی", "مشاهده مدرک", "حذف"])
@@ -631,6 +672,7 @@ class HealthRecordView(QWidget):
 
             # Title
             item_title = QTableWidgetItem(title_text)
+            item_title.setData(Qt.ItemDataRole.UserRole, doc.id)
             item_title.setTextAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
 
             # Date
@@ -678,13 +720,39 @@ class HealthRecordView(QWidget):
         reply = QMessageBox.question(
             self,
             "تأیید حذف",
-            "آیا از حذف این مدرک پزشکی اطمینان دارید؟",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+            "آیا از حذف این مدرک پزشکی اطمینان دارید؟\n\nنکته: پس از تایید، ۵ ثانیه فرصت بازگردانی (Undo) خواهید داشت.",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No
         )
-        if reply == QMessageBox.StandardButton.Yes:
-            MemberService.delete_medical_document(doc_id)
+        if reply != QMessageBox.StandardButton.Yes:
+            return
+
+        doc_title = "مدرک پزشکی"
+        for r in range(self.table_docs.rowCount() - 1, -1, -1):
+            it = self.table_docs.item(r, 0)
+            if it and it.data(Qt.ItemDataRole.UserRole) == doc_id:
+                doc_title = it.text() or doc_title
+                self.table_docs.hideRow(r)
+
+        def commit_delete(ids):
+            for did in ids:
+                try:
+                    MemberService.delete_medical_document(did)
+                except Exception as e:
+                    QMessageBox.critical(self, "خطا", f"خطا در حذف مدرک پزشکی: {str(e)}")
             self.load_documents()
-            QMessageBox.information(self, "موفقیت", "مدرک پزشکی با موفقیت حذف شد.")
+
+        def undo_delete(_ids):
+            self.load_documents()
+
+        self.undo_banner.start_countdown(
+            item_count=1,
+            pending_items=[doc_id],
+            on_commit=commit_delete,
+            on_undo=undo_delete,
+            item_label=f"«{doc_title}»",
+            duration_seconds=5,
+        )
 
     def save_data(self):
         data = self._get_current_form_data()

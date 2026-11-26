@@ -647,7 +647,7 @@ class TemplatesManagerView(QWidget):
         fa_count = str(count).translate(str.maketrans('0123456789', '۰۱۲۳۴۵۶۷۸۹'))
         reply = QMessageBox.question(
             self, "تایید حذف گروهی الگوهای تمرینی",
-            f"آیا از حذف {fa_count} الگوی تمرینی انتخاب‌شده اطمینان دارید؟\n\nنکته: پس از حذف، ۱۰ ثانیه فرصت بازگردانی (Undo) خواهید داشت.",
+            f"آیا از حذف {fa_count} الگوی تمرینی انتخاب‌شده اطمینان دارید؟\n\nنکته: پس از تایید، ۵ ثانیه فرصت بازگردانی (Undo) خواهید داشت.",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No
         )
@@ -729,7 +729,7 @@ class TemplatesManagerView(QWidget):
         fa_count = str(count).translate(str.maketrans('0123456789', '۰۱۲۳۴۵۶۷۸۹'))
         reply = QMessageBox.question(
             self, "تایید حذف گروهی الگوهای غذایی",
-            f"آیا از حذف {fa_count} الگوی غذایی انتخاب‌شده اطمینان دارید؟\n\nنکته: پس از حذف، ۱۰ ثانیه فرصت بازگردانی (Undo) خواهید داشت.",
+            f"آیا از حذف {fa_count} الگوی غذایی انتخاب‌شده اطمینان دارید؟\n\nنکته: پس از تایید، ۵ ثانیه فرصت بازگردانی (Undo) خواهید داشت.",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No
         )
@@ -826,7 +826,7 @@ class TemplatesManagerView(QWidget):
         reply = QMessageBox.warning(
             self,
             "⚠️ تایید حذف الگوی تمرینی",
-            f"آیا مطمئن هستید که می‌خواهید الگوی تمرینی «{plan_title}» را از بانک حذف کنید؟\n\nنکته: پس از تایید، ۱۰ ثانیه فرصت بازگردانی (Undo) خواهید داشت.",
+            f"آیا مطمئن هستید که می‌خواهید الگوی تمرینی «{plan_title}» را از بانک حذف کنید؟\n\nنکته: پس از تایید، ۵ ثانیه فرصت بازگردانی (Undo) خواهید داشت.",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No
         )
@@ -858,7 +858,7 @@ class TemplatesManagerView(QWidget):
         reply = QMessageBox.warning(
             self,
             "⚠️ تایید حذف الگوی غذایی",
-            f"آیا مطمئن هستید که می‌خواهید الگوی غذایی «{plan_title}» را از بانک حذف کنید؟\n\nنکته: پس از تایید، ۱۰ ثانیه فرصت بازگردانی (Undo) خواهید داشت.",
+            f"آیا مطمئن هستید که می‌خواهید الگوی غذایی «{plan_title}» را از بانک حذف کنید؟\n\nنکته: پس از تایید، ۵ ثانیه فرصت بازگردانی (Undo) خواهید داشت.",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No
         )
