@@ -227,25 +227,64 @@ class WorkoutEditorView(QWidget):
 
         # Program Details Form Box
         form_box = QGroupBox("مشخصات کلی برنامه تمرینی")
+        form_box.setObjectName("assign_plan_box")
         layout_form = QVBoxLayout(form_box)
+        layout_form.setContentsMargins(10, 8, 10, 8)
+        layout_form.setSpacing(8)
 
-        # Template Picker Row
-        row_tpl = QHBoxLayout()
-        self.combo_templates = QComboBox()
-        self.combo_templates.addItem("--- انتخاب و بارگذاری الگوی آماده از بانک ---", None)
-        self.load_template_dropdown()
-        self.combo_templates.currentIndexChanged.connect(self.on_template_selected)
+        combo_compact_qss = """
+            QComboBox {
+                padding-right: 8px;
+                padding-left: 22px;
+                font-size: 12px;
+            }
+            QComboBox QAbstractItemView::item {
+                min-height: 28px;
+                padding: 4px 8px;
+            }
+        """
 
-        row_tpl.addWidget(QLabel("📂 الگوهای آماده بانک:"))
-        row_tpl.addWidget(self.combo_templates)
-        layout_form.addLayout(row_tpl)
+        # Row 1: Title (right) + Athlete selector (left)
+        row_top = QHBoxLayout()
+        row_top.setSpacing(8)
 
-        row1 = QHBoxLayout()
+        lbl_title = QLabel("عنوان برنامه:")
         self.txt_title = QLineEdit()
+        self.txt_title.setFixedHeight(32)
+        self.txt_title.setMinimumWidth(260)
+        self.txt_title.setStyleSheet("padding: 4px 10px;")
         self.txt_title.setPlaceholderText("عنوان برنامه (مثلاً: برنامه حجمی ۴ روزه)...")
         self.txt_title.textEdited.connect(lambda: self._snapshot_change())
 
+        lbl_top_member = QLabel("ورزشکار:")
+        self.combo_member_top = SearchableComboBox(placeholder="جستجو یا تایپ نام ورزشکار...")
+        self.combo_member_top.setFixedHeight(32)
+        self.combo_member_top.setMinimumWidth(230)
+
+        row_top.addWidget(lbl_title)
+        row_top.addWidget(self.txt_title, 3)
+        row_top.addWidget(lbl_top_member)
+        row_top.addWidget(self.combo_member_top, 2)
+        layout_form.addLayout(row_top)
+
+        # Row 2: Templates (right) + Goal + Days + Training Level (left)
+        row_meta = QHBoxLayout()
+        row_meta.setSpacing(8)
+
+        self.combo_templates = QComboBox()
+        self.combo_templates.setFixedHeight(32)
+        self.combo_templates.setMinimumWidth(210)
+        self.combo_templates.view().setMinimumWidth(260)
+        self.combo_templates.setStyleSheet(combo_compact_qss)
+        self.combo_templates.addItem("--- انتخاب و بارگذاری الگوی آماده ---", None)
+        self.load_template_dropdown()
+        self.combo_templates.currentIndexChanged.connect(self.on_template_selected)
+
         self.combo_goal = QComboBox()
+        self.combo_goal.setFixedHeight(32)
+        self.combo_goal.setMinimumWidth(145)
+        self.combo_goal.view().setMinimumWidth(195)
+        self.combo_goal.setStyleSheet(combo_compact_qss)
         self.combo_goal.addItem("هایپرتروفی (عضله‌سازی)", "hypertrophy")
         self.combo_goal.addItem("چربی‌سوزی و کاهش وزن", "fat_loss")
         self.combo_goal.addItem("افزایش قدرت بی‌هوازی", "strength")
@@ -255,26 +294,34 @@ class WorkoutEditorView(QWidget):
         self.combo_goal.currentIndexChanged.connect(lambda: self._snapshot_change())
 
         self.combo_days = QComboBox()
+        self.combo_days.setFixedHeight(32)
+        self.combo_days.setMinimumWidth(115)
+        self.combo_days.view().setMinimumWidth(145)
+        self.combo_days.setStyleSheet(combo_compact_qss)
         for d in range(2, 7):
             self.combo_days.addItem(f"{d} روز در هفته", d)
-        self.combo_days.setCurrentIndex(1) # Default 3 days
+        self.combo_days.setCurrentIndex(1)  # Default 3 days
         self.combo_days.currentIndexChanged.connect(self.on_days_changed)
 
         self.combo_level = QComboBox()
+        self.combo_level.setFixedHeight(32)
+        self.combo_level.setMinimumWidth(95)
+        self.combo_level.view().setMinimumWidth(120)
+        self.combo_level.setStyleSheet(combo_compact_qss)
         self.combo_level.addItem("مبتدی", "beginner")
         self.combo_level.addItem("متوسط", "intermediate")
         self.combo_level.addItem("پیشرفته", "advanced")
         self.combo_level.currentIndexChanged.connect(lambda: self._snapshot_change())
 
-        row1.addWidget(QLabel("عنوان:"))
-        row1.addWidget(self.txt_title)
-        row1.addWidget(QLabel("هدف:"))
-        row1.addWidget(self.combo_goal)
-        row1.addWidget(QLabel("روزهای هفته:"))
-        row1.addWidget(self.combo_days)
-        row1.addWidget(QLabel("سطح تمرین:"))
-        row1.addWidget(self.combo_level)
-        layout_form.addLayout(row1)
+        row_meta.addWidget(QLabel("الگوهای آماده:"))
+        row_meta.addWidget(self.combo_templates, 3)
+        row_meta.addWidget(QLabel("هدف:"))
+        row_meta.addWidget(self.combo_goal, 2)
+        row_meta.addWidget(QLabel("روزهای هفته:"))
+        row_meta.addWidget(self.combo_days, 1)
+        row_meta.addWidget(QLabel("سطح تمرین:"))
+        row_meta.addWidget(self.combo_level, 1)
+        layout_form.addLayout(row_meta)
 
         layout.addWidget(form_box)
 
@@ -294,8 +341,10 @@ class WorkoutEditorView(QWidget):
         self.combo_member.setFixedHeight(36)
         self.combo_member.setMinimumWidth(260)
         self.load_members_dropdown()
-        self.combo_member.currentIndexChanged.connect(self._on_member_changed)
-        self.combo_member.currentTextChanged.connect(self._on_member_text_matched)
+        self.combo_member.currentIndexChanged.connect(self._on_bottom_member_changed)
+        self.combo_member.currentTextChanged.connect(lambda t: self._on_member_text_matched(self.combo_member, t))
+        self.combo_member_top.currentIndexChanged.connect(self._on_top_member_changed)
+        self.combo_member_top.currentTextChanged.connect(lambda t: self._on_member_text_matched(self.combo_member_top, t))
 
         btn_save = QPushButton("💾 ذخیره الگو در بانک")
         btn_save.setObjectName("secondary_button")
@@ -312,35 +361,88 @@ class WorkoutEditorView(QWidget):
 
         layout.addWidget(assign_box)
 
-    def load_members_dropdown(self):
-        cur = self.combo_member.currentData()
-        self.combo_member.blockSignals(True)
-        self.combo_member.clear()
-        members = MemberService.get_all_members(status_filter="active")
-        for m in members:
-            self.combo_member.addItem(m.full_name, m.id)
-        if cur is not None:
-            idx = self.combo_member.findData(cur)
-            if idx >= 0:
-                self.combo_member.setCurrentIndex(idx)
-            else:
-                self.combo_member.set_empty()
-        else:
-            self.combo_member.set_empty()
-        self.combo_member.blockSignals(False)
+    def _get_member_combos(self) -> list:
+        combos = [self.combo_member]
+        if hasattr(self, "combo_member_top"):
+            combos.append(self.combo_member_top)
+        return combos
 
-    def _on_member_changed(self, _index: int = None):
-        member_id = self.combo_member.currentData()
-        if member_id:
+    def _sync_member_combos(self, member_id, apply_days: bool = True):
+        self._last_synced_member_id = member_id
+        for cmb in self._get_member_combos():
+            cmb.blockSignals(True)
+            if member_id is not None:
+                idx = cmb.findData(member_id)
+                if idx >= 0:
+                    cmb.setCurrentIndex(idx)
+                else:
+                    cmb.set_empty()
+            else:
+                cmb.set_empty()
+            cmb.blockSignals(False)
+        if apply_days and member_id:
             self.apply_member_membership_days(member_id)
 
-    def _on_member_text_matched(self, text: str):
-        if not text:
+    def _on_bottom_member_changed(self, _index: int = None):
+        member_id = self.combo_member.currentData()
+        self._sync_member_combos(member_id, apply_days=True)
+
+    def _on_top_member_changed(self, _index: int = None):
+        member_id = self.combo_member_top.currentData()
+        self._sync_member_combos(member_id, apply_days=True)
+
+    def load_members_dropdown(self):
+        cur = self.combo_member.currentData()
+        if cur is None and hasattr(self, "combo_member_top"):
+            cur = self.combo_member_top.currentData()
+        typed_text = self.combo_member.currentText()
+        if not (typed_text and typed_text.strip()) and hasattr(self, "combo_member_top"):
+            typed_text = self.combo_member_top.currentText()
+        members = MemberService.get_all_members()
+        active_or_selected = [
+            m for m in members
+            if m.status != "archived" or (cur is not None and m.id == cur)
+        ]
+        sel_member = None
+        if cur is not None and all(m.id != cur for m in active_or_selected):
+            sel_member = MemberService.get_member_by_id(cur)
+        for cmb in self._get_member_combos():
+            cmb.blockSignals(True)
+            cmb.clear()
+            for m in active_or_selected:
+                cmb.addItem(m.full_name, m.id)
+            if sel_member:
+                cmb.addItem(sel_member.full_name, sel_member.id)
+            if cur is not None:
+                idx = cmb.findData(cur)
+                if idx >= 0:
+                    cmb.setCurrentIndex(idx)
+                else:
+                    cmb.set_empty()
+            elif typed_text and typed_text.strip():
+                cmb.setCurrentIndex(-1)
+                cmb.setEditText(typed_text)
+            else:
+                cmb.set_empty()
+            cmb.blockSignals(False)
+
+    def _on_member_text_matched(self, combo_or_text, text: str = None):
+        if text is None:
+            combo = self.combo_member
+            raw_text = combo_or_text
+        else:
+            combo = combo_or_text
+            raw_text = text
+        clean = (raw_text or "").strip()
+        if not clean:
+            if combo.currentIndex() != -1:
+                self._sync_member_combos(None, apply_days=False)
             return
-        cleaned = text.strip()
-        idx = self.combo_member.findText(cleaned, Qt.MatchFlag.MatchExactly)
-        if idx >= 0 and self.combo_member.currentIndex() != idx:
-            self.combo_member.setCurrentIndex(idx)
+        idx = combo.find_normalized_index(clean, allow_partial=False)
+        if idx >= 0:
+            m_id = combo.itemData(idx)
+            if m_id != getattr(self, "_last_synced_member_id", None):
+                self._sync_member_combos(m_id, apply_days=True)
 
     @staticmethod
     def _get_membership_days(membership_type: str) -> int:
@@ -397,11 +499,14 @@ class WorkoutEditorView(QWidget):
 
     def set_selected_member(self, member_id: int):
         self.load_members_dropdown()
-        idx = self.combo_member.findData(member_id)
-        if idx >= 0:
-            self.combo_member.setCurrentIndex(idx)
-        if member_id:
-            self.apply_member_membership_days(member_id)
+        if self.combo_member.findData(member_id) < 0 and member_id:
+            m = MemberService.get_member_by_id(member_id)
+            if m:
+                for cmb in self._get_member_combos():
+                    cmb.blockSignals(True)
+                    cmb.addItem(m.full_name, m.id)
+                    cmb.blockSignals(False)
+        self._sync_member_combos(member_id, apply_days=True)
 
     def _on_tab_moved(self, from_idx: int, to_idx: int):
         if from_idx == to_idx:
@@ -611,9 +716,9 @@ class WorkoutEditorView(QWidget):
             header.setSectionResizeMode(5, QHeaderView.ResizeMode.Interactive) # Tempo
             table.setColumnWidth(5, 105)
             header.setSectionResizeMode(6, QHeaderView.ResizeMode.Interactive) # Notes
-            table.setColumnWidth(6, 100)
+            table.setColumnWidth(6, 124)
             header.setSectionResizeMode(7, QHeaderView.ResizeMode.Fixed)       # Delete
-            table.setColumnWidth(7, 55)
+            table.setColumnWidth(7, 100)
 
             btn_add_row.clicked.connect(lambda _, t=table: self.add_exercise_row(t, exercises_list))
 
@@ -812,7 +917,7 @@ class WorkoutEditorView(QWidget):
         btn_notes = QPushButton("📝 توضیحات")
         btn_notes.setObjectName("secondary_button")
         btn_notes.setCursor(Qt.CursorShape.PointingHandCursor)
-        btn_notes.setFixedHeight(32)
+        btn_notes.setFixedHeight(38)
 
         # Lookup bank description
         curr_ex_id = combo_ex.currentData()
@@ -839,11 +944,14 @@ class WorkoutEditorView(QWidget):
 
         btn_notes.clicked.connect(lambda _, t=table, b=btn_notes, c=combo_ex, el=exercises_list: self.open_exercise_notes_dialog(t, b, c, el))
 
-        btn_del = QPushButton("🗑️")
+        btn_del = QPushButton("🗑️ حذف")
         btn_del.setObjectName("danger_button")
         btn_del.setToolTip("حذف حرکت ورزشی")
         btn_del.setCursor(Qt.CursorShape.PointingHandCursor)
-        btn_del.setFixedHeight(32)
+        btn_del.setFixedHeight(38)
+        btn_del.setStyleSheet(
+            "QPushButton#danger_button { padding: 4px 10px; min-height: 24px; font-size: 12px; border-radius: 6px; }"
+        )
         btn_del.clicked.connect(lambda _, t=table, b=btn_del: self.remove_exercise_row(t, b))
 
         # Connect listeners to snapshot undo
@@ -892,19 +1000,22 @@ class WorkoutEditorView(QWidget):
     def _update_btn_notes_display(self, btn_notes: QPushButton):
         notes = (btn_notes.property("trainer_notes") or "").strip()
         is_custom = bool(btn_notes.property("is_custom"))
+        base_cell_qss = "padding: 4px 8px; min-height: 24px; border-radius: 6px; font-size: 11px;"
         if notes:
             prefix = "توضیحات اختصاصی مربی برای این برنامه:\n" if is_custom else "توضیحات پیش‌فرض حرکت (بانک حرکات):\n"
             btn_notes.setToolTip(f"{prefix}{notes}")
             if is_custom:
                 btn_notes.setText("📝 توضیحات ✓")
-                btn_notes.setStyleSheet("color: #10B981; font-weight: bold; border: 1px solid #10B981; border-radius: 4px; font-size: 11px;")
+                btn_notes.setStyleSheet(
+                    f"QPushButton#secondary_button {{ color: #10B981; font-weight: bold; border: 1px solid #10B981; {base_cell_qss} }}"
+                )
             else:
                 btn_notes.setText("📝 توضیحات")
-                btn_notes.setStyleSheet("font-size: 11px;")
+                btn_notes.setStyleSheet(f"QPushButton#secondary_button {{ {base_cell_qss} }}")
         else:
             btn_notes.setText("📝 توضیحات")
             btn_notes.setToolTip("بدون توضیحات (کلیک جهت افزودن یا ویرایش)")
-            btn_notes.setStyleSheet("font-size: 11px;")
+            btn_notes.setStyleSheet(f"QPushButton#secondary_button {{ {base_cell_qss} }}")
 
     def _on_exercise_combo_changed(self, combo_ex: SearchableComboBox, btn_notes: QPushButton, exercises_list: list):
         curr_ex_id = combo_ex.currentData()
@@ -1105,7 +1216,7 @@ class WorkoutEditorView(QWidget):
         cur = self.combo_templates.currentData()
         self.combo_templates.blockSignals(True)
         self.combo_templates.clear()
-        self.combo_templates.addItem("--- انتخاب و بارگذاری الگوی آماده از بانک ---", None)
+        self.combo_templates.addItem("--- انتخاب و بارگذاری الگوی آماده ---", None)
         goal_names = {
             "hypertrophy": "عضله‌سازی",
             "fat_loss": "چربی‌سوزی",
@@ -1312,7 +1423,11 @@ class WorkoutEditorView(QWidget):
             return None
 
     def assign_plan(self):
-        member_id = self.combo_member.currentData()
+        member_id = self.combo_member.resolve_current_data()
+        if not member_id and hasattr(self, "combo_member_top"):
+            member_id = self.combo_member_top.resolve_current_data()
+            if member_id:
+                self._sync_member_combos(member_id, apply_days=True)
         if not member_id:
             QMessageBox.warning(self, "خطا", "لطفاً ابتدا یک ورزشکار را انتخاب کنید.")
             return

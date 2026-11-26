@@ -101,7 +101,7 @@ class MemberListView(QWidget):
         header.setMinimumSectionSize(20)
         header.setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
-        self.table.setColumnWidth(0, 44)
+        self.table.setColumnWidth(0, 60)
 
         header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
 
@@ -138,14 +138,14 @@ class MemberListView(QWidget):
         header = self.table.horizontalHeader()
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
         header.setSectionResizeMode(7, QHeaderView.ResizeMode.Fixed)
-        self.table.setColumnWidth(0, 44)
+        self.table.setColumnWidth(0, 60)
         self.table.setColumnWidth(7, 290)
 
         vw = self.table.viewport().width()
         if vw <= 100:
             vw = max(960, self.width() - 40)
 
-        col0_w = 44
+        col0_w = 60
         col2_w = 110
         col3_w = 105
         col4_w = 105
@@ -153,7 +153,7 @@ class MemberListView(QWidget):
         col6_w = 125
         col7_w = 290
         min_col1_w = 110
-        min_total = col0_w + min_col1_w + col2_w + col3_w + col4_w + col5_w + col6_w + col7_w  # 984px
+        min_total = col0_w + min_col1_w + col2_w + col3_w + col4_w + col5_w + col6_w + col7_w  # 1000px
 
         if vw >= min_total:
             header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)

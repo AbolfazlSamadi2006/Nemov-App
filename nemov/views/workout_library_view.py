@@ -912,27 +912,31 @@ class WorkoutLibraryView(QWidget):
 
         # Exercises Table
         self.table = QTableWidget()
-        self.table.setColumnCount(7)
-        self.table.setHorizontalHeaderLabels(["انتخاب", "نام حرکت", "عضله اصلی", "تجهیزات", "محدودیت آسیب‌دیدگی", "توضیحات", "عملیات"])
+        self.table.setColumnCount(8)
+        self.table.setHorizontalHeaderLabels([
+            "انتخاب", "ردیف", "نام حرکت", "عضله اصلی", "تجهیزات", "محدودیت آسیب‌دیدگی", "توضیحات", "عملیات"
+        ])
+        self.table.verticalHeader().setVisible(False)
         self.table.verticalHeader().setDefaultSectionSize(58)
-        self.table.verticalHeader().setDefaultAlignment(Qt.AlignmentFlag.AlignCenter)
         header = self.table.horizontalHeader()
         header.setMinimumSectionSize(40)
         header.setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
-        self.table.setColumnWidth(0, 56)
-        self.table.setColumnWidth(1, 195)
-        self.table.setColumnWidth(2, 140)
-        header.setSectionResizeMode(3, QHeaderView.ResizeMode.Fixed)
-        self.table.setColumnWidth(3, 75)
-        self.table.setColumnWidth(4, 130)
-        header.setSectionResizeMode(5, QHeaderView.ResizeMode.Stretch)
-        header.setSectionResizeMode(6, QHeaderView.ResizeMode.Fixed)
-        self.table.setColumnWidth(6, 250)
+        self.table.setColumnWidth(0, 60)
+        header.setSectionResizeMode(1, QHeaderView.ResizeMode.Fixed)
+        self.table.setColumnWidth(1, 54)
+        self.table.setColumnWidth(2, 195)
+        self.table.setColumnWidth(3, 140)
+        header.setSectionResizeMode(4, QHeaderView.ResizeMode.Fixed)
+        self.table.setColumnWidth(4, 75)
+        self.table.setColumnWidth(5, 130)
+        header.setSectionResizeMode(6, QHeaderView.ResizeMode.Stretch)
+        header.setSectionResizeMode(7, QHeaderView.ResizeMode.Fixed)
+        self.table.setColumnWidth(7, 250)
         self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
-        self.table.setItemDelegateForColumn(5, TwoLineDescriptionDelegate(self))
-        self.table.setItemDelegateForColumn(6, OperationsDelegate(self))
+        self.table.setItemDelegateForColumn(6, TwoLineDescriptionDelegate(self))
+        self.table.setItemDelegateForColumn(7, OperationsDelegate(self))
         self.table.viewport().setMouseTracking(True)
 
         layout.addWidget(self.table, 1)
@@ -1041,10 +1045,12 @@ class WorkoutLibraryView(QWidget):
 
             if not chk_w or not chk:
                 chk_w = QWidget()
+                chk_w.setStyleSheet("background: transparent;")
                 chk_lay = QHBoxLayout(chk_w)
                 chk_lay.setContentsMargins(0, 0, 0, 0)
                 chk_lay.setAlignment(Qt.AlignmentFlag.AlignCenter)
                 chk = QCheckBox(chk_w)
+                chk.setCursor(Qt.CursorShape.PointingHandCursor)
                 chk.toggled.connect(self.on_row_checkbox_toggled)
                 chk_lay.addWidget(chk)
                 self.table.setCellWidget(row, 0, chk_w)
@@ -1055,28 +1061,38 @@ class WorkoutLibraryView(QWidget):
             chk.setProperty("item_name", ex.name_fa)
             chk.blockSignals(False)
 
-            it_name = self.table.item(row, 1)
+            # Column 1: Row index (Persian numerals, centered - matches Backup view)
+            fa_idx = str(row + 1).translate(str.maketrans("0123456789", "۰۱۲۳۴۵۶۷۸۹"))
+            it_idx = self.table.item(row, 1)
+            if not it_idx:
+                it_idx = QTableWidgetItem("")
+                it_idx.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+                self.table.setItem(row, 1, it_idx)
+            it_idx.setText(fa_idx)
+            it_idx.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+
+            it_name = self.table.item(row, 2)
             if not it_name:
                 it_name = QTableWidgetItem("")
-                self.table.setItem(row, 1, it_name)
+                self.table.setItem(row, 2, it_name)
             it_name.setText(ex.name_fa)
             it_name.setToolTip(ex.name_fa)
 
             muscle_name = muscle_map.get(ex.primary_muscle, ex.primary_muscle)
             muscle_display = f"{muscle_name} (اصلاحی)" if getattr(ex, "is_corrective", False) else muscle_name
-            it_muscle = self.table.item(row, 2)
+            it_muscle = self.table.item(row, 3)
             if not it_muscle:
                 it_muscle = QTableWidgetItem("")
-                self.table.setItem(row, 2, it_muscle)
+                self.table.setItem(row, 3, it_muscle)
             it_muscle.setText(muscle_display)
             it_muscle.setToolTip(muscle_display)
 
             eq_txt = equip_map.get(ex.equipment, ex.equipment or "-")
-            it_equip = self.table.item(row, 3)
+            it_equip = self.table.item(row, 4)
             if not it_equip:
                 it_equip = QTableWidgetItem("")
                 it_equip.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-                self.table.setItem(row, 3, it_equip)
+                self.table.setItem(row, 4, it_equip)
             it_equip.setText(eq_txt)
             it_equip.setToolTip(eq_txt)
 
@@ -1099,32 +1115,32 @@ class WorkoutLibraryView(QWidget):
             else:
                 contra_txt = "-"
 
-            it_contra = self.table.item(row, 4)
+            it_contra = self.table.item(row, 5)
             if not it_contra:
                 it_contra = QTableWidgetItem("")
                 it_contra.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-                self.table.setItem(row, 4, it_contra)
+                self.table.setItem(row, 5, it_contra)
             it_contra.setText(contra_txt)
             it_contra.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             if ex.contraindications:
                 it_contra.setToolTip(contra_txt)
 
             desc_txt = ex.description or "-"
-            it_desc = self.table.item(row, 5)
+            it_desc = self.table.item(row, 6)
             if not it_desc:
                 it_desc = QTableWidgetItem("")
-                self.table.setItem(row, 5, it_desc)
+                self.table.setItem(row, 6, it_desc)
             it_desc.setText(desc_txt)
             if ex.description:
                 it_desc.setToolTip(desc_txt)
 
-            # Column 6: Operations delegate data
-            it6 = self.table.item(row, 6)
-            if not it6:
-                it6 = QTableWidgetItem()
-                self.table.setItem(row, 6, it6)
-            it6.setData(Qt.ItemDataRole.UserRole, ex)
-            it6.setData(Qt.ItemDataRole.UserRole + 1, bool(getattr(ex, "video_cloud_url", None)))
+            # Column 7: Operations delegate data
+            it7 = self.table.item(row, 7)
+            if not it7:
+                it7 = QTableWidgetItem()
+                self.table.setItem(row, 7, it7)
+            it7.setData(Qt.ItemDataRole.UserRole, ex)
+            it7.setData(Qt.ItemDataRole.UserRole + 1, bool(getattr(ex, "video_cloud_url", None)))
 
         self.table.setUpdatesEnabled(True)
 

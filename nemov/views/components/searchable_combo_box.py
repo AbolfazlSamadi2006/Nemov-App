@@ -26,6 +26,7 @@ class SearchableComboBox(QComboBox):
             if placeholder:
                 le.setPlaceholderText(placeholder)
             le.editingFinished.connect(self._on_editing_finished)
+            le.returnPressed.connect(self._on_editing_finished)
 
         self.currentIndexChanged.connect(self._ensure_centered)
         self.currentTextChanged.connect(self._ensure_centered)
@@ -35,8 +36,59 @@ class SearchableComboBox(QComboBox):
             comp.setFilterMode(Qt.MatchFlag.MatchContains)
             comp.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
             comp.setCompletionMode(QCompleter.CompletionMode.PopupCompletion)
+            comp.activated[str].connect(self._on_completer_activated)
             if comp.popup():
                 comp.popup().setItemDelegate(CenteredItemDelegate(self))
+
+    @staticmethod
+    def _normalize_text(text: str) -> str:
+        if not text:
+            return ""
+        normalized = (
+            str(text)
+            .replace("\u064a", "\u06cc")  # Arabic Yeh -> Persian Yeh
+            .replace("\u0649", "\u06cc")  # Alef Maksura -> Persian Yeh
+            .replace("\u0643", "\u06a9")  # Arabic Kaf -> Persian Kaf
+            .replace("\u200c", " ")       # ZWNJ -> space
+        )
+        return " ".join(normalized.split()).lower()
+
+    def _on_completer_activated(self, text: str):
+        idx = self.find_normalized_index(text, allow_partial=False)
+        if idx >= 0:
+            self.setCurrentIndex(idx)
+
+    def find_normalized_index(self, text: str, allow_partial: bool = True) -> int:
+        norm_query = self._normalize_text(text)
+        if not norm_query:
+            return -1
+        for i in range(self.count()):
+            if self._normalize_text(self.itemText(i)) == norm_query:
+                return i
+        if allow_partial:
+            partial_matches = [
+                i for i in range(self.count())
+                if norm_query in self._normalize_text(self.itemText(i))
+            ]
+            if len(partial_matches) == 1:
+                return partial_matches[0]
+        return -1
+
+    def resolve_current_data(self):
+        """Returns valid itemData matching currentText even if user typed or edited manually."""
+        norm_text = self._normalize_text(self.currentText())
+        if not norm_text:
+            self.setCurrentIndex(-1)
+            return None
+        cur_idx = self.currentIndex()
+        if cur_idx >= 0 and self._normalize_text(self.itemText(cur_idx)) == norm_text:
+            return self.itemData(cur_idx)
+        idx = self.find_normalized_index(self.currentText(), allow_partial=True)
+        if idx >= 0:
+            self.setCurrentIndex(idx)
+            return self.itemData(idx)
+        self.setCurrentIndex(-1)
+        return None
 
     def _ensure_centered(self, *args):
         le = self.lineEdit()
@@ -55,13 +107,9 @@ class SearchableComboBox(QComboBox):
         if not text:
             self.setCurrentIndex(-1)
             return
-        idx = self.findText(text, Qt.MatchFlag.MatchExactly)
+        idx = self.find_normalized_index(text, allow_partial=True)
         if idx >= 0:
             self.setCurrentIndex(idx)
         else:
-            idx_c = self.findText(text, Qt.MatchFlag.MatchContains)
-            if idx_c >= 0:
-                self.setCurrentIndex(idx_c)
-            else:
-                self.setCurrentIndex(-1)
-                self.setEditText(text)
+            self.setCurrentIndex(-1)
+            self.setEditText(text)

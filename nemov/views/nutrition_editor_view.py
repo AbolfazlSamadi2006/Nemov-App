@@ -1,7 +1,7 @@
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QComboBox, QPushButton, QTabWidget, QTableWidget, QHeaderView, QMessageBox, QGroupBox, QDialog, QFrame, QMenu
 )
-from PyQt6.QtCore import Qt, pyqtSignal, QPoint
+from PyQt6.QtCore import Qt, pyqtSignal, QPoint, QTimer
 from PyQt6.QtGui import QKeySequence, QShortcut
 from nemov.services.nutrition_service import NutritionService
 from nemov.services.member_service import MemberService
@@ -44,6 +44,15 @@ class NutritionEditorView(QWidget):
         super().showEvent(event)
         self.load_members_dropdown()
         self.load_template_dropdown()
+        QTimer.singleShot(0, self._position_table_actions_bar)
+        QTimer.singleShot(0, self._position_form_collapse_btn)
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        if hasattr(self, "_position_table_actions_bar"):
+            self._position_table_actions_bar()
+        if hasattr(self, "_position_form_collapse_btn"):
+            self._position_form_collapse_btn()
 
     def init_ui(self):
         layout = QVBoxLayout(self)
@@ -86,18 +95,21 @@ class NutritionEditorView(QWidget):
         layout.addLayout(header)
 
         # Program Details Form Box (Compact & Collapsible)
-        form_box = QGroupBox("مشخصات کلی برنامه غذایی")
-        form_box.setObjectName("assign_plan_box")
+        self.form_box = QGroupBox("مشخصات کلی برنامه غذایی")
+        self.form_box.setObjectName("assign_plan_box")
+        form_box = self.form_box
         layout_form = QVBoxLayout(form_box)
         layout_form.setSpacing(6)
-        layout_form.setContentsMargins(10, 8, 10, 8)
+        layout_form.setContentsMargins(10, 4, 10, 8)
 
-        # Header bar with toggle button & live summary
-        header_form = QHBoxLayout()
-        header_form.setContentsMargins(2, 0, 2, 0)
-        self.lbl_form_sub = QLabel("مشخصات رژیم، اهداف انرژی روزانه و درشت‌مغذی‌ها")
+        # Collapsed summary label (only shown when form details are collapsed)
+        self.lbl_form_sub = QLabel("")
         self.lbl_form_sub.setStyleSheet("font-size: 11px; font-weight: normal; color: #9CA3AF;")
-        self.btn_toggle_form = QPushButton("🔼 جمع کردن مشخصات")
+        self.lbl_form_sub.setVisible(False)
+        layout_form.addWidget(self.lbl_form_sub)
+
+        # Toggle button anchored directly on the top border line (left side, opposite the title)
+        self.btn_toggle_form = QPushButton("🔼 جمع کردن مشخصات", form_box)
         self.btn_toggle_form.setFixedHeight(24)
         self.btn_toggle_form.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_toggle_form.setStyleSheet("""
@@ -106,20 +118,18 @@ class NutritionEditorView(QWidget):
                 color: #93C5FD;
                 font-size: 11px;
                 font-weight: bold;
-                border-radius: 4px;
+                border-radius: 6px;
                 padding: 0 10px;
                 border: 1px solid #374151;
             }
             QPushButton:hover {
                 background-color: #2563EB;
                 color: #FFFFFF;
+                border-color: #3B82F6;
             }
         """)
         self.btn_toggle_form.clicked.connect(self.toggle_form_collapse)
-        header_form.addWidget(self.lbl_form_sub)
-        header_form.addStretch()
-        header_form.addWidget(self.btn_toggle_form)
-        layout_form.addLayout(header_form)
+        QTimer.singleShot(0, self._position_form_collapse_btn)
 
         # Form Details Widget (Expanded mode)
         self.form_details_widget = QWidget()
@@ -167,8 +177,8 @@ class NutritionEditorView(QWidget):
         lbl_goal = QLabel("هدف:")
         self.combo_goal = QComboBox()
         self.combo_goal.setFixedHeight(30)
-        self.combo_goal.setMinimumWidth(110)
-        self.combo_goal.view().setMinimumWidth(185)
+        self.combo_goal.setFixedWidth(156)
+        self.combo_goal.view().setMinimumWidth(190)
         self.combo_goal.setStyleSheet("""
             QComboBox {
                 padding-right: 8px;
@@ -189,7 +199,8 @@ class NutritionEditorView(QWidget):
         lbl_days = QLabel("روزها:")
         self.combo_days = QComboBox()
         self.combo_days.setFixedHeight(30)
-        self.combo_days.setMinimumWidth(110)
+        self.combo_days.setMinimumWidth(135)
+        self.combo_days.setMaximumWidth(160)
         self.combo_days.view().setMinimumWidth(170)
         self.combo_days.addItem("📅 شنبه تا جمعه", "7_days")
         self.combo_days.addItem("📅 تمرینی و استراحت", "training_rest")
@@ -204,10 +215,10 @@ class NutritionEditorView(QWidget):
         lbl_tdee = QLabel("TDEE:")
         self.txt_member_tdee = QLineEdit("0")
         self.txt_member_tdee.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.txt_member_tdee.setFixedWidth(50)
+        self.txt_member_tdee.setFixedWidth(138)
         self.txt_member_tdee.setFixedHeight(30)
         self.txt_member_tdee.setStyleSheet(
-            "font-weight: bold; color: #FBBF24; background-color: #1F2937; border: 1px solid #374151; border-radius: 4px; padding: 1px 2px;"
+            "font-weight: bold; color: #FBBF24; background-color: #1F2937; border: 1px solid #374151; border-radius: 4px; padding: 2px 6px;"
         )
         self.txt_member_tdee.textEdited.connect(self._on_manual_tdee_edited)
 
@@ -296,9 +307,9 @@ class NutritionEditorView(QWidget):
         )
 
         row_cal.addWidget(lbl_goal)
-        row_cal.addWidget(self.combo_goal, 2)
+        row_cal.addWidget(self.combo_goal)
         row_cal.addWidget(lbl_days)
-        row_cal.addWidget(self.combo_days, 1)
+        row_cal.addWidget(self.combo_days)
         row_cal.addWidget(lbl_tdee)
         row_cal.addWidget(self.txt_member_tdee)
         row_cal.addWidget(self.btn_tdee_p300)
@@ -321,12 +332,21 @@ class NutritionEditorView(QWidget):
         layout_form.addWidget(self.form_details_curtain)
         layout.addWidget(form_box)
 
+        # Tabs container wrapping self.tabs and independent fixed top-left action buttons
+        self.tabs_wrapper = QWidget()
+        tabs_wrapper_layout = QVBoxLayout(self.tabs_wrapper)
+        tabs_wrapper_layout.setContentsMargins(0, 0, 0, 0)
+        tabs_wrapper_layout.setSpacing(0)
+
         # Tabs for Meals
         self.tabs = QTabWidget()
         self.tabs.setMovable(True)
         self.tabs.tabBar().tabMoved.connect(self._on_tab_moved)
-        self.tabs.currentChanged.connect(lambda _: self.update_dynamic_calories())
-        layout.addWidget(self.tabs)
+        self.tabs.currentChanged.connect(self._on_tabs_current_changed)
+        tabs_wrapper_layout.addWidget(self.tabs)
+
+        self.table_actions_bar = self._create_table_action_toolbar(self.tabs_wrapper)
+        layout.addWidget(self.tabs_wrapper)
         self.setup_meal_tabs()
 
         # Assignment Box & Actions
@@ -365,7 +385,7 @@ class NutritionEditorView(QWidget):
             if combo.currentIndex() != -1:
                 self._sync_member_combos(None)
             return
-        idx = combo.findText(clean, Qt.MatchFlag.MatchExactly)
+        idx = combo.find_normalized_index(clean, allow_partial=False) if hasattr(combo, "find_normalized_index") else combo.findText(clean, Qt.MatchFlag.MatchExactly)
         if idx >= 0:
             m_id = combo.itemData(idx)
             if m_id != getattr(self, "_last_synced_member_id", None):
@@ -1057,6 +1077,8 @@ class NutritionEditorView(QWidget):
         if hasattr(self, 'lbl_cal_warn'):
             cal_err = validate_daily_calories(total_cal_int)
             self.lbl_cal_warn.show_warning(cal_err)
+        if hasattr(self, 'form_details_curtain') and hasattr(self.form_details_curtain, 'sync_expanded_height'):
+            self.form_details_curtain.sync_expanded_height()
 
         tdee = getattr(self, "_current_member_tdee", 0) or 0
         if tdee > 0:
@@ -1561,6 +1583,8 @@ class NutritionEditorView(QWidget):
             tgt_p = self._get_target_macro("protein")
             p_err = validate_protein(factor=f_val, total_grams=tgt_p)
             self.lbl_protein_warn.show_warning(p_err)
+            if hasattr(self, 'form_details_curtain') and hasattr(self.form_details_curtain, 'sync_expanded_height'):
+                self.form_details_curtain.sync_expanded_height()
 
         self.update_dynamic_calories()
         self._snapshot_change()
@@ -1928,10 +1952,14 @@ class NutritionEditorView(QWidget):
         txt_notes.setAlignment(Qt.AlignmentFlag.AlignCenter)
         txt_notes.setPlaceholderText("توضیحات اختصاصی...")
 
-        btn_del = QPushButton("🗑️")
+        btn_del = QPushButton("🗑️ حذف")
         btn_del.setObjectName("danger_button")
         btn_del.setToolTip("حذف ماده غذایی")
         btn_del.setCursor(Qt.CursorShape.PointingHandCursor)
+        btn_del.setFixedHeight(38)
+        btn_del.setStyleSheet(
+            "QPushButton#danger_button { padding: 4px 10px; min-height: 24px; font-size: 12px; border-radius: 6px; }"
+        )
         btn_del.clicked.connect(lambda _, t=table, b=btn_del: self.remove_food_row(t, b))
 
         # Connect listeners to snapshot undo & dynamic calorie calculation
@@ -1974,8 +2002,8 @@ class NutritionEditorView(QWidget):
 
         table = QTableWidget(0, 5)
         table.setHorizontalHeaderLabels(["نام ماده غذایی", "مقدار (ضریب واحد)", "کیلوکالری دریافتی", "توضیحات مربی", "حذف"])
-        table.verticalHeader().setDefaultSectionSize(48)
-        table.verticalHeader().setMinimumSectionSize(40)
+        table.verticalHeader().setDefaultSectionSize(50)
+        table.verticalHeader().setMinimumSectionSize(44)
 
         header = table.horizontalHeader()
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
@@ -1985,41 +2013,89 @@ class NutritionEditorView(QWidget):
         table.setColumnWidth(2, 115)
         header.setSectionResizeMode(3, QHeaderView.ResizeMode.Stretch)
         header.setSectionResizeMode(4, QHeaderView.ResizeMode.Fixed)
-        table.setColumnWidth(4, 60)
+        table.setColumnWidth(4, 100)
 
         layout_meal.addWidget(table)
         self.meal_tables.append((meal_key, table))
         return widget
 
-    def _create_meal_tab_corner_widget(self) -> QWidget:
-        corner = QWidget()
-        corner_layout = QHBoxLayout(corner)
-        corner_layout.setContentsMargins(6, 2, 8, 2)
-        corner_layout.setSpacing(6)
+    def _on_tabs_current_changed(self, _index: int = 0):
+        self.update_dynamic_calories()
+        self._position_table_actions_bar()
 
-        btn_undo = QPushButton("↩️ Undo")
-        btn_undo.setObjectName("undo_button")
-        btn_undo.setToolTip("بازگشت به مرحله قبل (Ctrl+Z)")
-        btn_undo.clicked.connect(self.undo)
+    def _create_table_action_toolbar(self, parent_widget: QWidget = None) -> QFrame:
+        bar = QFrame(parent_widget)
+        bar.setObjectName("nutrition_table_actions_bar")
+        bar.setStyleSheet("""
+            QFrame#nutrition_table_actions_bar {
+                background: transparent;
+                border: none;
+            }
+            QFrame#nutrition_table_actions_bar QPushButton {
+                padding: 3px 12px;
+            }
+        """)
+        bar_layout = QHBoxLayout(bar)
+        bar_layout.setContentsMargins(4, 0, 4, 0)
+        bar_layout.setSpacing(6)
 
-        btn_redo = QPushButton("↪️ Redo")
-        btn_redo.setObjectName("redo_button")
-        btn_redo.setToolTip("انجام مجدد مرحله بعد (Ctrl+Y)")
-        btn_redo.clicked.connect(self.redo)
+        self.btn_undo = QPushButton("↩️ Undo")
+        self.btn_undo.setObjectName("undo_button")
+        self.btn_undo.setFixedHeight(32)
+        self.btn_undo.setToolTip("بازگشت به مرحله قبل (Ctrl+Z)")
+        self.btn_undo.clicked.connect(self.undo)
 
-        self._undo_buttons.append(btn_undo)
-        self._redo_buttons.append(btn_redo)
+        self.btn_redo = QPushButton("↪️ Redo")
+        self.btn_redo.setObjectName("redo_button")
+        self.btn_redo.setFixedHeight(32)
+        self.btn_redo.setToolTip("انجام مجدد مرحله بعد (Ctrl+Y)")
+        self.btn_redo.clicked.connect(self.redo)
 
-        btn_add_item = QPushButton("➕ افزودن ماده غذایی")
-        btn_add_item.setObjectName("secondary_button")
-        btn_add_item.setCursor(Qt.CursorShape.PointingHandCursor)
-        btn_add_item.clicked.connect(self.on_add_food_clicked)
+        self.btn_add_food = QPushButton("➕ افزودن ماده غذایی")
+        self.btn_add_food.setObjectName("secondary_button")
+        self.btn_add_food.setFixedHeight(32)
+        self.btn_add_food.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_add_food.clicked.connect(self.on_add_food_clicked)
 
-        corner_layout.addWidget(btn_undo)
-        corner_layout.addWidget(btn_redo)
-        corner_layout.addWidget(btn_add_item)
+        self._undo_buttons = [self.btn_undo]
+        self._redo_buttons = [self.btn_redo]
 
-        return corner
+        # In RTL layout: right-to-left renders Undo -> Redo -> Add Food at far left
+        bar_layout.addWidget(self.btn_undo)
+        bar_layout.addWidget(self.btn_redo)
+        bar_layout.addWidget(self.btn_add_food)
+
+        return bar
+
+    def _position_table_actions_bar(self):
+        if not hasattr(self, "table_actions_bar") or not hasattr(self, "tabs_wrapper"):
+            return
+        wrapper = self.tabs_wrapper
+        bar = self.table_actions_bar
+        hint = bar.sizeHint()
+        bar_w = max(hint.width(), 290)
+        bar_h = max(hint.height(), 34)
+
+        x = 6
+        y = 2
+        cur_w = self.tabs.currentWidget() if hasattr(self, "tabs") else None
+        if isinstance(cur_w, QTabWidget):
+            meal_bar = cur_w.tabBar()
+            if meal_bar and meal_bar.height() > 0:
+                pt = meal_bar.mapTo(wrapper, QPoint(0, 0))
+                y = max(0, pt.y() + (meal_bar.height() - bar_h) // 2)
+            else:
+                outer_h = self.tabs.tabBar().height() if self.tabs.tabBar() else 34
+                y = max(34, outer_h + 4)
+        elif hasattr(self, "tabs") and self.tabs.tabBar():
+            outer_bar = self.tabs.tabBar()
+            if outer_bar.height() > 0:
+                pt = outer_bar.mapTo(wrapper, QPoint(0, 0))
+                y = max(0, pt.y() + (outer_bar.height() - bar_h) // 2)
+
+        bar.setGeometry(x, y, bar_w, bar_h)
+        bar.show()
+        bar.raise_()
 
     def get_current_active_meal_table(self) -> QTableWidget:
         current_w = self.tabs.currentWidget()
@@ -2045,10 +2121,9 @@ class NutritionEditorView(QWidget):
 
     def setup_meal_tabs_with_data(self, days_mode: str, days_data: list = None):
         self.tabs.blockSignals(True)
+        self.tabs.setCornerWidget(None, Qt.Corner.TopRightCorner)
         self.tabs.clear()
         self.meal_tables.clear()
-        self._undo_buttons.clear()
-        self._redo_buttons.clear()
         foods_list = NutritionService.get_all_foods()
         for f in foods_list:
             self._foods_cache_by_id[f.id] = f
@@ -2110,7 +2185,6 @@ class NutritionEditorView(QWidget):
                     table.insertRow(r)
                     self._create_food_row_widgets(table, r, foods_list, itm)
                 self.tabs.addTab(widget, meal_title)
-            self.tabs.setCornerWidget(self._create_meal_tab_corner_widget(), Qt.Corner.TopRightCorner)
         else:
             for d_idx, (day_key, day_title) in enumerate(days):
                 day_info = days_data[d_idx] if d_idx < len(days_data) else None
@@ -2131,12 +2205,13 @@ class NutritionEditorView(QWidget):
                         table.insertRow(r)
                         self._create_food_row_widgets(table, r, foods_list, itm)
                     day_tab_widget.addTab(widget, meal_title)
-                day_tab_widget.setCornerWidget(self._create_meal_tab_corner_widget(), Qt.Corner.TopRightCorner)
                 self.tabs.addTab(day_tab_widget, f"📅 {day_title}")
 
         self.tabs.blockSignals(False)
         self._update_undo_redo_ui()
         self.update_dynamic_calories()
+        self._position_table_actions_bar()
+        QTimer.singleShot(0, self._position_table_actions_bar)
 
     def refresh_editor(self):
         self.load_members_dropdown()
@@ -2462,7 +2537,11 @@ class NutritionEditorView(QWidget):
             self._load_plan_data_to_form(plan)
 
     def assign_plan(self):
-        member_id = self.combo_member.currentData()
+        member_id = self.combo_member.resolve_current_data()
+        if not member_id and hasattr(self, "combo_member_top"):
+            member_id = self.combo_member_top.resolve_current_data()
+            if member_id:
+                self._sync_member_combos(member_id, recalculate_macros=False)
         if not member_id:
             QMessageBox.warning(self, "خطا", "لطفاً یک ورزشکار را جهت تخصیص انتخاب کنید.")
             return
@@ -2522,6 +2601,21 @@ class NutritionEditorView(QWidget):
                 title="خطا در تخصیص برنامه غذایی"
             )
 
+    def _position_form_collapse_btn(self):
+        if not hasattr(self, "form_box") or not hasattr(self, "btn_toggle_form"):
+            return
+        btn = self.btn_toggle_form
+        btn.adjustSize()
+        btn.setFixedHeight(24)
+        btn_w = max(btn.sizeHint().width(), 130)
+        btn.setFixedWidth(btn_w)
+        # QGroupBox#assign_plan_box has margin-top: 12px; y=0 centers a 24px button directly on the top border line.
+        is_rtl = self.form_box.layoutDirection() == Qt.LayoutDirection.RightToLeft or self.isRightToLeft()
+        x = 18 if is_rtl else max(18, self.form_box.width() - btn_w - 18)
+        btn.move(x, 0)
+        btn.raise_()
+        btn.show()
+
     def toggle_form_collapse(self):
         if not hasattr(self, "form_details_curtain"):
             return
@@ -2529,12 +2623,14 @@ class NutritionEditorView(QWidget):
             self.form_details_curtain.expand()
             self.btn_toggle_form.setText("🔼 جمع کردن مشخصات")
             if hasattr(self, "lbl_form_sub"):
-                self.lbl_form_sub.setText("مشخصات رژیم، اهداف انرژی روزانه و درشت‌مغذی‌ها")
-                self.lbl_form_sub.setStyleSheet("font-size: 11px; font-weight: normal; color: #9CA3AF;")
+                self.lbl_form_sub.setText("")
+                self.lbl_form_sub.setVisible(False)
         else:
             self._update_form_summary(force=True)
             self.form_details_curtain.collapse()
             self.btn_toggle_form.setText("🔽 باز کردن و ویرایش فرم")
+        self._position_form_collapse_btn()
+        QTimer.singleShot(0, self._position_form_collapse_btn)
 
     def _update_form_summary(self, force: bool = False):
         if not hasattr(self, "lbl_form_sub"):
@@ -2568,6 +2664,7 @@ class NutritionEditorView(QWidget):
         )
         self.lbl_form_sub.setText(summary_text)
         self.lbl_form_sub.setStyleSheet("font-size: 11px; font-weight: bold; color: #E2E8F0;")
+        self.lbl_form_sub.setVisible(True)
 
     def open_food_bank(self):
         from nemov.views.food_library_dialog import FoodLibraryDialog

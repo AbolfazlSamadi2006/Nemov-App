@@ -8,7 +8,7 @@ using a zero-jitter QScrollArea viewport with sinusoidal easing curve and opacit
 from PyQt6.QtWidgets import (
     QWidget, QFrame, QScrollArea, QGraphicsOpacityEffect, QSizePolicy
 )
-from PyQt6.QtCore import Qt, QPropertyAnimation, QEasingCurve, pyqtProperty, pyqtSignal
+from PyQt6.QtCore import Qt, QPropertyAnimation, QEasingCurve, QSize, pyqtProperty, pyqtSignal
 
 
 class AnimatedAccordionCurtain(QScrollArea):
@@ -69,6 +69,7 @@ class AnimatedAccordionCurtain(QScrollArea):
             return self._cached_height
         layout = self.content_widget.layout()
         if layout:
+            layout.activate()
             h = layout.sizeHint().height()
             if h > 0:
                 self._cached_height = h
@@ -77,7 +78,32 @@ class AnimatedAccordionCurtain(QScrollArea):
         if h > 0:
             self._cached_height = h
             return h
-        return max(self._cached_height, 160)
+        self._cached_height = 160
+        return 160
+
+    def sizeHint(self) -> QSize:
+        base = super().sizeHint()
+        if self._is_collapsed and self.anim.state() != QPropertyAnimation.State.Running:
+            return QSize(base.width(), 0)
+        if not self._is_collapsed and self.anim.state() != QPropertyAnimation.State.Running:
+            return QSize(base.width(), self._get_full_height())
+        return base
+
+    def minimumSizeHint(self) -> QSize:
+        if self._is_collapsed:
+            return QSize(0, 0)
+        if self.anim.state() != QPropertyAnimation.State.Running:
+            return QSize(super().minimumSizeHint().width(), self._get_full_height())
+        return QSize(0, 0)
+
+    def sync_expanded_height(self):
+        if not self._is_collapsed and self.anim.state() != QPropertyAnimation.State.Running:
+            self.setMinimumHeight(0)
+            self.setMaximumHeight(16777215)
+            self.verticalScrollBar().setValue(0)
+            self.updateGeometry()
+            if self.parentWidget():
+                self.parentWidget().updateGeometry()
 
     def is_collapsed(self) -> bool:
         return self._is_collapsed
@@ -121,5 +147,7 @@ class AnimatedAccordionCurtain(QScrollArea):
         else:
             self.setMaximumHeight(16777215)
             self.setMinimumHeight(0)
+            self.verticalScrollBar().setValue(0)
             self.opacity_effect.setOpacity(1.0)
+            self.updateGeometry()
         self.anim_finished.emit(self._is_collapsed)

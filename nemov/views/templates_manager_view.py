@@ -66,13 +66,13 @@ class AssignTemplateDialog(QDialog):
 
     def load_members(self):
         self.combo_member.clear()
-        members = MemberService.get_all_members(status_filter="active")
+        members = [m for m in MemberService.get_all_members() if m.status != "archived"]
         for m in members:
             self.combo_member.addItem(m.full_name, m.id)
         self.combo_member.set_empty()
 
     def assign(self):
-        member_id = self.combo_member.currentData()
+        member_id = self.combo_member.resolve_current_data()
         if not member_id:
             QMessageBox.warning(self, "خطا", "لطفاً یک ورزشکار را انتخاب کنید.")
             return
@@ -226,8 +226,9 @@ class TemplatesManagerView(QWidget):
         header.setMinimumSectionSize(40)
         header.setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
-        self.table_workouts.setColumnWidth(0, 46)   # انتخاب
-        self.table_workouts.setColumnWidth(1, 46)   # ردیف
+        self.table_workouts.setColumnWidth(0, 60)   # انتخاب
+        header.setSectionResizeMode(1, QHeaderView.ResizeMode.Fixed)
+        self.table_workouts.setColumnWidth(1, 54)   # ردیف
         header.setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch) # عنوان
         self.table_workouts.setColumnWidth(3, 150)  # هدف
         self.table_workouts.setColumnWidth(4, 86)   # روزها
@@ -311,8 +312,9 @@ class TemplatesManagerView(QWidget):
         header.setMinimumSectionSize(40)
         header.setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
-        self.table_nutrition.setColumnWidth(0, 46)   # انتخاب
-        self.table_nutrition.setColumnWidth(1, 46)   # ردیف
+        self.table_nutrition.setColumnWidth(0, 60)   # انتخاب
+        header.setSectionResizeMode(1, QHeaderView.ResizeMode.Fixed)
+        self.table_nutrition.setColumnWidth(1, 54)   # ردیف
         header.setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch) # عنوان
         self.table_nutrition.setColumnWidth(3, 150)  # هدف
         self.table_nutrition.setColumnWidth(4, 86)   # کالری

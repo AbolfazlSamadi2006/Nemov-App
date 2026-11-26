@@ -738,12 +738,14 @@ class SmsView(QWidget):
         self.table_members = QTableWidget()
         self.table_members.setColumnCount(4)
         self.table_members.setHorizontalHeaderLabels(["انتخاب", "نام و نام خانوادگی", "شماره تماس", "وضعیت عضویت"])
-        self.table_members.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
+        self.table_members.horizontalHeader().setMinimumSectionSize(40)
+        self.table_members.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
+        self.table_members.setColumnWidth(0, 60)
         self.table_members.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
         self.table_members.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
         self.table_members.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents)
         self.table_members.verticalHeader().setVisible(False)
-        self.table_members.verticalHeader().setDefaultSectionSize(32)
+        self.table_members.verticalHeader().setDefaultSectionSize(52)
         self.table_members.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.table_members.setMinimumHeight(250)
         self.table_members.setMaximumHeight(300)
@@ -1238,12 +1240,14 @@ class SmsView(QWidget):
             if self.rb_active.isChecked() and not is_active:
                 should_check = False
 
+            chk.setCursor(Qt.CursorShape.PointingHandCursor)
             chk.setChecked(should_check)
             chk.stateChanged.connect(lambda _, mid=m.id: self.on_member_check_changed(mid))
 
             chk_w = QWidget()
+            chk_w.setStyleSheet("background: transparent;")
             ch_lay = QHBoxLayout(chk_w)
-            ch_lay.setContentsMargins(4, 0, 4, 0)
+            ch_lay.setContentsMargins(0, 0, 0, 0)
             ch_lay.setAlignment(Qt.AlignmentFlag.AlignCenter)
             ch_lay.addWidget(chk)
 

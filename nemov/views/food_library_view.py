@@ -95,21 +95,27 @@ class FoodLibraryView(QWidget):
 
         # Foods Table
         self.table = QTableWidget()
-        self.table.setColumnCount(9)
-        self.table.setHorizontalHeaderLabels(["انتخاب", "نام ماده غذایی", "دسته‌بندی", "واحد اندازه‌گیری", "کالری (kcal)", "پروتئین (g)", "کربوهیدرات (g)", "چربی (g)", "عملیات"])
+        self.table.setColumnCount(10)
+        self.table.setHorizontalHeaderLabels([
+            "انتخاب", "ردیف", "نام ماده غذایی", "دسته‌بندی",
+            "واحد اندازه‌گیری", "کالری (kcal)", "پروتئین (g)", "کربوهیدرات (g)", "چربی (g)", "عملیات"
+        ])
+        self.table.verticalHeader().setVisible(False)
         self.table.verticalHeader().setDefaultSectionSize(52)
-        
+
         header = self.table.horizontalHeader()
+        header.setMinimumSectionSize(40)
         header.setSectionResizeMode(QHeaderView.ResizeMode.Fixed)
-        header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
-        self.table.setColumnWidth(0, 52)   # انتخاب
-        self.table.setColumnWidth(2, 120)  # دسته‌بندی
-        self.table.setColumnWidth(3, 210)  # واحد اندازه‌گیری
-        self.table.setColumnWidth(4, 95)   # کالری (kcal)
-        self.table.setColumnWidth(5, 85)   # پروتئین (g)
-        self.table.setColumnWidth(6, 105)  # کربوهیدرات (g)
-        self.table.setColumnWidth(7, 85)   # چربی (g)
-        self.table.setColumnWidth(8, 145)  # عملیات
+        header.setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
+        self.table.setColumnWidth(0, 60)   # انتخاب
+        self.table.setColumnWidth(1, 54)   # ردیف
+        self.table.setColumnWidth(3, 120)  # دسته‌بندی
+        self.table.setColumnWidth(4, 210)  # واحد اندازه‌گیری
+        self.table.setColumnWidth(5, 95)   # کالری (kcal)
+        self.table.setColumnWidth(6, 85)   # پروتئین (g)
+        self.table.setColumnWidth(7, 105)  # کربوهیدرات (g)
+        self.table.setColumnWidth(8, 85)   # چربی (g)
+        self.table.setColumnWidth(9, 145)  # عملیات
 
         self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
@@ -148,19 +154,26 @@ class FoodLibraryView(QWidget):
             chk_l.setContentsMargins(0, 0, 0, 0)
             chk_l.setAlignment(Qt.AlignmentFlag.AlignCenter)
             chk = QCheckBox()
+            chk.setCursor(Qt.CursorShape.PointingHandCursor)
             chk.setProperty("item_id", f.id)
             chk.setProperty("item_name", f.name_fa)
             chk.toggled.connect(self.on_row_checkbox_toggled)
             chk_l.addWidget(chk)
             self.table.setCellWidget(row, 0, chk_w)
 
-            self.table.setItem(row, 1, QTableWidgetItem(f.name_fa))
-            self.table.setItem(row, 2, QTableWidgetItem(cat_map.get(f.category, f.category)))
-            self.table.setItem(row, 3, QTableWidgetItem(f.unit or "-"))
-            self.table.setItem(row, 4, QTableWidgetItem(f"{int(f.calories or 0)} kcal"))
-            self.table.setItem(row, 5, QTableWidgetItem(f"{int(f.protein_g or 0)}g"))
-            self.table.setItem(row, 6, QTableWidgetItem(f"{int(f.carbs_g or 0)}g"))
-            self.table.setItem(row, 7, QTableWidgetItem(f"{int(f.fat_g or 0)}g"))
+            # Row number in column 1 (Persian numerals, centered - matches Backup view)
+            fa_idx = str(row + 1).translate(str.maketrans("0123456789", "۰۱۲۳۴۵۶۷۸۹"))
+            it_idx = QTableWidgetItem(fa_idx)
+            it_idx.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.table.setItem(row, 1, it_idx)
+
+            self.table.setItem(row, 2, QTableWidgetItem(f.name_fa))
+            self.table.setItem(row, 3, QTableWidgetItem(cat_map.get(f.category, f.category)))
+            self.table.setItem(row, 4, QTableWidgetItem(f.unit or "-"))
+            self.table.setItem(row, 5, QTableWidgetItem(f"{int(f.calories or 0)} kcal"))
+            self.table.setItem(row, 6, QTableWidgetItem(f"{int(f.protein_g or 0)}g"))
+            self.table.setItem(row, 7, QTableWidgetItem(f"{int(f.carbs_g or 0)}g"))
+            self.table.setItem(row, 8, QTableWidgetItem(f"{int(f.fat_g or 0)}g"))
 
             # Operations Widget (Edit, Delete)
             btn_container = QWidget()
@@ -212,7 +225,7 @@ class FoodLibraryView(QWidget):
             btn_layout.addWidget(btn_edit)
             btn_layout.addWidget(btn_delete)
 
-            self.table.setCellWidget(row, 8, btn_container)
+            self.table.setCellWidget(row, 9, btn_container)
 
     def toggle_select_all(self, checked):
         for r in range(self.table.rowCount()):

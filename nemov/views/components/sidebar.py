@@ -167,15 +167,16 @@ class Sidebar(QFrame):
         
         self.title_lbl = QLabel(config.APP_NAME)
         self.title_lbl.setObjectName("sidebarBrandTitle")
+        self.title_lbl.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignAbsolute | Qt.AlignmentFlag.AlignVCenter)
 
-        # In RTL visual flow: Empty space on far left, Title in front, Logo on the far right
-        header.addStretch()
+        # In RTL visual flow: Title ("نِمو") on the far right, flexible space in middle, Logo stays on the far left
         header.addWidget(self.title_lbl, 0, Qt.AlignmentFlag.AlignVCenter)
+        header.addStretch(1)
         header.addWidget(self.logo_lbl, 0, Qt.AlignmentFlag.AlignVCenter)
         layout.addLayout(header)
 
         self.sub_lbl = QLabel("نرم‌افزار مدیریت ورزشی")
-        self.sub_lbl.setAlignment(Qt.AlignmentFlag.AlignRight)
+        self.sub_lbl.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignAbsolute | Qt.AlignmentFlag.AlignVCenter)
         layout.addWidget(self.sub_lbl)
 
         # Scrollable Navigation Container (prevents bottom overlap on any screen height)
