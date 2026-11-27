@@ -1,6 +1,6 @@
 import os
 from PyQt6.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QFrame, QLineEdit, QMessageBox, QGridLayout
+    QDialog, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QFrame, QLineEdit, QMessageBox, QGridLayout
 )
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QPixmap
@@ -17,17 +17,21 @@ class TrainerDetailsDialog(QDialog):
         super().__init__(parent)
         self.trainer_data = trainer_data or {}
         self.setWindowTitle(f"مشخصات کامل مربی - {self.trainer_data.get('full_name', '')}")
-        self.setFixedWidth(560)
+        from nemov.utils.ui_scaling import compute_responsive_size
+        dlg_w, max_h = compute_responsive_size(560, 720, widget=self, min_w=360, min_h=340)
+        self.setFixedWidth(dlg_w)
+        self.setMaximumHeight(max_h)
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowType.WindowContextHelpButtonHint)
         self.init_ui()
 
     def init_ui(self):
         palette = ThemeManager.get_current_palette()
+        from nemov.utils.ui_scaling import create_transparent_scroll_area
 
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(16, 16, 16, 16)
-        layout.setSpacing(12)
+        outer_layout = QVBoxLayout(self)
+        outer_layout.setContentsMargins(16, 16, 16, 16)
+        outer_layout.setSpacing(10)
 
         card = QFrame()
         card.setObjectName("card")
@@ -245,7 +249,12 @@ class TrainerDetailsDialog(QDialog):
         self.reset_pass_box.setVisible(False)
 
         card_layout.addWidget(pass_card)
-        layout.addWidget(card)
+
+        card_wrap = QWidget()
+        wrap_layout = QVBoxLayout(card_wrap)
+        wrap_layout.setContentsMargins(0, 0, 0, 0)
+        wrap_layout.addWidget(card)
+        outer_layout.addWidget(create_transparent_scroll_area(card_wrap, "trainer_details"), 1)
 
         # ----------------------------------------------------
         # Close Button
@@ -255,7 +264,7 @@ class TrainerDetailsDialog(QDialog):
         btn_close.setCursor(Qt.CursorShape.PointingHandCursor)
         btn_close.setObjectName("secondary_button")
         btn_close.clicked.connect(self.accept)
-        layout.addWidget(btn_close, alignment=Qt.AlignmentFlag.AlignCenter)
+        outer_layout.addWidget(btn_close, alignment=Qt.AlignmentFlag.AlignCenter)
 
     def _create_eye_button(self, field: QLineEdit, palette, height: int = 34) -> QPushButton:
         """Creates a compact eye toggle button without #secondary_button padding clipping."""

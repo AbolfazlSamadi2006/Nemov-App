@@ -23,10 +23,9 @@ class TrainerRegisterDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle("ثبت‌نام مربی جدید - نرم‌افزار مدیریت ورزشی نِمُو (Nemov)")
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
-        from PyQt6.QtWidgets import QApplication
-        screen = QApplication.primaryScreen()
-        avail_h = screen.availableGeometry().height() if screen else 800
-        self.setFixedSize(540, min(680, max(540, avail_h - 36)))
+        from nemov.utils.ui_scaling import compute_responsive_size
+        dlg_w, dlg_h = compute_responsive_size(540, 680, widget=self, min_w=360, min_h=360)
+        self.setFixedSize(dlg_w, dlg_h)
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowType.WindowContextHelpButtonHint)
 
         self.selected_photo_path = None

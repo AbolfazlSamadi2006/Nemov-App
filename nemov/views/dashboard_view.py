@@ -1,9 +1,9 @@
 import os
 from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QTableWidget, QTableWidgetItem, QHeaderView, QFrame
+    QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QLabel, QPushButton, QTableWidget, QTableWidgetItem, QHeaderView, QFrame, QSizePolicy
 )
-from PyQt6.QtCore import pyqtSignal, Qt
-from PyQt6.QtGui import QPixmap
+from PyQt6.QtCore import pyqtSignal, Qt, QTimer
+from PyQt6.QtGui import QPixmap, QFontMetrics
 from nemov.services.member_service import MemberService
 from nemov.utils.jalali_date import days_until_expire, get_today_shamsi
 from nemov.utils.image_utils import get_circular_pixmap, resolve_image_path
@@ -50,96 +50,53 @@ class DashboardView(QWidget):
         layout.addLayout(header_layout)
 
         # Quick Actions Bar
-        from PyQt6.QtWidgets import QSizePolicy
-        actions_frame = QFrame()
-        actions_frame.setObjectName("card")
-        actions_frame.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
-        actions_layout = QHBoxLayout(actions_frame)
-        actions_layout.setContentsMargins(12, 12, 12, 12)
+        self.actions_frame = QFrame()
+        self.actions_frame.setObjectName("card")
+        # Horizontal Ignored lets DashboardView shrink smoothly below 1-row width so _relayout_quick_actions wraps to 2 rows without locking window width
+        self.actions_frame.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed)
+        self.actions_grid = QGridLayout(self.actions_frame)
+        # QFrame#card already applies symmetric 12px CSS padding on all sides, so grid margins stay horizontal-only to preserve exact vertical centering
+        self.actions_grid.setContentsMargins(2, 0, 2, 0)
+        self.actions_grid.setHorizontalSpacing(8)
+        self.actions_grid.setVerticalSpacing(10)
 
         quick_color = palette.text_primary if palette else "#FFFFFF"
         self.lbl_quick = QLabel("دسترسی سریع:")
         self.lbl_quick.setStyleSheet(f"font-weight: bold; color: {quick_color}; background: transparent;")
 
-        btn_add_member = QPushButton("➕ ثبت عضو جدید")
-        btn_add_member.setObjectName("primary_button")
-        btn_add_member.setFixedHeight(36)
-        btn_add_member.clicked.connect(lambda: self.navigate_to.emit("add_member"))
+        self.btn_add_member = QPushButton("➕ ثبت عضو جدید")
+        self.btn_add_member.setObjectName("primary_button")
+        self.btn_add_member.setFixedHeight(36)
+        self.btn_add_member.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_add_member.clicked.connect(lambda: self.navigate_to.emit("add_member"))
 
-        btn_quick_tuition = QPushButton("💰 ثبت شهریه")
-        btn_quick_tuition.setFixedHeight(36)
-        btn_quick_tuition.setCursor(Qt.CursorShape.PointingHandCursor)
-        btn_quick_tuition.setStyleSheet("""
-            QPushButton {
-                background-color: #10B981;
-                color: #FFFFFF;
-                font-weight: bold;
-                border: none;
-                border-radius: 6px;
-                padding: 0 14px;
-                font-size: 13px;
-            }
-            QPushButton:hover {
-                background-color: #059669;
-            }
-            QPushButton:pressed {
-                background-color: #047857;
-            }
-        """)
-        btn_quick_tuition.clicked.connect(lambda: self.navigate_to.emit("pay_tuition"))
+        self.btn_quick_tuition = QPushButton("💰 ثبت شهریه")
+        self.btn_quick_tuition.setFixedHeight(36)
+        self.btn_quick_tuition.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_quick_tuition.clicked.connect(lambda: self.navigate_to.emit("pay_tuition"))
 
-        btn_new_workout = QPushButton("🏋️ ساخت برنامه تمرینی")
-        btn_new_workout.setFixedHeight(36)
-        btn_new_workout.setCursor(Qt.CursorShape.PointingHandCursor)
-        btn_new_workout.setStyleSheet("""
-            QPushButton {
-                background-color: #2563EB;
-                color: #FFFFFF;
-                font-weight: bold;
-                border: none;
-                border-radius: 6px;
-                padding: 0 14px;
-                font-size: 13px;
-            }
-            QPushButton:hover {
-                background-color: #1D4ED8;
-            }
-            QPushButton:pressed {
-                background-color: #1E40AF;
-            }
-        """)
-        btn_new_workout.clicked.connect(lambda: self.navigate_to.emit("new_workout"))
+        self.btn_new_workout = QPushButton("🏋️ ساخت برنامه تمرینی")
+        self.btn_new_workout.setFixedHeight(36)
+        self.btn_new_workout.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_new_workout.clicked.connect(lambda: self.navigate_to.emit("new_workout"))
 
-        btn_new_nutrition = QPushButton("🥗 ساخت برنامه غذایی")
-        btn_new_nutrition.setFixedHeight(36)
-        btn_new_nutrition.setCursor(Qt.CursorShape.PointingHandCursor)
-        btn_new_nutrition.setStyleSheet("""
-            QPushButton {
-                background-color: #8B5CF6;
-                color: #FFFFFF;
-                font-weight: bold;
-                border: none;
-                border-radius: 6px;
-                padding: 0 14px;
-                font-size: 13px;
-            }
-            QPushButton:hover {
-                background-color: #7C3AED;
-            }
-            QPushButton:pressed {
-                background-color: #6D28D9;
-            }
-        """)
-        btn_new_nutrition.clicked.connect(lambda: self.navigate_to.emit("new_nutrition"))
+        self.btn_new_nutrition = QPushButton("🥗 ساخت برنامه غذایی")
+        self.btn_new_nutrition.setFixedHeight(36)
+        self.btn_new_nutrition.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_new_nutrition.clicked.connect(lambda: self.navigate_to.emit("new_nutrition"))
 
-        actions_layout.addWidget(self.lbl_quick)
-        actions_layout.addWidget(btn_add_member)
-        actions_layout.addWidget(btn_quick_tuition)
-        actions_layout.addWidget(btn_new_workout)
-        actions_layout.addWidget(btn_new_nutrition)
-        actions_layout.addStretch()
+        self._quick_buttons = [
+            self.btn_add_member,
+            self.btn_quick_tuition,
+            self.btn_new_workout,
+            self.btn_new_nutrition,
+        ]
+        self._quick_rows_mode = None
+        self._quick_compact_mode = None
+        self._apply_quick_buttons_style(compact=False)
+        self._relayout_quick_actions()
 
-        layout.addWidget(actions_frame)
+        layout.addWidget(self.actions_frame)
 
         # All Members Table
         table_title = QLabel("📋 لیست کلیه ورزشکاران و وضعیت انقضای عضویت")
@@ -150,7 +107,9 @@ class DashboardView(QWidget):
         self.table.setColumnCount(6)
         self.table.setHorizontalHeaderLabels(["ورزشکار", "مربی مربوطه", "شماره تماس", "نوع عضویت", "تاریخ انقضا (شمسی)", "وضعیت"])
         header = self.table.horizontalHeader()
-        header.setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        header.setMinimumSectionSize(80)
+        header.setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
+        self.table.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
 
         self.table.verticalHeader().setVisible(False)
         self.table.verticalHeader().setDefaultSectionSize(52)
@@ -161,6 +120,131 @@ class DashboardView(QWidget):
         
         # Initial Data Refresh
         self.refresh_dashboard()
+        self._adjust_table_columns()
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        self._relayout_quick_actions()
+        self._adjust_table_columns()
+        QTimer.singleShot(0, self._relayout_quick_actions)
+        QTimer.singleShot(0, self._adjust_table_columns)
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        self._relayout_quick_actions()
+        self._adjust_table_columns()
+
+    def _apply_quick_buttons_style(self, compact: bool):
+        h_pad = 9 if compact else 14
+        font_px = 12 if compact else 13
+        btn_specs = [
+            (self.btn_quick_tuition, "#10B981", "#059669", "#047857"),
+            (self.btn_new_workout, "#2563EB", "#1D4ED8", "#1E40AF"),
+            (self.btn_new_nutrition, "#8B5CF6", "#7C3AED", "#6D28D9"),
+        ]
+        self.btn_add_member.setStyleSheet(
+            f"QPushButton#primary_button {{ padding: 0 {h_pad}px; font-size: {font_px}px; font-weight: bold; min-height: 36px; max-height: 36px; }}"
+        )
+        for btn, bg, hover, pressed in btn_specs:
+            btn.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: {bg};
+                    color: #FFFFFF;
+                    font-weight: bold;
+                    border: none;
+                    border-radius: 6px;
+                    padding: 0 {h_pad}px;
+                    font-size: {font_px}px;
+                    min-height: 36px;
+                    max-height: 36px;
+                }}
+                QPushButton:hover {{ background-color: {hover}; }}
+                QPushButton:pressed {{ background-color: {pressed}; }}
+            """)
+
+        # Guarantee minimum width from real rendered font width so text & emoji never clip
+        for btn in self._quick_buttons:
+            f = btn.font()
+            f.setPixelSize(font_px)
+            f.setBold(True)
+            fm = QFontMetrics(f)
+            min_w = fm.horizontalAdvance(btn.text()) + (h_pad * 2) + 10
+            btn.setMinimumWidth(min_w)
+
+    def _relayout_quick_actions(self):
+        if not hasattr(self, "actions_grid"):
+            return
+        avail_w = max(360, self.width() - 68)
+        lbl_w = self.lbl_quick.sizeHint().width()
+
+        # Check whether 1-row fits at normal padding, else compact padding, else 2 neat rows
+        self._apply_quick_buttons_style(compact=False)
+        one_row_normal = lbl_w + sum(b.minimumWidth() for b in self._quick_buttons) + (len(self._quick_buttons) * 8) + 12
+
+        if avail_w >= one_row_normal:
+            compact = False
+            two_rows = False
+        else:
+            self._apply_quick_buttons_style(compact=True)
+            one_row_compact = lbl_w + sum(b.minimumWidth() for b in self._quick_buttons) + (len(self._quick_buttons) * 8) + 12
+            compact = True
+            two_rows = avail_w < one_row_compact
+
+        if getattr(self, "_quick_rows_mode", None) == two_rows and getattr(self, "_quick_compact_mode", None) == compact:
+            return
+        self._quick_rows_mode = two_rows
+        self._quick_compact_mode = compact
+
+        while self.actions_grid.count():
+            self.actions_grid.takeAt(0)
+
+        for c in range(10):
+            self.actions_grid.setColumnStretch(c, 0)
+
+        self.actions_grid.setVerticalSpacing(10)
+        if not two_rows:
+            self.actions_grid.addWidget(self.lbl_quick, 0, 0, Qt.AlignmentFlag.AlignVCenter)
+            for idx, btn in enumerate(self._quick_buttons, start=1):
+                self.actions_grid.addWidget(btn, 0, idx, Qt.AlignmentFlag.AlignVCenter)
+            self.actions_grid.setColumnStretch(len(self._quick_buttons) + 1, 1)
+            self.actions_frame.setFixedHeight(62)
+        else:
+            self.actions_grid.addWidget(self.lbl_quick, 0, 0, Qt.AlignmentFlag.AlignVCenter)
+            self.actions_grid.addWidget(self.btn_add_member, 0, 1, Qt.AlignmentFlag.AlignVCenter)
+            self.actions_grid.addWidget(self.btn_quick_tuition, 0, 2, Qt.AlignmentFlag.AlignVCenter)
+            self.actions_grid.addWidget(self.btn_new_workout, 1, 1, Qt.AlignmentFlag.AlignVCenter)
+            self.actions_grid.addWidget(self.btn_new_nutrition, 1, 2, Qt.AlignmentFlag.AlignVCenter)
+            self.actions_grid.setColumnStretch(3, 1)
+            self.actions_frame.setFixedHeight(108)
+        self.actions_frame.updateGeometry()
+
+    def _adjust_table_columns(self):
+        """Proportionally allocates width while clamping Athlete Name (>=210px) so names never clip or blur."""
+        if not hasattr(self, "table"):
+            return
+        header = self.table.horizontalHeader()
+        header.setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
+
+        # Readable minimum floor per column: [ورزشکار, مربی, تلفن, نوع عضویت, تاریخ انقضا, وضعیت]
+        mins = [210, 105, 112, 105, 115, 155]
+        shares = [0.30, 0.14, 0.12, 0.12, 0.12, 0.20]
+        min_total = sum(mins)
+
+        vw = self.table.viewport().width()
+        if vw <= 100:
+            vw = max(620, self.width() - 46)
+
+        if vw >= min_total:
+            extra = vw - min_total
+            widths = [m + int(extra * s) for m, s in zip(mins, shares)]
+            diff = vw - sum(widths)
+            if diff != 0:
+                widths[0] += diff
+        else:
+            widths = list(mins)
+
+        for col, w in enumerate(widths):
+            self.table.setColumnWidth(col, w)
 
     def open_avatar_preview(self, photo_path: str, member_name: str):
         """Opens a circular animated popup zoom of athlete's photo."""

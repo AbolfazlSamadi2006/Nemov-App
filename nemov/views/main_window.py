@@ -13,6 +13,8 @@ from nemov.auth.authentication import CurrentUser
 
 class MainWindow(QMainWindow):
     logout_signal = pyqtSignal()
+    SIDEBAR_COLLAPSE_THRESHOLD = 1050
+    SIDEBAR_EXPAND_THRESHOLD = 1100
 
     def __init__(self):
         super().__init__()
@@ -26,19 +28,13 @@ class MainWindow(QMainWindow):
         apply_windows_taskbar_icon(self)
 
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
-        from PyQt6.QtWidgets import QApplication
-        screen = QApplication.primaryScreen()
-        if screen:
-            avail = screen.availableGeometry()
-            min_w = min(960, max(800, avail.width() - 40))
-            min_h = min(560, max(480, avail.height() - 50))
-            self.setMinimumSize(min_w, min_h)
-            init_w = min(1280, max(min_w, avail.width() - 20))
-            init_h = min(800, max(min_h, avail.height() - 40))
-            self.resize(init_w, init_h)
-        else:
-            self.resize(1280, 800)
-            self.setMinimumSize(960, 560)
+        from nemov.utils.ui_scaling import get_available_screen_size, clamp_minimum_size
+        avail_w, avail_h = get_available_screen_size(self)
+        min_w, min_h = clamp_minimum_size(960, 560, widget=self, floor_w=640, floor_h=380, margin_w=24, margin_h=36)
+        self.setMinimumSize(min_w, min_h)
+        init_w = min(max(1280, avail_w if avail_w <= 1280 else 1280), max(min_w, avail_w - 20))
+        init_h = min(max(800, avail_h if avail_h <= 800 else 800), max(min_h, avail_h - 40))
+        self.resize(init_w, init_h)
 
         self._view_members = None
         self._view_workouts = None
@@ -50,6 +46,8 @@ class MainWindow(QMainWindow):
         self._view_backup = None
         self._view_accounting = None
         self._view_sms = None
+        self._user_sidebar_override = None
+        self._auto_collapsed_by_resize = False
 
         self.init_ui()
 
@@ -57,6 +55,32 @@ class MainWindow(QMainWindow):
         super().showEvent(event)
         from nemov.utils.image_utils import apply_windows_taskbar_icon
         apply_windows_taskbar_icon(self)
+        self._sync_sidebar_to_window_width(animate=False)
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        self._sync_sidebar_to_window_width(animate=True)
+
+    def _on_sidebar_user_toggled(self, collapsed: bool):
+        self._user_sidebar_override = bool(collapsed)
+        self._auto_collapsed_by_resize = False
+
+    def _sync_sidebar_to_window_width(self, animate: bool = True):
+        if not hasattr(self, "sidebar") or not self.sidebar:
+            return
+        w = self.width()
+        if w <= 0:
+            return
+        if w < self.SIDEBAR_COLLAPSE_THRESHOLD:
+            if not self.sidebar.is_collapsed() and self._user_sidebar_override is not False:
+                self._auto_collapsed_by_resize = True
+                self.sidebar.set_collapsed(True, animate=animate, user_initiated=False)
+        elif w >= self.SIDEBAR_EXPAND_THRESHOLD:
+            if self._auto_collapsed_by_resize and self._user_sidebar_override is None and self.sidebar.is_collapsed():
+                self._auto_collapsed_by_resize = False
+                self.sidebar.set_collapsed(False, animate=animate, user_initiated=False)
+            elif not self.sidebar.is_collapsed() and self._user_sidebar_override is False:
+                self._user_sidebar_override = None
 
     def init_ui(self):
         central_widget = QWidget()
@@ -73,6 +97,7 @@ class MainWindow(QMainWindow):
         self.sidebar.member_birthday_clicked.connect(self.open_member_detail)
         self.sidebar.member_expiration_clicked.connect(self.open_member_detail)
         self.sidebar.notifications_marked_read.connect(self._on_sidebar_notifications_marked_read)
+        self.sidebar.collapse_toggled.connect(self._on_sidebar_user_toggled)
         main_layout.addWidget(self.sidebar)
 
         # Stacked Container for Views

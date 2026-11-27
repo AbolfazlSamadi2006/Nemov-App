@@ -82,10 +82,17 @@ class RechargeInfoDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle("⚡ راهنمای خرید و شارژ بسته پیامک")
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
-        self.setFixedSize(580, 570)
+        from nemov.utils.ui_scaling import compute_responsive_size, create_transparent_scroll_area
+        dlg_w, dlg_h = compute_responsive_size(580, 570, widget=self, min_w=360, min_h=340)
+        self.setFixedSize(dlg_w, dlg_h)
 
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(24, 20, 24, 20)
+        outer_layout = QVBoxLayout(self)
+        outer_layout.setContentsMargins(24, 16, 24, 16)
+        outer_layout.setSpacing(10)
+
+        content_widget = QWidget()
+        layout = QVBoxLayout(content_widget)
+        layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(12)
 
         title = QLabel("💳 تعرفه بسته‌ها و اطلاعات واریز کارت‌به‌کارت")
@@ -228,11 +235,14 @@ class RechargeInfoDialog(QDialog):
 
         layout.addStretch()
 
+        scroll_area = create_transparent_scroll_area(content_widget, "recharge_info")
+        outer_layout.addWidget(scroll_area, 1)
+
         btn_close = QPushButton("متوجه شدم")
         btn_close.setObjectName("primary_button")
         btn_close.setCursor(Qt.CursorShape.PointingHandCursor)
         btn_close.clicked.connect(self.accept)
-        layout.addWidget(btn_close, alignment=Qt.AlignmentFlag.AlignCenter)
+        outer_layout.addWidget(btn_close, alignment=Qt.AlignmentFlag.AlignCenter)
 
     def copy_to_clipboard(self, text: str, btn: QPushButton, original_text: str):
         clipboard = QApplication.clipboard()
@@ -277,6 +287,20 @@ class SmsView(QWidget):
         self.load_members()
         self.refresh_balance()
         self.load_auto_settings()
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        if hasattr(self, "phone_mockup"):
+            if self.height() >= 1050 and self.width() >= 1800:
+                pw, ph = 320, 560
+            else:
+                pw, ph = 280, 490
+            if self.phone_mockup.width() != pw or self.phone_mockup.height() != ph:
+                self.phone_mockup.setFixedSize(pw, ph)
+                if hasattr(self, "btn_send_broadcast"):
+                    self.btn_send_broadcast.setFixedWidth(pw)
+                if hasattr(self, "progress_bar"):
+                    self.progress_bar.setFixedWidth(pw)
 
     def init_ui(self):
         main_layout = QVBoxLayout(self)
@@ -761,10 +785,9 @@ class SmsView(QWidget):
         self.table_members.verticalHeader().setDefaultSectionSize(52)
         self.table_members.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.table_members.setMinimumHeight(250)
-        self.table_members.setMaximumHeight(300)
         right_panel.addWidget(self.table_members, 1)
 
-        layout.addLayout(right_panel, 2)
+        layout.addLayout(right_panel, 1)
 
         # =====================================================================
         # Left Column: Smartphone Live Preview Container
@@ -870,7 +893,7 @@ class SmsView(QWidget):
         phone_container.addWidget(self.progress_bar)
 
         phone_container.addStretch()
-        layout.addLayout(phone_container, 1)
+        layout.addLayout(phone_container, 0)
 
         self.tab_broadcast.setWidget(container)
 

@@ -171,7 +171,10 @@ class ThemePaletteCard(QFrame):
         self.is_dark = palette_data.get("is_dark", True)
         self.is_selected = is_selected
 
-        self.setFixedSize(190, 105)
+        from PyQt6.QtWidgets import QSizePolicy
+        self.setMinimumSize(190, 105)
+        self.setMaximumSize(280, 105)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.setObjectName(f"themeCard_{self.theme_id}")
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setAttribute(Qt.WidgetAttribute.WA_Hover, True)

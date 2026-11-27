@@ -24,6 +24,12 @@ class NemovApplication:
 
         self.app = QApplication(sys.argv)
         self.app.setApplicationName(config.APP_NAME)
+        try:
+            from nemov.utils.ui_scaling import HorizontalWheelNormalizer
+            self._hwheel_normalizer = HorizontalWheelNormalizer(self.app)
+            self.app.installEventFilter(self._hwheel_normalizer)
+        except Exception:
+            pass
 
         # Load and register embedded fonts to guarantee crisp Persian rendering across all systems
         try:

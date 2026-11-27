@@ -207,8 +207,11 @@ class ExerciseFormDialog(QDialog):
         self.video_cloud_url = None
         self.setWindowTitle("ویرایش حرکت ورزشی" if exercise_data else "افزودن حرکت جدید به بانک")
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
-        self.resize(880, 640)
-        self.setMinimumSize(800, 520)
+        from nemov.utils.ui_scaling import compute_responsive_size, clamp_minimum_size
+        min_w, min_h = clamp_minimum_size(800, 520, widget=self, floor_w=640, floor_h=380)
+        pref_w, pref_h = compute_responsive_size(880, 640, widget=self, min_w=min_w, min_h=min_h)
+        self.resize(pref_w, pref_h)
+        self.setMinimumSize(min_w, min_h)
         self.init_ui()
 
     def init_ui(self):

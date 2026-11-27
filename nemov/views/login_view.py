@@ -135,8 +135,31 @@ class LoginView(QWidget):
                 return
         super().keyPressEvent(event)
 
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        self._update_responsive_card_size()
+
+    def _update_responsive_card_size(self):
+        if not hasattr(self, "card"):
+            return
+        w, h = self.width(), self.height()
+        if w >= 2050 and h >= 1080:
+            card_w = min(640, max(480, int(w * 0.28)))
+            card_h = min(740, max(640, int(h * 0.54)))
+        else:
+            # Reserve 24px horizontal card margins + ~24px for vertical scrollbar so no H-scroll appears
+            card_w = min(480, max(320, w - 48)) if w > 0 else 480
+            card_h = 640
+        self.card.setFixedSize(card_w, card_h)
+
     def init_ui(self):
-        main_layout = QVBoxLayout(self)
+        from nemov.utils.ui_scaling import create_transparent_scroll_area
+        outer_layout = QVBoxLayout(self)
+        outer_layout.setContentsMargins(0, 0, 0, 0)
+
+        center_host = QWidget()
+        main_layout = QVBoxLayout(center_host)
+        main_layout.setContentsMargins(12, 12, 12, 12)
         main_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         # Login Card Container
@@ -282,6 +305,7 @@ class LoginView(QWidget):
         card_layout.addWidget(self.btn_login)
 
         main_layout.addWidget(self.card)
+        outer_layout.addWidget(create_transparent_scroll_area(center_host, "login_host"))
 
     def _apply_theme_style(self):
         """Applies dynamic theme styling to login canvas, card, inputs, buttons, and popups."""

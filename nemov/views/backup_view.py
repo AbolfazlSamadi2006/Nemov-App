@@ -74,6 +74,11 @@ class BackupView(QWidget):
     def showEvent(self, event):
         super().showEvent(event)
         self.load_all_data()
+        self._relayout_theme_grids()
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        self._relayout_theme_grids()
 
     def init_ui(self):
         main_layout = QVBoxLayout(self)
@@ -314,46 +319,79 @@ class BackupView(QWidget):
         lbl_dark_section.setStyleSheet("font-size: 13px; font-weight: bold; margin-top: 6px;")
         layout_theme.addWidget(lbl_dark_section)
 
-        grid_dark = QGridLayout()
-        grid_dark.setHorizontalSpacing(10)
-        grid_dark.setVerticalSpacing(10)
+        self.grid_dark = QGridLayout()
+        self.grid_dark.setHorizontalSpacing(10)
+        self.grid_dark.setVerticalSpacing(10)
 
         dark_palettes = [p for p in PALETTES_METADATA if p.get("is_dark", True)]
+        self._dark_cards = []
         for idx, p_data in enumerate(dark_palettes):
             card = ThemePaletteCard(p_data)
             card.clicked.connect(self._on_theme_card_clicked)
             self.theme_cards[p_data["id"]] = card
-            row = idx // 4
-            col = idx % 4
-            grid_dark.addWidget(card, row, col)
+            self._dark_cards.append(card)
+            self.grid_dark.addWidget(card, idx // 4, idx % 4)
 
-        layout_theme.addLayout(grid_dark)
+        layout_theme.addLayout(self.grid_dark)
 
         # Sub-section: ☀️ تم‌های لایت اختصاصی (۵ پالت)
         lbl_light_section = QLabel("☀️ تم‌های لایت اختصاصی (۵ پالت)")
         lbl_light_section.setStyleSheet("font-size: 13px; font-weight: bold; margin-top: 12px;")
         layout_theme.addWidget(lbl_light_section)
 
-        grid_light = QGridLayout()
-        grid_light.setHorizontalSpacing(10)
-        grid_light.setVerticalSpacing(10)
+        self.grid_light = QGridLayout()
+        self.grid_light.setHorizontalSpacing(10)
+        self.grid_light.setVerticalSpacing(10)
 
         light_palettes = [p for p in PALETTES_METADATA if not p.get("is_dark", True)]
+        self._light_cards = []
         for idx, p_data in enumerate(light_palettes):
             card = ThemePaletteCard(p_data)
             card.clicked.connect(self._on_theme_card_clicked)
             self.theme_cards[p_data["id"]] = card
-            row = idx // 4
-            col = idx % 4
-            grid_light.addWidget(card, row, col)
+            self._light_cards.append(card)
+            self.grid_light.addWidget(card, idx // 4, idx % 4)
 
-        layout_theme.addLayout(grid_light)
+        layout_theme.addLayout(self.grid_light)
+        self._theme_grid_cols = 4
+        self._relayout_theme_grids()
 
         layout.addWidget(theme_box)
         layout.addStretch(1)
 
         scroll.setWidget(container)
         return scroll
+
+    def _relayout_theme_grids(self):
+        """Reflows dark and light theme cards across available width (4 cols on standard laptops, up to 6-8 on TVs)."""
+        if not hasattr(self, "grid_dark") or not hasattr(self, "_dark_cards"):
+            return
+        avail_w = 0
+        try:
+            if hasattr(self, "tab_appearance") and self.tab_appearance.viewport():
+                avail_w = self.tab_appearance.viewport().width() - 96
+        except Exception:
+            avail_w = 0
+        if avail_w <= 200:
+            avail_w = max(780, self.width() - 120)
+
+        if avail_w >= 1350:
+            cols = max(5, min(6, avail_w // 220))
+        elif avail_w < 820:
+            cols = max(2, avail_w // 210)
+        else:
+            cols = 4
+
+        if getattr(self, "_theme_grid_cols", None) == cols:
+            return
+        self._theme_grid_cols = cols
+
+        for grid, cards in ((self.grid_dark, self._dark_cards), (self.grid_light, self._light_cards)):
+            while grid.count():
+                grid.takeAt(0)
+            row_cols = min(cols, len(cards)) if cols > 4 else cols
+            for idx, card in enumerate(cards):
+                grid.addWidget(card, idx // row_cols, idx % row_cols)
 
     def _create_profile_tab(self) -> QWidget:
         scroll = QScrollArea()

@@ -1,5 +1,5 @@
 from PyQt6.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QGridLayout, QLabel, QLineEdit, QComboBox, QPushButton, QTextEdit, QMessageBox, QDoubleSpinBox
+    QDialog, QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QLabel, QLineEdit, QComboBox, QPushButton, QTextEdit, QMessageBox, QDoubleSpinBox
 )
 from PyQt6.QtCore import Qt
 from nemov.views.components.jalali_calendar_widget import JalaliDatePicker
@@ -17,19 +17,24 @@ class MemberFormDialog(QDialog):
         self.photo_path = None
         self.setWindowTitle("ثبت / ویرایش ورزشکار جدید")
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
-        from PyQt6.QtWidgets import QApplication
-        screen = QApplication.primaryScreen()
-        avail_h = screen.availableGeometry().height() if screen else 800
+        from nemov.utils.ui_scaling import compute_responsive_size, create_transparent_scroll_area, get_available_screen_size
+        _, avail_h = get_available_screen_size(self)
         self._compact_mode = avail_h < 650
-        dlg_h = min(615, max(540, avail_h - 36))
-        self.setFixedSize(650, dlg_h)
+        dlg_w, dlg_h = compute_responsive_size(650, 615, widget=self, min_w=360, min_h=340)
+        self.setFixedSize(dlg_w, dlg_h)
 
         self.init_ui()
 
     def init_ui(self):
-        layout = QVBoxLayout(self)
+        from nemov.utils.ui_scaling import create_transparent_scroll_area
+        outer_layout = QVBoxLayout(self)
+        outer_layout.setSpacing(6)
+        outer_layout.setContentsMargins(8, 12 if getattr(self, "_compact_mode", False) else 14, 8, 12 if getattr(self, "_compact_mode", False) else 14)
+
+        form_body = QWidget()
+        layout = QVBoxLayout(form_body)
         layout.setSpacing(5 if getattr(self, "_compact_mode", False) else 8)
-        layout.setContentsMargins(20, 12 if getattr(self, "_compact_mode", False) else 16, 20, 12 if getattr(self, "_compact_mode", False) else 16)
+        layout.setContentsMargins(4, 2, 4, 2)
 
 
         # Name Row
@@ -171,7 +176,8 @@ class MemberFormDialog(QDialog):
         self.lbl_bmr_badge = QLabel("BMR: -\nTDEE: -")
         self.lbl_bmr_badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.lbl_bmr_badge.setFixedHeight(76)
-        self.lbl_bmr_badge.setFixedWidth(295)
+        self.lbl_bmr_badge.setMinimumWidth(265)
+        self.lbl_bmr_badge.setMaximumWidth(285)
         self.lbl_bmr_badge.setStyleSheet("font-size: 12px; font-weight: bold; padding: 6px 8px; border-radius: 8px; background-color: #555555; color: white;")
 
         self.spin_height.valueChanged.connect(self.update_bmr_display)
@@ -293,6 +299,9 @@ class MemberFormDialog(QDialog):
 
 
 
+        scroll_area = create_transparent_scroll_area(form_body, "member_form")
+        outer_layout.addWidget(scroll_area, 1)
+
         # Submit Buttons
         btn_box = QHBoxLayout()
         btn_save = QPushButton("ذخیره اطلاعات")
@@ -303,7 +312,7 @@ class MemberFormDialog(QDialog):
 
         btn_box.addWidget(btn_save)
         btn_box.addWidget(btn_cancel)
-        layout.addLayout(btn_box)
+        outer_layout.addLayout(btn_box)
 
         # Load existing data if editing, else calculate default 1-month expiry from start date
         if self.member_data:

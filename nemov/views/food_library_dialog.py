@@ -182,7 +182,9 @@ class FoodLibraryDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle("بانک مواد غذایی و ارزش‌های تغذیه‌ای")
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
-        self.setMinimumSize(700, 500)
+        from nemov.utils.ui_scaling import clamp_minimum_size
+        min_w, min_h = clamp_minimum_size(700, 500, widget=self, floor_w=600, floor_h=360)
+        self.setMinimumSize(min_w, min_h)
         self.init_ui()
 
     def init_ui(self):

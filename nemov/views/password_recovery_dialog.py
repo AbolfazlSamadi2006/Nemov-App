@@ -51,7 +51,7 @@ class PasswordRecoveryDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle("بازیابی نام کاربری و کلمه عبور مربی")
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
-        self.setFixedSize(540, 580)
+        self._apply_responsive_fixed_size(540, 580)
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowType.WindowContextHelpButtonHint)
 
         self.matched_user = None
@@ -420,18 +420,10 @@ class PasswordRecoveryDialog(QDialog):
         self.stack.setCurrentIndex(index)
         self.stack.updateGeometry()
         if not self.step2_frame.isVisible():
-            if index == 1:
-                self.setFixedSize(540, 580)
-            else:
-                if self.otp_verify_box.isVisible():
-                    self.setFixedSize(540, 640)
-                else:
-                    self.setFixedSize(540, 580)
+            target_h = 640 if (index == 0 and self.otp_verify_box.isVisible()) else 580
         else:
-            if index == 1:
-                self.setFixedSize(540, 640)
-            else:
-                self.setFixedSize(540, 700)
+            target_h = 640 if index == 1 else 700
+        self._apply_responsive_fixed_size(540, target_h)
 
         palette = ThemeManager.get_current_palette()
         if index == 0:
@@ -527,7 +519,7 @@ class PasswordRecoveryDialog(QDialog):
             )
             self.otp_verify_box.setVisible(True)
             self.stack.updateGeometry()
-            self.setFixedSize(540, 640)
+            self._apply_responsive_fixed_size(540, 640)
 
             # Start 60 second countdown timer
             self.countdown_seconds = 60
@@ -596,10 +588,15 @@ class PasswordRecoveryDialog(QDialog):
 
         self.step2_frame.setVisible(True)
         if self.stack.currentIndex() == 0:
-            self.setFixedSize(540, 700)
+            self._apply_responsive_fixed_size(540, 700)
         else:
-            self.setFixedSize(540, 640)
+            self._apply_responsive_fixed_size(540, 640)
         self.txt_new_password.setFocus()
+
+    def _apply_responsive_fixed_size(self, pref_w: int, pref_h: int):
+        from nemov.utils.ui_scaling import compute_responsive_size
+        w, h = compute_responsive_size(pref_w, pref_h, widget=self, min_w=360, min_h=340)
+        self.setFixedSize(w, h)
 
     def do_reset_and_login(self):
         if not self.matched_user:
