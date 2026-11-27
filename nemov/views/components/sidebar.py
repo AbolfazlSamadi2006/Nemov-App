@@ -1273,7 +1273,8 @@ class Sidebar(QFrame):
             btn.style().polish(btn)
 
     def _on_theme_changed(self, theme_key: str):
-        """Immediately re-applies brand title color, sidebar styles, and notification cards when theme changes."""
+        """Immediately re-applies brand logo/title, sidebar styles, and notification cards when theme changes."""
+        self.refresh_branding()
         self._apply_theme_style()
         self.refresh_notifications()
 

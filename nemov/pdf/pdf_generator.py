@@ -404,7 +404,7 @@ class PDFGenerator:
         # Title with Dynamic Club Logo
         from nemov.services.branding_service import BrandingService
         club_name = BrandingService.get_active_club_name()
-        logo_path = BrandingService.get_club_logo_path()
+        logo_path = BrandingService.get_pdf_logo_path()
         header_title = Paragraph(reshape_title_text(f"برنامه تمرینی {club_name}"), title_style)
         
         logo_img = None
@@ -618,7 +618,7 @@ class PDFGenerator:
 
         from nemov.services.branding_service import BrandingService
         club_name = BrandingService.get_active_club_name()
-        logo_path = BrandingService.get_club_logo_path()
+        logo_path = BrandingService.get_pdf_logo_path()
         header_title = Paragraph(reshape_title_text(f"برنامه غذایی و رژیمی {club_name}"), title_style)
         
         logo_img = None
@@ -821,7 +821,7 @@ class PDFGenerator:
         # 1. Title & Subtitle with Dynamic Club Logo
         from nemov.services.branding_service import BrandingService
         club_name = BrandingService.get_active_club_name()
-        logo_path = BrandingService.get_club_logo_path()
+        logo_path = BrandingService.get_pdf_logo_path()
         header_title = Paragraph(reshape_title_text(f"گزارش تراز و صورت مالی {club_name}"), title_style)
         
         logo_img = None

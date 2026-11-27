@@ -206,10 +206,10 @@ class BrandingService:
             session.close()
 
     @staticmethod
-    def get_active_logo_path() -> str:
+    def get_active_logo_path(for_light_bg: bool | None = None) -> str:
         """
         Returns resolved absolute path to custom logo if set and exists on disk;
-        otherwise safely falls back to default official Nemov logo.
+        otherwise safely falls back to the dark-bg or light-bg official Nemov logo.
         """
         info = BrandingService.get_club_info()
         custom_logo = (info.get("club_logo_path") or "").strip()
@@ -226,13 +226,31 @@ class BrandingService:
                     # Corrupted, unreadable, or 0-byte image file; fall back to official Nemov logo
                     pass
 
-        # Fallback to official Nemov logos
-        candidates = [
-            config.BASE_DIR / "resources" / "images" / "nemov_logo.png",
-            config.BASE_DIR / "resources" / "icons" / "nemov.ico",
-            config.BASE_DIR / "resources" / "images" / "app_icon.png",
-            config.BASE_DIR / "resources" / "images" / "logo.png",
-        ]
+        if for_light_bg is None:
+            for_light_bg = False
+            try:
+                from nemov.utils.theme_manager import ThemeManager
+                palette = ThemeManager.get_current_palette()
+                for_light_bg = not bool(getattr(palette, "is_dark", True))
+            except Exception:
+                pass
+
+        # Fallback to official Nemov logos (dark-text variant for PDFs / light themes)
+        if for_light_bg:
+            candidates = [
+                config.BASE_DIR / "resources" / "images" / "nemov_logo_light.png",
+                config.BASE_DIR / "resources" / "images" / "nemov_logo.png",
+                config.BASE_DIR / "resources" / "icons" / "nemov.ico",
+                config.BASE_DIR / "resources" / "images" / "app_icon.png",
+                config.BASE_DIR / "resources" / "images" / "logo.png",
+            ]
+        else:
+            candidates = [
+                config.BASE_DIR / "resources" / "images" / "nemov_logo.png",
+                config.BASE_DIR / "resources" / "icons" / "nemov.ico",
+                config.BASE_DIR / "resources" / "images" / "app_icon.png",
+                config.BASE_DIR / "resources" / "images" / "logo.png",
+            ]
         for cand in candidates:
             if cand.exists() and cand.is_file():
                 return str(cand.resolve())
@@ -256,9 +274,14 @@ class BrandingService:
         return cls.get_active_club_name()
 
     @classmethod
-    def get_club_logo_path(cls) -> str:
+    def get_club_logo_path(cls, for_light_bg: bool | None = None) -> str:
         """Convenience alias for get_active_logo_path."""
-        return cls.get_active_logo_path()
+        return cls.get_active_logo_path(for_light_bg=for_light_bg)
+
+    @staticmethod
+    def get_pdf_logo_path() -> str:
+        """Returns custom club logo if configured; otherwise dark-slate Nemov logo for white PDF paper."""
+        return BrandingService.get_active_logo_path(for_light_bg=True)
 
     @staticmethod
     def get_selected_theme_id() -> str:
@@ -305,6 +328,7 @@ reset_to_default_logo = BrandingService.reset_to_default_logo
 get_active_logo_path = BrandingService.get_active_logo_path
 get_active_club_name = BrandingService.get_active_club_name
 get_club_name = BrandingService.get_active_club_name
-get_club_logo_path = BrandingService.get_active_logo_path
+get_club_logo_path = BrandingService.get_club_logo_path
+get_pdf_logo_path = BrandingService.get_pdf_logo_path
 get_selected_theme_id = BrandingService.get_selected_theme_id
 save_selected_theme_id = BrandingService.save_selected_theme_id

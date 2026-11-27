@@ -1533,7 +1533,7 @@ class BackupView(QWidget):
             # 2. Apply theme live to QApplication and all open windows
             ThemeManager.apply_theme(theme_id)
 
-            # 3. Update logo preview box if present
+            # 3. Update logo preview box & theme-matched official logo
             if hasattr(self, "lbl_logo_preview"):
                 p = ThemeManager.get_current_palette()
                 self.lbl_logo_preview.setStyleSheet(f"""
@@ -1545,6 +1545,7 @@ class BackupView(QWidget):
                         font-size: 26px;
                     }}
                 """)
+            self._refresh_logo_preview()
 
             # 4. Save selected theme to database and notify system
             BrandingService.save_selected_theme_id(theme_id)

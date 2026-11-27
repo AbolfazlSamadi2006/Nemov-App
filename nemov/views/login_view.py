@@ -170,16 +170,13 @@ class LoginView(QWidget):
         card_layout = QVBoxLayout(self.card)
         card_layout.setSpacing(8)
 
-        # Logo Image (Enlarged)
-        icon_path = config.BASE_DIR / "resources" / "images" / "nemov_logo.png"
-        if not icon_path.exists():
-            icon_path = config.BASE_DIR / "resources" / "images" / "app_icon.png"
-        if icon_path.exists():
-            lbl_logo = QLabel()
-            pix = QPixmap(str(icon_path)).scaled(110, 110, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
-            lbl_logo.setPixmap(pix)
-            lbl_logo.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            card_layout.addWidget(lbl_logo)
+        # Logo Image (Enlarged, adapts automatically for light vs dark themes)
+        self.lbl_logo = QLabel()
+        self.lbl_logo.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._refresh_logo_pixmap()
+        if not self.lbl_logo.pixmap() or self.lbl_logo.pixmap().isNull():
+            self.lbl_logo.hide()
+        card_layout.addWidget(self.lbl_logo)
 
         # Subtitle Text
         self.sub_lbl = QLabel(f"ورود به {config.APP_TITLE}")
@@ -307,6 +304,38 @@ class LoginView(QWidget):
         main_layout.addWidget(self.card)
         outer_layout.addWidget(create_transparent_scroll_area(center_host, "login_host"))
 
+    def _refresh_logo_pixmap(self):
+        """Selects dark-bg or light-bg official Nemov logo matching active theme."""
+        if not hasattr(self, "lbl_logo"):
+            return
+        try:
+            palette = ThemeManager.get_current_palette()
+            is_dark = bool(getattr(palette, "is_dark", True))
+        except Exception:
+            is_dark = True
+
+        candidates = (
+            [
+                config.BASE_DIR / "resources" / "images" / "nemov_logo.png",
+                config.BASE_DIR / "resources" / "images" / "app_icon.png",
+            ]
+            if is_dark
+            else [
+                config.BASE_DIR / "resources" / "images" / "nemov_logo_light.png",
+                config.BASE_DIR / "resources" / "images" / "nemov_logo.png",
+                config.BASE_DIR / "resources" / "images" / "app_icon.png",
+            ]
+        )
+        for icon_path in candidates:
+            if icon_path.exists():
+                pix = QPixmap(str(icon_path)).scaled(
+                    110, 110, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation
+                )
+                if not pix.isNull():
+                    self.lbl_logo.setPixmap(pix)
+                    self.lbl_logo.show()
+                    return
+
     def _apply_theme_style(self):
         """Applies dynamic theme styling to login canvas, card, inputs, buttons, and popups."""
         try:
@@ -319,7 +348,8 @@ class LoginView(QWidget):
         # 1. Root canvas background (scoped strictly to QWidget#login_view to avoid cascade)
         self.setStyleSheet(f"QWidget#login_view {{ background-color: {palette.bg_base}; }}")
 
-        # 2. Login card container
+        # 2. Login card container + logo contrast
+        self._refresh_logo_pixmap()
         if hasattr(self, "card"):
             self.card.setStyleSheet(f"""
                 QFrame#login_card {{

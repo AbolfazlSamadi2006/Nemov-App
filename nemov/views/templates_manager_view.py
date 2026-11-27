@@ -263,10 +263,10 @@ class TemplatesManagerView(QWidget):
 
         self.combo_filter_nutrition_goal = QComboBox()
         self.combo_filter_nutrition_goal.addItem("همه اهداف رژیم", "all")
-        self.combo_filter_nutrition_goal.addItem("عضله‌سازی (Muscle Gain)", "muscle_gain")
-        self.combo_filter_nutrition_goal.addItem("کاهش وزن و چربی‌سوزی (Weight Loss)", "weight_loss")
-        self.combo_filter_nutrition_goal.addItem("افزایش وزن (Weight Gain)", "weight_gain")
-        self.combo_filter_nutrition_goal.addItem("تثبیت وزن (Maintenance)", "maintenance")
+        self.combo_filter_nutrition_goal.addItem("عضله‌سازی", "muscle_gain")
+        self.combo_filter_nutrition_goal.addItem("کاهش وزن و چربی‌سوزی", "weight_loss")
+        self.combo_filter_nutrition_goal.addItem("افزایش وزن", "weight_gain")
+        self.combo_filter_nutrition_goal.addItem("تثبیت وزن", "maintenance")
         self.combo_filter_nutrition_goal.currentIndexChanged.connect(self.filter_nutrition_table)
 
         self.chk_select_all_n = QCheckBox("انتخاب همه")
@@ -316,9 +316,9 @@ class TemplatesManagerView(QWidget):
         header.setSectionResizeMode(1, QHeaderView.ResizeMode.Fixed)
         self.table_nutrition.setColumnWidth(1, 54)   # ردیف
         header.setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch) # عنوان
-        self.table_nutrition.setColumnWidth(3, 150)  # هدف
+        self.table_nutrition.setColumnWidth(3, 95)   # هدف
         self.table_nutrition.setColumnWidth(4, 86)   # کالری
-        self.table_nutrition.setColumnWidth(5, 155)  # P/C/F
+        self.table_nutrition.setColumnWidth(5, 210)  # P/C/F
         self.table_nutrition.setColumnWidth(6, 85)   # وعده‌ها
         self.table_nutrition.setColumnWidth(7, 87)   # شاگردان
         header.setSectionResizeMode(8, QHeaderView.ResizeMode.Fixed)
@@ -489,10 +489,10 @@ class TemplatesManagerView(QWidget):
             filtered.append(p)
 
         goal_map = {
-            "muscle_gain": "عضله‌سازی (Muscle Gain)",
-            "weight_loss": "کاهش وزن (Weight Loss)",
-            "weight_gain": "افزایش وزن (Weight Gain)",
-            "maintenance": "تثبیت وزن (Maintenance)"
+            "muscle_gain": "عضله‌سازی",
+            "weight_loss": "کاهش وزن",
+            "weight_gain": "افزایش وزن",
+            "maintenance": "تثبیت وزن"
         }
 
         self.chk_select_all_n.blockSignals(True)
@@ -513,7 +513,7 @@ class TemplatesManagerView(QWidget):
                 assignments_count = len(p.assignments) if p.assignments else 0
             except Exception:
                 assignments_count = 0
-            macros_str = f"P: {int(p.target_protein or 0)}g | C: {int(p.target_carbs or 0)}g | F: {int(p.target_fat or 0)}g"
+            macros_str = f"\u200EP: {int(p.target_protein or 0)}g | C: {int(p.target_carbs or 0)}g | F: {int(p.target_fat or 0)}g"
 
             chk_w = QWidget()
             chk_w.setStyleSheet("background: transparent;")
