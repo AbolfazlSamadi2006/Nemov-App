@@ -95,10 +95,27 @@
 
 ## 💻 راهنمای نصب و راه‌اندازی
 
+### ۱. نصب سریع برای مربیان و کاربران نهایی (Windows Installer)
 1. فایل نصاب آخرین نسخه را از بخش **[Releases](https://github.com/AbolfazlSamadi2006/Nemov-App/releases/latest)** دانلود نمایید:
    - فایل: `Nemov_Setup_v3.4.5.exe`
 2. فایل ستاپ را اجرا کرده و مسیر نصب دلخواه را انتخاب کنید.
 3. پس از اتمام نصب، آیکون نرم‌افزار روی دسکتاپ و منوی استارت ایجاد شده و برنامه آماده استفاده خواهد بود.
+
+### ۲. راه‌اندازی از سورس، اجرای سرور ابری و اجرای تست‌ها (ویژه توسعه و ارزیابی دانشگاهی)
+```bash
+# ۱) نصب پیش‌نیازها و اجرای کلاینت دسکتاپ (PyQt6 + SQLite WAL)
+pip install -r requirements.txt
+python main.py
+
+# ۲) اجرای سرور API ابری به‌صورت محلی (FastAPI + PostgreSQL/SQLite Fallback + ArvanCloud S3)
+cd nemov_cloud_server/runflare_app
+pip install -r requirements.txt
+uvicorn main:app --host 0.0.0.0 --port 8000
+
+# ۳) اجرای مجموعه کامل تست‌های واحد و یکپارچگی (۹۵ تست)
+python -m unittest discover -s tests -p "test_*.py" -v
+```
+* آدرس سرویس آنلاین مستقرشده (HTTPS): `https://storage.nemovapp.ir` (لندینگ و API رانفلر + ذخیره‌سازی ابری آروان)
 
 ---
 
@@ -131,6 +148,7 @@
 > * 📐 **[فاز ۲: دیدگاه‌های چهارگانه طراحی (Use Case، نمودار فعالیت، معماری سیستم ۴ لایه و مدل داده‌ها ERD)](docs/phase-2_diagrams-and-system-design/README.md)**
 > * 🔌 **[فاز ۳: قرارداد APIها، انتخاب پشته فنی، توجیه هاستینگ ابری و پروتوتایپ کلیک‌پذیر](docs/phase-3_prototype-and-api-specs/README.md)**
 > * 📊 **[فاز ۴: اسلایدهای دفاعیه و ارائه اول مهندسی و فایل رسمی پاورپوینت](docs/phase-4_presentation-1/README.md)**
+> * 🔗 **[فاز ۵: راه‌اندازی کد پایه، دیتابیس، API و اولین یکپارچه‌سازی UI به API](docs/phase-5_core-integration/README.md)**
 > * 🎨 **[پروتوتایپ تعاملی و رفتار کاربری در فیگما (Figma Prototype)](https://www.figma.com/design/bxozUbyh4zZVSQXlJFVxeF)**
 </details>
 

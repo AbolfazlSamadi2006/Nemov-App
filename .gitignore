@@ -18,7 +18,6 @@ dist/
 # Test Exports & QA screenshots
 exports/
 qa_*.png
-/tests/
 
 # Database & SQLite files
 *.db
