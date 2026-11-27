@@ -115,7 +115,10 @@ class BrandingService:
                     setting.value = v
 
             session.commit()
-            mark_data_changed()
+            # Only flag unsaved session data when actual club identity fields change;
+            # theme selection alone is a local UI preference and shouldn't prompt backup on exit.
+            if any(k in data for k in ("club_name", "club_phone", "club_address")):
+                mark_data_changed()
             return True
         except Exception:
             session.rollback()
@@ -311,7 +314,8 @@ class BrandingService:
                 else:
                     setting.value = v
             session.commit()
-            mark_data_changed()
+            # UI theme preference saves directly and silently to local SQLite;
+            # it must not mark session data dirty or trigger ExitBackupDialog on exit.
             return True
         except Exception:
             session.rollback()

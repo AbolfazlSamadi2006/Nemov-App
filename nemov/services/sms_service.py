@@ -69,9 +69,9 @@ DEFAULT_SMS_TEMPLATES = {
 
 class SmsService:
     """
-    Client-side service communicating with Cloudflare Worker SMS API Gateway.
+    Client-side service communicating with Runflare SMS API Gateway.
     Zero SMS.ir API key is stored locally; all credit verification and delivery
-    is proxied and centrally deducted via the serverless Cloudflare Worker.
+    is proxied and centrally deducted via the Runflare cloud server.
     """
 
     # In-memory OTP cache for SMS: {phone: {"code": "12345", "expires_at": timestamp, "attempts": 0}}
@@ -191,7 +191,7 @@ class SmsService:
         trainer_name: str = None
     ) -> Tuple[bool, str, int]:
         """
-        Sends an SMS through the Cloudflare Worker Gateway.
+        Sends an SMS through the Runflare Cloud API Gateway.
         Returns (success: bool, detail_message: str, remaining_balance: int).
         """
         phone = cls.normalize_phone_number(trainer_phone or cls.get_trainer_phone())
@@ -241,7 +241,7 @@ class SmsService:
     @classmethod
     def get_history(cls, trainer_phone: str = None) -> List[Dict[str, Any]]:
         """
-        Retrieves the recent SMS delivery history for this trainer from the Cloudflare Worker.
+        Retrieves the recent SMS delivery history for this trainer from the Runflare cloud server.
         """
         phone = (trainer_phone or cls.get_trainer_phone()).replace(" ", "")
         user = CurrentUser.get()

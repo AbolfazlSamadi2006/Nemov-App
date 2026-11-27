@@ -49,8 +49,11 @@ class CloudRestoreDialog(QDialog):
         self.txt_phone.returnPressed.connect(self.do_restore)
         card_l.addWidget(self.txt_phone)
 
+        from nemov.utils.theme_manager import ThemeManager
+        pal = ThemeManager.get_current_palette()
+        status_amber = "#F59E0B" if pal.is_dark else "#B45309"
         self.lbl_status = QLabel("")
-        self.lbl_status.setStyleSheet("font-size: 11px; color: #F59E0B;")
+        self.lbl_status.setStyleSheet(f"font-size: 11px; color: {status_amber}; background: transparent;")
         self.lbl_status.setAlignment(Qt.AlignmentFlag.AlignCenter)
         card_l.addWidget(self.lbl_status)
 

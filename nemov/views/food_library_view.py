@@ -13,6 +13,24 @@ class FoodLibraryView(QWidget):
         super().__init__(parent)
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
         self.init_ui()
+        try:
+            from nemov.utils.theme_manager import ThemeManager
+            ThemeManager.theme_changed.connect(self._on_theme_changed)
+        except Exception:
+            pass
+        self._apply_theme_style()
+
+    def _on_theme_changed(self, _theme_key: str):
+        self._apply_theme_style()
+
+    def _apply_theme_style(self):
+        try:
+            from nemov.utils.theme_manager import ThemeManager
+            palette = ThemeManager.get_current_palette()
+            if hasattr(self, "btn_bulk_delete"):
+                self.btn_bulk_delete.setStyleSheet(ThemeManager.get_bulk_delete_qss(palette))
+        except Exception:
+            pass
 
     def init_ui(self):
         layout = QVBoxLayout(self)
@@ -64,24 +82,6 @@ class FoodLibraryView(QWidget):
         self.btn_bulk_delete.setFixedHeight(32)
         self.btn_bulk_delete.setEnabled(False)
         self.btn_bulk_delete.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_bulk_delete.setStyleSheet("""
-            QPushButton {
-                background-color: #7B1113;
-                color: #FFFFFF;
-                font-weight: bold;
-                border: none;
-                border-radius: 6px;
-                padding: 4px 12px;
-                font-size: 12px;
-            }
-            QPushButton:hover {
-                background-color: #9B1B1E;
-            }
-            QPushButton:disabled {
-                background-color: #333333;
-                color: #777777;
-            }
-        """)
         self.btn_bulk_delete.clicked.connect(self.bulk_delete_foods)
 
         controls.addWidget(QLabel("جستجو:"))

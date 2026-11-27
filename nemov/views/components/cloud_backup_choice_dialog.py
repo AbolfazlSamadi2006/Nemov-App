@@ -114,7 +114,7 @@ class CloudBackupChoiceDialog(QDialog):
                 text-align: center;
             }}
             QPushButton:hover {{
-                background-color: #27272A;
+                background-color: {palette.btn_sec_hover};
                 color: #EF4444;
                 border-color: #EF4444;
             }}

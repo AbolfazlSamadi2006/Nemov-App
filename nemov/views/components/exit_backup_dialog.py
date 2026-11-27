@@ -9,6 +9,7 @@ from nemov.services.backup_service import (
     create_local_backup, export_offline_backup, upload_cloud_backup, is_internet_connected
 )
 from nemov.utils.jalali_date import gregorian_to_shamsi
+from nemov.utils.theme_manager import ThemeManager
 
 
 class ExitBackupDialog(QDialog):
@@ -26,19 +27,20 @@ class ExitBackupDialog(QDialog):
         layout.setContentsMargins(24, 24, 24, 24)
         layout.setSpacing(18)
 
+        pal = ThemeManager.get_current_palette()
         # Header Title
         lbl_title = QLabel("💾 پشتیبان‌گیری و خروج از حساب" if self.is_logout else "💾 پشتیبان‌گیری و خروج از نرم‌افزار")
-        lbl_title.setStyleSheet("""
+        lbl_title.setStyleSheet(f"""
             font-size: 18px;
             font-weight: bold;
-            color: #FFFFFF;
+            color: {pal.text_primary};
         """)
         layout.addWidget(lbl_title)
 
         # Question prompt
         msg_text = "آیا مایل به تهیه نسخه پشتیبان از اطلاعات باشگاه پیش از خروج از حساب کاربری هستید؟" if self.is_logout else "آیا مایل به تهیه نسخه پشتیبان از اطلاعات باشگاه پیش از خروج هستید؟"
         lbl_msg = QLabel(msg_text)
-        lbl_msg.setStyleSheet("color: #E0E0E0; font-size: 14px;")
+        lbl_msg.setStyleSheet(f"color: {pal.text_secondary}; font-size: 14px;")
         lbl_msg.setWordWrap(True)
         layout.addWidget(lbl_msg)
 
@@ -95,19 +97,20 @@ class ExitBackupDialog(QDialog):
         self.btn_normal_exit = QPushButton("🚪 خیر")
         self.btn_normal_exit.setFixedHeight(42)
         self.btn_normal_exit.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_normal_exit.setStyleSheet("""
-            QPushButton {
-                background-color: #374151;
-                color: #F3F4F6;
+        self.btn_normal_exit.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {pal.btn_sec_bg};
+                color: {pal.btn_sec_text};
                 font-size: 13px;
                 font-weight: bold;
                 border-radius: 8px;
-                border: 1px solid #4B5563;
+                border: 1px solid {pal.btn_sec_border};
                 text-align: center;
-            }
-            QPushButton:hover {
-                background-color: #4B5563;
-            }
+            }}
+            QPushButton:hover {{
+                background-color: {pal.btn_sec_hover};
+                color: {pal.text_primary};
+            }}
         """)
         self.btn_normal_exit.clicked.connect(self.handle_normal_exit)
         layout.addWidget(self.btn_normal_exit)
@@ -116,17 +119,17 @@ class ExitBackupDialog(QDialog):
         self.btn_cancel = QPushButton("بازگشت و انصراف")
         self.btn_cancel.setFixedHeight(34)
         self.btn_cancel.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_cancel.setStyleSheet("""
-            QPushButton {
+        self.btn_cancel.setStyleSheet(f"""
+            QPushButton {{
                 background: transparent;
-                color: #9CA3AF;
+                color: {pal.text_muted};
                 font-size: 12px;
                 border: none;
-            }
-            QPushButton:hover {
-                color: #E5E7EB;
+            }}
+            QPushButton:hover {{
+                color: {pal.text_primary};
                 text-decoration: underline;
-            }
+            }}
         """)
         self.btn_cancel.clicked.connect(self.reject)
         layout.addWidget(self.btn_cancel, alignment=Qt.AlignmentFlag.AlignCenter)

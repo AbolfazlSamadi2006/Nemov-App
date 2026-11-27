@@ -124,6 +124,7 @@ class Sidebar(QFrame):
     logout_requested = pyqtSignal()
     member_birthday_clicked = pyqtSignal(int)
     member_expiration_clicked = pyqtSignal(int)
+    draft_clicked = pyqtSignal(str)  # Emits unfinished draft_id
     notifications_marked_read = pyqtSignal()
     collapse_toggled = pyqtSignal(bool)  # True = collapsed, False = expanded
 
@@ -146,12 +147,18 @@ class Sidebar(QFrame):
         self.buttons = {}
         self._nav_meta = {}
         self._current_nav_id: str = "dashboard"
+        self._excluded_draft_ids: set[str] = set()
         self.init_ui()
         self.refresh_notifications()
         self.refresh_branding()
         try:
             from nemov.utils.theme_manager import ThemeManager
             ThemeManager.theme_changed.connect(self._on_theme_changed)
+        except Exception:
+            pass
+        try:
+            from nemov.services.draft_service import get_draft_notifier
+            get_draft_notifier().drafts_changed.connect(self.refresh_notifications)
         except Exception:
             pass
         self._apply_theme_style()
@@ -478,22 +485,118 @@ class Sidebar(QFrame):
         self.refresh_notifications()
         self.notifications_marked_read.emit()
 
+    def set_excluded_draft_ids(self, draft_ids: set):
+        new_ids = set(draft_ids or ())
+        if new_ids != getattr(self, "_excluded_draft_ids", set()):
+            self._excluded_draft_ids = new_ids
+            self.refresh_notifications()
+
     def refresh_notifications(self):
         while self.notif_items_layout.count() > 0:
             item = self.notif_items_layout.takeAt(0)
             if item.widget():
                 item.widget().deleteLater()
 
+        draft_count = 0
         upcoming_count = 0
         exp_count = 0
 
         try:
             from nemov.services.notification_service import NotificationService
+            from nemov.services.draft_service import DraftService
             from nemov.utils.theme_manager import ThemeManager
             try:
                 palette = ThemeManager.get_current_palette()
             except Exception:
                 palette = None
+
+            # --- 0. Unfinished Draft Work Notifications ---
+            try:
+                drafts = DraftService.list_drafts(exclude_draft_ids=getattr(self, "_excluded_draft_ids", set()))
+            except Exception:
+                drafts = []
+
+            if drafts:
+                draft_count = len(drafts)
+                if palette:
+                    d_bg, d_text, d_border, d_hover = ThemeManager.get_tone_colors("blue", palette)
+                    r_bg, r_fg, r_bd, r_hv = ThemeManager.get_tone_colors("rose", palette)
+                else:
+                    d_bg, d_text, d_border, d_hover = "#1E293B", "#BFDBFE", "#3B82F6", "#1D4ED8"
+                    r_bg, r_fg, r_bd, r_hv = "#3B1111", "#FCA5A5", "#EF4444", "#DC2626"
+
+                for draft in drafts:
+                    did = draft.get("draft_id", "")
+                    sec_title = draft.get("section_title", "بخش")
+                    d_title = draft.get("title") or sec_title
+                    d_summary = draft.get("summary") or ""
+                    d_time = draft.get("updated_shamsi") or ""
+
+                    row_w = QWidget()
+                    row_w.setFixedHeight(34)
+                    row_w.setStyleSheet("background: transparent; border: none;")
+                    row_l = QHBoxLayout(row_w)
+                    row_l.setContentsMargins(0, 0, 0, 0)
+                    row_l.setSpacing(3)
+
+                    raw_text = f"📝 {d_title}"
+                    tooltip_parts = [f"📝 کار ناتمام ({sec_title})", d_title]
+                    if d_summary:
+                        tooltip_parts.append(d_summary)
+                    if d_time:
+                        tooltip_parts.append(f"🕒 ذخیره خودکار: {d_time}")
+                    tooltip_parts.append("(برای ادامه کلیک کنید)")
+                    tooltip_text = "\n".join(tooltip_parts)
+
+                    btn = SidebarNotifButton(scroll_area=self.notif_inner_scroll)
+                    btn.setFixedHeight(34)
+                    btn.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+                    btn.setCursor(Qt.CursorShape.PointingHandCursor)
+                    btn.setStyleSheet(f"""
+                        QPushButton {{
+                            background-color: {d_bg};
+                            color: {d_text};
+                            border: 1px solid {d_border};
+                            border-radius: 6px;
+                            padding: 4px 6px;
+                            font-size: 11px;
+                            font-weight: bold;
+                            text-align: right;
+                        }}
+                        QPushButton:hover {{
+                            background-color: {d_hover};
+                            border: 1px solid {d_border};
+                            color: #FFFFFF;
+                        }}
+                    """)
+                    btn.set_full_text(raw_text, tooltip_text)
+                    btn.clicked.connect(lambda _, target_id=did: self.draft_clicked.emit(target_id))
+
+                    btn_del = QPushButton("✕")
+                    btn_del.setFixedSize(22, 34)
+                    btn_del.setCursor(Qt.CursorShape.PointingHandCursor)
+                    btn_del.setToolTip("حذف و صرف‌نظر کردن از این پیش‌نویس ناتمام")
+                    btn_del.setStyleSheet(f"""
+                        QPushButton {{
+                            background-color: {r_bg};
+                            color: {r_fg};
+                            border: 1px solid {r_bd};
+                            border-radius: 6px;
+                            font-size: 10px;
+                            font-weight: bold;
+                            padding: 0px;
+                        }}
+                        QPushButton:hover {{
+                            background-color: {r_hv};
+                            color: #FFFFFF;
+                            border-color: {r_hv};
+                        }}
+                    """)
+                    btn_del.clicked.connect(lambda _, target_id=did: DraftService.delete_draft(target_id))
+
+                    row_l.addWidget(btn, 1)
+                    row_l.addWidget(btn_del, 0)
+                    self.notif_items_layout.addWidget(row_w)
 
             upcoming_members, upcoming_exp = NotificationService.sync_and_get_unread_sidebar_notifications()
             
@@ -644,7 +747,7 @@ class Sidebar(QFrame):
         except Exception:
             pass
 
-        total_notifs = upcoming_count + exp_count + update_count
+        total_notifs = draft_count + upcoming_count + exp_count + update_count
         self._total_notifs = total_notifs
 
         fa_count = str(total_notifs).translate(str.maketrans('0123456789', '۰۱۲۳۴۵۶۷۸۹'))

@@ -2,6 +2,7 @@ from PyQt6.QtWidgets import (
     QFrame, QHBoxLayout, QLabel, QPushButton, QProgressBar
 )
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal
+from nemov.utils.theme_manager import ThemeManager
 
 class UndoDeleteBanner(QFrame):
     """
@@ -26,23 +27,37 @@ class UndoDeleteBanner(QFrame):
         self.timer.timeout.connect(self._on_tick)
 
         self.init_ui()
+        self._apply_theme_style()
+        try:
+            ThemeManager.theme_changed.connect(self._on_theme_changed)
+        except Exception:
+            pass
         self.hide()
 
-    def init_ui(self):
-        self.setObjectName("undo_banner")
-        self.setStyleSheet("""
-            QFrame#undo_banner {
-                background-color: #261616;
+    def _on_theme_changed(self, _theme_key: str):
+        self._apply_theme_style()
+
+    def _apply_theme_style(self):
+        pal = ThemeManager.get_current_palette()
+        r_bg, r_fg, r_bd, _ = ThemeManager.get_tone_colors("rose", pal)
+        banner_bg = "#261616" if pal.is_dark else r_bg
+        cd_col = "#FFA726" if pal.is_dark else "#B45309"
+        track_bg = "#331A1A" if pal.is_dark else pal.border_light
+
+        self.setStyleSheet(f"""
+            QFrame#undo_banner {{
+                background-color: {banner_bg};
                 border: 1px solid #E53935;
                 border-radius: 8px;
                 padding: 6px 14px;
-            }
-            QLabel {
-                color: #FFFFFF;
+            }}
+            QLabel {{
+                color: {pal.text_primary};
                 font-size: 13px;
                 font-weight: 500;
-            }
-            QPushButton#btn_undo {
+                background: transparent;
+            }}
+            QPushButton#btn_undo {{
                 background-color: #10B981;
                 color: #FFFFFF;
                 border: none;
@@ -50,34 +65,39 @@ class UndoDeleteBanner(QFrame):
                 padding: 6px 14px;
                 font-weight: bold;
                 font-size: 12px;
-            }
-            QPushButton#btn_undo:hover {
+            }}
+            QPushButton#btn_undo:hover {{
                 background-color: #059669;
-            }
-            QPushButton#btn_dismiss {
-                background-color: transparent;
-                color: #AAAAAA;
-                border: 1px solid #555555;
+            }}
+            QPushButton#btn_dismiss {{
+                background-color: {pal.btn_sec_bg};
+                color: {pal.btn_sec_text};
+                border: 1px solid {pal.btn_sec_border};
                 border-radius: 6px;
                 padding: 6px 12px;
                 font-size: 12px;
-            }
-            QPushButton#btn_dismiss:hover {
-                color: #FFFFFF;
-                border-color: #888888;
-                background-color: #333333;
-            }
-            QProgressBar {
+            }}
+            QPushButton#btn_dismiss:hover {{
+                color: {pal.text_primary};
+                border-color: {pal.border};
+                background-color: {pal.btn_sec_hover};
+            }}
+            QProgressBar {{
                 border: none;
-                background-color: #331A1A;
+                background-color: {track_bg};
                 height: 4px;
                 border-radius: 2px;
-            }
-            QProgressBar::chunk {
+            }}
+            QProgressBar::chunk {{
                 background-color: #E53935;
                 border-radius: 2px;
-            }
+            }}
         """)
+        if hasattr(self, "lbl_countdown"):
+            self.lbl_countdown.setStyleSheet(f"color: {cd_col}; font-weight: bold; background: transparent;")
+
+    def init_ui(self):
+        self.setObjectName("undo_banner")
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(10, 6, 10, 6)
@@ -85,7 +105,6 @@ class UndoDeleteBanner(QFrame):
 
         self.lbl_message = QLabel("🗑️ موارد انتخاب‌شده حذف شدند.")
         self.lbl_countdown = QLabel("⏱️ فرصت بازگردانی: ۵ ثانیه")
-        self.lbl_countdown.setStyleSheet("color: #FFA726; font-weight: bold;")
 
         self.btn_undo = QPushButton("↺ بازگردانی (Undo)")
         self.btn_undo.setObjectName("btn_undo")

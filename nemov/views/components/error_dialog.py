@@ -16,6 +16,7 @@ from nemov.utils.logger import (
     get_parsed_log_entries
 )
 from nemov.views.components.undo_delete_banner import UndoDeleteBanner
+from nemov.utils.theme_manager import ThemeManager
 
 
 class ErrorDialog(QDialog):
@@ -67,20 +68,21 @@ class ErrorDialog(QDialog):
         # Toggle Technical Details button
         self.btn_toggle = QPushButton("مشاهده جزئیات فنی خطا ▾")
         self.btn_toggle.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_toggle.setStyleSheet("""
-            QPushButton {
-                background-color: #262626;
-                color: #A3A3A3;
-                border: 1px solid #404040;
+        pal = ThemeManager.get_current_palette()
+        self.btn_toggle.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {pal.btn_sec_bg};
+                color: {pal.btn_sec_text};
+                border: 1px solid {pal.btn_sec_border};
                 border-radius: 6px;
                 padding: 6px 12px;
                 font-size: 12px;
                 text-align: right;
-            }
-            QPushButton:hover {
-                background-color: #333333;
-                color: #F3F4F6;
-            }
+            }}
+            QPushButton:hover {{
+                background-color: {pal.btn_sec_hover};
+                color: {pal.text_primary};
+            }}
         """)
         self.btn_toggle.clicked.connect(self.toggle_details)
         layout.addWidget(self.btn_toggle)
@@ -95,16 +97,17 @@ class ErrorDialog(QDialog):
         self.txt_details.setPlainText(full_details_text)
         self.txt_details.setFixedHeight(150)
         self.txt_details.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
-        self.txt_details.setStyleSheet("""
-            QTextEdit {
-                background-color: #111827;
-                color: #F87171;
+        err_fg = "#F87171" if pal.is_dark else "#B91C1C"
+        self.txt_details.setStyleSheet(f"""
+            QTextEdit {{
+                background-color: {pal.bg_surface};
+                color: {err_fg};
                 font-family: Consolas, 'Courier New', monospace;
                 font-size: 11px;
-                border: 1px solid #374151;
+                border: 1px solid {pal.border};
                 border-radius: 6px;
                 padding: 8px;
-            }
+            }}
         """)
         self.txt_details.setVisible(False)
         layout.addWidget(self.txt_details)
@@ -133,22 +136,24 @@ class ErrorDialog(QDialog):
         self.btn_copy.clicked.connect(self.copy_to_clipboard)
         btn_layout.addWidget(self.btn_copy)
 
-        # Open Logs Folder Button
-        btn_folder = QPushButton("📁 پوشه لاگ‌ها")
-        btn_folder.setCursor(Qt.CursorShape.PointingHandCursor)
-        btn_folder.setFixedHeight(38)
-        btn_folder.setStyleSheet("""
-            QPushButton {
-                background-color: #374151;
-                color: #F3F4F6;
+        sec_qss = f"""
+            QPushButton {{
+                background-color: {pal.btn_sec_bg};
+                color: {pal.btn_sec_text};
+                border: 1px solid {pal.btn_sec_border};
                 border-radius: 6px;
                 padding: 0 14px;
                 font-size: 13px;
-            }
-            QPushButton:hover {
-                background-color: #4B5563;
-            }
-        """)
+            }}
+            QPushButton:hover {{
+                background-color: {pal.btn_sec_hover};
+                color: {pal.text_primary};
+            }}
+        """
+        btn_folder = QPushButton("📁 پوشه لاگ‌ها")
+        btn_folder.setCursor(Qt.CursorShape.PointingHandCursor)
+        btn_folder.setFixedHeight(38)
+        btn_folder.setStyleSheet(sec_qss)
         btn_folder.clicked.connect(open_logs_folder)
         btn_layout.addWidget(btn_folder)
 
@@ -159,19 +164,7 @@ class ErrorDialog(QDialog):
         btn_close.setCursor(Qt.CursorShape.PointingHandCursor)
         btn_close.setFixedHeight(38)
         btn_close.setFixedWidth(80)
-        btn_close.setStyleSheet("""
-            QPushButton {
-                background-color: #1F2937;
-                color: #D1D5DB;
-                border: 1px solid #4B5563;
-                border-radius: 6px;
-                font-size: 13px;
-            }
-            QPushButton:hover {
-                background-color: #374151;
-                color: #FFFFFF;
-            }
-        """)
+        btn_close.setStyleSheet(sec_qss)
         btn_close.clicked.connect(self.accept)
         btn_layout.addWidget(btn_close)
 
@@ -243,29 +236,28 @@ class LogViewerDialog(QDialog):
         layout.setContentsMargins(18, 18, 18, 18)
         layout.setSpacing(12)
 
+        palette = ThemeManager.get_current_palette()
         # Header Title and path
         header_box = QHBoxLayout()
         title_lbl = QLabel("📑 گزارشات، وقایع و لاگ‌های سیستم")
-        title_lbl.setStyleSheet("font-size: 16px; font-weight: bold; color: #FFFFFF;")
+        title_lbl.setStyleSheet(f"font-size: 16px; font-weight: bold; color: {palette.text_primary};")
         header_box.addWidget(title_lbl)
 
         path_lbl = QLabel(f"مسیر پوشه لاگ‌ها: {get_logs_dir()}")
-        path_lbl.setStyleSheet("color: #9CA3AF; font-size: 11px;")
+        path_lbl.setStyleSheet(f"color: {palette.text_muted}; font-size: 11px;")
         header_box.addStretch()
         header_box.addWidget(path_lbl)
         layout.addLayout(header_box)
 
         # Filter & Search Card
         filter_card = QFrame()
-        from nemov.utils.theme_manager import ThemeManager
-        palette = ThemeManager.get_current_palette()
         filter_card.setStyleSheet(f"background-color: {palette.bg_surface}; border: 1px solid {palette.border_light}; border-radius: 8px; padding: 4px;")
         filter_layout = QHBoxLayout(filter_card)
         filter_layout.setContentsMargins(10, 6, 10, 6)
         filter_layout.setSpacing(10)
 
         lbl_filter = QLabel("🎯 فیلتر نمایش:")
-        lbl_filter.setStyleSheet("color: #CCCCCC; font-weight: bold; font-size: 12px;")
+        lbl_filter.setStyleSheet(f"color: {palette.text_primary}; font-weight: bold; font-size: 12px;")
         filter_layout.addWidget(lbl_filter)
 
         self.combo_filter = QComboBox()
@@ -278,7 +270,7 @@ class LogViewerDialog(QDialog):
         filter_layout.addWidget(self.combo_filter)
 
         lbl_order = QLabel("🔃 ترتیب:")
-        lbl_order.setStyleSheet("color: #CCCCCC; font-weight: bold; font-size: 12px;")
+        lbl_order.setStyleSheet(f"color: {palette.text_primary}; font-weight: bold; font-size: 12px;")
         filter_layout.addWidget(lbl_order)
 
         self.combo_order = QComboBox()
@@ -298,7 +290,7 @@ class LogViewerDialog(QDialog):
         filter_layout.addWidget(self.txt_search, 1)
 
         self.lbl_stats = QLabel("")
-        self.lbl_stats.setStyleSheet("color: #9CA3AF; font-size: 11px; font-weight: bold;")
+        self.lbl_stats.setStyleSheet(f"color: {palette.text_secondary}; font-size: 11px; font-weight: bold;")
         filter_layout.addWidget(self.lbl_stats)
 
         layout.addWidget(filter_card)
@@ -308,15 +300,15 @@ class LogViewerDialog(QDialog):
         self.browser.setReadOnly(True)
         self.browser.setOpenLinks(False)
         self.browser.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
-        self.browser.setStyleSheet("""
-            QTextBrowser {
-                background-color: #101216;
-                color: #FFFFFF;
-                border: 1px solid #282C34;
+        self.browser.setStyleSheet(f"""
+            QTextBrowser {{
+                background-color: {palette.bg_card};
+                color: {palette.text_primary};
+                border: 1px solid {palette.border};
                 border-radius: 8px;
                 padding: 10px;
                 font-family: 'Vazirmatn', 'Segoe UI', Tahoma, sans-serif;
-            }
+            }}
         """)
         self.browser.anchorClicked.connect(self.handle_link_clicked)
         layout.addWidget(self.browser, 1)
@@ -326,7 +318,7 @@ class LogViewerDialog(QDialog):
 
         # Status toast label
         self.lbl_status = QLabel("")
-        self.lbl_status.setStyleSheet("color: #10B981; font-weight: bold; font-size: 12px; min-height: 18px;")
+        self.lbl_status.setStyleSheet(f"color: {'#10B981' if palette.is_dark else '#047857'}; font-weight: bold; font-size: 12px; min-height: 18px;")
         self.lbl_status.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self.lbl_status)
 
@@ -335,7 +327,7 @@ class LogViewerDialog(QDialog):
         bottom_bar.setSpacing(10)
 
         lbl_copy_num = QLabel("کپی لاگ مشخص:")
-        lbl_copy_num.setStyleSheet("color: #D1D5DB; font-size: 12px; font-weight: bold;")
+        lbl_copy_num.setStyleSheet(f"color: {palette.text_primary}; font-size: 12px; font-weight: bold;")
         bottom_bar.addWidget(lbl_copy_num)
 
         self.spin_copy = QSpinBox()
@@ -353,10 +345,16 @@ class LogViewerDialog(QDialog):
         self.btn_copy_single.clicked.connect(self.copy_single_log)
         bottom_bar.addWidget(self.btn_copy_single)
 
+        log_sec_qss = (
+            f"background-color: {palette.btn_sec_bg}; color: {palette.btn_sec_text}; "
+            f"border: 1px solid {palette.btn_sec_border}; border-radius: 6px; padding: 0 12px; font-size: 12px;"
+        )
+        r_bg, r_fg, r_bd, _ = ThemeManager.get_tone_colors("rose", palette)
+
         self.btn_copy_filtered = QPushButton("📋 کپی تمام لاگ‌های نمایشی")
         self.btn_copy_filtered.setFixedHeight(34)
         self.btn_copy_filtered.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_copy_filtered.setStyleSheet("background-color: #374151; color: #F3F4F6; border-radius: 6px; padding: 0 12px; font-size: 12px;")
+        self.btn_copy_filtered.setStyleSheet(log_sec_qss)
         self.btn_copy_filtered.clicked.connect(self.copy_filtered_logs)
         bottom_bar.addWidget(self.btn_copy_filtered)
 
@@ -365,21 +363,21 @@ class LogViewerDialog(QDialog):
         btn_refresh = QPushButton("🔄 بروزرسانی")
         btn_refresh.setFixedHeight(34)
         btn_refresh.setCursor(Qt.CursorShape.PointingHandCursor)
-        btn_refresh.setStyleSheet("background-color: #1F2937; color: #D1D5DB; border: 1px solid #4B5563; border-radius: 6px; padding: 0 12px; font-size: 12px;")
+        btn_refresh.setStyleSheet(log_sec_qss)
         btn_refresh.clicked.connect(self.load_logs)
         bottom_bar.addWidget(btn_refresh)
 
         btn_open_folder = QPushButton("📁 پوشه لاگ‌ها")
         btn_open_folder.setFixedHeight(34)
         btn_open_folder.setCursor(Qt.CursorShape.PointingHandCursor)
-        btn_open_folder.setStyleSheet("background-color: #1F2937; color: #D1D5DB; border: 1px solid #4B5563; border-radius: 6px; padding: 0 12px; font-size: 12px;")
+        btn_open_folder.setStyleSheet(log_sec_qss)
         btn_open_folder.clicked.connect(open_logs_folder)
         bottom_bar.addWidget(btn_open_folder)
 
         btn_clear = QPushButton("🗑️ پاک‌سازی")
         btn_clear.setFixedHeight(34)
         btn_clear.setCursor(Qt.CursorShape.PointingHandCursor)
-        btn_clear.setStyleSheet("background-color: #7F1D1D; color: #FCA5A5; border-radius: 6px; padding: 0 12px; font-size: 12px;")
+        btn_clear.setStyleSheet(f"background-color: {r_bg}; color: {r_fg}; border: 1px solid {r_bd}; border-radius: 6px; padding: 0 12px; font-size: 12px; font-weight: bold;")
         btn_clear.clicked.connect(self.handle_clear_logs)
         bottom_bar.addWidget(btn_clear)
 
@@ -387,7 +385,7 @@ class LogViewerDialog(QDialog):
         btn_close.setFixedHeight(34)
         btn_close.setFixedWidth(75)
         btn_close.setCursor(Qt.CursorShape.PointingHandCursor)
-        btn_close.setStyleSheet("background-color: #1F2937; color: #D1D5DB; border: 1px solid #4B5563; border-radius: 6px; font-size: 12px;")
+        btn_close.setStyleSheet(log_sec_qss)
         btn_close.clicked.connect(self.accept)
         bottom_bar.addWidget(btn_close)
 
@@ -438,6 +436,10 @@ class LogViewerDialog(QDialog):
         if not filtered:
             html_parts.append("<div style='text-align: center; color: #9CA3AF; padding: 40px; font-size: 14px;'>هیچ لاگی با فیلتر یا جستجوی انتخابی یافت نشد.</div>")
         else:
+            pal = ThemeManager.get_current_palette()
+            link_col = "#60A5FA" if pal.is_dark else "#2563EB"
+            ts_col = "#9CA3AF" if pal.is_dark else "#6B7280"
+            body_text_col = "#FECACA" if pal.is_dark else "#7F1D1D"
             for e in filtered:
                 is_err = e["level"] in ("ERROR", "CRITICAL")
                 num = e["num"]
@@ -445,27 +447,27 @@ class LogViewerDialog(QDialog):
                 msg = html.escape(e["message"])
 
                 if is_err:
-                    bg_color = "#1F0F12"
-                    border_color = "#DC2626"
-                    header_bg = "#2D1418"
-                    badge_color = "#EF4444"
+                    if pal.is_dark:
+                        bg_color, border_color, header_bg = "#1F0F12", "#DC2626", "#2D1418"
+                        badge_color, text_color, body_bg = "#EF4444", "#FCA5A5", "#15080A"
+                    else:
+                        bg_color, border_color, header_bg = "#FEF2F2", "#DC2626", "#FEE2E2"
+                        badge_color, text_color, body_bg = "#B91C1C", "#991B1B", "#FFFFFF"
                     badge_text = "🔴 لاگ خطا و باگ سیستم"
-                    text_color = "#FCA5A5"
-                    body_bg = "#15080A"
                 else:
-                    bg_color = "#0A1F17"
-                    border_color = "#059669"
-                    header_bg = "#0F2E22"
-                    badge_color = "#10B981"
+                    if pal.is_dark:
+                        bg_color, border_color, header_bg = "#0A1F17", "#059669", "#0F2E22"
+                        badge_color, text_color, body_bg = "#10B981", "#6EE7B7", "#071711"
+                    else:
+                        bg_color, border_color, header_bg = "#ECFDF5", "#059669", "#D1FAE5"
+                        badge_color, text_color, body_bg = "#047857", "#065F46", "#FFFFFF"
                     badge_text = "🟢 لاگ سیستمی و موفقیت‌آمیز"
-                    text_color = "#6EE7B7"
-                    body_bg = "#071711"
 
                 card = f"""
                 <table width='100%' border='0' cellpadding='8' cellspacing='0' style='background-color: {bg_color}; border: 1px solid {border_color}; border-radius: 8px; margin-bottom: 12px;'>
                     <tr style='background-color: {header_bg};'>
-                        <td align='left' width='35%' style='color: #9CA3AF; font-size: 11px;'>
-                            <a href='copy:{num}' style='color: #60A5FA; text-decoration: none; font-weight: bold; margin-left: 10px;'>📋 کپی این لاگ</a>
+                        <td align='left' width='35%' style='color: {ts_col}; font-size: 11px;'>
+                            <a href='copy:{num}' style='color: {link_col}; text-decoration: none; font-weight: bold; margin-left: 10px;'>📋 کپی این لاگ</a>
                             <span style='font-family: Consolas, monospace;'>📅 {ts}</span>
                         </td>
                         <td align='right' width='65%' style='color: {badge_color}; font-size: 13px; font-weight: bold;' dir='rtl'>
@@ -485,7 +487,7 @@ class LogViewerDialog(QDialog):
                     card += f"""
                     <tr>
                         <td colspan='2' style='padding: 0 12px 12px 12px;'>
-                            <div style='background-color: {body_bg}; border: 1px dashed {border_color}; border-radius: 6px; color: #FECACA; font-family: Consolas, monospace; font-size: 11px; padding: 8px; direction: ltr; text-align: left; white-space: pre-wrap;'>{body_text}</div>
+                            <div style='background-color: {body_bg}; border: 1px dashed {border_color}; border-radius: 6px; color: {body_text_col}; font-family: Consolas, monospace; font-size: 11px; padding: 8px; direction: ltr; text-align: left; white-space: pre-wrap;'>{body_text}</div>
                         </td>
                     </tr>
                     """

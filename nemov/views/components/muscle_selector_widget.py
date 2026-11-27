@@ -8,6 +8,7 @@ from PyQt6.QtGui import (
     QPainter, QPixmap, QColor, QPen, QBrush, QPolygonF, QCursor, QFont, QFontDatabase
 )
 from PyQt6.QtCore import Qt, pyqtSignal, QPointF, QRectF, QEvent
+from nemov.utils.theme_manager import ThemeManager
 
 MUSCLE_DEFINITIONS = {
     "neck": {
@@ -552,24 +553,66 @@ class MuscleSelectorWidget(QFrame):
     def __init__(self, parent=None, is_filter_mode=False):
         super().__init__(parent)
         self.is_filter_mode = is_filter_mode
+        self._current_chip_key = ""
+        self._current_chip_name = ""
+        self.lbl_hint = None
         self.setObjectName("muscleSelectorFrame")
-        self.setStyleSheet("""
-            QFrame#muscleSelectorFrame {
-                background-color: #12151B;
-                border: 1px solid #2D333B;
+        self.init_ui()
+        self._apply_theme_style()
+        try:
+            ThemeManager.theme_changed.connect(self._on_theme_changed)
+        except Exception:
+            pass
+
+    def _on_theme_changed(self, _theme_key: str):
+        self._apply_theme_style()
+
+    def _apply_theme_style(self):
+        pal = ThemeManager.get_current_palette()
+        self.setStyleSheet(f"""
+            QFrame#muscleSelectorFrame {{
+                background-color: {pal.bg_card};
+                border: 1px solid {pal.border};
                 border-radius: 12px;
-            }
-            QToolTip {
-                background-color: #1E293B;
-                color: #F8FAFC;
-                border: 1px solid #475569;
+            }}
+            QToolTip {{
+                background-color: {pal.bg_surface};
+                color: {pal.text_primary};
+                border: 1px solid {pal.border};
                 border-radius: 5px;
                 padding: 4px 8px;
                 font-family: "Vazirmatn", "Segoe UI", sans-serif;
                 font-size: 11px;
-            }
+            }}
         """)
-        self.init_ui()
+        if hasattr(self, "btn_reset"):
+            self.btn_reset.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: {pal.btn_sec_bg};
+                    color: {pal.btn_sec_text};
+                    font-family: "Vazirmatn", "Segoe UI", sans-serif;
+                    border: 1px solid {pal.btn_sec_border};
+                    border-radius: 6px;
+                    padding: 3px 8px;
+                    font-size: 11px;
+                    font-weight: bold;
+                }}
+                QPushButton:hover {{
+                    background-color: {pal.btn_sec_hover};
+                    color: {pal.text_primary};
+                }}
+            """)
+        if getattr(self, "lbl_hint", None) is not None:
+            self.lbl_hint.setStyleSheet(f"""
+                QLabel {{
+                    color: {pal.text_secondary};
+                    font-family: "Vazirmatn", "Segoe UI", sans-serif;
+                    font-size: 11px;
+                    background: transparent;
+                }}
+            """)
+        if hasattr(self, "lbl_status"):
+            self._update_status_chip(self._current_chip_key, self._current_chip_name)
 
     def init_ui(self):
         vlay = QVBoxLayout(self)
@@ -626,17 +669,9 @@ class MuscleSelectorWidget(QFrame):
 
         # Footer hint (only in dialog mode; filter card has its own dedicated description)
         if not self.is_filter_mode:
-            lbl_hint = QLabel("💡 با کلیک روی بدن یا انتخاب از لیست، عضله را برگزینید.")
-            lbl_hint.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            lbl_hint.setStyleSheet("""
-                QLabel {
-                    color: #94A3B8;
-                    font-family: "Vazirmatn", "Segoe UI", sans-serif;
-                    font-size: 11px;
-                    background: transparent;
-                }
-            """)
-            vlay.addWidget(lbl_hint)
+            self.lbl_hint = QLabel("💡 با کلیک روی بدن یا انتخاب از لیست، عضله را برگزینید.")
+            self.lbl_hint.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            vlay.addWidget(self.lbl_hint)
 
     def _on_canvas_clicked(self, muscle_key: str, name_fa: str):
         self._update_status_chip(muscle_key, name_fa)
@@ -651,17 +686,22 @@ class MuscleSelectorWidget(QFrame):
                 self.lbl_status.setText("🎯 عضله: انتخاب نشده" if not self.is_filter_mode else "🎯 فیلتر: همه عضلات")
 
     def _update_status_chip(self, muscle_key: str, name_fa: str):
+        pal = ThemeManager.get_current_palette()
+        alpha = 0.25 if pal.is_dark else 0.16
+        self._current_chip_key = muscle_key or ""
+        self._current_chip_name = name_fa or ""
+
         if muscle_key and muscle_key in MUSCLE_DEFINITIONS:
             color = MUSCLE_DEFINITIONS[muscle_key]["color"]
             prefix = "🎯 فیلتر:" if self.is_filter_mode else "🎯 عضله:"
             self.lbl_status.setText(f"{prefix} {name_fa}")
             self.lbl_status.setStyleSheet(f"""
                 QLabel {{
-                    color: #FFFFFF;
+                    color: {pal.text_primary};
                     font-family: "Vazirmatn", "Segoe UI", sans-serif;
                     font-size: 11.5px;
                     font-weight: bold;
-                    background-color: rgba({int(color[1:3], 16)}, {int(color[3:5], 16)}, {int(color[5:7], 16)}, 0.25);
+                    background-color: rgba({int(color[1:3], 16)}, {int(color[3:5], 16)}, {int(color[5:7], 16)}, {alpha});
                     border: 1px solid {color};
                     border-radius: 6px;
                     padding: 4px 10px;
@@ -670,30 +710,33 @@ class MuscleSelectorWidget(QFrame):
         elif muscle_key and muscle_key in LEGACY_NAMES_FA:
             color = "#3B82F6"
             display_name = name_fa or LEGACY_NAMES_FA[muscle_key]
+            self._current_chip_name = display_name
             prefix = "🎯 فیلتر:" if self.is_filter_mode else "🎯 عضله:"
             self.lbl_status.setText(f"{prefix} {display_name}")
             self.lbl_status.setStyleSheet(f"""
                 QLabel {{
-                    color: #FFFFFF;
+                    color: {pal.text_primary};
                     font-family: "Vazirmatn", "Segoe UI", sans-serif;
                     font-size: 11.5px;
                     font-weight: bold;
-                    background-color: rgba(59, 130, 246, 0.25);
+                    background-color: rgba(59, 130, 246, {alpha});
                     border: 1px solid {color};
                     border-radius: 6px;
                     padding: 4px 10px;
                 }}
             """)
         else:
+            self._current_chip_key = ""
+            self._current_chip_name = ""
             self.lbl_status.setText("🎯 عضله: انتخاب نشده" if not self.is_filter_mode else "🎯 فیلتر: همه عضلات")
-            self.lbl_status.setStyleSheet("""
+            self.lbl_status.setStyleSheet(f"""
                 QLabel {{
-                    color: #C9D1D9;
+                    color: {pal.text_primary};
                     font-family: "Vazirmatn", "Segoe UI", sans-serif;
                     font-size: 11.5px;
                     font-weight: bold;
-                    background-color: #1C2128;
-                    border: 1px solid #30363D;
+                    background-color: {pal.bg_surface};
+                    border: 1px solid {pal.border};
                     border-radius: 6px;
                     padding: 4px 10px;
                 }}

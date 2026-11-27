@@ -552,7 +552,7 @@ def delete_trainer_account(user_id: int) -> bool:
         except Exception:
             pass
 
-        # 6. Delete backup on Cloudflare Worker if connected
+        # 6. Delete backup on Runflare cloud server if connected
         if trainer_phone:
             try:
                 import urllib.request, config

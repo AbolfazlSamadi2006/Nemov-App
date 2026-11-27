@@ -15,6 +15,7 @@ from nemov.utils.image_utils import get_circular_pixmap
 from nemov.services.update_service import (
     UpdateService, UpdateCheckWorker, UpdateDownloadWorker, format_bytes
 )
+from nemov.utils.theme_manager import ThemeManager
 
 
 class DeveloperView(QWidget):
@@ -26,7 +27,181 @@ class DeveloperView(QWidget):
         self.selected_dev_photo_path = None
         self._check_worker = None
         self._download_worker = None
+        self._update_headline_state = "idle"
+        self._dl_progress_done = False
         self.init_ui()
+        self._apply_theme_style()
+        try:
+            ThemeManager.theme_changed.connect(self._on_theme_changed)
+        except Exception:
+            pass
+
+    def _on_theme_changed(self, _theme_key: str):
+        self._apply_theme_style()
+        if hasattr(self, "lbl_dev_email"):
+            self._refresh_dev_links_and_admin_styles()
+
+    def _apply_headline_style(self, pal=None):
+        if pal is None:
+            pal = ThemeManager.get_current_palette()
+        state = getattr(self, "_update_headline_state", "idle")
+        if state == "checking":
+            col = "#60A5FA" if pal.is_dark else "#1D4ED8"
+            self.lbl_update_headline.setStyleSheet(f"color: {col}; font-size: 13px; background: transparent;")
+        elif state == "error":
+            col = "#F87171" if pal.is_dark else "#B91C1C"
+            self.lbl_update_headline.setStyleSheet(f"color: {col}; font-size: 13px; background: transparent;")
+        elif state == "up_to_date":
+            col = "#34D399" if pal.is_dark else "#047857"
+            self.lbl_update_headline.setStyleSheet(f"color: {col}; font-size: 13px; line-height: 1.6; background: transparent;")
+        elif state == "available":
+            col = "#FBBF24" if pal.is_dark else "#B45309"
+            self.lbl_update_headline.setStyleSheet(f"color: {col}; font-size: 13px; line-height: 1.6; font-weight: bold; background: transparent;")
+        else:
+            self.lbl_update_headline.setStyleSheet(f"color: {pal.text_primary}; font-size: 13px; line-height: 1.5; background: transparent;")
+
+    def _apply_theme_style(self):
+        pal = ThemeManager.get_current_palette()
+        self._load_app_logo()
+        if hasattr(self, "lbl_title"):
+            self.lbl_title.setStyleSheet(f"font-size: 16px; font-weight: bold; color: {pal.text_primary};")
+        if hasattr(self, "lbl_app_name"):
+            self.lbl_app_name.setStyleSheet(f"font-size: 18px; font-weight: bold; color: {pal.text_primary};")
+        if hasattr(self, "lbl_cur_ver"):
+            ver_col = "#60A5FA" if pal.is_dark else "#1D4ED8"
+            self.lbl_cur_ver.setStyleSheet(f"font-size: 12px; color: {ver_col}; font-weight: bold;")
+        if hasattr(self, "lbl_ver_dot"):
+            self.lbl_ver_dot.setStyleSheet(f"color: {pal.text_muted};")
+        if hasattr(self, "lbl_platform"):
+            self.lbl_platform.setStyleSheet(f"font-size: 12px; color: {pal.text_secondary};")
+        if hasattr(self, "lbl_lic_status"):
+            self.lbl_lic_status.setStyleSheet(f"font-weight: bold; font-size: 13px; color: {pal.text_primary};")
+        if hasattr(self, "btn_check_update"):
+            self.btn_check_update.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: #2563EB;
+                    color: #FFFFFF;
+                    font-weight: bold;
+                    font-size: 13px;
+                    border-radius: 6px;
+                    padding: 0 16px;
+                    border: 1px solid #1D4ED8;
+                }}
+                QPushButton:hover {{
+                    background-color: #1D4ED8;
+                }}
+                QPushButton:disabled {{
+                    background-color: {pal.btn_sec_bg};
+                    color: {pal.text_muted};
+                    border: 1px solid {pal.btn_sec_border};
+                }}
+            """)
+        if hasattr(self, "lbl_last_check"):
+            self.lbl_last_check.setStyleSheet(f"color: {pal.text_secondary}; font-size: 12px;")
+        if hasattr(self, "update_status_card"):
+            self.update_status_card.setStyleSheet(f"""
+                QFrame#dev_update_status_card {{
+                    background-color: {pal.bg_card};
+                    border: 1px solid {pal.border};
+                    border-radius: 8px;
+                    padding: 12px;
+                }}
+            """)
+        if hasattr(self, "lbl_update_headline"):
+            self._apply_headline_style(pal)
+        if hasattr(self, "lbl_cl_title"):
+            cl_col = "#F59E0B" if pal.is_dark else "#B45309"
+            self.lbl_cl_title.setStyleSheet(f"font-size: 13px; font-weight: bold; color: {cl_col}; background: transparent;")
+        if hasattr(self, "txt_changelog"):
+            self.txt_changelog.setStyleSheet(f"""
+                QTextBrowser {{
+                    background-color: {pal.bg_surface};
+                    color: {pal.text_primary};
+                    border: 1px solid {pal.border};
+                    border-radius: 6px;
+                    padding: 10px;
+                    font-family: 'Vazirmatn', sans-serif;
+                    font-size: 12px;
+                    line-height: 1.6;
+                }}
+            """)
+        if hasattr(self, "lbl_download_progress"):
+            dl_col = ("#34D399" if pal.is_dark else "#047857") if getattr(self, "_dl_progress_done", False) else ("#60A5FA" if pal.is_dark else "#1D4ED8")
+            self.lbl_download_progress.setStyleSheet(f"font-size: 12px; color: {dl_col}; font-weight: bold; background: transparent;")
+        if hasattr(self, "bar_download"):
+            self.bar_download.setStyleSheet(f"""
+                QProgressBar {{
+                    background-color: {pal.border};
+                    border-radius: 4px;
+                    border: none;
+                }}
+                QProgressBar::chunk {{
+                    background-color: #10B981;
+                    border-radius: 4px;
+                }}
+            """)
+        if hasattr(self, "btn_browser_download"):
+            self.btn_browser_download.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: {pal.btn_sec_bg};
+                    color: {pal.btn_sec_text};
+                    font-weight: bold;
+                    font-size: 12px;
+                    border-radius: 6px;
+                    padding: 0 14px;
+                    border: 1px solid {pal.btn_sec_border};
+                }}
+                QPushButton:hover {{
+                    background-color: {pal.btn_sec_hover};
+                    color: {pal.text_primary};
+                }}
+            """)
+        if hasattr(self, "lbl_dev_full_name"):
+            self.lbl_dev_full_name.setStyleSheet(f"font-size: 20px; font-weight: bold; color: {pal.text_primary};")
+        if hasattr(self, "lbl_dev_role"):
+            role_col = "#E53E3E" if pal.is_dark else pal.primary
+            self.lbl_dev_role.setStyleSheet(f"font-size: 13px; color: {role_col}; font-weight: bold;")
+        for lbl_attr in ("lbl_dev_phone", "lbl_dev_email", "lbl_dev_telegram", "lbl_dev_github"):
+            lbl = getattr(self, lbl_attr, None)
+            if lbl is not None:
+                lbl.setStyleSheet(f"font-size: 14px; color: {pal.text_primary};")
+        if hasattr(self, "lbl_dev_photo_edit") and (not self.selected_dev_photo_path or not os.path.exists(self.selected_dev_photo_path)):
+            self.lbl_dev_photo_edit.setStyleSheet(f"border: 1px dashed {pal.border}; border-radius: 30px; color: {pal.text_muted};")
+        if hasattr(self, "btn_save_dev"):
+            self.btn_save_dev.setStyleSheet(f"""
+                QPushButton {{ background-color: #065F46; color: white; border-radius: 6px; font-weight: bold; font-size: 13px; }}
+                QPushButton:hover {{ background-color: #047857; }}
+                QPushButton:disabled {{ background-color: {pal.btn_sec_bg}; color: {pal.text_muted}; border: 1px solid {pal.btn_sec_border}; }}
+            """)
+
+    def _refresh_dev_links_and_admin_styles(self):
+        pal = ThemeManager.get_current_palette()
+        link_col = "#60A5FA" if pal.is_dark else "#2563EB"
+        email = getattr(self, "_dev_email_raw", "a.samadi2006@gmail.com")
+        tg_url = getattr(self, "_dev_tg_url", "https://t.me/AqaSamadi")
+        tg_display = getattr(self, "_dev_tg_display", "t.me/AqaSamadi")
+        github = getattr(self, "_dev_github_raw", "github.com/AbolfazlSamadi2006")
+        github_url = getattr(self, "_dev_github_url", f"https://{github}")
+        self.lbl_dev_email.setText(f'پست الکترونیک (جیمیل): <a href="mailto:{email}" style="color: {link_col}; text-decoration: underline;">{email}</a>')
+        self.lbl_dev_telegram.setText(f'تلگرام: <a href="{tg_url}" style="color: {link_col}; text-decoration: underline;">{tg_display}</a>')
+        self.lbl_dev_github.setText(f'گیت‌هاب: <a href="{github_url}" style="color: {link_col}; text-decoration: underline;">{github}</a>')
+        if CurrentUser.is_admin():
+            self.combo_license.setStyleSheet(f"""
+                QComboBox {{
+                    background-color: {pal.input_bg}; color: {pal.text_primary}; border: 1px solid {pal.input_border}; border-radius: 6px; padding: 4px 8px;
+                }}
+            """)
+        else:
+            self.combo_license.setStyleSheet(f"""
+                QComboBox {{
+                    background-color: {pal.bg_surface}; color: {pal.text_muted}; border: 1px solid {pal.border}; border-radius: 6px; padding: 4px 8px;
+                }}
+            """)
+            self.btn_save_license.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: {pal.btn_sec_bg}; color: {pal.text_muted}; border-radius: 6px; font-weight: bold; padding: 0 15px; font-size: 13px; border: 1px solid {pal.btn_sec_border};
+                }}
+            """)
 
     def showEvent(self, event):
         super().showEvent(event)
@@ -51,12 +226,11 @@ class DeveloperView(QWidget):
         btn_back.setCursor(Qt.CursorShape.PointingHandCursor)
         btn_back.clicked.connect(self.back_requested.emit)
 
-        title = QLabel("ℹ️ درباره نرم‌افزار نِمو و اطلاعات برنامه‌نویس")
-        title.setObjectName("h1")
-        title.setStyleSheet("font-size: 16px; font-weight: bold; color: #FFFFFF;")
+        self.lbl_title = QLabel("ℹ️ درباره نرم‌افزار نِمو و اطلاعات برنامه‌نویس")
+        self.lbl_title.setObjectName("h1")
 
         header_layout.addWidget(btn_back)
-        header_layout.addWidget(title)
+        header_layout.addWidget(self.lbl_title)
         header_layout.addStretch()
         main_vbox.addWidget(header_frame)
 
@@ -105,24 +279,21 @@ class DeveloperView(QWidget):
 
         v_app_text = QVBoxLayout()
         v_app_text.setSpacing(4)
-        lbl_app_name = QLabel(config.APP_TITLE)
-        lbl_app_name.setStyleSheet("font-size: 18px; font-weight: bold; color: #FFFFFF;")
+        self.lbl_app_name = QLabel(config.APP_TITLE)
 
         row_meta = QHBoxLayout()
         row_meta.setSpacing(10)
         
-        lbl_cur_ver = QLabel(f"🏷️ نسخه فعلی: {config.APP_VERSION}")
-        lbl_cur_ver.setStyleSheet("font-size: 12px; color: #60A5FA; font-weight: bold;")
+        self.lbl_cur_ver = QLabel(f"🏷️ نسخه فعلی: {config.APP_VERSION}")
+        self.lbl_ver_dot = QLabel("•")
+        self.lbl_platform = QLabel("💻 پلتفرم: ویندوز (نسخه ۶۴ بیتی)")
 
-        lbl_platform = QLabel("💻 پلتفرم: ویندوز (نسخه ۶۴ بیتی)")
-        lbl_platform.setStyleSheet("font-size: 12px; color: #A0AEC0;")
-
-        row_meta.addWidget(lbl_cur_ver)
-        row_meta.addWidget(QLabel("•"))
-        row_meta.addWidget(lbl_platform)
+        row_meta.addWidget(self.lbl_cur_ver)
+        row_meta.addWidget(self.lbl_ver_dot)
+        row_meta.addWidget(self.lbl_platform)
         row_meta.addStretch()
 
-        v_app_text.addWidget(lbl_app_name)
+        v_app_text.addWidget(self.lbl_app_name)
         v_app_text.addLayout(row_meta)
 
         row_id.addWidget(self.lbl_app_logo)
@@ -135,8 +306,7 @@ class DeveloperView(QWidget):
         layout_lic.setContentsMargins(0, 8, 0, 0)
         layout_lic.setSpacing(12)
 
-        lbl_lic_status = QLabel("وضعیت لایسنس برنامه:")
-        lbl_lic_status.setStyleSheet("font-weight: bold; font-size: 13px; color: #E2E8F0;")
+        self.lbl_lic_status = QLabel("وضعیت لایسنس برنامه:")
 
         self.combo_license = QComboBox()
         self.combo_license.setFixedHeight(36)
@@ -150,7 +320,7 @@ class DeveloperView(QWidget):
         self.btn_save_license.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_save_license.clicked.connect(self.save_license_status)
 
-        layout_lic.addWidget(lbl_lic_status)
+        layout_lic.addWidget(self.lbl_lic_status)
         layout_lic.addWidget(self.combo_license)
         layout_lic.addWidget(self.btn_save_license)
         layout_lic.addStretch()
@@ -174,29 +344,9 @@ class DeveloperView(QWidget):
         self.btn_check_update.setFixedHeight(38)
         self.btn_check_update.setMinimumWidth(180)
         self.btn_check_update.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_check_update.setStyleSheet("""
-            QPushButton {
-                background-color: #2563EB;
-                color: #FFFFFF;
-                font-weight: bold;
-                font-size: 13px;
-                border-radius: 6px;
-                padding: 0 16px;
-                border: 1px solid #1D4ED8;
-            }
-            QPushButton:hover {
-                background-color: #1D4ED8;
-            }
-            QPushButton:disabled {
-                background-color: #374151;
-                color: #9CA3AF;
-                border: 1px solid #4B5563;
-            }
-        """)
         self.btn_check_update.clicked.connect(self.check_for_updates_manual)
 
         self.lbl_last_check = QLabel("آخرین بررسی: هنوز انجام نشده")
-        self.lbl_last_check.setStyleSheet("color: #9CA3AF; font-size: 12px;")
 
         row_up_header.addWidget(self.btn_check_update)
         row_up_header.addWidget(self.lbl_last_check)
@@ -206,21 +356,12 @@ class DeveloperView(QWidget):
         # Dynamic Status Container
         self.update_status_card = QFrame()
         self.update_status_card.setObjectName("dev_update_status_card")
-        self.update_status_card.setStyleSheet("""
-            QFrame#dev_update_status_card {
-                background-color: #1A202C;
-                border: 1px solid #2D3748;
-                border-radius: 8px;
-                padding: 12px;
-            }
-        """)
         layout_status = QVBoxLayout(self.update_status_card)
         layout_status.setContentsMargins(14, 12, 14, 12)
         layout_status.setSpacing(10)
 
         # 1. Info / Initial State Label
         self.lbl_update_headline = QLabel("جهت بررسی وجود نسخه جدید در گیت‌هاب، روی دکمه «بررسی نسخه جدید» کلیک فرمایید.")
-        self.lbl_update_headline.setStyleSheet("color: #E2E8F0; font-size: 13px; line-height: 1.5;")
         self.lbl_update_headline.setWordWrap(True)
         layout_status.addWidget(self.lbl_update_headline)
 
@@ -232,26 +373,13 @@ class DeveloperView(QWidget):
         v_cl.setContentsMargins(0, 4, 0, 4)
         v_cl.setSpacing(6)
 
-        lbl_cl_title = QLabel("📋 قابلیت‌ها و تغییرات نسخه جدید:")
-        lbl_cl_title.setStyleSheet("font-size: 13px; font-weight: bold; color: #F59E0B;")
-        v_cl.addWidget(lbl_cl_title)
+        self.lbl_cl_title = QLabel("📋 قابلیت‌ها و تغییرات نسخه جدید:")
+        v_cl.addWidget(self.lbl_cl_title)
 
         self.txt_changelog = QTextBrowser()
         self.txt_changelog.setFixedHeight(160)
         self.txt_changelog.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
         self.txt_changelog.setOpenExternalLinks(True)
-        self.txt_changelog.setStyleSheet("""
-            QTextBrowser {
-                background-color: #111827;
-                color: #E5E7EB;
-                border: 1px solid #374151;
-                border-radius: 6px;
-                padding: 10px;
-                font-family: 'Vazirmatn', sans-serif;
-                font-size: 12px;
-                line-height: 1.6;
-            }
-        """)
         v_cl.addWidget(self.txt_changelog)
         layout_status.addWidget(self.changelog_container)
         self.changelog_container.setVisible(False)
@@ -265,7 +393,6 @@ class DeveloperView(QWidget):
         v_dl.setSpacing(6)
 
         self.lbl_download_progress = QLabel("در حال دریافت نسخه جدید...")
-        self.lbl_download_progress.setStyleSheet("font-size: 12px; color: #60A5FA; font-weight: bold;")
         v_dl.addWidget(self.lbl_download_progress)
 
         self.bar_download = QProgressBar()
@@ -273,17 +400,6 @@ class DeveloperView(QWidget):
         self.bar_download.setTextVisible(False)
         self.bar_download.setRange(0, 100)
         self.bar_download.setValue(0)
-        self.bar_download.setStyleSheet("""
-            QProgressBar {
-                background-color: #374151;
-                border-radius: 4px;
-                border: none;
-            }
-            QProgressBar::chunk {
-                background-color: #10B981;
-                border-radius: 4px;
-            }
-        """)
         v_dl.addWidget(self.bar_download)
         layout_status.addWidget(self.download_panel)
         self.download_panel.setVisible(False)
@@ -365,21 +481,6 @@ class DeveloperView(QWidget):
         self.btn_browser_download.setFixedHeight(38)
         self.btn_browser_download.setMinimumWidth(170)
         self.btn_browser_download.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_browser_download.setStyleSheet("""
-            QPushButton {
-                background-color: #374151;
-                color: #E5E7EB;
-                font-weight: bold;
-                font-size: 12px;
-                border-radius: 6px;
-                padding: 0 14px;
-                border: 1px solid #4B5563;
-            }
-            QPushButton:hover {
-                background-color: #4B5563;
-                color: #FFFFFF;
-            }
-        """)
         self.btn_browser_download.clicked.connect(self.open_browser_download)
         self.row_up_actions.addWidget(self.btn_browser_download)
 
@@ -399,16 +500,26 @@ class DeveloperView(QWidget):
 
     def _load_app_logo(self):
         try:
-            from nemov.utils.image_utils import get_app_icon
-            pix = get_app_icon().pixmap(54, 54)
+            pal = ThemeManager.get_current_palette()
+            logo_file = "nemov_logo.png" if pal.is_dark else "nemov_logo_light.png"
+            logo_path = config.BASE_DIR / "resources" / "images" / logo_file
+            if not logo_path.exists():
+                logo_path = config.BASE_DIR / "resources" / "images" / "nemov_logo.png"
+            pix = QPixmap(str(logo_path)) if logo_path.exists() else QPixmap()
+            if pix.isNull():
+                from nemov.utils.image_utils import get_app_icon
+                pix = get_app_icon().pixmap(54, 54)
+            else:
+                pix = pix.scaled(54, 54, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
             if not pix.isNull():
                 self.lbl_app_logo.setPixmap(pix)
+                self.lbl_app_logo.setStyleSheet("background: transparent;")
             else:
                 self.lbl_app_logo.setText("🏆")
-                self.lbl_app_logo.setStyleSheet("font-size: 38px;")
+                self.lbl_app_logo.setStyleSheet("font-size: 38px; background: transparent;")
         except Exception:
             self.lbl_app_logo.setText("🏆")
-            self.lbl_app_logo.setStyleSheet("font-size: 38px;")
+            self.lbl_app_logo.setStyleSheet("font-size: 38px; background: transparent;")
 
     # =========================================================================
     # TAB 2: اطلاعات و مشخصات برنامه‌نویس
@@ -443,12 +554,10 @@ class DeveloperView(QWidget):
 
         self.lbl_dev_full_name = QLabel("مهندس ابوالفضل صمدی کوچکسرائی")
         self.lbl_dev_full_name.setTextInteractionFlags(SELECTABLE_FLAGS)
-        self.lbl_dev_full_name.setStyleSheet("font-size: 20px; font-weight: bold; color: #FFFFFF;")
 
         # Fixed spelling to نِمو and removed "، پیاده‌ساز" and "(Nemov)" as requested
         self.lbl_dev_role = QLabel("طراح و توسعه‌دهنده نرم‌افزار مدیریت ورزشی نِمو")
         self.lbl_dev_role.setTextInteractionFlags(SELECTABLE_FLAGS)
-        self.lbl_dev_role.setStyleSheet("font-size: 13px; color: #E53E3E; font-weight: bold;")
 
         v_info.addWidget(self.lbl_dev_full_name)
         v_info.addWidget(self.lbl_dev_role)
@@ -597,11 +706,6 @@ class DeveloperView(QWidget):
         self.btn_save_dev.setFixedHeight(38)
         self.btn_save_dev.setFixedWidth(240)
         self.btn_save_dev.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_save_dev.setStyleSheet("""
-            QPushButton { background-color: #065F46; color: white; border-radius: 6px; font-weight: bold; font-size: 13px; }
-            QPushButton:hover { background-color: #047857; }
-            QPushButton:disabled { background-color: #2D2D2D; color: #777777; border: 1px solid #444444; }
-        """)
         self.btn_save_dev.setEnabled(False)
         self.btn_save_dev.clicked.connect(self.save_dev_info)
         row_dev_actions.addWidget(self.btn_save_dev)
@@ -638,7 +742,8 @@ class DeveloperView(QWidget):
         self.btn_check_update.setEnabled(False)
         self.btn_check_update.setText("⏳ در حال بررسی...")
         self.lbl_update_headline.setText("در حال ارتباط با مخزن گیت‌هاب و بررسی وضعیت آخرین نسخه...")
-        self.lbl_update_headline.setStyleSheet("color: #60A5FA; font-size: 13px;")
+        self._update_headline_state = "checking"
+        self._apply_headline_style()
 
         self._check_worker = UpdateCheckWorker(current_version=config.APP_VERSION)
         self._check_worker.finished_signal.connect(self._on_check_finished)
@@ -650,7 +755,8 @@ class DeveloperView(QWidget):
 
         if error_msg:
             self.lbl_update_headline.setText(f"⚠️ {error_msg}")
-            self.lbl_update_headline.setStyleSheet("color: #F87171; font-size: 13px;")
+            self._update_headline_state = "error"
+            self._apply_headline_style()
             self.changelog_container.setVisible(False)
             self.btn_download.setVisible(False)
             self.btn_browser_download.setVisible(False)
@@ -665,7 +771,8 @@ class DeveloperView(QWidget):
                 f"✅ نرم‌افزار نِمو کاملاً به‌روز است!\n"
                 f"شما در حال حاضر از جدیدترین و پایدارترین نسخه موجود ({tag}) استفاده می‌فرمایید."
             )
-            self.lbl_update_headline.setStyleSheet("color: #34D399; font-size: 13px; line-height: 1.6;")
+            self._update_headline_state = "up_to_date"
+            self._apply_headline_style()
             self.changelog_container.setVisible(False)
             self.btn_download.setVisible(False)
             self.btn_browser_download.setVisible(False)
@@ -680,7 +787,8 @@ class DeveloperView(QWidget):
                 f"عنوان انتشار: {title}\n"
                 f"حجم فایل: {size_str}"
             )
-            self.lbl_update_headline.setStyleSheet("color: #FBBF24; font-size: 13px; line-height: 1.6; font-weight: bold;")
+            self._update_headline_state = "available"
+            self._apply_headline_style()
 
             body_text = info.get("body", "").strip() or "تغییرات و بهینه‌سازی‌های نرم‌افزار نِمو اعمال شده است."
             self.txt_changelog.setMarkdown(body_text)
@@ -709,7 +817,10 @@ class DeveloperView(QWidget):
         self.btn_download.setVisible(False)
         self.btn_cancel_dl.setVisible(True)
         self.download_panel.setVisible(True)
+        self._dl_progress_done = False
         self.bar_download.setValue(0)
+        dl_col = "#60A5FA" if ThemeManager.get_current_palette().is_dark else "#1D4ED8"
+        self.lbl_download_progress.setStyleSheet(f"font-size: 12px; color: {dl_col}; font-weight: bold; background: transparent;")
         self.lbl_download_progress.setText("در حال آماده‌سازی و اتصال به سرور دانلود...")
 
         self._download_worker = UpdateDownloadWorker(download_url=download_url, asset_name=asset_name)
@@ -736,9 +847,11 @@ class DeveloperView(QWidget):
 
         # Success!
         UpdateService.set_downloaded_installer(file_path)
+        self._dl_progress_done = True
         self.bar_download.setValue(100)
         self.lbl_download_progress.setText("✅ دانلود نسخه جدید با موفقیت تکمیل شد!")
-        self.lbl_download_progress.setStyleSheet("font-size: 12px; color: #34D399; font-weight: bold;")
+        done_col = "#34D399" if ThemeManager.get_current_palette().is_dark else "#047857"
+        self.lbl_download_progress.setStyleSheet(f"font-size: 12px; color: {done_col}; font-weight: bold; background: transparent;")
         self.btn_apply_update.setVisible(True)
 
     def cancel_download(self):
@@ -810,9 +923,10 @@ class DeveloperView(QWidget):
             self.lbl_dev_photo_edit.setText("")
             self.lbl_dev_photo_edit.setStyleSheet("border: none; background: transparent;")
         else:
+            pal = ThemeManager.get_current_palette()
             self.lbl_dev_photo_edit.setPixmap(QPixmap())
             self.lbl_dev_photo_edit.setText("📷")
-            self.lbl_dev_photo_edit.setStyleSheet("border: 1px dashed #666; border-radius: 30px; color: #888;")
+            self.lbl_dev_photo_edit.setStyleSheet(f"border: 1px dashed {pal.border}; border-radius: 30px; color: {pal.text_muted};")
         self._loading_dev = False
         self.btn_save_dev.setEnabled(False)
         if hasattr(self, "btn_reset_dev"):
@@ -904,15 +1018,13 @@ class DeveloperView(QWidget):
         self.lbl_dev_full_name.setText(f"{fname} {lname}".strip())
         self.lbl_dev_phone.setText(f"شماره همراه: {phone}")
 
-        self.lbl_dev_email.setText(f'پست الکترونیک (جیمیل): <a href="mailto:{email}" style="color: #60A5FA; text-decoration: underline;">{email}</a>')
-
+        self._dev_email_raw = email
         tg_clean = telegram.replace("https://", "").replace("http://", "").replace("t.me/", "").replace("@", "").strip()
-        tg_url = f"https://t.me/{tg_clean}" if tg_clean else "https://t.me/AqaSamadi"
-        tg_display = f"t.me/{tg_clean}" if tg_clean else "t.me/AqaSamadi"
-        self.lbl_dev_telegram.setText(f'تلگرام: <a href="{tg_url}" style="color: #60A5FA; text-decoration: underline;">{tg_display}</a>')
-
-        github_url = github if github.startswith("http") else f"https://{github}"
-        self.lbl_dev_github.setText(f'گیت‌هاب: <a href="{github_url}" style="color: #60A5FA; text-decoration: underline;">{github}</a>')
+        self._dev_tg_url = f"https://t.me/{tg_clean}" if tg_clean else "https://t.me/AqaSamadi"
+        self._dev_tg_display = f"t.me/{tg_clean}" if tg_clean else "t.me/AqaSamadi"
+        self._dev_github_raw = github
+        self._dev_github_url = github if github.startswith("http") else f"https://{github}"
+        self._refresh_dev_links_and_admin_styles()
 
         if photo_path and os.path.exists(photo_path):
             pixmap = QPixmap(photo_path)
@@ -933,15 +1045,9 @@ class DeveloperView(QWidget):
         self.btn_save_license.setEnabled(is_admin)
         self.dev_edit_box.setVisible(is_admin)
 
-        from nemov.utils.theme_manager import ThemeManager
-        palette = ThemeManager.get_current_palette()
+        self._refresh_dev_links_and_admin_styles()
 
         if is_admin:
-            self.combo_license.setStyleSheet(f"""
-                QComboBox {{
-                    background-color: {palette.input_bg}; color: {palette.text_primary}; border: 1px solid {palette.input_border}; border-radius: 6px; padding: 4px 8px;
-                }}
-            """)
             self.btn_save_license.setStyleSheet("""
                 QPushButton {
                     background-color: #2563EB; color: white; border-radius: 6px; font-weight: bold; padding: 0 15px; font-size: 13px;
@@ -976,17 +1082,6 @@ class DeveloperView(QWidget):
             self.btn_save_dev.setEnabled(False)
             if hasattr(self, "btn_reset_dev"):
                 self.btn_reset_dev.setEnabled(False)
-        else:
-            self.combo_license.setStyleSheet(f"""
-                QComboBox {{
-                    background-color: {palette.bg_surface}; color: {palette.text_muted}; border: 1px solid {palette.border}; border-radius: 6px; padding: 4px 8px;
-                }}
-            """)
-            self.btn_save_license.setStyleSheet(f"""
-                QPushButton {{
-                    background-color: {palette.btn_sec_bg}; color: {palette.text_muted}; border-radius: 6px; font-weight: bold; padding: 0 15px; font-size: 13px; border: 1px solid {palette.btn_sec_border};
-                }}
-            """)
 
         # If an update check result already exists in the session, reflect it
         last_check = UpdateService.get_last_check_time()

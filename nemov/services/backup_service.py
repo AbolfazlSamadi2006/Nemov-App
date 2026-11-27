@@ -1,5 +1,6 @@
 import os
 import shutil
+import sqlite3
 import zipfile
 import socket
 import json
@@ -11,35 +12,96 @@ import errno
 from pathlib import Path
 from datetime import datetime
 import config
-from nemov.database.connection import SessionLocal
+from nemov.database.connection import SessionLocal, checkpoint_wal
 from nemov.models.database_models import BackupRecord
 from nemov.utils.jalali_date import gregorian_to_shamsi
 
 
+def _atomic_sqlite_backup(src_db: Path, dest_db: Path) -> bool:
+    """
+    Creates an atomic, crash-safe copy of a SQLite database using sqlite3.Connection.backup()
+    into a temporary file followed by os.replace().
+    """
+    if not src_db.exists():
+        return False
+    dest_db.parent.mkdir(parents=True, exist_ok=True)
+    tmp_db = dest_db.with_suffix(".db.tmp")
+    src_conn = None
+    dst_conn = None
+    try:
+        src_conn = sqlite3.connect(str(src_db), timeout=5.0)
+        dst_conn = sqlite3.connect(str(tmp_db))
+        src_conn.backup(dst_conn)
+        dst_conn.commit()
+        dst_conn.close()
+        dst_conn = None
+        src_conn.close()
+        src_conn = None
+        os.replace(tmp_db, dest_db)
+        return True
+    except Exception:
+        for conn in (dst_conn, src_conn):
+            if conn is not None:
+                try:
+                    conn.close()
+                except Exception:
+                    pass
+        try:
+            shutil.copy2(src_db, tmp_db)
+            os.replace(tmp_db, dest_db)
+            return True
+        except Exception:
+            if tmp_db.exists():
+                try:
+                    tmp_db.unlink()
+                except Exception:
+                    pass
+            return False
+
+
 def create_local_backup() -> Path:
-    """Always updates and overwrites the single local backup in data/backups/latest_backup.db and AppData."""
+    """Atomically updates data/backups/latest_backup.db (with 2 rolling copies) and AppData."""
     if not config.DB_PATH.exists():
         return None
-        
+
+    checkpoint_wal("PASSIVE")
+
     config.BACKUPS_DIR.mkdir(parents=True, exist_ok=True)
     local_backup_file = config.BACKUPS_DIR / "latest_backup.db"
-    
+    prev1 = config.BACKUPS_DIR / "latest_backup_prev1.db"
+    prev2 = config.BACKUPS_DIR / "latest_backup_prev2.db"
+    staged_new = config.BACKUPS_DIR / "latest_backup.staged.tmp"
+
     try:
-        shutil.copy2(config.DB_PATH, local_backup_file)
+        if _atomic_sqlite_backup(config.DB_PATH, staged_new):
+            # Rotate existing valid backups without leaving a missing-file window
+            if local_backup_file.exists() and local_backup_file.stat().st_size > 0:
+                if prev1.exists():
+                    try:
+                        os.replace(prev1, prev2)
+                    except Exception:
+                        pass
+                try:
+                    os.replace(local_backup_file, prev1)
+                except Exception:
+                    pass
+            os.replace(staged_new, local_backup_file)
     except Exception as e:
         print(f"Error saving local backup: {e}")
-        
-    # Sync to persistent AppData
+        if staged_new.exists():
+            try:
+                staged_new.unlink()
+            except Exception:
+                pass
+
+    # Atomically mirror to persistent AppData
     try:
         config.APPDATA_DATA_DIR.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(config.DB_PATH, config.APPDATA_DATA_DIR / "nemov.db")
-        try:
-            shutil.copy2(config.DB_PATH, config.APPDATA_DATA_DIR / "yalda.db")
-        except Exception:
-            pass
+        _atomic_sqlite_backup(config.DB_PATH, config.APPDATA_DATA_DIR / "nemov.db")
+        _atomic_sqlite_backup(config.DB_PATH, config.APPDATA_DATA_DIR / "yalda.db")
     except Exception as e:
         print(f"Error syncing to AppData: {e}")
-        
+
     return local_backup_file
 
 
@@ -105,9 +167,9 @@ def is_internet_connected(timeout: float = 3.0) -> bool:
         pass
 
     hosts = [
-        ("8.8.8.8", 53),
-        ("1.1.1.1", 53),
-        ("google.com", 80)
+        ("nemovapp.ir", 443),
+        ("s3.ir-central1.arvanstorage.ir", 443),
+        ("www.aparat.com", 443),
     ]
     for host, port in hosts:
         try:

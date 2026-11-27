@@ -96,6 +96,7 @@ class MainWindow(QMainWindow):
         self.sidebar.logout_requested.connect(self.logout)
         self.sidebar.member_birthday_clicked.connect(self.open_member_detail)
         self.sidebar.member_expiration_clicked.connect(self.open_member_detail)
+        self.sidebar.draft_clicked.connect(self.open_unfinished_draft)
         self.sidebar.notifications_marked_read.connect(self._on_sidebar_notifications_marked_read)
         self.sidebar.collapse_toggled.connect(self._on_sidebar_user_toggled)
         main_layout.addWidget(self.sidebar)
@@ -300,36 +301,243 @@ class MainWindow(QMainWindow):
                 target_widget.load_members()
 
             self.stack.setCurrentWidget(target_widget)
+            self._sync_excluded_draft_ids()
+
+    def _sync_excluded_draft_ids(self):
+        if not hasattr(self, "sidebar") or not self.sidebar:
+            return
+        excluded = set()
+        try:
+            curr = self.stack.currentWidget()
+            if curr is not None:
+                if curr is self._view_workouts and hasattr(curr, "get_active_draft_id"):
+                    did = curr.get_active_draft_id()
+                    if did:
+                        excluded.add(did)
+                elif curr is self._view_nutrition and hasattr(curr, "get_active_draft_id"):
+                    did = curr.get_active_draft_id()
+                    if did:
+                        excluded.add(did)
+                elif isinstance(curr, MemberDetailView) and hasattr(curr, "tabs"):
+                    tab_idx = curr.tabs.currentIndex()
+                    if tab_idx == 0 and hasattr(curr, "view_health"):
+                        excluded.add(curr.view_health.get_active_draft_id())
+                    elif tab_idx == 1 and hasattr(curr, "view_assessment"):
+                        excluded.add(curr.view_assessment.get_active_draft_id())
+            self.sidebar.set_excluded_draft_ids(excluded)
+        except Exception:
+            pass
+
+    def _get_active_unfinished_widget(self, section: str):
+        if section == "workout_editor" and self._view_workouts is not None:
+            if self._view_workouts.has_unfinished_work():
+                return self._view_workouts, "workouts"
+        elif section == "nutrition_editor" and self._view_nutrition is not None:
+            if self._view_nutrition.has_unfinished_work():
+                return self._view_nutrition, "nutrition"
+        elif section in ("health_record", "assessment"):
+            curr = self.stack.currentWidget()
+            if isinstance(curr, MemberDetailView):
+                w = curr.view_health if section == "health_record" else curr.view_assessment
+                if hasattr(w, "has_unfinished_work") and w.has_unfinished_work():
+                    return w, "member_detail"
+        return None, None
+
+    def _confirm_replace_active_unfinished(self, section: str, target_draft: dict) -> bool:
+        """
+        If an unfinished draft/form is already open in the exact same section (different from target_draft),
+        asks whether the coach wants to finish the current form first or discard it and resume the older one.
+        """
+        active_widget, _ctx = self._get_active_unfinished_widget(section)
+        if active_widget is None:
+            return True
+        if active_widget.get_active_draft_id() == target_draft.get("draft_id"):
+            return True
+
+        sec_title = target_draft.get("section_title") or "این بخش"
+        cur_desc = active_widget.get_unfinished_summary() if hasattr(active_widget, "get_unfinished_summary") else "فرم جاری"
+        target_desc = target_draft.get("title") or sec_title
+
+        msg = QMessageBox(self)
+        msg.setWindowTitle("⚠️ فرم ناتمام دیگری در همین بخش باز است")
+        msg.setIcon(QMessageBox.Icon.Warning)
+        msg.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
+        msg.setText(
+            f"در بخش «{sec_title}» هم‌اکنون یک فرم ناتمام دیگر ({cur_desc}) باز است.\n\n"
+            f"مورد ناتمام انتخاب‌شده: {target_desc}\n\n"
+            "آیا مایلید ابتدا همین فرم بازشده فعلی را تکمیل کنید یا از فرم جاری صرف‌نظر کرده و مورد ناتمام قبلی باز شود؟"
+        )
+        btn_keep_current = msg.addButton("↩️ ابتدا فرم جاری را تمام می‌کنم", QMessageBox.ButtonRole.RejectRole)
+        btn_open_past = msg.addButton("📂 باز کردن مورد ناتمام قبلی (حذف فرم جاری)", QMessageBox.ButtonRole.AcceptRole)
+        msg.setDefaultButton(btn_keep_current)
+        msg.exec()
+
+        if msg.clickedButton() == btn_open_past:
+            binder = getattr(active_widget, "_draft_binder", None)
+            if hasattr(active_widget, "reset_to_new_plan"):
+                active_widget.reset_to_new_plan(clear_draft=True)
+            elif hasattr(active_widget, "reset_form"):
+                active_widget.reset_form(clear_draft=True)
+            elif hasattr(active_widget, "revert_changes"):
+                active_widget.revert_changes()
+            elif binder:
+                binder.clear_draft(rotate_id=True)
+            return True
+        return False
+
+    def open_unfinished_draft(self, draft_id: str):
+        from nemov.services.draft_service import DraftService
+        draft = DraftService.get_draft(draft_id)
+        if not draft:
+            self.sidebar.refresh_notifications()
+            return
+
+        section = draft.get("section")
+        if not self._confirm_replace_active_unfinished(section, draft):
+            # Focus active section if user chose to finish the currently open form first
+            if section == "workout_editor":
+                self.sidebar.navigate("workouts")
+            elif section == "nutrition_editor":
+                self.sidebar.navigate("nutrition")
+            self._sync_excluded_draft_ids()
+            return
+
+        entity_id = draft.get("entity_id")
+        member_id = draft.get("member_id")
+
+        if section == "workout_editor":
+            self.sidebar.navigate("workouts")
+            self.view_workouts.restore_draft(draft)
+            self._sync_excluded_draft_ids()
+        elif section == "nutrition_editor":
+            self.sidebar.navigate("nutrition")
+            self.view_nutrition.restore_draft(draft)
+            self._sync_excluded_draft_ids()
+        elif section in ("health_record", "assessment") and member_id:
+            curr = self.stack.currentWidget()
+            if not (isinstance(curr, MemberDetailView) and curr.member_id == member_id):
+                self.open_member_detail(member_id)
+                curr = self.stack.currentWidget()
+            if isinstance(curr, MemberDetailView):
+                if section == "health_record":
+                    curr.tabs.setCurrentIndex(0)
+                    curr.view_health.restore_draft(draft)
+                else:
+                    curr.tabs.setCurrentIndex(1)
+                    curr.view_assessment.restore_draft(draft)
+                self._sync_excluded_draft_ids()
+        elif section == "member_form":
+            from nemov.services.member_service import MemberService
+            member_obj = MemberService.get_member_by_id(entity_id) if entity_id else None
+            dlg = MemberFormDialog(self, member_data=member_obj, draft_data=draft)
+            if dlg.exec() == QDialog.DialogCode.Accepted:
+                self.view_dashboard.refresh_dashboard()
+                if self._view_members is not None:
+                    self._view_members.load_members()
+                curr = self.stack.currentWidget()
+                if isinstance(curr, MemberDetailView) and member_obj and curr.member_id == member_obj.id:
+                    curr.load_member_info()
+            self.sidebar.refresh_notifications()
+        elif section == "exercise_form":
+            from nemov.services.workout_service import WorkoutService
+            from nemov.views.workout_library_view import ExerciseFormDialog
+            ex_obj = None
+            if entity_id:
+                ex_obj = next((e for e in WorkoutService.get_all_exercises(include_unlisted=True) if e.id == entity_id), None)
+            dlg = ExerciseFormDialog(self, exercise_data=ex_obj, draft_data=draft)
+            if dlg.exec() == QDialog.DialogCode.Accepted:
+                data = dlg.get_data()
+                if ex_obj:
+                    WorkoutService.update_exercise(ex_obj.id, data)
+                    QMessageBox.information(self, "موفقیت", "حرکت ورزشی با موفقیت ویرایش شد.")
+                else:
+                    WorkoutService.create_exercise(data)
+                    QMessageBox.information(self, "موفقیت", "حرکت جدید به بانک افزوده شد.")
+                if self._view_exercises is not None:
+                    self._view_exercises.reload_exercises()
+            self.sidebar.refresh_notifications()
+        elif section == "food_form":
+            from nemov.services.nutrition_service import NutritionService
+            from nemov.views.food_library_dialog import FoodFormDialog
+            food_obj = None
+            if entity_id:
+                food_obj = next((f for f in NutritionService.get_all_foods(include_unlisted=True) if f.id == entity_id), None)
+            dlg = FoodFormDialog(self, food_data=food_obj, draft_data=draft)
+            if dlg.exec() == QDialog.DialogCode.Accepted:
+                data = dlg.get_data()
+                if food_obj:
+                    NutritionService.update_food(food_obj.id, data)
+                    QMessageBox.information(self, "موفقیت", "ماده غذایی با موفقیت ویرایش شد.")
+                else:
+                    NutritionService.create_food(data)
+                    QMessageBox.information(self, "موفقیت", "ماده غذایی جدید با موفقیت اضافه شد.")
+                if self._view_foods is not None:
+                    self._view_foods.load_foods()
+            self.sidebar.refresh_notifications()
 
     def open_workout_editor_with_plan(self, plan_id: int, member_id: int = None):
+        if self._view_workouts is not None and self._view_workouts.has_unfinished_work():
+            self._view_workouts._draft_binder.flush_now()
         self.sidebar.navigate("workouts")
         self.view_workouts.load_plan_for_edit(plan_id)
         if member_id:
             self.view_workouts.set_selected_member(member_id)
+        self._sync_excluded_draft_ids()
 
     def open_nutrition_editor_with_plan(self, plan_id: int, member_id: int = None):
+        if self._view_nutrition is not None and self._view_nutrition.has_unfinished_work():
+            self._view_nutrition._draft_binder.flush_now()
         self.sidebar.navigate("nutrition")
         self.view_nutrition.load_plan_for_edit(plan_id)
         if member_id:
             self.view_nutrition.set_selected_member(member_id)
+        self._sync_excluded_draft_ids()
 
     def open_new_workout_editor(self):
+        preserve = self._view_workouts is not None and self._view_workouts.has_unfinished_work()
+        if preserve:
+            self._view_workouts._draft_binder.flush_now()
+            self._view_workouts.reset_to_new_plan(clear_draft=False)
+            self._view_workouts._draft_binder.new_draft_id()
+        else:
+            self.view_workouts.reset_to_new_plan()
         self.sidebar.navigate("workouts")
-        self.view_workouts.reset_to_new_plan()
+        self._sync_excluded_draft_ids()
 
     def open_new_workout_for_member(self, member_id: int):
+        preserve = self._view_workouts is not None and self._view_workouts.has_unfinished_work()
+        if preserve:
+            self._view_workouts._draft_binder.flush_now()
+            self._view_workouts.reset_to_new_plan(clear_draft=False)
+            self._view_workouts._draft_binder.new_draft_id()
+        else:
+            self.view_workouts.reset_to_new_plan()
         self.sidebar.navigate("workouts")
-        self.view_workouts.reset_to_new_plan()
         self.view_workouts.set_selected_member(member_id)
+        self._sync_excluded_draft_ids()
 
     def open_new_nutrition_editor(self):
+        preserve = self._view_nutrition is not None and self._view_nutrition.has_unfinished_work()
+        if preserve:
+            self._view_nutrition._draft_binder.flush_now()
+            self._view_nutrition.reset_form(clear_draft=False)
+            self._view_nutrition._draft_binder.new_draft_id()
+        else:
+            self.view_nutrition.reset_form()
         self.sidebar.navigate("nutrition")
-        self.view_nutrition.reset_form()
+        self._sync_excluded_draft_ids()
 
     def open_new_nutrition_for_member(self, member_id: int):
+        preserve = self._view_nutrition is not None and self._view_nutrition.has_unfinished_work()
+        if preserve:
+            self._view_nutrition._draft_binder.flush_now()
+            self._view_nutrition.reset_form(clear_draft=False)
+            self._view_nutrition._draft_binder.new_draft_id()
+        else:
+            self.view_nutrition.reset_form()
         self.sidebar.navigate("nutrition")
-        self.view_nutrition.reset_form()
         self.view_nutrition.set_selected_member(member_id)
+        self._sync_excluded_draft_ids()
 
     def refresh_on_login(self):
         """Refreshes sidebar, resets active index to Dashboard, and loads dashboard data instantly."""
@@ -342,6 +550,8 @@ class MainWindow(QMainWindow):
             self.sidebar.refresh_branding()
             self.sidebar._apply_theme_style()
             self.sidebar.navigate("dashboard")
+            self.sidebar.refresh_notifications()
+            self._sync_excluded_draft_ids()
 
         try:
             self.view_dashboard.refresh_dashboard()
@@ -388,22 +598,54 @@ class MainWindow(QMainWindow):
         detail_view.edit_nutrition_requested.connect(self.open_nutrition_editor_with_plan)
         detail_view.create_workout_requested.connect(self.open_new_workout_for_member)
         detail_view.create_nutrition_requested.connect(self.open_new_nutrition_for_member)
+        detail_view.tabs.currentChanged.connect(lambda _idx: self._sync_excluded_draft_ids())
         idx = self.stack.addWidget(detail_view)
         self.stack.setCurrentIndex(idx)
+        self._sync_excluded_draft_ids()
+
+    def _persist_active_theme_locally(self):
+        """Silently persists the active theme locally on exit/logout without triggering ExitBackupDialog."""
+        try:
+            from nemov.utils.theme_manager import ThemeManager
+            from nemov.services.branding_service import BrandingService
+            current_theme = ThemeManager.get_current_theme_key()
+            if current_theme:
+                BrandingService.save_selected_theme_id(current_theme)
+        except Exception:
+            pass
+
+    def _flush_all_local_state_silently(self):
+        """Flushes active theme, pending form drafts, SQLite WAL, and local/AppData atomic backup silently."""
+        self._persist_active_theme_locally()
+        try:
+            from nemov.services.draft_service import DraftService
+            DraftService.flush_all_binders()
+        except Exception:
+            pass
+        try:
+            from nemov.services.autosave_service import AutoSaveManager
+            AutoSaveManager.get_instance().flush_local_sync()
+        except Exception:
+            pass
 
     def logout(self):
-        from nemov.database.connection import has_data_changed, reset_data_changed
-        if has_data_changed():
-            dialog = ExitBackupDialog(self, is_logout=True)
-            if dialog.exec() == QDialog.DialogCode.Accepted:
-                reset_data_changed()
-                CurrentUser.logout()
-                self.logout_signal.emit()
-                self.hide()
-        else:
-            CurrentUser.logout()
-            self.logout_signal.emit()
-            self.hide()
+        self._flush_all_local_state_silently()
+        try:
+            from nemov.services.autosave_service import AutoSaveManager, is_autosave_enabled
+            if is_autosave_enabled():
+                AutoSaveManager.get_instance().trigger_autosave_if_eligible()
+        except Exception:
+            pass
+        # Clear in-memory cached forms after flushing drafts so another trainer login starts clean
+        if self._view_workouts is not None:
+            self._view_workouts.reset_to_new_plan(clear_draft=False)
+            self._view_workouts._draft_binder.new_draft_id()
+        if self._view_nutrition is not None:
+            self._view_nutrition.reset_form(clear_draft=False)
+            self._view_nutrition._draft_binder.new_draft_id()
+        CurrentUser.logout()
+        self.logout_signal.emit()
+        self.hide()
 
     def on_account_deleted(self):
         from nemov.database.connection import reset_data_changed
@@ -413,21 +655,15 @@ class MainWindow(QMainWindow):
         self.hide()
 
     def closeEvent(self, event):
+        self._flush_all_local_state_silently()
         # If window is hidden or user already logged out, accept immediately
         if not self.isVisible() or CurrentUser.get() is None:
             event.accept()
             return
 
-        from nemov.database.connection import has_data_changed, reset_data_changed
-        if has_data_changed():
-            dialog = ExitBackupDialog(self)
-            if dialog.exec() == QDialog.DialogCode.Accepted:
-                reset_data_changed()
-                event.accept()
-            else:
-                event.ignore()
-        else:
-            event.accept()
+        from nemov.database.connection import reset_data_changed
+        reset_data_changed()
+        event.accept()
 
     def _start_background_update_check(self):
         try:

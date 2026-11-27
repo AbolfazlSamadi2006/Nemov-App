@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker, scoped_session
 import config
 from nemov.models.database_models import Base
@@ -6,11 +6,39 @@ from nemov.models.database_models import Base
 engine = create_engine(config.DATABASE_URI, echo=False, connect_args={"check_same_thread": False})
 SessionLocal = scoped_session(sessionmaker(autocommit=False, autoflush=False, bind=engine, expire_on_commit=False))
 
+
+@event.listens_for(engine, "connect")
+def _set_sqlite_pragmas(dbapi_connection, _connection_record):
+    """Enables SQLite WAL mode for fast, concurrent, power-cut resilient writes."""
+    try:
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA journal_mode=WAL;")
+        cursor.execute("PRAGMA synchronous=NORMAL;")
+        cursor.execute("PRAGMA busy_timeout=5000;")
+        cursor.close()
+    except Exception:
+        pass
+
+
+def checkpoint_wal(mode: str = "PASSIVE") -> bool:
+    """Flushes SQLite WAL frames cleanly back into the main database file."""
+    allowed_modes = {"PASSIVE", "FULL", "RESTART", "TRUNCATE"}
+    safe_mode = mode.upper() if isinstance(mode, str) and mode.upper() in allowed_modes else "PASSIVE"
+    try:
+        with engine.connect() as conn:
+            conn.exec_driver_sql(f"PRAGMA wal_checkpoint({safe_mode});")
+        return True
+    except Exception:
+        return False
+
+
 _session_has_changes = False
+_local_has_changes = False
 
 def mark_data_changed():
-    global _session_has_changes
+    global _session_has_changes, _local_has_changes
     _session_has_changes = True
+    _local_has_changes = True
 
 def reset_data_changed():
     global _session_has_changes
@@ -18,6 +46,13 @@ def reset_data_changed():
 
 def has_data_changed() -> bool:
     return _session_has_changes
+
+def reset_local_data_changed():
+    global _local_has_changes
+    _local_has_changes = False
+
+def has_local_data_changed() -> bool:
+    return _local_has_changes
 
 def get_session():
     """Returns a new SQLAlchemy session."""

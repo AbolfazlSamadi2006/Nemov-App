@@ -8,6 +8,7 @@ from PyQt6.QtGui import QPixmap, QKeySequence, QShortcut
 from PyQt6.QtCore import Qt, QTimer
 from nemov.services.member_service import MemberService
 from nemov.views.components.undo_delete_banner import UndoDeleteBanner
+from nemov.utils.theme_manager import ThemeManager
 
 
 class ZoomableGraphicsView(QGraphicsView):
@@ -66,8 +67,10 @@ class MedicalDocumentViewerDialog(QDialog):
         lbl_title = QLabel(f"📑 {self.title_str}")
         lbl_title.setObjectName("h2")
 
+        pal = ThemeManager.get_current_palette()
+        e_bg, e_fg, e_bd, _ = ThemeManager.get_tone_colors("emerald", pal)
         self.lbl_page_info = QLabel("صفحه ۱ از ۱")
-        self.lbl_page_info.setStyleSheet("font-size: 13px; font-weight: bold; color: #10B981; background: #1E293B; padding: 4px 12px; border-radius: 12px;")
+        self.lbl_page_info.setStyleSheet(f"font-size: 13px; font-weight: bold; color: {e_fg}; background: {e_bg}; border: 1px solid {e_bd}; padding: 4px 12px; border-radius: 12px;")
 
         header.addWidget(lbl_title)
         header.addStretch()
@@ -76,7 +79,7 @@ class MedicalDocumentViewerDialog(QDialog):
 
         # Toolbar Row: Zoom & Page Navigation Controls
         toolbar = QFrame()
-        toolbar.setStyleSheet("background-color: #222222; border-radius: 8px; padding: 4px;")
+        toolbar.setStyleSheet(f"background-color: {pal.bg_card}; border: 1px solid {pal.border}; border-radius: 8px; padding: 4px;")
         layout_tool = QHBoxLayout(toolbar)
         layout_tool.setSpacing(8)
 
@@ -389,6 +392,17 @@ class HealthRecordView(QWidget):
         self.member_id = member_id
         self.saved_data = {}
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
+        from nemov.services.draft_service import DebouncedDraftBinder
+        self._draft_binder = DebouncedDraftBinder(
+            parent=self,
+            section="health_record",
+            section_title="پرونده سلامت و پزشکی",
+            get_payload_fn=self._get_current_form_data,
+            is_dirty_fn=self.has_unfinished_work,
+            get_meta_fn=self._get_draft_meta,
+            draft_id=f"health_record_m{member_id}",
+            debounce_ms=3000,
+        )
         self.init_ui()
         self.load_data()
         self.load_documents()
@@ -507,7 +521,7 @@ class HealthRecordView(QWidget):
         self.btn_reset.setFixedHeight(40)
         self.btn_reset.setObjectName("secondary_button")
         self.btn_reset.setEnabled(False)
-        self.btn_reset.clicked.connect(self.load_data)
+        self.btn_reset.clicked.connect(self.revert_changes)
         row_save.addWidget(self.btn_reset)
         row_save.addStretch()
 
@@ -628,15 +642,80 @@ class HealthRecordView(QWidget):
             "exercise_limitations": self.txt_limitations.toPlainText().strip()
         }
 
+    def has_unfinished_work(self) -> bool:
+        if not getattr(self, "saved_data", None):
+            return False
+        return self._get_current_form_data() != self.saved_data
+
+    def get_active_draft_id(self) -> str:
+        return self._draft_binder.draft_id if hasattr(self, "_draft_binder") else f"health_record_m{self.member_id}"
+
+    def _get_draft_meta(self) -> dict:
+        m_name = ""
+        try:
+            m = MemberService.get_member_by_id(self.member_id)
+            if m and getattr(m, "full_name", None):
+                m_name = m.full_name
+        except Exception:
+            pass
+        title = f"پرونده سلامت ({m_name})" if m_name else "پرونده سلامت ورزشکار"
+        return {
+            "title": title,
+            "summary": f"سوابق پزشکی و آسیب‌دیدگی {m_name}".strip(),
+            "member_id": self.member_id,
+            "member_name": m_name,
+            "entity_id": self.member_id,
+        }
+
+    def revert_changes(self):
+        self.load_data()
+        if hasattr(self, "_draft_binder"):
+            self._draft_binder.clear_draft(rotate_id=False)
+
+    def restore_draft(self, draft: dict):
+        if not isinstance(draft, dict):
+            return
+        payload = draft.get("payload") or {}
+        binder = getattr(self, "_draft_binder", None)
+        ctx = binder.suspended() if binder else None
+        if ctx:
+            ctx.__enter__()
+        self._block_form_signals(True)
+        try:
+            self.cb_hypertension.setChecked(bool(payload.get("has_hypertension", False)))
+            self.cb_diabetes.setChecked(bool(payload.get("has_diabetes", False)))
+            self.cb_heart.setChecked(bool(payload.get("has_heart_issue", False)))
+            self.cb_allergy.setChecked(bool(payload.get("has_allergy", False)))
+            self.cb_medication_restriction.setChecked(bool(payload.get("has_medication_restriction", False)))
+            self.txt_allergy.setText(payload.get("allergy_details", "") or "")
+            self.txt_medication_restriction.setText(payload.get("medication_restriction_details", "") or "")
+            self.txt_other_med.setText(payload.get("other_medical", "") or "")
+            self.txt_knee.setText(payload.get("knee_injury", "") or "")
+            self.txt_back.setText(payload.get("back_injury", "") or "")
+            self.txt_shoulder.setText(payload.get("shoulder_injury", "") or "")
+            self.txt_wrist.setText(payload.get("wrist_injury", "") or "")
+            self.txt_limitations.setText(payload.get("exercise_limitations", "") or "")
+        finally:
+            self._block_form_signals(False)
+            if ctx:
+                ctx.__exit__(None, None, None)
+        self._check_dirty_state()
+
     def _check_dirty_state(self):
         if not hasattr(self, "saved_data") or not hasattr(self, "btn_save") or not hasattr(self, "btn_reset"):
             return
         is_dirty = (self._get_current_form_data() != self.saved_data)
         self.btn_save.setEnabled(is_dirty)
         self.btn_reset.setEnabled(is_dirty)
+        if hasattr(self, "_draft_binder"):
+            self._draft_binder.schedule()
 
     def load_data(self):
         rec = MemberService.get_health_record(self.member_id)
+        binder = getattr(self, "_draft_binder", None)
+        ctx = binder.suspended() if binder else None
+        if ctx:
+            ctx.__enter__()
         self._block_form_signals(True)
         try:
             self.cb_hypertension.setChecked(bool(rec.has_hypertension) if rec else False)
@@ -654,9 +733,13 @@ class HealthRecordView(QWidget):
             self.txt_limitations.setText((rec.exercise_limitations or "") if rec else "")
         finally:
             self._block_form_signals(False)
+            if ctx:
+                ctx.__exit__(None, None, None)
 
         self.saved_data = self._get_current_form_data()
-        self._check_dirty_state()
+        is_dirty = False
+        self.btn_save.setEnabled(is_dirty)
+        self.btn_reset.setEnabled(is_dirty)
 
     def load_documents(self):
         docs = MemberService.get_medical_documents(self.member_id)
@@ -759,6 +842,8 @@ class HealthRecordView(QWidget):
         MemberService.update_health_record(self.member_id, data)
         self.saved_data = data
         self._check_dirty_state()
+        if hasattr(self, "_draft_binder"):
+            self._draft_binder.clear_draft(rotate_id=False)
         QMessageBox.information(self, "موفقیت", "پرونده سلامت با موفقیت ذخیره شد.")
 
     def export_medical_package(self):

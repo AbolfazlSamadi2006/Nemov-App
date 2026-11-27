@@ -173,7 +173,20 @@ class WorkoutEditorView(QWidget):
         self._prev_num_days = 3
         self.init_ui()
         self._last_state = self._capture_state()
+        self._baseline_state = self._comparable_draft_state(self._capture_draft_payload())
+        self._empty_comparable_state = dict(self._baseline_state)
         self._update_undo_redo_ui()
+
+        from nemov.services.draft_service import DebouncedDraftBinder
+        self._draft_binder = DebouncedDraftBinder(
+            parent=self,
+            section="workout_editor",
+            section_title="برنامه‌ریزی تمرینی",
+            get_payload_fn=self._capture_draft_payload,
+            is_dirty_fn=self.has_unfinished_work,
+            get_meta_fn=self._get_draft_meta,
+            debounce_ms=3000,
+        )
 
         # Keyboard shortcuts
         QShortcut(QKeySequence("Ctrl+Z"), self, self.undo)
@@ -386,10 +399,14 @@ class WorkoutEditorView(QWidget):
     def _on_bottom_member_changed(self, _index: int = None):
         member_id = self.combo_member.currentData()
         self._sync_member_combos(member_id, apply_days=True)
+        if hasattr(self, "_draft_binder"):
+            self._draft_binder.schedule()
 
     def _on_top_member_changed(self, _index: int = None):
         member_id = self.combo_member_top.currentData()
         self._sync_member_combos(member_id, apply_days=True)
+        if hasattr(self, "_draft_binder"):
+            self._draft_binder.schedule()
 
     def load_members_dropdown(self):
         cur = self.combo_member.currentData()
@@ -793,6 +810,85 @@ class WorkoutEditorView(QWidget):
         self._redo_stack.clear()
         self._last_state = new_state
         self._update_undo_redo_ui()
+        if hasattr(self, "_draft_binder"):
+            self._draft_binder.schedule()
+
+    @staticmethod
+    def _comparable_draft_state(payload: dict) -> dict:
+        cmp_d = dict(payload or {})
+        cmp_d.pop("tab_index", None)
+        return cmp_d
+
+    def _capture_draft_payload(self) -> dict:
+        st = self._capture_state()
+        m_id = self.combo_member.currentData() if hasattr(self, "combo_member") else None
+        if not m_id and hasattr(self, "combo_member_top"):
+            m_id = self.combo_member_top.currentData()
+        st["member_id"] = m_id
+        st["editing_plan_id"] = self.editing_plan_id
+        return st
+
+    def has_unfinished_work(self) -> bool:
+        if not hasattr(self, "_baseline_state"):
+            return False
+        cur = self._comparable_draft_state(self._capture_draft_payload())
+        return cur != self._baseline_state
+
+    def get_active_draft_id(self) -> str:
+        return self._draft_binder.draft_id if hasattr(self, "_draft_binder") else ""
+
+    def get_unfinished_summary(self) -> str:
+        meta = self._get_draft_meta()
+        return meta.get("title", "برنامه تمرینی جاری")
+
+    def _get_draft_meta(self) -> dict:
+        m_id = self.combo_member.currentData() if hasattr(self, "combo_member") else None
+        m_name = self.combo_member.currentText().strip() if m_id and hasattr(self, "combo_member") else ""
+        plan_title = self.txt_title.text().strip() if hasattr(self, "txt_title") else ""
+        ex_count = sum(table.rowCount() for _t, table in getattr(self, "day_tables", []))
+        title_parts = [f"برنامه تمرینی «{plan_title}»" if plan_title else "برنامه تمرینی"]
+        if m_name:
+            title_parts.append(f"({m_name})")
+        summary_parts = [f"{ex_count} حرکت ورزشی"]
+        if m_name:
+            summary_parts.append(f"ورزشکار: {m_name}")
+        return {
+            "title": " ".join(title_parts),
+            "summary": " • ".join(summary_parts),
+            "member_id": m_id,
+            "member_name": m_name,
+            "entity_id": self.editing_plan_id,
+        }
+
+    def restore_draft(self, draft: dict):
+        if not isinstance(draft, dict):
+            return
+        payload = draft.get("payload") or {}
+        binder = getattr(self, "_draft_binder", None)
+        self._loading_plan = True
+        try:
+            ctx = binder.suspended() if binder else None
+            if ctx:
+                ctx.__enter__()
+            self.editing_plan_id = payload.get("editing_plan_id")
+            if self.editing_plan_id:
+                self.lbl_header_title.setText(f"✏️ ویرایش الگوی تمرینی: {payload.get('title', '')}")
+            else:
+                self.lbl_header_title.setText("🏋️ برنامه‌ریزی تمرینی")
+            self._days_cache.clear()
+            self._restore_state(payload)
+            self._sync_member_combos(payload.get("member_id"), apply_days=False)
+            self._baseline_state = dict(getattr(self, "_empty_comparable_state", {}))
+            self._undo_stack.clear()
+            self._redo_stack.clear()
+            self._last_state = self._capture_state()
+            self._update_undo_redo_ui()
+            if binder:
+                binder.set_draft_id(draft["draft_id"])
+        finally:
+            if binder and ctx:
+                ctx.__exit__(None, None, None)
+            self._loading_plan = False
 
     def _push_undo_state(self):
         self._snapshot_change()
@@ -1309,28 +1405,45 @@ class WorkoutEditorView(QWidget):
             self.reset_to_new_plan()
             QMessageBox.information(self, "بازنشانی", "فرم برنامه تمرینی بازنشانی شد.")
 
-    def reset_to_new_plan(self):
-        self.editing_plan_id = None
-        self._days_cache.clear()
-        self._prev_num_days = 3
-        self.lbl_header_title.setText("🏋️ برنامه‌ریزی تمرینی")
-        self.txt_title.clear()
-        self.combo_goal.setCurrentIndex(0)
-        self.combo_days.blockSignals(True)
-        self.combo_days.setCurrentIndex(1)
-        self.combo_days.blockSignals(False)
-        self.combo_level.setCurrentIndex(0)
-        self.setup_day_tabs()
-        self.combo_templates.blockSignals(True)
-        self.combo_templates.setCurrentIndex(0)
-        self.combo_templates.blockSignals(False)
-        self._undo_stack.clear()
-        self._redo_stack.clear()
-        self._last_state = self._capture_state()
-        self._update_undo_redo_ui()
+    def reset_to_new_plan(self, clear_draft: bool = True):
+        binder = getattr(self, "_draft_binder", None)
+        ctx = binder.suspended() if binder else None
+        if ctx:
+            ctx.__enter__()
+        try:
+            self.editing_plan_id = None
+            self._days_cache.clear()
+            self._prev_num_days = 3
+            self.lbl_header_title.setText("🏋️ برنامه‌ریزی تمرینی")
+            self.txt_title.clear()
+            self.combo_goal.setCurrentIndex(0)
+            self.combo_days.blockSignals(True)
+            self.combo_days.setCurrentIndex(1)
+            self.combo_days.blockSignals(False)
+            self.combo_level.setCurrentIndex(0)
+            self.setup_day_tabs()
+            self.combo_templates.blockSignals(True)
+            self.combo_templates.setCurrentIndex(0)
+            self.combo_templates.blockSignals(False)
+            self._sync_member_combos(None, apply_days=False)
+            self._undo_stack.clear()
+            self._redo_stack.clear()
+            self._last_state = self._capture_state()
+            self._baseline_state = self._comparable_draft_state(self._capture_draft_payload())
+            self._empty_comparable_state = dict(self._baseline_state)
+            self._update_undo_redo_ui()
+        finally:
+            if ctx:
+                ctx.__exit__(None, None, None)
+        if clear_draft and binder:
+            binder.clear_draft(rotate_id=True)
 
     def load_plan_for_edit(self, plan_id: int):
         self._suppress_loaded_alert = True
+        binder = getattr(self, "_draft_binder", None)
+        ctx = binder.suspended() if binder else None
+        if ctx:
+            ctx.__enter__()
         try:
             self.editing_plan_id = plan_id
             self._days_cache.clear()
@@ -1339,8 +1452,13 @@ class WorkoutEditorView(QWidget):
                 self._prev_num_days = plan.days_per_week
                 self.lbl_header_title.setText(f"✏️ ویرایش الگوی تمرینی: {plan.title}")
                 self._load_plan_data_to_form(plan)
+                self._baseline_state = self._comparable_draft_state(self._capture_draft_payload())
         finally:
+            if ctx:
+                ctx.__exit__(None, None, None)
             self._suppress_loaded_alert = False
+        if binder:
+            binder.clear_draft(rotate_id=True)
 
     def save_plan(self):
         plan_info, days_data = self.get_plan_data()
@@ -1407,6 +1525,9 @@ class WorkoutEditorView(QWidget):
                 from nemov.utils.logger import log_info
                 log_info(f"Created workout template: '{plan.title}' (ID: {plan.id})")
                 QMessageBox.information(self, "موفقیت", "الگوی برنامه تمرینی در بانک ذخیره گردید.")
+            if hasattr(self, "_draft_binder"):
+                self._draft_binder.clear_draft(rotate_id=True)
+            self._baseline_state = self._comparable_draft_state(self._capture_draft_payload())
             return plan
         except Exception as e:
             import traceback

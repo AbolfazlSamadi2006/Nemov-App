@@ -50,7 +50,7 @@ def _format_network_error_message(exc: Exception) -> str:
 
 def upload_exercise_video_to_cloud(video_path: str, custom_filename: str = None) -> tuple[bool, str, str]:
     """
-    Uploads a local exercise video file to the Cloudflare Worker R2 video endpoint.
+    Uploads a local exercise video file to the Runflare / ArvanCloud video endpoint.
     Automatically ensures web-standard H.264 format with faststart before upload.
     Returns: (success: bool, url_or_error: str, filename: str)
     """
@@ -172,7 +172,7 @@ def upload_exercise_video_to_cloud(video_path: str, custom_filename: str = None)
 
 def upload_exercise_image_to_cloud(image_path: str, custom_filename: str = None) -> tuple[bool, str, str]:
     """
-    Uploads a local exercise image file to the Cloudflare Worker image endpoint.
+    Uploads a local exercise image file to the Runflare / ArvanCloud image endpoint.
     Automatically ensures web-optimized format (JPEG quality 92) before upload.
     Returns: (success: bool, url_or_error: str, filename: str)
     """
@@ -372,7 +372,7 @@ def is_exercise_video_pending(ex: Exercise) -> bool:
 def sync_all_pending_exercise_media(progress_callback=None) -> tuple[int, int, list]:
     """
     Scans all exercises in the database with a local media file (video or image)
-    that need cloud synchronization, and uploads them to Cloudflare Worker R2.
+    that need cloud synchronization, and uploads them to Runflare / ArvanCloud Object Storage.
     
     progress_callback(current, total, exercise_name) can be provided.
     Returns: (success_count, fail_count, list_of_errors)
@@ -444,8 +444,8 @@ def get_pending_sync_count() -> int:
 
 def check_internet_connection(timeout: float = 3.0) -> bool:
     """
-    Reliably verifies active internet connectivity by probing cloud server or DNS HTTPS endpoints.
-    Safe against local proxy/DNS spoofing and never raises uncaught exceptions.
+    Reliably verifies active connectivity by probing Runflare, ArvanCloud, and Iranian HTTPS endpoints.
+    Works reliably on Iranian domestic networks without VPN and never raises uncaught exceptions.
     """
     import urllib.request
     import urllib.error
@@ -453,8 +453,9 @@ def check_internet_connection(timeout: float = 3.0) -> bool:
 
     test_urls = [
         config.DEFAULT_CLOUD_BACKUP_URL.rstrip("/"),
-        "https://1.1.1.1",
-        "https://www.google.com"
+        "https://nemovapp.ir",
+        "https://s3.ir-central1.arvanstorage.ir",
+        "https://www.aparat.com",
     ]
 
     ctx = ssl.create_default_context()

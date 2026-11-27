@@ -386,6 +386,7 @@ class AssessmentView(QWidget):
 
         self.init_ui()
         self.load_history()
+        self._init_draft_persistence()
 
     def init_ui(self):
         layout = QVBoxLayout(self)
@@ -642,6 +643,8 @@ class AssessmentView(QWidget):
             shutil.copy2(fp, dest)
             self.before_photo_path = str(dest)
             self.btn_before.setText(f"📷 عکس قبل: {os.path.basename(fp)[:12]}")
+            if hasattr(self, "_draft_binder"):
+                self._draft_binder.schedule()
 
     def select_after_photo(self):
         from nemov.utils.image_source_chooser import get_image_file_path
@@ -651,6 +654,8 @@ class AssessmentView(QWidget):
             shutil.copy2(fp, dest)
             self.after_photo_path = str(dest)
             self.btn_after.setText(f"📷 عکس بعد: {os.path.basename(fp)[:12]}")
+            if hasattr(self, "_draft_binder"):
+                self._draft_binder.schedule()
 
     def _validate_assessment_inputs(self):
         err = None
@@ -749,21 +754,126 @@ class AssessmentView(QWidget):
         self.update_live_bmr()
         self.load_history()
 
-    def reset_form(self):
-        self._prefill_member_height_weight()
-        self.spin_fat.setValue(0.0)
-        self.spin_neck.setValue(0.0)
-        self.spin_chest.setValue(0.0)
-        self.spin_arm.setValue(0.0)
-        self.spin_abdomen.setValue(0.0)
-        self.spin_waist.setValue(0.0)
-        self.spin_hip.setValue(0.0)
-        self.spin_thigh.setValue(0.0)
-        self.before_photo_path = None
-        self.after_photo_path = None
-        self.btn_before.setText("📷 عکس قبل")
-        self.btn_after.setText("📷 عکس بعد")
-        self.update_live_bmr()
+    def reset_form(self, clear_draft: bool = True):
+        binder = getattr(self, "_draft_binder", None)
+        ctx = binder.suspended() if binder else None
+        if ctx:
+            ctx.__enter__()
+        try:
+            self._prefill_member_height_weight()
+            self.spin_fat.setValue(0.0)
+            self.spin_neck.setValue(0.0)
+            self.spin_chest.setValue(0.0)
+            self.spin_arm.setValue(0.0)
+            self.spin_abdomen.setValue(0.0)
+            self.spin_waist.setValue(0.0)
+            self.spin_hip.setValue(0.0)
+            self.spin_thigh.setValue(0.0)
+            self.before_photo_path = None
+            self.after_photo_path = None
+            self.btn_before.setText("📷 عکس قبل")
+            self.btn_after.setText("📷 عکس بعد")
+            self.update_live_bmr()
+            self._baseline_state = self._capture_draft_state()
+        finally:
+            if ctx:
+                ctx.__exit__(None, None, None)
+        if clear_draft and binder:
+            binder.clear_draft(rotate_id=False)
+
+    def _capture_draft_state(self) -> dict:
+        return {
+            "assessment_date_shamsi": self.picker_date.text(),
+            "height_cm": self.spin_height.value(),
+            "weight_kg": self.spin_weight.value(),
+            "body_fat_percentage": self.spin_fat.value(),
+            "neck_circ": self.spin_neck.value(),
+            "chest_circ": self.spin_chest.value(),
+            "arm_circ": self.spin_arm.value(),
+            "abdomen_circ": self.spin_abdomen.value(),
+            "waist_circ": self.spin_waist.value(),
+            "hip_circ": self.spin_hip.value(),
+            "thigh_circ": self.spin_thigh.value(),
+            "before_photo_path": self.before_photo_path,
+            "after_photo_path": self.after_photo_path,
+        }
+
+    def has_unfinished_work(self) -> bool:
+        if not hasattr(self, "_baseline_state"):
+            return False
+        return self._capture_draft_state() != self._baseline_state
+
+    def get_active_draft_id(self) -> str:
+        return self._draft_binder.draft_id if hasattr(self, "_draft_binder") else f"assessment_m{self.member_id}"
+
+    def _init_draft_persistence(self):
+        from nemov.services.draft_service import DebouncedDraftBinder
+        self._baseline_state = self._capture_draft_state()
+        self._draft_binder = DebouncedDraftBinder(
+            parent=self,
+            section="assessment",
+            section_title="ارزیابی فیزیکی و سایز",
+            get_payload_fn=self._capture_draft_state,
+            is_dirty_fn=self.has_unfinished_work,
+            get_meta_fn=self._get_draft_meta,
+            draft_id=f"assessment_m{self.member_id}",
+            debounce_ms=3000,
+        )
+        for sp in (self.spin_height, self.spin_weight, self.spin_fat, self.spin_neck,
+                   self.spin_chest, self.spin_arm, self.spin_abdomen, self.spin_waist,
+                   self.spin_hip, self.spin_thigh):
+            sp.valueChanged.connect(self._draft_binder.schedule)
+        self.picker_date.date_changed.connect(self._draft_binder.schedule)
+
+    def _get_draft_meta(self) -> dict:
+        m_name = ""
+        try:
+            from nemov.services.member_service import MemberService
+            m = MemberService.get_member_by_id(self.member_id)
+            if m and getattr(m, "full_name", None):
+                m_name = m.full_name
+        except Exception:
+            pass
+        title = f"ارزیابی فیزیکی ({m_name})" if m_name else "ارزیابی فیزیکی و سایز"
+        return {
+            "title": title,
+            "summary": f"تاریخ: {self.picker_date.text()} • وزن: {self.spin_weight.value():.1f}kg",
+            "member_id": self.member_id,
+            "member_name": m_name,
+            "entity_id": self.member_id,
+        }
+
+    def restore_draft(self, draft: dict):
+        if not isinstance(draft, dict):
+            return
+        payload = draft.get("payload") or {}
+        binder = getattr(self, "_draft_binder", None)
+        ctx = binder.suspended() if binder else None
+        if ctx:
+            ctx.__enter__()
+        try:
+            if payload.get("assessment_date_shamsi"):
+                self.picker_date.setText(payload["assessment_date_shamsi"])
+            self.spin_height.setValue(float(payload.get("height_cm") or 0.0))
+            self.spin_weight.setValue(float(payload.get("weight_kg") or 0.0))
+            self.spin_fat.setValue(float(payload.get("body_fat_percentage") or 0.0))
+            self.spin_neck.setValue(float(payload.get("neck_circ") or 0.0))
+            self.spin_chest.setValue(float(payload.get("chest_circ") or 0.0))
+            self.spin_arm.setValue(float(payload.get("arm_circ") or 0.0))
+            self.spin_abdomen.setValue(float(payload.get("abdomen_circ") or 0.0))
+            self.spin_waist.setValue(float(payload.get("waist_circ") or 0.0))
+            self.spin_hip.setValue(float(payload.get("hip_circ") or 0.0))
+            self.spin_thigh.setValue(float(payload.get("thigh_circ") or 0.0))
+            self.before_photo_path = payload.get("before_photo_path")
+            self.after_photo_path = payload.get("after_photo_path")
+            if self.before_photo_path:
+                self.btn_before.setText(f"📷 عکس قبل: {os.path.basename(self.before_photo_path)[:12]}")
+            if self.after_photo_path:
+                self.btn_after.setText(f"📷 عکس بعد: {os.path.basename(self.after_photo_path)[:12]}")
+            self.update_live_bmr()
+        finally:
+            if ctx:
+                ctx.__exit__(None, None, None)
 
     def update_live_bmr(self):
         from nemov.services.member_service import MemberService

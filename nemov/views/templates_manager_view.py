@@ -13,6 +13,7 @@ from nemov.views.components.searchable_combo_box import SearchableComboBox
 from nemov.views.components.undo_delete_banner import UndoDeleteBanner
 import re
 from nemov.utils.jalali_date import get_now_shamsi_for_filename
+from nemov.utils.theme_manager import ThemeManager
 
 
 class AssignTemplateDialog(QDialog):
@@ -35,7 +36,7 @@ class AssignTemplateDialog(QDialog):
         layout.setSpacing(14)
 
         lbl_info = QLabel(f"<b>الگوی انتخابی:</b> {self.template_title}")
-        lbl_info.setStyleSheet("font-size: 14px; color: #FFFFFF;")
+        lbl_info.setStyleSheet(f"font-size: 14px; color: {ThemeManager.get_current_palette().text_primary};")
         layout.addWidget(lbl_info)
 
         layout.addWidget(QLabel("انتخاب ورزشکار (شاگرد):"))
@@ -116,6 +117,21 @@ class TemplatesManagerView(QWidget):
         self.workout_plans = []
         self.nutrition_plans = []
         self.init_ui()
+        self._apply_theme_style()
+        try:
+            ThemeManager.theme_changed.connect(self._on_theme_changed)
+        except Exception:
+            pass
+
+    def _on_theme_changed(self, _theme_key: str):
+        self._apply_theme_style()
+
+    def _apply_theme_style(self):
+        bulk_qss = ThemeManager.get_bulk_delete_qss()
+        for attr in ("btn_bulk_delete_w", "btn_bulk_delete_n"):
+            b = getattr(self, attr, None)
+            if b is not None:
+                b.setStyleSheet(bulk_qss)
 
     def showEvent(self, event):
         super().showEvent(event)
@@ -188,22 +204,6 @@ class TemplatesManagerView(QWidget):
 
         self.btn_bulk_delete_w = QPushButton("🗑️ حذف انتخاب‌شده‌ها")
         self.btn_bulk_delete_w.setEnabled(False)
-        self.btn_bulk_delete_w.setStyleSheet("""
-            QPushButton {
-                background-color: #DC2626;
-                color: #FFFFFF;
-                font-weight: bold;
-                border-radius: 6px;
-                padding: 6px 14px;
-            }
-            QPushButton:hover {
-                background-color: #B91C1C;
-            }
-            QPushButton:disabled {
-                background-color: #4B5563;
-                color: #9CA3AF;
-            }
-        """)
         self.btn_bulk_delete_w.clicked.connect(self.bulk_delete_workout_templates)
 
         btn_new_w = QPushButton("➕ ساخت الگوی تمرینی جدید")
@@ -274,22 +274,6 @@ class TemplatesManagerView(QWidget):
 
         self.btn_bulk_delete_n = QPushButton("🗑️ حذف انتخاب‌شده‌ها")
         self.btn_bulk_delete_n.setEnabled(False)
-        self.btn_bulk_delete_n.setStyleSheet("""
-            QPushButton {
-                background-color: #DC2626;
-                color: #FFFFFF;
-                font-weight: bold;
-                border-radius: 6px;
-                padding: 6px 14px;
-            }
-            QPushButton:hover {
-                background-color: #B91C1C;
-            }
-            QPushButton:disabled {
-                background-color: #4B5563;
-                color: #9CA3AF;
-            }
-        """)
         self.btn_bulk_delete_n.clicked.connect(self.bulk_delete_nutrition_templates)
 
         btn_new_n = QPushButton("➕ ساخت الگوی غذایی جدید")

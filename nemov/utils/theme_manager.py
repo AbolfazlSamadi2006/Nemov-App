@@ -867,6 +867,89 @@ class ThemeManager:
         return cls.get_current_palette()
 
     @classmethod
+    def get_tone_colors(cls, tone: str, palette: Optional[ThemePalette] = None) -> tuple[str, str, str, str]:
+        """Returns (bg, fg, border, hover_bg) tailored cleanly for dark and light themes."""
+        pal = palette or cls.get_current_palette()
+        is_dark = bool(getattr(pal, "is_dark", True))
+        dark_map = {
+            "blue": ("#172554", "#93C5FD", "#2563EB", "#2563EB"),
+            "amber": ("#3B2806", "#FDE68A", "#D97706", "#D97706"),
+            "emerald": ("#064E3B", "#A7F3D0", "#059669", "#059669"),
+            "rose": ("#2E1A1A", "#F87171", "#DC2626", "#DC2626"),
+            "indigo": ("#1E1B4B", "#C7D2FE", "#6366F1", "#6366F1"),
+            "purple": ("#2E1065", "#E9D5FF", "#9333EA", "#9333EA"),
+            "neutral": (pal.bg_surface, pal.text_secondary, pal.border_light, pal.btn_sec_hover),
+        }
+        light_map = {
+            "blue": ("#EFF6FF", "#1D4ED8", "#93C5FD", "#2563EB"),
+            "amber": ("#FFFBEB", "#B45309", "#FCD34D", "#D97706"),
+            "emerald": ("#ECFDF5", "#047857", "#6EE7B7", "#059669"),
+            "rose": ("#FEF2F2", "#B91C1C", "#FCA5A5", "#DC2626"),
+            "indigo": ("#EEF2FF", "#4338CA", "#A5B4FC", "#4F46E5"),
+            "purple": ("#FAF5FF", "#7E22CE", "#D8B4FE", "#9333EA"),
+            "neutral": (pal.btn_sec_bg, pal.text_secondary, pal.btn_sec_border, pal.btn_sec_hover),
+        }
+        table = dark_map if is_dark else light_map
+        return table.get(tone, table["neutral"])
+
+    @classmethod
+    def get_bulk_delete_qss(cls, palette: Optional[ThemePalette] = None) -> str:
+        """Shared theme-aware QSS for bulk-delete buttons across library/archive views."""
+        pal = palette or cls.get_current_palette()
+        enabled_bg = "#DC2626" if not pal.is_dark else "#7B1113"
+        hover_bg = "#B91C1C" if not pal.is_dark else "#9B1B1E"
+        return f"""
+            QPushButton {{
+                background-color: {enabled_bg};
+                color: #FFFFFF;
+                font-weight: bold;
+                border: none;
+                border-radius: 6px;
+                padding: 4px 12px;
+                font-size: 12px;
+            }}
+            QPushButton:hover {{
+                background-color: {hover_bg};
+            }}
+            QPushButton:disabled {{
+                background-color: {pal.btn_sec_bg};
+                color: {pal.text_muted};
+                border: 1px solid {pal.btn_sec_border};
+            }}
+        """
+
+    @classmethod
+    def get_popup_menu_qss(cls, palette: Optional[ThemePalette] = None) -> str:
+        """Shared theme-aware QMenu QSS for suggestion/context popups."""
+        pal = palette or cls.get_current_palette()
+        sel_bg = pal.btn_sec_hover if not pal.is_dark else "#374151"
+        sel_fg = pal.primary if not pal.is_dark else "#34D399"
+        return f"""
+            QMenu {{
+                background-color: {pal.bg_card};
+                color: {pal.text_primary};
+                border: 1px solid {pal.border_light};
+                border-radius: 6px;
+                padding: 4px;
+                font-size: 11px;
+            }}
+            QMenu::item {{
+                padding: 6px 14px;
+                border-radius: 4px;
+            }}
+            QMenu::item:selected {{
+                background-color: {sel_bg};
+                color: {sel_fg};
+            }}
+            QMenu::section {{
+                padding: 4px 10px;
+                font-weight: bold;
+                color: {pal.text_secondary};
+                background-color: {pal.bg_surface};
+            }}
+        """
+
+    @classmethod
     def update_svg_arrows(cls, stroke_color: str):
         """
         Adapts SVG arrow icons so they remain crisp against light or dark inputs.

@@ -84,11 +84,11 @@ class EmailSpamGuideDialog(QDialog):
 
         # Web Gmail instructions
         web_box = QFrame()
-        web_box.setStyleSheet("background-color: #242427; border-radius: 8px; padding: 10px;")
+        web_box.setStyleSheet(f"background-color: {palette.bg_surface}; border: 1px solid {palette.border}; border-radius: 8px; padding: 10px;")
         web_layout = QVBoxLayout(web_box)
         web_layout.setSpacing(4)
         lbl_web_head = QLabel("💻 در نسخه وب جیمیل (کامپیوتر یا مرورگر):")
-        lbl_web_head.setStyleSheet("color: #38BDF8; font-weight: bold; font-size: 12px;")
+        lbl_web_head.setStyleSheet(f"color: {'#38BDF8' if palette.is_dark else '#0284C7'}; font-weight: bold; font-size: 12px;")
         web_layout.addWidget(lbl_web_head)
 
         lbl_web_steps = QLabel(
@@ -98,17 +98,17 @@ class EmailSpamGuideDialog(QDialog):
             "← ایمیل فوراً به صندوق اصلی منتقل شده و دفعات بعد نیز به Inbox می‌رود."
         )
         lbl_web_steps.setWordWrap(True)
-        lbl_web_steps.setStyleSheet("color: #E2E8F0; font-size: 12px; line-height: 1.8;")
+        lbl_web_steps.setStyleSheet(f"color: {palette.text_primary}; font-size: 12px; line-height: 1.8;")
         web_layout.addWidget(lbl_web_steps)
         m1_layout.addWidget(web_box)
 
         # Mobile Gmail instructions
         mobile_box = QFrame()
-        mobile_box.setStyleSheet("background-color: #242427; border-radius: 8px; padding: 10px;")
+        mobile_box.setStyleSheet(f"background-color: {palette.bg_surface}; border: 1px solid {palette.border}; border-radius: 8px; padding: 10px;")
         mobile_layout = QVBoxLayout(mobile_box)
         mobile_layout.setSpacing(4)
         lbl_mob_head = QLabel("📱 در برنامه جیمیل گوشی (اندروید یا آیفون):")
-        lbl_mob_head.setStyleSheet("color: #F472B6; font-weight: bold; font-size: 12px;")
+        lbl_mob_head.setStyleSheet(f"color: {'#F472B6' if palette.is_dark else '#BE185D'}; font-weight: bold; font-size: 12px;")
         mobile_layout.addWidget(lbl_mob_head)
 
         lbl_mob_steps = QLabel(
@@ -117,7 +117,7 @@ class EmailSpamGuideDialog(QDialog):
             "۳. روی آیکون <b>سه نقطه (⋮)</b> در گوشه بالا بزنید و گزینه <b>«گزارش به‌عنوان هرزنامه نیست» (Report not spam)</b> یا <b>«انتقال به صندوق ورودی» (Move to inbox)</b> را انتخاب کنید."
         )
         lbl_mob_steps.setWordWrap(True)
-        lbl_mob_steps.setStyleSheet("color: #E2E8F0; font-size: 12px; line-height: 1.8;")
+        lbl_mob_steps.setStyleSheet(f"color: {palette.text_primary}; font-size: 12px; line-height: 1.8;")
         mobile_layout.addWidget(lbl_mob_steps)
         m1_layout.addWidget(mobile_box)
 
@@ -132,7 +132,7 @@ class EmailSpamGuideDialog(QDialog):
         m2_layout.setSpacing(10)
 
         m2_title = QLabel("🔒 روش دوم (تضمینی و دائمی): افزودن ایمیل نرم‌افزار به مخاطبین")
-        m2_title.setStyleSheet("color: #FBBF24; font-size: 14px; font-weight: bold;")
+        m2_title.setStyleSheet(f"color: {'#FBBF24' if palette.is_dark else '#B45309'}; font-size: 14px; font-weight: bold;")
         m2_layout.addWidget(m2_title)
 
         lbl_m2_desc = QLabel(

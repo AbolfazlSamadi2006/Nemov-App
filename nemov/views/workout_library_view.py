@@ -9,6 +9,7 @@ from nemov.views.components.media_viewer_dialog import MediaViewerDialog
 from nemov.views.components.undo_delete_banner import UndoDeleteBanner
 import os
 from nemov.views.components.muscle_selector_widget import MuscleSelectorWidget, MUSCLE_DEFINITIONS
+from nemov.utils.theme_manager import ThemeManager
 
 
 class OperationsDelegate(QStyledItemDelegate):
@@ -43,12 +44,13 @@ class OperationsDelegate(QStyledItemDelegate):
         r = index.row()
 
         # 1. Media
+        pal = ThemeManager.get_current_palette()
         has_cloud = index.data(Qt.ItemDataRole.UserRole + 1)
-        media_bg = QColor("#3D3D3D") if (self.hover_row == r and self.hover_btn == 1) else QColor("#2D2D2D")
-        painter.setPen(Qt.PenStyle.NoPen)
+        media_bg = QColor(pal.btn_sec_hover) if (self.hover_row == r and self.hover_btn == 1) else QColor(pal.btn_sec_bg)
+        painter.setPen(QColor(pal.btn_sec_border))
         painter.setBrush(media_bg)
         painter.drawRoundedRect(media_rect, 6, 6)
-        painter.setPen(QColor("#FFFFFF"))
+        painter.setPen(QColor(pal.btn_sec_text))
         painter.drawText(media_rect, Qt.AlignmentFlag.AlignCenter, "🎬 رسانه ☁️" if has_cloud else "🎬 رسانه")
 
         # 2. Edit
@@ -142,7 +144,7 @@ class TwoLineDescriptionDelegate(QStyledItemDelegate):
         font.setPointSize(9)
         font.setStyleStrategy(QFont.StyleStrategy.PreferAntialias)
         painter.setFont(font)
-        painter.setPen(QColor("#D1D5DB"))
+        painter.setPen(QColor(ThemeManager.get_current_palette().text_secondary))
 
         fm = painter.fontMetrics()
         line_height = fm.lineSpacing()
@@ -198,9 +200,11 @@ class TwoLineDescriptionDelegate(QStyledItemDelegate):
 
 
 class ExerciseFormDialog(QDialog):
-    def __init__(self, parent=None, exercise_data=None):
+    def __init__(self, parent=None, exercise_data=None, draft_data=None):
         super().__init__(parent)
         self.exercise_data = exercise_data
+        self._draft_data = draft_data
+        self._was_saved = False
         self.media_path = None
         self.media_type = "image"
         self.thumbnail_path = None
@@ -213,6 +217,31 @@ class ExerciseFormDialog(QDialog):
         self.resize(pref_w, pref_h)
         self.setMinimumSize(min_w, min_h)
         self.init_ui()
+        self._apply_theme_style()
+        try:
+            ThemeManager.theme_changed.connect(self._on_theme_changed)
+        except Exception:
+            pass
+
+    def _on_theme_changed(self, _theme_key: str):
+        self._apply_theme_style()
+
+    def _apply_theme_style(self):
+        pal = ThemeManager.get_current_palette()
+        r_bg, r_fg, r_bd, r_hv = ThemeManager.get_tone_colors("rose", pal)
+        if hasattr(self, "btn_remove_media"):
+            self.btn_remove_media.setStyleSheet(
+                f"QPushButton {{ font-size: 11px; font-weight: bold; padding: 6px 10px; "
+                f"background-color: {r_bg}; color: {r_fg}; border: 1px solid {r_bd}; border-radius: 4px; }}"
+                f"QPushButton:hover {{ background-color: {r_hv}; color: #FFFFFF; }}"
+            )
+        if hasattr(self, "lbl_media_status"):
+            self.lbl_media_status.setStyleSheet(f"color: {pal.text_muted}; font-size: 11px;")
+        if hasattr(self, "chk_corrective"):
+            self.chk_corrective.setStyleSheet(f"font-weight: bold; color: {pal.text_primary};")
+        if hasattr(self, "lbl_anat_title"):
+            head_col = pal.primary_hover if pal.is_dark else pal.primary
+            self.lbl_anat_title.setStyleSheet(f"font-weight: bold; color: {head_col}; font-size: 12px;")
 
     def init_ui(self):
         main_layout = QHBoxLayout(self)
@@ -339,9 +368,8 @@ class ExerciseFormDialog(QDialog):
         # Left Column: Mannequin Visual Selector
         vlay_anatomy = QVBoxLayout()
         vlay_anatomy.setSpacing(6)
-        lbl_anat_title = QLabel("🧍 انتخاب آناتومیک روی بدن (روبرو و پشت)")
-        lbl_anat_title.setStyleSheet("font-weight: bold; color: #F87171; font-size: 12px;")
-        vlay_anatomy.addWidget(lbl_anat_title)
+        self.lbl_anat_title = QLabel("🧍 انتخاب آناتومیک روی بدن (روبرو و پشت)")
+        vlay_anatomy.addWidget(self.lbl_anat_title)
 
         self.muscle_selector = MuscleSelectorWidget(self, is_filter_mode=False)
         self.muscle_selector.muscle_changed.connect(self._on_mannequin_muscle_changed)
@@ -358,6 +386,8 @@ class ExerciseFormDialog(QDialog):
                 self.muscle_selector.set_selected_muscle(cur_key)
             else:
                 self.muscle_selector.clear_selection()
+
+        self._init_draft_persistence()
 
     def _on_mannequin_muscle_changed(self, muscle_key: str, name_fa: str):
         if muscle_key:
@@ -589,6 +619,9 @@ class ExerciseFormDialog(QDialog):
                 return
             self.txt_name.setText(suggested_name)
 
+        self._was_saved = True
+        if hasattr(self, "_draft_binder"):
+            self._draft_binder.clear_draft(rotate_id=False)
         self.accept()
 
     def get_data(self):
@@ -658,6 +691,82 @@ class ExerciseFormDialog(QDialog):
         else:
             self.btn_edit_media.hide()
             self.btn_remove_media.hide()
+
+    def _init_draft_persistence(self):
+        import uuid
+        from nemov.services.draft_service import DebouncedDraftBinder
+        self._baseline_state = self.get_data()
+        draft_id = (
+            self._draft_data["draft_id"]
+            if self._draft_data
+            else (f"exercise_form_e{self.exercise_data.id}" if self.exercise_data else f"exercise_form_new_{uuid.uuid4().hex[:8]}")
+        )
+        self._draft_binder = DebouncedDraftBinder(
+            parent=self,
+            section="exercise_form",
+            section_title="فرم حرکت ورزشی",
+            get_payload_fn=self.get_data,
+            is_dirty_fn=lambda: (not self._was_saved) and (self.get_data() != self._baseline_state),
+            get_meta_fn=self._get_draft_meta,
+            draft_id=draft_id,
+            debounce_ms=3000,
+        )
+        if self._draft_data:
+            self._restore_draft(self._draft_data)
+
+        for le in (self.txt_name, self.txt_contra, self.txt_video_url):
+            le.textChanged.connect(self._draft_binder.schedule)
+        self.txt_desc.textChanged.connect(self._draft_binder.schedule)
+        self.combo_muscle.currentIndexChanged.connect(self._draft_binder.schedule)
+        self.combo_equip.currentIndexChanged.connect(self._draft_binder.schedule)
+        self.chk_corrective.stateChanged.connect(self._draft_binder.schedule)
+        self.muscle_selector.muscle_changed.connect(lambda *_: self._draft_binder.schedule())
+
+    def _get_draft_meta(self) -> dict:
+        d = self.get_data()
+        name = d.get("name_fa", "")
+        action_lbl = "ویرایش حرکت" if self.exercise_data else "افزودن حرکت"
+        title = f"{action_lbl}: {name}" if name else action_lbl
+        return {
+            "title": title,
+            "summary": "بانک حرکات ورزشی",
+            "entity_id": self.exercise_data.id if self.exercise_data else None,
+        }
+
+    def _restore_draft(self, draft: dict):
+        from nemov.services.cloud_sync_service import resolve_exercise_media_path
+        payload = draft.get("payload") or {}
+        with self._draft_binder.suspended():
+            self.txt_name.setText(payload.get("name_fa", "") or "")
+            idx_m = self.combo_muscle.findData(payload.get("primary_muscle"))
+            self.combo_muscle.setCurrentIndex(idx_m if idx_m >= 0 else 0)
+            if payload.get("primary_muscle"):
+                self.muscle_selector.set_selected_muscle(payload["primary_muscle"])
+            else:
+                self.muscle_selector.clear_selection()
+            idx_e = self.combo_equip.findData(payload.get("equipment"))
+            if idx_e >= 0:
+                self.combo_equip.setCurrentIndex(idx_e)
+            self.txt_contra.setText(payload.get("contraindications", "") or "")
+            self.txt_video_url.setText(payload.get("video_url", "") or "")
+            self.txt_desc.setText(payload.get("description", "") or "")
+            self.chk_corrective.setChecked(bool(payload.get("is_corrective", False)))
+            self.media_path = payload.get("media_path")
+            self.media_type = payload.get("media_type") or "image"
+            self.thumbnail_path = payload.get("thumbnail_path")
+            self.video_cloud_url = payload.get("video_cloud_url")
+            actual_path = resolve_exercise_media_path(self.media_path) if self.media_path else None
+            if actual_path and os.path.exists(actual_path):
+                self.media_path = actual_path
+                self.lbl_media_status.setText(f"فایل: {os.path.basename(actual_path)}")
+                self.lbl_media_status.setStyleSheet("color: #4CAF50; font-size: 11px;")
+                self.btn_edit_media.setVisible(True)
+                self.btn_remove_media.setVisible(True)
+
+    def closeEvent(self, event):
+        if hasattr(self, "_draft_binder") and not self._was_saved:
+            self._draft_binder.flush_now()
+        super().closeEvent(event)
 class CloudVideoSyncWorker(QThread):
     progress_updated = pyqtSignal(int, int, str)
     sync_finished = pyqtSignal(int, int, list)
@@ -685,6 +794,112 @@ class WorkoutLibraryView(QWidget):
         self.sync_worker = None
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
         self.init_ui()
+        self._apply_theme_style()
+        try:
+            ThemeManager.theme_changed.connect(self._on_theme_changed)
+        except Exception:
+            pass
+
+    def _on_theme_changed(self, _theme_key: str):
+        self._apply_theme_style()
+
+    def _apply_theme_style(self):
+        pal = ThemeManager.get_current_palette()
+        b_bg, b_fg, b_bd, b_hv = ThemeManager.get_tone_colors("blue", pal)
+        if hasattr(self, "btn_cloud_sync"):
+            self.btn_cloud_sync.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: {b_bg};
+                    color: {b_fg};
+                    font-weight: bold;
+                    border: 1px solid {b_bd};
+                    border-radius: 6px;
+                    padding: 6px 14px;
+                    font-size: 12.5px;
+                }}
+                QPushButton:hover {{
+                    background-color: {b_hv};
+                    color: #FFFFFF;
+                }}
+                QPushButton:disabled {{
+                    background-color: {pal.btn_sec_bg};
+                    color: {pal.text_muted};
+                    border: 1px solid {pal.border_light};
+                }}
+            """)
+        if hasattr(self, "btn_toggle_mannequin"):
+            self.btn_toggle_mannequin.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: {pal.btn_sec_bg};
+                    color: {pal.btn_sec_text};
+                    font-family: "Vazirmatn", "Segoe UI", sans-serif;
+                    font-weight: bold;
+                    border: 1px solid {pal.btn_sec_border};
+                    border-radius: 6px;
+                    padding: 4px 12px;
+                    font-size: 11.5px;
+                }}
+                QPushButton:hover {{
+                    background-color: {pal.btn_sec_hover};
+                    color: {pal.text_primary};
+                }}
+                QPushButton:!checked {{
+                    background-color: {pal.bg_surface};
+                    color: {pal.text_secondary};
+                    border: 1px solid {pal.border};
+                }}
+                QPushButton:!checked:hover {{
+                    background-color: {pal.btn_sec_hover};
+                    color: {pal.text_primary};
+                }}
+            """)
+        if hasattr(self, "btn_bulk_delete"):
+            self.btn_bulk_delete.setStyleSheet(ThemeManager.get_bulk_delete_qss(pal))
+        if hasattr(self, "anat_filter_frame"):
+            self.anat_filter_frame.setStyleSheet(f"""
+                QFrame#anatFilterCard {{
+                    background-color: {pal.bg_card};
+                    border: 1px solid {pal.border};
+                    border-radius: 10px;
+                }}
+            """)
+        if hasattr(self, "lbl_anat_head"):
+            head_col = pal.primary_hover if pal.is_dark else pal.primary
+            self.lbl_anat_head.setStyleSheet(f"color: {head_col}; font-weight: bold; font-size: 13px; background: transparent;")
+        if hasattr(self, "lbl_anat_desc"):
+            self.lbl_anat_desc.setStyleSheet(f"color: {pal.text_secondary}; font-size: 11px; background: transparent;")
+        if hasattr(self, "lbl_filter_stats"):
+            self.lbl_filter_stats.setStyleSheet(f"""
+                QLabel {{
+                    color: {pal.text_primary};
+                    font-family: "Vazirmatn", "Segoe UI", sans-serif;
+                    font-weight: bold;
+                    font-size: 11.5px;
+                    background-color: {pal.bg_surface};
+                    border: 1px solid {pal.border};
+                    border-radius: 6px;
+                    padding: 5px 12px;
+                }}
+            """)
+        if hasattr(self, "btn_show_all"):
+            self.btn_show_all.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: {pal.btn_sec_bg};
+                    color: {pal.btn_sec_text};
+                    font-family: "Vazirmatn", "Segoe UI", sans-serif;
+                    border: 1px solid {pal.btn_sec_border};
+                    border-radius: 6px;
+                    padding: 5px 12px;
+                    font-size: 11px;
+                    font-weight: bold;
+                }}
+                QPushButton:hover {{
+                    background-color: {pal.btn_sec_hover};
+                    color: {pal.text_primary};
+                }}
+            """)
+        if hasattr(self, "table") and self.table.viewport():
+            self.table.viewport().update()
 
     def init_ui(self):
         layout = QVBoxLayout(self)
@@ -765,31 +980,6 @@ class WorkoutLibraryView(QWidget):
         self.btn_toggle_mannequin.setChecked(True)
         self.btn_toggle_mannequin.setFixedHeight(32)
         self.btn_toggle_mannequin.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_toggle_mannequin.setStyleSheet("""
-            QPushButton {
-                background-color: #1F2937;
-                color: #60A5FA;
-                font-family: "Vazirmatn", "Segoe UI", sans-serif;
-                font-weight: bold;
-                border: 1px solid #3B82F6;
-                border-radius: 6px;
-                padding: 4px 12px;
-                font-size: 11.5px;
-            }
-            QPushButton:hover {
-                background-color: #2563EB;
-                color: #FFFFFF;
-            }
-            QPushButton:!checked {
-                background-color: #181F2A;
-                color: #94A3B8;
-                border: 1px solid #475569;
-            }
-            QPushButton:!checked:hover {
-                background-color: #334155;
-                color: #F8FAFC;
-            }
-        """)
         self.btn_toggle_mannequin.toggled.connect(self.toggle_anatomy_filter)
 
         controls.addWidget(QLabel("جستجو:"))
@@ -806,24 +996,6 @@ class WorkoutLibraryView(QWidget):
         self.btn_bulk_delete.setFixedHeight(32)
         self.btn_bulk_delete.setEnabled(False)
         self.btn_bulk_delete.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_bulk_delete.setStyleSheet("""
-            QPushButton {
-                background-color: #7B1113;
-                color: #FFFFFF;
-                font-weight: bold;
-                border: none;
-                border-radius: 6px;
-                padding: 4px 12px;
-                font-size: 12px;
-            }
-            QPushButton:hover {
-                background-color: #9B1B1E;
-            }
-            QPushButton:disabled {
-                background-color: #333333;
-                color: #777777;
-            }
-        """)
         self.btn_bulk_delete.clicked.connect(self.bulk_delete_exercises)
 
         controls.addSpacing(10)
@@ -834,13 +1006,6 @@ class WorkoutLibraryView(QWidget):
         # Anatomy Filter Card Frame (Visual Mannequin above table)
         self.anat_filter_frame = QFrame()
         self.anat_filter_frame.setObjectName("anatFilterCard")
-        self.anat_filter_frame.setStyleSheet("""
-            QFrame#anatFilterCard {
-                background-color: #11141A;
-                border: 1px solid #232936;
-                border-radius: 10px;
-            }
-        """)
         anat_layout = QHBoxLayout(self.anat_filter_frame)
         anat_layout.setContentsMargins(14, 8, 14, 8)
         anat_layout.setSpacing(16)
@@ -849,57 +1014,27 @@ class WorkoutLibraryView(QWidget):
         vlay_info = QVBoxLayout()
         vlay_info.setSpacing(6)
 
-        lbl_anat_head = QLabel("🎯 فیلتر تصویری و هوشمند بر اساس آناتومی بدن")
-        lbl_anat_head.setStyleSheet("color: #F87171; font-weight: bold; font-size: 13px;")
+        self.lbl_anat_head = QLabel("🎯 فیلتر تصویری و هوشمند بر اساس آناتومی بدن")
 
-        lbl_anat_desc = QLabel(
+        self.lbl_anat_desc = QLabel(
             "با کلیک روی هر عضله از بدن آدمک (نمای روبرو یا پشت)، جدول حرکات فوراً بر اساس آن عضله فیلتر می‌شود.\n"
             "برای مشاهده مجدد تمام حرکات، روی دکمه «همه عضلات» کلیک کنید."
         )
-        lbl_anat_desc.setStyleSheet("color: #9CA3AF; font-size: 11px;")
-        lbl_anat_desc.setWordWrap(True)
+        self.lbl_anat_desc.setWordWrap(True)
 
         self.lbl_filter_stats = QLabel("در حال بارگذاری...")
-        self.lbl_filter_stats.setStyleSheet("""
-            QLabel {
-                color: #E2E8F0;
-                font-family: "Vazirmatn", "Segoe UI", sans-serif;
-                font-weight: bold;
-                font-size: 11.5px;
-                background-color: #1E2430;
-                border: 1px solid #333C4D;
-                border-radius: 6px;
-                padding: 5px 12px;
-            }
-        """)
 
-        btn_show_all = QPushButton("نمایش همه عضلات")
-        btn_show_all.setCursor(Qt.CursorShape.PointingHandCursor)
-        btn_show_all.setStyleSheet("""
-            QPushButton {
-                background-color: #2D3748;
-                color: #CBD5E1;
-                font-family: "Vazirmatn", "Segoe UI", sans-serif;
-                border: 1px solid #4A5568;
-                border-radius: 6px;
-                padding: 5px 12px;
-                font-size: 11px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: #4A5568;
-                color: #FFFFFF;
-            }
-        """)
-        btn_show_all.clicked.connect(self.clear_anatomy_filter)
+        self.btn_show_all = QPushButton("نمایش همه عضلات")
+        self.btn_show_all.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_show_all.clicked.connect(self.clear_anatomy_filter)
 
         row_info_btns = QHBoxLayout()
         row_info_btns.addWidget(self.lbl_filter_stats)
-        row_info_btns.addWidget(btn_show_all)
+        row_info_btns.addWidget(self.btn_show_all)
         row_info_btns.addStretch()
 
-        vlay_info.addWidget(lbl_anat_head)
-        vlay_info.addWidget(lbl_anat_desc)
+        vlay_info.addWidget(self.lbl_anat_head)
+        vlay_info.addWidget(self.lbl_anat_desc)
         vlay_info.addLayout(row_info_btns)
         vlay_info.addStretch()
 

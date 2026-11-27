@@ -14,6 +14,7 @@ from nemov.pdf.pdf_generator import PDFGenerator
 import os
 import re
 from nemov.utils.jalali_date import get_now_shamsi_for_filename
+from nemov.utils.theme_manager import ThemeManager
 
 class ViewWorkoutPlanDialog(QDialog):
     """Full detail view dialog for a Workout Plan showing days, exercises, sets, reps and media."""
@@ -37,16 +38,17 @@ class ViewWorkoutPlanDialog(QDialog):
         dlg_layout.setContentsMargins(20, 20, 20, 20)
         dlg_layout.setSpacing(14)
 
+        pal = ThemeManager.get_current_palette()
         lbl_title = QLabel(f"<b>نام حرکت:</b> {exercise_name}")
-        lbl_title.setStyleSheet("font-size: 14px; color: #FFFFFF;")
+        lbl_title.setStyleSheet(f"font-size: 14px; color: {pal.text_primary};")
         dlg_layout.addWidget(lbl_title)
 
         txt_notes = QTextEdit()
         txt_notes.setReadOnly(True)
         txt_notes.setText(notes)
         txt_notes.setStyleSheet(
-            "background-color: #1A202C; color: #E2E8F0; font-size: 13px; "
-            "border: 1px solid #4A5568; border-radius: 6px; padding: 10px; line-height: 1.6;"
+            f"background-color: {pal.input_bg}; color: {pal.text_primary}; font-size: 13px; "
+            f"border: 1px solid {pal.input_border}; border-radius: 6px; padding: 10px; line-height: 1.6;"
         )
         txt_notes.setFixedHeight(160)
         dlg_layout.addWidget(txt_notes)
@@ -87,7 +89,7 @@ class ViewWorkoutPlanDialog(QDialog):
             f"<b>تعداد روزها:</b> {self.plan.days_per_week} روز در هفته  |  "
             f"<b>سطح تمرین:</b> {level_fa}"
         )
-        lbl_info.setStyleSheet("color: #FFFFFF; font-size: 13px;")
+        lbl_info.setStyleSheet(f"color: {ThemeManager.get_current_palette().text_primary}; font-size: 13px;")
         card_l.addWidget(lbl_info)
         layout.addWidget(card)
 
@@ -293,7 +295,7 @@ class ViewNutritionPlanDialog(QDialog):
             f"<b>کالری کل روزانه:</b> {int(self.plan.target_calories or 0)} kcal  |  "
             f"<b>درشت‌مغذی‌ها:</b> {macros_str}"
         )
-        lbl_info.setStyleSheet("color: #FFFFFF; font-size: 13px;")
+        lbl_info.setStyleSheet(f"color: {ThemeManager.get_current_palette().text_primary}; font-size: 13px;")
         card_l.addWidget(lbl_info)
         layout.addWidget(card)
 
@@ -407,8 +409,49 @@ class MemberDetailView(QWidget):
     def __init__(self, member_id: int, parent=None):
         super().__init__(parent)
         self.member_id = member_id
+        self._has_avatar_photo = False
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
         self.init_ui()
+        self._apply_theme_style()
+        try:
+            ThemeManager.theme_changed.connect(self._on_theme_changed)
+        except Exception:
+            pass
+
+    def _on_theme_changed(self, _theme_key: str):
+        self._apply_theme_style()
+
+    def _apply_theme_style(self):
+        pal = ThemeManager.get_current_palette()
+        if hasattr(self, "lbl_avatar") and not self._has_avatar_photo:
+            self.lbl_avatar.setStyleSheet(f"border-radius: 50px; background-color: {pal.bg_surface}; color: {pal.text_muted}; font-size: 40px;")
+        for attr in ("lbl_workout_title", "lbl_nutrition_title"):
+            lbl = getattr(self, attr, None)
+            if lbl is not None:
+                lbl.setStyleSheet(f"font-size: 15px; font-weight: bold; color: {pal.text_primary};")
+        for attr in ("lbl_workout_sub", "lbl_nutrition_sub"):
+            lbl = getattr(self, attr, None)
+            if lbl is not None:
+                lbl.setStyleSheet(f"color: {pal.text_secondary}; font-size: 12px;")
+        bulk_qss = ThemeManager.get_bulk_delete_qss(pal)
+        for attr in ("btn_bulk_delete_workout", "btn_bulk_delete_nutrition"):
+            b = getattr(self, attr, None)
+            if b is not None:
+                b.setStyleSheet(bulk_qss)
+        empty_qss = f"""
+            QLabel {{
+                color: {pal.text_muted};
+                font-size: 14px;
+                padding: 40px;
+                background-color: {pal.bg_card};
+                border: 1px solid {pal.border};
+                border-radius: 8px;
+            }}
+        """
+        for attr in ("lbl_no_workout", "lbl_no_nutrition"):
+            lbl = getattr(self, attr, None)
+            if lbl is not None:
+                lbl.setStyleSheet(empty_qss)
 
     def init_ui(self):
         layout = QVBoxLayout(self)
@@ -536,14 +579,19 @@ class MemberDetailView(QWidget):
                 if not pixmap.isNull():
                     from nemov.utils.image_utils import get_circular_pixmap
                     circ_pix = get_circular_pixmap(pixmap, 100)
+                    self._has_avatar_photo = True
                     self.lbl_avatar.setPixmap(circ_pix)
                     self.lbl_avatar.setStyleSheet("border: none; background: transparent;")
                 else:
+                    self._has_avatar_photo = False
+                    pal = ThemeManager.get_current_palette()
                     self.lbl_avatar.setText("👤")
-                    self.lbl_avatar.setStyleSheet("font-size: 50px; background-color: #2E2E2E; border-radius: 50px;")
+                    self.lbl_avatar.setStyleSheet(f"font-size: 50px; background-color: {pal.bg_surface}; color: {pal.text_muted}; border-radius: 50px;")
             else:
+                self._has_avatar_photo = False
+                pal = ThemeManager.get_current_palette()
                 self.lbl_avatar.setText("👤")
-                self.lbl_avatar.setStyleSheet("font-size: 50px; background-color: #2E2E2E; border-radius: 50px;")
+                self.lbl_avatar.setStyleSheet(f"font-size: 50px; background-color: {pal.bg_surface}; color: {pal.text_muted}; border-radius: 50px;")
 
     def init_workout_tab(self):
         layout = QVBoxLayout(self.tab_workout)
@@ -555,12 +603,10 @@ class MemberDetailView(QWidget):
         top_box.setSpacing(12)
         title_box = QVBoxLayout()
         title_box.setSpacing(4)
-        lbl_title = QLabel("🏋️ بایگانی و تاریخچه برنامه‌های تمرینی ورزشکار")
-        lbl_title.setStyleSheet("font-size: 15px; font-weight: bold; color: #FFFFFF;")
-        lbl_sub = QLabel("مشاهده جزئیات، ویرایش، صدور PDF و حذف برنامه‌های تمرینی به ترتیب تاریخ تخصیص")
-        lbl_sub.setStyleSheet("color: #AAAAAA; font-size: 12px;")
-        title_box.addWidget(lbl_title)
-        title_box.addWidget(lbl_sub)
+        self.lbl_workout_title = QLabel("🏋️ بایگانی و تاریخچه برنامه‌های تمرینی ورزشکار")
+        self.lbl_workout_sub = QLabel("مشاهده جزئیات، ویرایش، صدور PDF و حذف برنامه‌های تمرینی به ترتیب تاریخ تخصیص")
+        title_box.addWidget(self.lbl_workout_title)
+        title_box.addWidget(self.lbl_workout_sub)
         top_box.addLayout(title_box)
         top_box.addStretch()
 
@@ -573,23 +619,6 @@ class MemberDetailView(QWidget):
         self.btn_bulk_delete_workout.setEnabled(False)
         self.btn_bulk_delete_workout.setFixedSize(190, 36)
         self.btn_bulk_delete_workout.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_bulk_delete_workout.setStyleSheet("""
-            QPushButton {
-                background-color: #DC2626;
-                color: #FFFFFF;
-                font-weight: bold;
-                border: none;
-                border-radius: 6px;
-                padding: 6px 14px;
-            }
-            QPushButton:hover {
-                background-color: #B91C1C;
-            }
-            QPushButton:disabled {
-                background-color: #4B5563;
-                color: #9CA3AF;
-            }
-        """)
         self.btn_bulk_delete_workout.clicked.connect(self.bulk_delete_workout_plans)
 
         btn_assign_new = QPushButton("➕ تخصیص برنامه تمرینی")
@@ -634,16 +663,6 @@ class MemberDetailView(QWidget):
 
         self.lbl_no_workout = QLabel("هیچ برنامه تمرینی در تاریخچه این ورزشکار ثبت نشده است.")
         self.lbl_no_workout.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        self.lbl_no_workout.setStyleSheet("""
-            QLabel {
-                color: #777777;
-                font-size: 14px;
-                padding: 40px;
-                background-color: #141414;
-                border: 1px solid #282828;
-                border-radius: 8px;
-            }
-        """)
         self.lbl_no_workout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.lbl_no_workout.setVisible(False)
         layout.addWidget(self.lbl_no_workout, 1)
@@ -861,15 +880,13 @@ class MemberDetailView(QWidget):
         # Header Row
         top_box = QHBoxLayout()
         top_box.setSpacing(12)
-        title = QLabel("🥗 تاریخچه و بایگانی برنامه‌های غذایی")
-        title.setStyleSheet("font-size: 15px; font-weight: bold; color: #FFFFFF;")
-        subtitle = QLabel("مشاهده جزئیات، ویرایش، صدور PDF و حذف برنامه‌های غذایی به ترتیب تاریخ تخصیص")
-        subtitle.setStyleSheet("color: #AAAAAA; font-size: 12px;")
+        self.lbl_nutrition_title = QLabel("🥗 تاریخچه و بایگانی برنامه‌های غذایی")
+        self.lbl_nutrition_sub = QLabel("مشاهده جزئیات، ویرایش، صدور PDF و حذف برنامه‌های غذایی به ترتیب تاریخ تخصیص")
 
         top_info = QVBoxLayout()
         top_info.setSpacing(4)
-        top_info.addWidget(title)
-        top_info.addWidget(subtitle)
+        top_info.addWidget(self.lbl_nutrition_title)
+        top_info.addWidget(self.lbl_nutrition_sub)
         top_box.addLayout(top_info)
         top_box.addStretch()
 
@@ -882,23 +899,6 @@ class MemberDetailView(QWidget):
         self.btn_bulk_delete_nutrition.setEnabled(False)
         self.btn_bulk_delete_nutrition.setFixedSize(190, 36)
         self.btn_bulk_delete_nutrition.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_bulk_delete_nutrition.setStyleSheet("""
-            QPushButton {
-                background-color: #DC2626;
-                color: #FFFFFF;
-                font-weight: bold;
-                border: none;
-                border-radius: 6px;
-                padding: 6px 14px;
-            }
-            QPushButton:hover {
-                background-color: #B91C1C;
-            }
-            QPushButton:disabled {
-                background-color: #4B5563;
-                color: #9CA3AF;
-            }
-        """)
         self.btn_bulk_delete_nutrition.clicked.connect(self.bulk_delete_nutrition_plans)
 
         btn_assign = QPushButton("➕ تخصیص برنامه غذایی")
@@ -943,16 +943,6 @@ class MemberDetailView(QWidget):
 
         self.lbl_no_nutrition = QLabel("هیچ برنامه غذایی در تاریخچه این ورزشکار ثبت نشده است.")
         self.lbl_no_nutrition.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        self.lbl_no_nutrition.setStyleSheet("""
-            QLabel {
-                color: #777777;
-                font-size: 14px;
-                padding: 40px;
-                background-color: #141414;
-                border: 1px solid #282828;
-                border-radius: 8px;
-            }
-        """)
         self.lbl_no_nutrition.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.lbl_no_nutrition.setVisible(False)
         layout.addWidget(self.lbl_no_nutrition, 1)

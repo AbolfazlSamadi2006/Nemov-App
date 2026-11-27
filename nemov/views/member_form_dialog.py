@@ -11,10 +11,13 @@ from nemov.utils.jalali_date import add_months_shamsi
 import os
 
 class MemberFormDialog(QDialog):
-    def __init__(self, parent=None, member_data=None):
+    def __init__(self, parent=None, member_data=None, draft_data=None):
         super().__init__(parent)
         self.member_data = member_data
+        self._draft_data = draft_data
         self.photo_path = None
+        self._was_saved = False
+        self._explicit_cancel = False
         self.setWindowTitle("ثبت / ویرایش ورزشکار جدید")
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
         from nemov.utils.ui_scaling import compute_responsive_size, create_transparent_scroll_area, get_available_screen_size
@@ -308,7 +311,7 @@ class MemberFormDialog(QDialog):
         btn_save.clicked.connect(self.save)
         btn_cancel = QPushButton("انصراف")
         btn_cancel.setObjectName("secondary_button")
-        btn_cancel.clicked.connect(self.reject)
+        btn_cancel.clicked.connect(self._on_explicit_cancel)
 
         btn_box.addWidget(btn_save)
         btn_box.addWidget(btn_cancel)
@@ -319,6 +322,8 @@ class MemberFormDialog(QDialog):
             self.load_member_data()
         else:
             self.recalculate_expiry()
+
+        self._init_draft_persistence()
 
 
     def _validate_phone_field(self):
@@ -354,6 +359,8 @@ class MemberFormDialog(QDialog):
         if filepath:
             self.photo_path = filepath
             self.btn_photo.setText(f"📷 عکس: {os.path.basename(filepath)[:15]}")
+            if hasattr(self, "_draft_binder"):
+                self._draft_binder.schedule()
 
     def update_bmr_display(self):
         from nemov.utils.bmr_calculator import calculate_bmr_tdee, calculate_age_from_shamsi, PAL_LEVELS
@@ -547,6 +554,9 @@ class MemberFormDialog(QDialog):
                 except Exception:
                     pass
                 QMessageBox.information(self, "موفقیت", "ورزشکار جدید با موفقیت ثبت شد.")
+            self._was_saved = True
+            if hasattr(self, "_draft_binder"):
+                self._draft_binder.clear_draft(rotate_id=False)
             self.accept()
         except Exception as e:
             QMessageBox.critical(self, "خطا", f"خطا در ثبت اطلاعات: {str(e)}")
@@ -632,4 +642,102 @@ class MemberFormDialog(QDialog):
         if m.notes:
             self.txt_notes.setText(m.notes)
         self.update_bmr_display()
+
+    def _init_draft_persistence(self):
+        import uuid
+        from nemov.services.draft_service import DebouncedDraftBinder
+        self._baseline_state = self.get_data()
+        draft_id = (
+            self._draft_data["draft_id"]
+            if self._draft_data
+            else (f"member_form_m{self.member_data.id}" if self.member_data else f"member_form_new_{uuid.uuid4().hex[:8]}")
+        )
+        self._draft_binder = DebouncedDraftBinder(
+            parent=self,
+            section="member_form",
+            section_title="ثبت / ویرایش ورزشکار",
+            get_payload_fn=self.get_data,
+            is_dirty_fn=lambda: (not self._was_saved) and (self.get_data() != self._baseline_state),
+            get_meta_fn=self._get_draft_meta,
+            draft_id=draft_id,
+            debounce_ms=3000,
+        )
+        if self._draft_data:
+            self._restore_draft(self._draft_data)
+
+        for le in (self.txt_first_name, self.txt_last_name, self.txt_phone, self.txt_job, self.txt_tuition_fee):
+            le.textChanged.connect(self._draft_binder.schedule)
+        self.txt_notes.textChanged.connect(self._draft_binder.schedule)
+        for cmb in (self.combo_gender, self.combo_activity, self.combo_membership, self.combo_status):
+            cmb.currentIndexChanged.connect(self._draft_binder.schedule)
+        for sp in (self.spin_height, self.spin_weight):
+            sp.valueChanged.connect(self._draft_binder.schedule)
+        for pk in (self.picker_birth, self.picker_reg, self.picker_insurance, self.picker_start, self.picker_expire):
+            pk.date_changed.connect(self._draft_binder.schedule)
+
+    def _get_draft_meta(self) -> dict:
+        d = self.get_data()
+        full_n = f"{d.get('first_name', '')} {d.get('last_name', '')}".strip()
+        action_lbl = "ویرایش ورزشکار" if self.member_data else "ثبت ورزشکار"
+        title = f"{action_lbl}: {full_n}" if full_n else action_lbl
+        phone = d.get("phone", "")
+        return {
+            "title": title,
+            "summary": f"موبایل: {phone}" if phone else "فرم مشخصات ورزشکار",
+            "member_id": self.member_data.id if self.member_data else None,
+            "member_name": full_n,
+            "entity_id": self.member_data.id if self.member_data else None,
+        }
+
+    def _restore_draft(self, draft: dict):
+        payload = draft.get("payload") or {}
+        with self._draft_binder.suspended():
+            self.txt_first_name.setText(payload.get("first_name", "") or "")
+            self.txt_last_name.setText(payload.get("last_name", "") or "")
+            self.txt_phone.setText(payload.get("phone", "") or "")
+            self.txt_job.setText(payload.get("job", "") or "")
+            idx_g = self.combo_gender.findData(payload.get("gender"))
+            if idx_g >= 0:
+                self.combo_gender.setCurrentIndex(idx_g)
+            if payload.get("birth_date_shamsi"):
+                self.picker_birth.setText(payload["birth_date_shamsi"])
+            self.spin_height.setValue(float(payload.get("height_cm") or 0.0))
+            self.spin_weight.setValue(float(payload.get("initial_weight_kg") or 0.0))
+            idx_a = self.combo_activity.findData(payload.get("activity_level"))
+            if idx_a >= 0:
+                self.combo_activity.setCurrentIndex(idx_a)
+            if payload.get("registration_date_shamsi"):
+                self.picker_reg.setText(payload["registration_date_shamsi"])
+            if payload.get("insurance_date_shamsi"):
+                self.picker_insurance.setText(payload["insurance_date_shamsi"])
+            if payload.get("tuition_fee") is not None:
+                self.txt_tuition_fee.setText(f"{int(payload['tuition_fee']):,}")
+            else:
+                self.txt_tuition_fee.clear()
+            idx_m = self.combo_membership.findData(payload.get("membership_type"))
+            if idx_m >= 0:
+                self.combo_membership.setCurrentIndex(idx_m)
+            if payload.get("membership_start_shamsi"):
+                self.picker_start.setText(payload["membership_start_shamsi"])
+            if payload.get("membership_expire_shamsi"):
+                self.picker_expire.setText(payload["membership_expire_shamsi"])
+            self.photo_path = payload.get("photo_path")
+            if self.photo_path and os.path.exists(self.photo_path):
+                self.btn_photo.setText(f"📷 عکس: {os.path.basename(self.photo_path)[:15]}")
+            self.txt_notes.setText(payload.get("notes", "") or "")
+            idx_s = self.combo_status.findData(payload.get("status"))
+            if idx_s >= 0:
+                self.combo_status.setCurrentIndex(idx_s)
+            self.update_bmr_display()
+
+    def _on_explicit_cancel(self):
+        self._explicit_cancel = True
+        if hasattr(self, "_draft_binder"):
+            self._draft_binder.clear_draft(rotate_id=False)
+        self.reject()
+
+    def closeEvent(self, event):
+        if hasattr(self, "_draft_binder") and not self._was_saved and not self._explicit_cancel:
+            self._draft_binder.flush_now()
+        super().closeEvent(event)
 

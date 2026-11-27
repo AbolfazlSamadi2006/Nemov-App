@@ -54,6 +54,8 @@ class TrainerRegisterDialog(QDialog):
         scroll.setStyleSheet("QScrollArea { border: none; background: transparent; }")
 
         scroll_widget = QWidget()
+        scroll_widget.setObjectName("reg_scroll_host")
+        scroll_widget.setStyleSheet("QWidget#reg_scroll_host { background: transparent; }")
         form_layout = QVBoxLayout(scroll_widget)
         form_layout.setSpacing(8)
 
@@ -359,18 +361,22 @@ class TrainerRegisterDialog(QDialog):
                 self.txt_phone.setFocus()
                 return
 
-            ERROR_STYLE = """
-                QLineEdit {
-                    background-color: #2D1515;
-                    color: #FFAAAA;
-                    border: 1.5px solid #EF4444;
+            pal = ThemeManager.get_current_palette()
+            err_bg = "#2D1515" if pal.is_dark else "#FEF2F2"
+            err_fg = "#FFAAAA" if pal.is_dark else "#991B1B"
+            err_bd = "#EF4444" if pal.is_dark else "#DC2626"
+            ERROR_STYLE = f"""
+                QLineEdit {{
+                    background-color: {err_bg};
+                    color: {err_fg};
+                    border: 1.5px solid {err_bd};
                     border-radius: 6px;
                     padding: 6px 10px;
                     font-size: 13px;
-                }
-                QLineEdit:focus {
-                    border: 1.5px solid #FF4444;
-                }
+                }}
+                QLineEdit:focus {{
+                    border: 1.5px solid {err_bd};
+                }}
             """
 
             if password != confirm_password:

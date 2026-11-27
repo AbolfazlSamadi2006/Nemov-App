@@ -430,11 +430,11 @@ class PasswordRecoveryDialog(QDialog):
             if hasattr(self, "identity_completer") and self.identity_completer.model():
                 identities = self._get_registered_identities()
                 self.identity_completer.model().setStringList(identities)
-            self.btn_tab_sms.setStyleSheet(f"background-color: {palette.primary}; color: {palette.text_primary}; font-weight: bold; border-radius: 6px; border: none;")
-            self.btn_tab_secret.setStyleSheet(f"background-color: {palette.bg_surface}; color: {palette.text_secondary}; border: 1px solid {palette.border}; border-radius: 6px;")
+            self.btn_tab_sms.setStyleSheet(f"background-color: {palette.primary}; color: {palette.primary_text}; font-weight: bold; border-radius: 6px; border: none;")
+            self.btn_tab_secret.setStyleSheet(f"background-color: {palette.btn_sec_bg}; color: {palette.btn_sec_text}; border: 1px solid {palette.btn_sec_border}; border-radius: 6px;")
         else:
-            self.btn_tab_sms.setStyleSheet(f"background-color: {palette.bg_surface}; color: {palette.text_secondary}; border: 1px solid {palette.border}; border-radius: 6px;")
-            self.btn_tab_secret.setStyleSheet(f"background-color: {palette.primary}; color: {palette.text_primary}; font-weight: bold; border-radius: 6px; border: none;")
+            self.btn_tab_sms.setStyleSheet(f"background-color: {palette.btn_sec_bg}; color: {palette.btn_sec_text}; border: 1px solid {palette.btn_sec_border}; border-radius: 6px;")
+            self.btn_tab_secret.setStyleSheet(f"background-color: {palette.primary}; color: {palette.primary_text}; font-weight: bold; border-radius: 6px; border: none;")
 
     def _create_eye_button(self, field: QLineEdit, palette) -> QPushButton:
         """Creates a compact eye toggle button without #secondary_button padding clipping."""

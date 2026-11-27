@@ -8,9 +8,11 @@ from nemov.views.components.field_validator import (
 )
 
 class FoodFormDialog(QDialog):
-    def __init__(self, parent=None, food_data=None):
+    def __init__(self, parent=None, food_data=None, draft_data=None):
         super().__init__(parent)
         self.food_data = food_data
+        self._draft_data = draft_data
+        self._was_saved = False
         self.setWindowTitle("ویرایش ماده غذایی" if food_data else "افزودن ماده غذایی جدید")
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
         self.setFixedSize(560, 400)
@@ -109,6 +111,8 @@ class FoodFormDialog(QDialog):
         if self.food_data:
             self.load_data()
 
+        self._init_draft_persistence()
+
     def _check_food_macros(self):
         err = validate_food_macros(
             self.spin_cal.value(),
@@ -153,6 +157,9 @@ class FoodFormDialog(QDialog):
                 return
             self.txt_name.setText(suggested_name)
 
+        self._was_saved = True
+        if hasattr(self, "_draft_binder"):
+            self._draft_binder.clear_draft(rotate_id=False)
         self.accept()
 
     def get_data(self):
@@ -176,6 +183,63 @@ class FoodFormDialog(QDialog):
         self.spin_protein.setValue(f.protein_g or 0)
         self.spin_carbs.setValue(f.carbs_g or 0)
         self.spin_fat.setValue(f.fat_g or 0)
+
+    def _init_draft_persistence(self):
+        import uuid
+        from nemov.services.draft_service import DebouncedDraftBinder
+        self._baseline_state = self.get_data()
+        draft_id = (
+            self._draft_data["draft_id"]
+            if self._draft_data
+            else (f"food_form_f{self.food_data.id}" if self.food_data else f"food_form_new_{uuid.uuid4().hex[:8]}")
+        )
+        self._draft_binder = DebouncedDraftBinder(
+            parent=self,
+            section="food_form",
+            section_title="فرم ماده غذایی",
+            get_payload_fn=self.get_data,
+            is_dirty_fn=lambda: (not self._was_saved) and (self.get_data() != self._baseline_state),
+            get_meta_fn=self._get_draft_meta,
+            draft_id=draft_id,
+            debounce_ms=3000,
+        )
+        if self._draft_data:
+            self._restore_draft(self._draft_data)
+
+        self.txt_name.textChanged.connect(self._draft_binder.schedule)
+        self.txt_unit.textChanged.connect(self._draft_binder.schedule)
+        self.combo_cat.currentIndexChanged.connect(self._draft_binder.schedule)
+        for sp in (self.spin_cal, self.spin_protein, self.spin_carbs, self.spin_fat):
+            sp.valueChanged.connect(self._draft_binder.schedule)
+
+    def _get_draft_meta(self) -> dict:
+        d = self.get_data()
+        name = d.get("name_fa", "")
+        action_lbl = "ویرایش ماده غذایی" if self.food_data else "افزودن ماده غذایی"
+        title = f"{action_lbl}: {name}" if name else action_lbl
+        return {
+            "title": title,
+            "summary": f"{int(round(d.get('calories') or 0))} کالری • {d.get('unit', '')}",
+            "entity_id": self.food_data.id if self.food_data else None,
+        }
+
+    def _restore_draft(self, draft: dict):
+        payload = draft.get("payload") or {}
+        with self._draft_binder.suspended():
+            self.txt_name.setText(payload.get("name_fa", "") or "")
+            idx = self.combo_cat.findData(payload.get("category"))
+            if idx >= 0:
+                self.combo_cat.setCurrentIndex(idx)
+            self.txt_unit.setText(payload.get("unit", "100 گرم") or "100 گرم")
+            self.spin_cal.setValue(float(payload.get("calories") or 0.0))
+            self.spin_protein.setValue(float(payload.get("protein_g") or 0.0))
+            self.spin_carbs.setValue(float(payload.get("carbs_g") or 0.0))
+            self.spin_fat.setValue(float(payload.get("fat_g") or 0.0))
+
+    def closeEvent(self, event):
+        if hasattr(self, "_draft_binder") and not self._was_saved:
+            self._draft_binder.flush_now()
+        super().closeEvent(event)
 
 class FoodLibraryDialog(QDialog):
     def __init__(self, parent=None):

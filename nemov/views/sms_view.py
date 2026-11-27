@@ -15,6 +15,7 @@ from nemov.services.member_service import MemberService
 from nemov.database.connection import SessionLocal
 from nemov.models.database_models import Member, SystemSetting
 from nemov.utils.jalali_date import get_today_shamsi
+from nemov.utils.theme_manager import ThemeManager
 
 
 class SmsBalanceThread(QThread):
@@ -120,12 +121,18 @@ class RechargeInfoDialog(QDialog):
             ("🥇 بسته طلایی: ۵۰۰ پیامک خدماتی", "۱۵۰,۰۰۰ تومان"),
             ("💎 بسته الماس: ۱۰۰۰ پیامک خدماتی", "۳۰۰,۰۰۰ تومان"),
         ]
+        pal = ThemeManager.get_current_palette()
+        b_bg, b_fg, b_bd, _ = ThemeManager.get_tone_colors("blue", pal)
+        e_bg, e_fg, e_bd, _ = ThemeManager.get_tone_colors("emerald", pal)
+        a_bg, a_fg, a_bd, _ = ThemeManager.get_tone_colors("amber", pal)
+        i_bg, i_fg, i_bd, _ = ThemeManager.get_tone_colors("indigo", pal)
+
         for title_txt, price_txt in packages:
             row = QHBoxLayout()
             lbl_title = QLabel(title_txt)
-            lbl_title.setStyleSheet("font-size: 13px; font-weight: bold; color: #F3F4F6;")
+            lbl_title.setStyleSheet(f"font-size: 13px; font-weight: bold; color: {pal.text_primary}; background: transparent;")
             lbl_price = QLabel(price_txt)
-            lbl_price.setStyleSheet("font-size: 13px; font-weight: bold; color: #34D399;")
+            lbl_price.setStyleSheet(f"font-size: 13px; font-weight: bold; color: {e_fg}; background: transparent;")
             row.addWidget(lbl_title)
             row.addStretch()
             row.addWidget(lbl_price)
@@ -136,40 +143,43 @@ class RechargeInfoDialog(QDialog):
         # Bank & Contact Card with Copy Buttons
         bank_card = QFrame()
         bank_card.setObjectName("bankCard")
-        bank_card.setStyleSheet("""
-            QFrame#bankCard {
-                background-color: #121826;
-                border: 1px solid #1D4ED8;
+        bank_card.setStyleSheet(f"""
+            QFrame#bankCard {{
+                background-color: {pal.bg_card};
+                border: 1px solid {b_bd};
                 border-radius: 8px;
-            }
+            }}
         """)
         bank_layout = QVBoxLayout(bank_card)
         bank_layout.setContentsMargins(16, 12, 16, 12)
         bank_layout.setSpacing(10)
 
-        # Card row
-        card_row = QHBoxLayout()
-        card_row.setSpacing(8)
-        lbl_card_title = QLabel("💳 شماره کارت:")
-        lbl_card_title.setStyleSheet("color: #93C5FD; font-size: 12px; font-weight: bold;")
-        lbl_card_val = QLabel("6280 - 2313 - 2802 - 6199")
-        lbl_card_val.setStyleSheet("color: #FCD34D; font-family: monospace; font-size: 14px; font-weight: bold; direction: ltr;")
-        self.btn_copy_card = QPushButton("📋 کپی شماره کارت")
-        self.btn_copy_card.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_copy_card.setStyleSheet("""
-            QPushButton {
-                background-color: #1E293B;
-                color: #E2E8F0;
-                border: 1px solid #475569;
+        sec_btn_qss = f"""
+            QPushButton {{
+                background-color: {pal.btn_sec_bg};
+                color: {pal.btn_sec_text};
+                border: 1px solid {pal.btn_sec_border};
                 border-radius: 6px;
                 padding: 4px 10px;
                 font-size: 11px;
                 font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: #334155;
-            }
-        """)
+            }}
+            QPushButton:hover {{
+                background-color: {pal.btn_sec_hover};
+                color: {pal.text_primary};
+            }}
+        """
+
+        # Card row
+        card_row = QHBoxLayout()
+        card_row.setSpacing(8)
+        lbl_card_title = QLabel("💳 شماره کارت:")
+        lbl_card_title.setStyleSheet(f"color: {b_fg}; font-size: 12px; font-weight: bold; background: transparent;")
+        lbl_card_val = QLabel("6280 - 2313 - 2802 - 6199")
+        lbl_card_val.setStyleSheet(f"color: {a_fg}; font-family: monospace; font-size: 14px; font-weight: bold; direction: ltr; background: transparent;")
+        self.btn_copy_card = QPushButton("📋 کپی شماره کارت")
+        self.btn_copy_card.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_copy_card.setStyleSheet(sec_btn_qss)
         self.btn_copy_card.clicked.connect(lambda: self.copy_to_clipboard("6280231328026199", self.btn_copy_card, "📋 کپی شماره کارت"))
         card_row.addWidget(lbl_card_title)
         card_row.addWidget(lbl_card_val)
@@ -181,25 +191,12 @@ class RechargeInfoDialog(QDialog):
         phone_row = QHBoxLayout()
         phone_row.setSpacing(8)
         lbl_phone_title = QLabel("📞 تماس و پیامک:")
-        lbl_phone_title.setStyleSheet("color: #93C5FD; font-size: 12px; font-weight: bold;")
+        lbl_phone_title.setStyleSheet(f"color: {b_fg}; font-size: 12px; font-weight: bold; background: transparent;")
         lbl_phone_val = QLabel("09336427711")
-        lbl_phone_val.setStyleSheet("color: #6EE7B7; font-family: monospace; font-size: 14px; font-weight: bold; direction: ltr;")
+        lbl_phone_val.setStyleSheet(f"color: {e_fg}; font-family: monospace; font-size: 14px; font-weight: bold; direction: ltr; background: transparent;")
         self.btn_copy_phone = QPushButton("📋 کپی شماره تماس")
         self.btn_copy_phone.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_copy_phone.setStyleSheet("""
-            QPushButton {
-                background-color: #1E293B;
-                color: #E2E8F0;
-                border: 1px solid #475569;
-                border-radius: 6px;
-                padding: 4px 10px;
-                font-size: 11px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: #334155;
-            }
-        """)
+        self.btn_copy_phone.setStyleSheet(sec_btn_qss)
         self.btn_copy_phone.clicked.connect(lambda: self.copy_to_clipboard("09336427711", self.btn_copy_phone, "📋 کپی شماره تماس"))
         phone_row.addWidget(lbl_phone_title)
         phone_row.addWidget(lbl_phone_val)
@@ -212,12 +209,12 @@ class RechargeInfoDialog(QDialog):
         # Contact Info & Notice
         contact_card = QFrame()
         contact_card.setObjectName("contactCard")
-        contact_card.setStyleSheet("""
-            QFrame#contactCard {
-                background-color: #18181B;
-                border: 1px dashed #6366F1;
+        contact_card.setStyleSheet(f"""
+            QFrame#contactCard {{
+                background-color: {pal.bg_surface};
+                border: 1px dashed {i_bd};
                 border-radius: 8px;
-            }
+            }}
         """)
         contact_layout = QVBoxLayout(contact_card)
         contact_layout.setContentsMargins(14, 10, 14, 10)
@@ -225,9 +222,9 @@ class RechargeInfoDialog(QDialog):
         phone = SmsService.get_trainer_phone() or "شماره ثبت‌نشده"
         name = SmsService.get_trainer_name()
         lbl_acc = QLabel(f"📱 شناسه شما در سامانه پیامکی: {phone} ({name})")
-        lbl_acc.setStyleSheet("color: #818CF8; font-weight: bold; background: transparent; border: none; font-size: 12px;")
+        lbl_acc.setStyleSheet(f"color: {i_fg}; font-weight: bold; background: transparent; border: none; font-size: 12px;")
         lbl_notice = QLabel("⚡ پس از واریز، تصویر فیش را ارسال فرمایید یا جهت شارژ سریع‌تر با پیامک یا تماس اطلاع دهید.")
-        lbl_notice.setStyleSheet("color: #FCD34D; font-weight: bold; background: transparent; border: none; font-size: 12px;")
+        lbl_notice.setStyleSheet(f"color: {a_fg}; font-weight: bold; background: transparent; border: none; font-size: 12px;")
         lbl_notice.setWordWrap(True)
         contact_layout.addWidget(lbl_acc)
         contact_layout.addWidget(lbl_notice)
@@ -249,24 +246,27 @@ class RechargeInfoDialog(QDialog):
         if clipboard:
             clipboard.setText(text)
         btn.setText("کپی شد! ✅")
-        btn.setStyleSheet("background-color: #065F46; color: #6EE7B7; border: 1px solid #059669; border-radius: 6px; padding: 4px 10px; font-size: 11px; font-weight: bold;")
+        e_bg, e_fg, e_bd, _ = ThemeManager.get_tone_colors("emerald")
+        btn.setStyleSheet(f"background-color: {e_bg}; color: {e_fg}; border: 1px solid {e_bd}; border-radius: 6px; padding: 4px 10px; font-size: 11px; font-weight: bold;")
         QTimer.singleShot(2000, lambda: self.reset_copy_btn(btn, original_text))
 
     def reset_copy_btn(self, btn: QPushButton, original_text: str):
         btn.setText(original_text)
-        btn.setStyleSheet("""
-            QPushButton {
-                background-color: #1E293B;
-                color: #E2E8F0;
-                border: 1px solid #475569;
+        pal = ThemeManager.get_current_palette()
+        btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {pal.btn_sec_bg};
+                color: {pal.btn_sec_text};
+                border: 1px solid {pal.btn_sec_border};
                 border-radius: 6px;
                 padding: 4px 10px;
                 font-size: 11px;
                 font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: #334155;
-            }
+            }}
+            QPushButton:hover {{
+                background-color: {pal.btn_sec_hover};
+                color: {pal.text_primary};
+            }}
         """)
 
 
@@ -280,13 +280,352 @@ class SmsView(QWidget):
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
 
         self._balance_data = {"remaining": 0, "status": "unknown"}
+        self._balance_state = "loading"
         self._all_members = []
         self._selected_member_ids = set()
+        self._chip_buttons = []
 
         self.init_ui()
+        self._apply_theme_style()
+        try:
+            ThemeManager.theme_changed.connect(self._on_theme_changed)
+        except Exception:
+            pass
         self.load_members()
         self.refresh_balance()
         self.load_auto_settings()
+
+    def _on_theme_changed(self, _theme_key: str):
+        self._apply_theme_style()
+
+    def _apply_balance_card_style(self, pal=None):
+        if pal is None:
+            pal = ThemeManager.get_current_palette()
+        state = getattr(self, "_balance_state", "loading")
+        if hasattr(self, "lbl_b_caption"):
+            _, b_fg, _, _ = ThemeManager.get_tone_colors("blue", pal)
+            self.lbl_b_caption.setStyleSheet(f"font-size: 11px; color: {b_fg}; background: transparent; border: none;")
+
+        if state == "positive":
+            bg, fg, bd, _ = ThemeManager.get_tone_colors("emerald", pal)
+            self.card_balance.setStyleSheet(f"QFrame#cardBalance {{ background-color: {bg}; border: 1px solid {bd}; border-radius: 8px; }}")
+            self.lbl_balance_val.setStyleSheet(f"font-size: 17px; font-weight: bold; color: {fg}; background: transparent; border: none;")
+        elif state == "zero_wait":
+            bg, fg, bd, _ = ThemeManager.get_tone_colors("amber", pal)
+            self.card_balance.setStyleSheet(f"QFrame#cardBalance {{ background-color: {bg}; border: 1px solid {bd}; border-radius: 8px; }}")
+            self.lbl_balance_val.setStyleSheet(f"font-size: 14px; font-weight: bold; color: {fg}; background: transparent; border: none;")
+        elif state == "zero_expired":
+            bg, fg, bd, _ = ThemeManager.get_tone_colors("rose", pal)
+            self.card_balance.setStyleSheet(f"QFrame#cardBalance {{ background-color: {bg}; border: 1px solid {bd}; border-radius: 8px; }}")
+            self.lbl_balance_val.setStyleSheet(f"font-size: 14px; font-weight: bold; color: {fg}; background: transparent; border: none;")
+        elif state == "offline":
+            self.card_balance.setStyleSheet(f"QFrame#cardBalance {{ background-color: {pal.bg_surface}; border: 1px solid {pal.border_light}; border-radius: 8px; }}")
+            self.lbl_balance_val.setStyleSheet(f"font-size: 13px; color: {pal.text_muted}; background: transparent; border: none;")
+        else:
+            _, b_fg, _, _ = ThemeManager.get_tone_colors("blue", pal)
+            self.card_balance.setStyleSheet(f"QFrame#cardBalance {{ background-color: {pal.bg_surface}; border: 1px solid {pal.border_light}; border-radius: 8px; }}")
+            self.lbl_balance_val.setStyleSheet(f"font-size: 17px; font-weight: bold; color: {b_fg}; background: transparent; border: none;")
+
+    def _apply_theme_style(self):
+        pal = ThemeManager.get_current_palette()
+        sec_btn_qss = f"""
+            QPushButton {{
+                background-color: {pal.btn_sec_bg};
+                color: {pal.btn_sec_text};
+                border: 1px solid {pal.btn_sec_border};
+                border-radius: 6px;
+                padding: 6px 14px;
+                font-size: 12px;
+                font-weight: bold;
+            }}
+            QPushButton:hover {{
+                background-color: {pal.btn_sec_hover};
+                color: {pal.text_primary};
+            }}
+            QPushButton:disabled {{
+                background-color: {pal.bg_surface};
+                color: {pal.text_muted};
+                border: 1px solid {pal.border_light};
+            }}
+        """
+        if hasattr(self, "card_balance"):
+            self._apply_balance_card_style(pal)
+        if hasattr(self, "btn_refresh_bal"):
+            self.btn_refresh_bal.setStyleSheet(sec_btn_qss)
+        if hasattr(self, "btn_refresh_history"):
+            self.btn_refresh_history.setStyleSheet(sec_btn_qss)
+        if hasattr(self, "btn_run_check_now"):
+            self.btn_run_check_now.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: {pal.btn_sec_bg};
+                    color: {pal.btn_sec_text};
+                    border: 1px solid {pal.btn_sec_border};
+                    border-radius: 6px;
+                    padding: 10px 18px;
+                    font-size: 12px;
+                    font-weight: bold;
+                }}
+                QPushButton:hover {{
+                    background-color: {pal.btn_sec_hover};
+                    color: {pal.text_primary};
+                }}
+            """)
+
+        # Tab 1: Broadcast
+        for attr in ("lbl_tpl", "lbl_recip", "lbl_phone_title"):
+            lbl = getattr(self, attr, None)
+            if lbl is not None:
+                lbl.setStyleSheet(f"font-weight: bold; font-size: 13px; color: {pal.text_primary};")
+
+        combo_bold_qss = f"""
+            QComboBox {{
+                background-color: {pal.input_bg};
+                border: 1px solid {pal.input_border};
+                border-radius: 6px;
+                color: {pal.text_primary};
+                padding: 8px 12px;
+                font-size: 13px;
+                font-weight: bold;
+            }}
+            QComboBox:hover {{
+                border-color: {pal.input_focus_border};
+            }}
+        """
+        if hasattr(self, "combo_templates"):
+            self.combo_templates.setStyleSheet(combo_bold_qss)
+
+        if hasattr(self, "dynamic_frame"):
+            self.dynamic_frame.setStyleSheet(f"""
+                QFrame#sms_dynamic_card {{
+                    background-color: {pal.bg_base};
+                    border: 1px solid {pal.border};
+                    border-radius: 8px;
+                }}
+            """)
+        chip_btn_qss = f"""
+            QPushButton {{
+                background-color: {pal.btn_sec_bg};
+                color: {pal.btn_sec_text};
+                border: 1px solid {pal.btn_sec_border};
+                border-radius: 11px;
+                padding: 3px 9px;
+                font-size: 11px;
+            }}
+            QPushButton:hover {{
+                background-color: {pal.btn_sec_hover};
+                color: {pal.text_primary};
+                border-color: {pal.primary};
+            }}
+        """
+        for cb in getattr(self, "_chip_buttons", []):
+            cb.setStyleSheet(chip_btn_qss)
+
+        for attr in ("lbl_dyn_date", "lbl_dyn_reason", "lbl_h_days", "lbl_h_note"):
+            lbl = getattr(self, attr, None)
+            if lbl is not None:
+                lbl.setStyleSheet(f"font-size: 11px; font-weight: bold; color: {pal.text_secondary}; background: transparent;")
+        for attr in ("lbl_hol_chips", "lbl_hc"):
+            lbl = getattr(self, attr, None)
+            if lbl is not None:
+                lbl.setStyleSheet(f"font-size: 11px; color: {pal.text_muted}; background: transparent;")
+        if hasattr(self, "lbl_h_women"):
+            w_col = "#F472B6" if pal.is_dark else "#BE185D"
+            self.lbl_h_women.setStyleSheet(f"font-size: 11px; font-weight: bold; color: {w_col}; background: transparent;")
+        if hasattr(self, "lbl_h_men"):
+            m_col = "#60A5FA" if pal.is_dark else "#1D4ED8"
+            self.lbl_h_men.setStyleSheet(f"font-size: 11px; font-weight: bold; color: {m_col}; background: transparent;")
+
+        hours_combo_qss = f"""
+            QComboBox {{
+                background-color: {pal.input_bg};
+                border: 1px solid {pal.input_border};
+                border-radius: 6px;
+                color: {pal.text_primary};
+                padding: 5px 8px;
+                font-size: 12px;
+            }}
+        """
+        for attr in ("combo_hours_days", "combo_hours_women", "combo_hours_men"):
+            c = getattr(self, attr, None)
+            if c is not None:
+                c.setStyleSheet(hours_combo_qss)
+
+        if hasattr(self, "lbl_selection_summary"):
+            a_bg, a_fg, a_bd, _ = ThemeManager.get_tone_colors("amber", pal)
+            self.lbl_selection_summary.setStyleSheet(f"""
+                QLabel {{
+                    font-size: 12px;
+                    font-weight: bold;
+                    color: {a_fg};
+                    background-color: {a_bg};
+                    border: 1px solid {a_bd};
+                    border-radius: 9px;
+                    padding: 1px 8px;
+                }}
+            """)
+        if hasattr(self, "btn_deselect_all"):
+            r_bg, r_fg, r_bd, r_hv = ThemeManager.get_tone_colors("rose", pal)
+            self.btn_deselect_all.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: {r_bg};
+                    color: {r_fg};
+                    border: 1px solid {r_bd};
+                    border-radius: 6px;
+                    padding: 4px 12px;
+                    font-size: 11px;
+                    font-weight: bold;
+                }}
+                QPushButton:hover {{
+                    background-color: {r_hv};
+                    color: #FFFFFF;
+                    border-color: {r_hv};
+                }}
+                QPushButton:pressed {{
+                    background-color: {r_bd};
+                    color: #FFFFFF;
+                }}
+            """)
+        if hasattr(self, "input_search_member"):
+            self.input_search_member.setStyleSheet(
+                f"background-color: {pal.input_bg}; border: 1px solid {pal.input_border}; "
+                f"border-radius: 6px; padding: 6px 12px; color: {pal.text_primary}; font-size: 12px;"
+            )
+
+        # Smartphone preview: keep sleek bezel, adapt inner screen & SMS bubble to Light/Dark
+        if hasattr(self, "phone_mockup"):
+            screen_bg = "#0A0A0C" if pal.is_dark else "#F8FAFC"
+            bezel_bd = "#27272A" if pal.is_dark else "#334155"
+            bar_col = "#3F3F46" if pal.is_dark else "#94A3B8"
+            hdr_col = "#9CA3AF" if pal.is_dark else "#475569"
+            bubble_bg = "#1E293B" if pal.is_dark else "#E2E8F0"
+            bubble_bd = "#334155" if pal.is_dark else "#CBD5E1"
+            msg_col = "#F1F5F9" if pal.is_dark else "#0F172A"
+            time_col = "#64748B"
+
+            self.phone_mockup.setStyleSheet(f"""
+                QFrame#smsPhoneMockup {{
+                    background-color: {screen_bg};
+                    border: 3px solid {bezel_bd};
+                    border-radius: 28px;
+                    padding: 14px;
+                }}
+            """)
+            if hasattr(self, "phone_notch"):
+                self.phone_notch.setStyleSheet(f"background-color: {bar_col}; border-radius: 2px; border: none;")
+            if hasattr(self, "phone_hdr"):
+                self.phone_hdr.setStyleSheet(f"font-size: 11px; color: {hdr_col}; margin-bottom: 8px; background: transparent; border: none;")
+            if hasattr(self, "chat_bubble"):
+                self.chat_bubble.setStyleSheet(f"""
+                    QFrame#smsChatBubble {{
+                        background-color: {bubble_bg};
+                        border: 1px solid {bubble_bd};
+                        border-radius: 12px;
+                        padding: 12px;
+                    }}
+                """)
+            if hasattr(self, "lbl_preview_msg"):
+                self.lbl_preview_msg.setStyleSheet(f"font-size: 12px; color: {msg_col}; line-height: 1.5; background: transparent; border: none;")
+            if hasattr(self, "lbl_preview_time"):
+                self.lbl_preview_time.setStyleSheet(f"font-size: 10px; color: {time_col}; background: transparent; border: none;")
+            if hasattr(self, "phone_home_bar"):
+                self.phone_home_bar.setStyleSheet(f"background-color: {bar_col}; border-radius: 1px; border: none;")
+
+        if hasattr(self, "progress_bar"):
+            self.progress_bar.setStyleSheet(f"""
+                QProgressBar {{
+                    background-color: {pal.border};
+                    border-radius: 4px;
+                    height: 8px;
+                    text-align: center;
+                }}
+                QProgressBar::chunk {{
+                    background-color: #10B981;
+                    border-radius: 4px;
+                }}
+            """)
+
+        # Tab 2: Automated SMS
+        if hasattr(self, "lbl_auto_head"):
+            self.lbl_auto_head.setStyleSheet(f"font-size: 16px; font-weight: bold; color: {pal.text_primary};")
+        if hasattr(self, "lbl_auto_desc"):
+            self.lbl_auto_desc.setStyleSheet(f"font-size: 12px; color: {pal.text_secondary}; line-height: 1.6;")
+        card_qss = f"""
+            QFrame {{
+                background-color: {pal.bg_card};
+                border: 1px solid {pal.border};
+                border-radius: 10px;
+            }}
+        """
+        for card in getattr(self, "_auto_cards", []):
+            card.setStyleSheet(card_qss)
+        tpl_box_qss = f"""
+            QFrame {{
+                background-color: {pal.bg_surface};
+                border: 1px dashed {pal.border_light};
+                border-radius: 6px;
+            }}
+        """
+        for tb in getattr(self, "_auto_tpl_boxes", []):
+            tb.setStyleSheet(tpl_box_qss)
+        chk_qss = f"""
+            QCheckBox {{
+                font-size: 13px;
+                font-weight: bold;
+                color: {pal.text_primary};
+                background: transparent;
+                border: none;
+                spacing: 10px;
+                min-height: 28px;
+            }}
+            QCheckBox::indicator {{
+                width: 18px;
+                height: 18px;
+            }}
+        """
+        for chk in (
+            getattr(self, "chk_auto_welcome", None),
+            getattr(self, "chk_auto_birthday", None),
+            getattr(self, "chk_auto_tuition", None),
+        ):
+            if chk is not None:
+                chk.setStyleSheet(chk_qss)
+
+        _, b_fg, _, _ = ThemeManager.get_tone_colors("blue", pal)
+        _, pu_fg, _, _ = ThemeManager.get_tone_colors("purple", pal)
+        _, am_fg, _, _ = ThemeManager.get_tone_colors("amber", pal)
+        if hasattr(self, "lbl_wel_title"):
+            self.lbl_wel_title.setStyleSheet(f"font-size: 14px; font-weight: bold; color: {b_fg}; background: transparent; border: none;")
+        if hasattr(self, "lbl_bday_title"):
+            self.lbl_bday_title.setStyleSheet(f"font-size: 14px; font-weight: bold; color: {pu_fg}; background: transparent; border: none;")
+        if hasattr(self, "lbl_tui_title"):
+            self.lbl_tui_title.setStyleSheet(f"font-size: 14px; font-weight: bold; color: {am_fg}; background: transparent; border: none;")
+        if hasattr(self, "lbl_tuition_days"):
+            self.lbl_tuition_days.setStyleSheet(f"font-size: 12px; color: {pal.text_secondary}; font-weight: bold; background: transparent; border: none;")
+        if hasattr(self, "combo_tuition_days"):
+            self.combo_tuition_days.setStyleSheet(f"""
+                QComboBox {{
+                    background-color: {pal.input_bg};
+                    color: {pal.text_primary};
+                    border: 1px solid {pal.input_border};
+                    border-radius: 6px;
+                    padding: 5px 30px 5px 12px;
+                    font-size: 12px;
+                    font-weight: bold;
+                    min-height: 32px;
+                    min-width: 170px;
+                }}
+                QComboBox:hover {{
+                    border-color: {pal.input_focus_border};
+                }}
+            """)
+        for lbl in getattr(self, "_auto_tag_labels", []):
+            lbl.setStyleSheet(f"font-size: 11px; font-weight: bold; color: {pal.text_muted}; background: transparent; border: none;")
+        for lbl in getattr(self, "_auto_tpl_labels", []):
+            lbl.setStyleSheet(f"font-size: 12px; color: {pal.text_primary}; line-height: 1.5; background: transparent; border: none;")
+
+        # Tab 3: History
+        if hasattr(self, "lbl_h_title"):
+            self.lbl_h_title.setStyleSheet(f"font-size: 15px; font-weight: bold; color: {pal.text_primary};")
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
@@ -333,23 +672,12 @@ class SmsView(QWidget):
 
         self.card_balance = QFrame()
         self.card_balance.setObjectName("cardBalance")
-        from nemov.utils.theme_manager import ThemeManager
-        palette = ThemeManager.get_current_palette()
-        self.card_balance.setStyleSheet(f"""
-            QFrame#cardBalance {{
-                background-color: {palette.bg_surface};
-                border: 1px solid {palette.border_light};
-                border-radius: 8px;
-            }}
-        """)
         cb_layout = QVBoxLayout(self.card_balance)
         cb_layout.setContentsMargins(16, 8, 16, 8)
         cb_layout.setSpacing(2)
-        lbl_b_caption = QLabel("اعتبار پیامک باقیمانده")
-        lbl_b_caption.setStyleSheet("font-size: 11px; color: #93C5FD; background: transparent; border: none;")
+        self.lbl_b_caption = QLabel("اعتبار پیامک باقیمانده")
         self.lbl_balance_val = QLabel("در حال دریافت...")
-        self.lbl_balance_val.setStyleSheet("font-size: 17px; font-weight: bold; color: #60A5FA; background: transparent; border: none;")
-        cb_layout.addWidget(lbl_b_caption)
+        cb_layout.addWidget(self.lbl_b_caption)
         cb_layout.addWidget(self.lbl_balance_val)
         wallet_box.addWidget(self.card_balance)
 
@@ -359,20 +687,6 @@ class SmsView(QWidget):
 
         self.btn_refresh_bal = QPushButton("🔄 به‌روزرسانی موجودی")
         self.btn_refresh_bal.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_refresh_bal.setStyleSheet("""
-            QPushButton {
-                background-color: #27272A;
-                color: #FFFFFF;
-                border: 1px solid #3F3F46;
-                border-radius: 6px;
-                padding: 6px 14px;
-                font-size: 12px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: #3F3F46;
-            }
-        """)
         self.btn_refresh_bal.clicked.connect(self.refresh_balance)
 
         self.btn_buy_pkg = QPushButton("⚡ شارژ بسته پیامکی")
@@ -441,65 +755,21 @@ class SmsView(QWidget):
 
         # 1. Template Selector
         tpl_row = QHBoxLayout()
-        lbl_tpl = QLabel("انتخاب الگوی پیامک:")
-        lbl_tpl.setStyleSheet("font-weight: bold; font-size: 13px; color: #FFFFFF;")
+        self.lbl_tpl = QLabel("انتخاب الگوی پیامک:")
         self.combo_templates = QComboBox()
-        self.combo_templates.setStyleSheet("""
-            QComboBox {
-                background-color: #27272A;
-                border: 1px solid #3F3F46;
-                border-radius: 6px;
-                color: #FFFFFF;
-                padding: 8px 12px;
-                font-size: 13px;
-                font-weight: bold;
-            }
-        """)
         self.combo_templates.addItem("🏖️  اعلام تعطیلی باشگاه (الگوی تاییدشده ۱۴۶۸۷۷)", "holiday")
         self.combo_templates.addItem("⏰  تغییر ساعت و سانس‌های باشگاه (الگوی تاییدشده ۳۸۵۰۰۳)", "hours")
         self.combo_templates.currentIndexChanged.connect(self.on_template_changed)
-        tpl_row.addWidget(lbl_tpl)
+        tpl_row.addWidget(self.lbl_tpl)
         tpl_row.addWidget(self.combo_templates, 1)
         right_panel.addLayout(tpl_row)
 
         # 2. Dynamic Input Fields for template
-        try:
-            from nemov.utils.theme_manager import ThemeManager
-            _pal = ThemeManager.get_current_palette()
-        except Exception:
-            _pal = None
-        _dyn_bg = _pal.bg_base if _pal else "#0F0F12"
-        _dyn_border = _pal.border if _pal else "#27272A"
-        _chip_hover_border = _pal.primary if _pal else "#DC2626"
-
         self.dynamic_frame = QFrame()
         self.dynamic_frame.setObjectName("sms_dynamic_card")
-        self.dynamic_frame.setStyleSheet(f"""
-            QFrame#sms_dynamic_card {{
-                background-color: {_dyn_bg};
-                border: 1px solid {_dyn_border};
-                border-radius: 8px;
-            }}
-        """)
         self.dyn_layout = QVBoxLayout(self.dynamic_frame)
         self.dyn_layout.setContentsMargins(14, 12, 14, 12)
         self.dyn_layout.setSpacing(8)
-
-        chip_btn_style = f"""
-            QPushButton {{
-                background-color: #27272A;
-                color: #D1D5DB;
-                border: 1px solid #3F3F46;
-                border-radius: 11px;
-                padding: 3px 9px;
-                font-size: 11px;
-            }}
-            QPushButton:hover {{
-                background-color: #3F3F46;
-                color: #FFFFFF;
-                border-color: {_chip_hover_border};
-            }}
-        """
 
         # ---------------------------------------------------------------------
         # Panel 1: Holiday
@@ -516,24 +786,22 @@ class SmsView(QWidget):
 
         col_date = QVBoxLayout()
         col_date.setSpacing(4)
-        lbl_dyn_date = QLabel("📅 تاریخ تعطیلی:")
-        lbl_dyn_date.setStyleSheet("font-size: 11px; font-weight: bold; color: #D1D5DB;")
+        self.lbl_dyn_date = QLabel("📅 تاریخ تعطیلی:")
         self.input_dyn_date = QLineEdit()
         self.input_dyn_date.setPlaceholderText("مثال: فردا چهارشنبه ۲ مهر یا ۲ الی ۴ مهر")
         self.input_dyn_date.setText(f"امروز ({get_today_shamsi()})")
         self.input_dyn_date.textChanged.connect(self.update_preview)
-        col_date.addWidget(lbl_dyn_date)
+        col_date.addWidget(self.lbl_dyn_date)
         col_date.addWidget(self.input_dyn_date)
 
         col_reason = QVBoxLayout()
         col_reason.setSpacing(4)
-        lbl_dyn_reason = QLabel("🛑 علت تعطیلی باشگاه:")
-        lbl_dyn_reason.setStyleSheet("font-size: 11px; font-weight: bold; color: #D1D5DB;")
+        self.lbl_dyn_reason = QLabel("🛑 علت تعطیلی باشگاه:")
         self.input_dyn_reason = QLineEdit()
         self.input_dyn_reason.setPlaceholderText("مثال: تعطیلات رسمی / تعمیرات سالن و سرویس تجهیزات")
         self.input_dyn_reason.setText("تعطیلات رسمی")
         self.input_dyn_reason.textChanged.connect(self.update_preview)
-        col_reason.addWidget(lbl_dyn_reason)
+        col_reason.addWidget(self.lbl_dyn_reason)
         col_reason.addWidget(self.input_dyn_reason)
 
         hol_row1.addLayout(col_date, 1)
@@ -542,9 +810,8 @@ class SmsView(QWidget):
 
         hol_chips_row = QHBoxLayout()
         hol_chips_row.setSpacing(6)
-        lbl_hol_chips = QLabel("علت‌های پرتکرار:")
-        lbl_hol_chips.setStyleSheet("font-size: 11px; color: #9CA3AF;")
-        hol_chips_row.addWidget(lbl_hol_chips)
+        self.lbl_hol_chips = QLabel("علت‌های پرتکرار:")
+        hol_chips_row.addWidget(self.lbl_hol_chips)
 
         for r_chip_text, r_chip_val in [
             ("تعطیلات رسمی", "تعطیلات رسمی"),
@@ -555,15 +822,14 @@ class SmsView(QWidget):
         ]:
             btn_c = QPushButton(r_chip_text)
             btn_c.setCursor(Qt.CursorShape.PointingHandCursor)
-            btn_c.setStyleSheet(chip_btn_style)
             btn_c.clicked.connect(lambda _, v=r_chip_val: self.set_holiday_reason_preset(v))
+            self._chip_buttons.append(btn_c)
             hol_chips_row.addWidget(btn_c)
 
         hol_chips_row.addStretch()
         l_hol.addLayout(hol_chips_row)
         self.dyn_layout.addWidget(self.panel_holiday)
 
-        # ---------------------------------------------------------------------
         # ---------------------------------------------------------------------
         # Panel 2: Working Hours (Template ID: 385003)
         # ---------------------------------------------------------------------
@@ -579,11 +845,9 @@ class SmsView(QWidget):
 
         col_h_days = QVBoxLayout()
         col_h_days.setSpacing(4)
-        lbl_h_days = QLabel("🗓️ روزها:")
-        lbl_h_days.setStyleSheet("font-size: 11px; font-weight: bold; color: #D1D5DB;")
+        self.lbl_h_days = QLabel("🗓️ روزها:")
         self.combo_hours_days = QComboBox()
         self.combo_hours_days.setEditable(True)
-        self.combo_hours_days.setStyleSheet("QComboBox { background-color: #27272A; border: 1px solid #3F3F46; border-radius: 6px; color: #FFFFFF; padding: 5px 8px; font-size: 12px; }")
         for day_opt in [
             "شنبه تا پنجشنبه",
             "همه روزه (شنبه تا پنجشنبه)",
@@ -593,16 +857,14 @@ class SmsView(QWidget):
         ]:
             self.combo_hours_days.addItem(day_opt)
         self.combo_hours_days.currentTextChanged.connect(self.update_preview)
-        col_h_days.addWidget(lbl_h_days)
+        col_h_days.addWidget(self.lbl_h_days)
         col_h_days.addWidget(self.combo_hours_days)
 
         col_h_women = QVBoxLayout()
         col_h_women.setSpacing(4)
-        lbl_h_women = QLabel("👩 سانس بانوان:")
-        lbl_h_women.setStyleSheet("font-size: 11px; font-weight: bold; color: #F472B6;")
+        self.lbl_h_women = QLabel("👩 سانس بانوان:")
         self.combo_hours_women = QComboBox()
         self.combo_hours_women.setEditable(True)
-        self.combo_hours_women.setStyleSheet("QComboBox { background-color: #27272A; border: 1px solid #3F3F46; border-radius: 6px; color: #FFFFFF; padding: 5px 8px; font-size: 12px; }")
         for w_opt in [
             "۸ الی ۱۲ و ۱۵ الی ۱۹",
             "۰۸:۰۰ الی ۱۲:۰۰ و ۱۵:۰۰ الی ۱۹:۰۰",
@@ -613,16 +875,14 @@ class SmsView(QWidget):
             self.combo_hours_women.addItem(w_opt)
         self.combo_hours_women.setCurrentText("۸ الی ۱۲ و ۱۵ الی ۱۹")
         self.combo_hours_women.currentTextChanged.connect(self.update_preview)
-        col_h_women.addWidget(lbl_h_women)
+        col_h_women.addWidget(self.lbl_h_women)
         col_h_women.addWidget(self.combo_hours_women)
 
         col_h_men = QVBoxLayout()
         col_h_men.setSpacing(4)
-        lbl_h_men = QLabel("👨 سانس آقایان:")
-        lbl_h_men.setStyleSheet("font-size: 11px; font-weight: bold; color: #60A5FA;")
+        self.lbl_h_men = QLabel("👨 سانس آقایان:")
         self.combo_hours_men = QComboBox()
         self.combo_hours_men.setEditable(True)
-        self.combo_hours_men.setStyleSheet("QComboBox { background-color: #27272A; border: 1px solid #3F3F46; border-radius: 6px; color: #FFFFFF; padding: 5px 8px; font-size: 12px; }")
         for m_opt in [
             "۱۲ الی ۱۵ و ۱۹ الی ۲۳",
             "۱۲:۰۰ الی ۱۵:۰۰ و ۱۹:۰۰ الی ۲۳:۰۰",
@@ -633,7 +893,7 @@ class SmsView(QWidget):
             self.combo_hours_men.addItem(m_opt)
         self.combo_hours_men.setCurrentText("۱۲ الی ۱۵ و ۱۹ الی ۲۳")
         self.combo_hours_men.currentTextChanged.connect(self.update_preview)
-        col_h_men.addWidget(lbl_h_men)
+        col_h_men.addWidget(self.lbl_h_men)
         col_h_men.addWidget(self.combo_hours_men)
 
         hours_row1.addLayout(col_h_days, 2)
@@ -643,52 +903,50 @@ class SmsView(QWidget):
 
         hours_row2 = QHBoxLayout()
         hours_row2.setSpacing(10)
-        lbl_h_note = QLabel("توضیحات تکمیلی (اختیاری):")
-        lbl_h_note.setStyleSheet("font-size: 11px; color: #D1D5DB;")
+        self.lbl_h_note = QLabel("توضیحات تکمیلی (اختیاری):")
         self.input_hours_note = QLineEdit()
         self.input_hours_note.setPlaceholderText("مثال: جمعه‌ها سالن تعطیل است / پذیرش تا ۲۱:۳۰")
         self.input_hours_note.setText("جمعه‌ها سالن تعطیل است")
         self.input_hours_note.textChanged.connect(self.update_preview)
-        hours_row2.addWidget(lbl_h_note)
+        hours_row2.addWidget(self.lbl_h_note)
         hours_row2.addWidget(self.input_hours_note, 1)
         l_hours.addLayout(hours_row2)
 
         hours_chips_row = QHBoxLayout()
         hours_chips_row.setSpacing(6)
-        lbl_hc = QLabel("تنظیم سریع:")
-        lbl_hc.setStyleSheet("font-size: 11px; color: #9CA3AF;")
-        hours_chips_row.addWidget(lbl_hc)
+        self.lbl_hc = QLabel("تنظیم سریع:")
+        hours_chips_row.addWidget(self.lbl_hc)
 
         btn_default = QPushButton("ساعات کاری پیش‌فرض")
         btn_default.setCursor(Qt.CursorShape.PointingHandCursor)
-        btn_default.setStyleSheet(chip_btn_style)
         btn_default.clicked.connect(lambda: self.set_hours_preset(
             "شنبه تا پنجشنبه", "۸ الی ۱۲ و ۱۵ الی ۱۹", "۱۲ الی ۱۵ و ۱۹ الی ۲۳", "جمعه‌ها سالن تعطیل است"
         ))
+        self._chip_buttons.append(btn_default)
         hours_chips_row.addWidget(btn_default)
 
         btn_women = QPushButton("تغییر سانس بانوان")
         btn_women.setCursor(Qt.CursorShape.PointingHandCursor)
-        btn_women.setStyleSheet(chip_btn_style)
         btn_women.clicked.connect(lambda: self.set_hours_preset(
             "شنبه تا پنجشنبه", "۰۸:۰۰ الی ۱۲:۰۰ و ۱۵:۰۰ الی ۱۹:۰۰", "بدون تغییر", "شیفت جدید بانوان"
         ))
+        self._chip_buttons.append(btn_women)
         hours_chips_row.addWidget(btn_women)
 
         btn_men = QPushButton("تغییر سانس آقایان")
         btn_men.setCursor(Qt.CursorShape.PointingHandCursor)
-        btn_men.setStyleSheet(chip_btn_style)
         btn_men.clicked.connect(lambda: self.set_hours_preset(
             "شنبه تا پنجشنبه", "بدون تغییر", "۱۲:۰۰ الی ۱۵:۰۰ و ۱۹:۰۰ الی ۲۳:۰۰", "شیفت جدید آقایان"
         ))
+        self._chip_buttons.append(btn_men)
         hours_chips_row.addWidget(btn_men)
 
         btn_friday = QPushButton("جمعه‌ها و تعطیلات")
         btn_friday.setCursor(Qt.CursorShape.PointingHandCursor)
-        btn_friday.setStyleSheet(chip_btn_style)
         btn_friday.clicked.connect(lambda: self.set_hours_preset(
             "جمعه‌ها و ایام تعطیل", "۱۰:۰۰ الی ۱۴:۰۰", "۱۴:۰۰ الی ۱۹:۰۰", "پذیرش آخرین شیفت ساعت ۱۸:۳۰"
         ))
+        self._chip_buttons.append(btn_friday)
         hours_chips_row.addWidget(btn_friday)
 
         hours_chips_row.addStretch()
@@ -700,22 +958,10 @@ class SmsView(QWidget):
         # 3. Recipients Selector
         recip_head = QHBoxLayout()
         recip_head.setSpacing(8)
-        lbl_recip = QLabel("👥 انتخاب دریافت‌کنندگان پیامک:")
-        lbl_recip.setStyleSheet("font-weight: bold; font-size: 13px; color: #FFFFFF;")
-        recip_head.addWidget(lbl_recip)
+        self.lbl_recip = QLabel("👥 انتخاب دریافت‌کنندگان پیامک:")
+        recip_head.addWidget(self.lbl_recip)
 
         self.lbl_selection_summary = QLabel("")
-        self.lbl_selection_summary.setStyleSheet("""
-            QLabel {
-                font-size: 12px;
-                font-weight: bold;
-                color: #F59E0B;
-                background-color: #27221A;
-                border: 1px solid #78350F;
-                border-radius: 9px;
-                padding: 1px 8px;
-            }
-        """)
         self.lbl_selection_summary.setVisible(False)
         recip_head.addWidget(self.lbl_selection_summary)
 
@@ -736,25 +982,6 @@ class SmsView(QWidget):
         self.btn_deselect_all = QPushButton("🚫  لغو انتخاب همه")
         self.btn_deselect_all.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_deselect_all.setToolTip("لغو انتخاب تمام شاگردان جهت انتخاب دستی ۱ یا چند نفر")
-        self.btn_deselect_all.setStyleSheet("""
-            QPushButton {
-                background-color: #27272A;
-                color: #F87171;
-                border: 1px solid #7F1D1D;
-                border-radius: 6px;
-                padding: 4px 12px;
-                font-size: 11px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: #991B1B;
-                color: #FFFFFF;
-                border-color: #EF4444;
-            }
-            QPushButton:pressed {
-                background-color: #7F1D1D;
-            }
-        """)
         self.btn_deselect_all.clicked.connect(self.deselect_all_members)
 
         recip_head.addStretch()
@@ -767,7 +994,6 @@ class SmsView(QWidget):
         # Search Bar
         self.input_search_member = QLineEdit()
         self.input_search_member.setPlaceholderText("🔍 جستجوی نام یا شماره ورزشکار...")
-        self.input_search_member.setStyleSheet("background-color: #202024; border: 1px solid #27272A; border-radius: 6px; padding: 6px 12px; color: #FFFFFF; font-size: 12px;")
         self.input_search_member.textChanged.connect(self.search_members_table)
         right_panel.addWidget(self.input_search_member)
 
@@ -796,72 +1022,51 @@ class SmsView(QWidget):
         phone_container.setSpacing(10)
         phone_container.setAlignment(Qt.AlignmentFlag.AlignTop)
 
-        lbl_phone_title = QLabel("📱 پیش‌نمایش در صفحه گوشی شاگرد:")
-        lbl_phone_title.setStyleSheet("font-size: 13px; font-weight: bold; color: #E4E4E7;")
-        lbl_phone_title.setFixedHeight(24)
-        phone_container.addWidget(lbl_phone_title)
+        self.lbl_phone_title = QLabel("📱 پیش‌نمایش در صفحه گوشی شاگرد:")
+        self.lbl_phone_title.setFixedHeight(24)
+        phone_container.addWidget(self.lbl_phone_title)
 
         # Mock Smartphone Frame
         self.phone_mockup = QFrame()
+        self.phone_mockup.setObjectName("smsPhoneMockup")
         self.phone_mockup.setFixedWidth(280)
         self.phone_mockup.setFixedHeight(490)
-
-        self.phone_mockup.setStyleSheet("""
-            QFrame {
-                background-color: #0A0A0C;
-                border: 3px solid #27272A;
-                border-radius: 28px;
-                padding: 14px;
-            }
-        """)
         mock_layout = QVBoxLayout(self.phone_mockup)
         mock_layout.setContentsMargins(10, 10, 10, 10)
         mock_layout.setSpacing(8)
 
         # Speaker Notch
-        notch = QFrame()
-        notch.setFixedSize(60, 4)
-        notch.setStyleSheet("background-color: #3F3F46; border-radius: 2px;")
-        mock_layout.addWidget(notch, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.phone_notch = QFrame()
+        self.phone_notch.setFixedSize(60, 4)
+        mock_layout.addWidget(self.phone_notch, alignment=Qt.AlignmentFlag.AlignCenter)
 
         # Phone Header
-        p_hdr = QLabel(f"پیامک از: {config.APP_NAME}")
-        p_hdr.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        p_hdr.setStyleSheet("font-size: 11px; color: #9CA3AF; margin-bottom: 8px;")
-        mock_layout.addWidget(p_hdr)
+        self.phone_hdr = QLabel(f"پیامک از: {config.APP_NAME}")
+        self.phone_hdr.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        mock_layout.addWidget(self.phone_hdr)
 
         # Chat Bubble
         self.chat_bubble = QFrame()
-        self.chat_bubble.setStyleSheet("""
-            QFrame {
-                background-color: #1E293B;
-                border: 1px solid #334155;
-                border-radius: 12px;
-                padding: 12px;
-            }
-        """)
+        self.chat_bubble.setObjectName("smsChatBubble")
         bubble_layout = QVBoxLayout(self.chat_bubble)
         bubble_layout.setContentsMargins(8, 8, 8, 8)
         bubble_layout.setSpacing(6)
 
         self.lbl_preview_msg = QLabel("متن پیامک اینجا نمایش داده می‌شود...")
         self.lbl_preview_msg.setWordWrap(True)
-        self.lbl_preview_msg.setStyleSheet("font-size: 12px; color: #F1F5F9; line-height: 1.5;")
         bubble_layout.addWidget(self.lbl_preview_msg)
 
-        lbl_time = QLabel("هم‌اکنون • ۱۰۰٪ خدماتی")
-        lbl_time.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        lbl_time.setStyleSheet("font-size: 10px; color: #64748B;")
-        bubble_layout.addWidget(lbl_time)
+        self.lbl_preview_time = QLabel("هم‌اکنون • ۱۰۰٪ خدماتی")
+        self.lbl_preview_time.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        bubble_layout.addWidget(self.lbl_preview_time)
 
         mock_layout.addWidget(self.chat_bubble)
         mock_layout.addStretch()
 
         # Phone Home Bar
-        home_bar = QFrame()
-        home_bar.setFixedSize(70, 3)
-        home_bar.setStyleSheet("background-color: #3F3F46; border-radius: 1px;")
-        mock_layout.addWidget(home_bar, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.phone_home_bar = QFrame()
+        self.phone_home_bar.setFixedSize(70, 3)
+        mock_layout.addWidget(self.phone_home_bar, alignment=Qt.AlignmentFlag.AlignCenter)
 
         phone_container.addWidget(self.phone_mockup)
 
@@ -878,18 +1083,6 @@ class SmsView(QWidget):
         self.progress_bar = QProgressBar()
         self.progress_bar.setVisible(False)
         self.progress_bar.setFixedWidth(280)
-        self.progress_bar.setStyleSheet("""
-            QProgressBar {
-                background-color: #27272A;
-                border-radius: 4px;
-                height: 8px;
-                text-align: center;
-            }
-            QProgressBar::chunk {
-                background-color: #10B981;
-                border-radius: 4px;
-            }
-        """)
         phone_container.addWidget(self.progress_bar)
 
         phone_container.addStretch()
@@ -910,76 +1103,47 @@ class SmsView(QWidget):
         layout.setContentsMargins(18, 18, 18, 18)
         layout.setSpacing(16)
 
-        lbl_head = QLabel("⚙️ سیستم ارسال خودکار پیام‌های هوشمند")
-        lbl_head.setStyleSheet("font-size: 16px; font-weight: bold; color: #FFFFFF;")
-        layout.addWidget(lbl_head)
+        self.lbl_auto_head = QLabel("⚙️ سیستم ارسال خودکار پیام‌های هوشمند")
+        layout.addWidget(self.lbl_auto_head)
 
-        lbl_desc = QLabel(
+        self.lbl_auto_desc = QLabel(
             "با فعال‌سازی این گزینه‌ها، پیام‌های خوش‌آمدگویی، تبریک تولد و یادآوری شهریه به صورت کاملاً خودکار برای ورزشکاران ارسال می‌شوند. "
             "برنامه مجهز به سیستم ضدتکرار است و از ارسال پیامک مجدد در یک روز به یک شاگرد جلوگیری می‌نماید."
         )
-        lbl_desc.setWordWrap(True)
-        lbl_desc.setStyleSheet("font-size: 12px; color: #A1A1AA; line-height: 1.6;")
-        layout.addWidget(lbl_desc)
+        self.lbl_auto_desc.setWordWrap(True)
+        layout.addWidget(self.lbl_auto_desc)
 
-        card_style = """
-            QFrame {
-                background-color: #202024;
-                border: 1px solid #27272A;
-                border-radius: 10px;
-            }
-        """
-        tpl_box_style = """
-            QFrame {
-                background-color: #18181B;
-                border: 1px dashed #3F3F46;
-                border-radius: 6px;
-            }
-        """
-        chk_style = """
-            QCheckBox {
-                font-size: 13px;
-                font-weight: bold;
-                color: #FFFFFF;
-                background: transparent;
-                border: none;
-                spacing: 10px;
-                min-height: 28px;
-            }
-            QCheckBox::indicator {
-                width: 18px;
-                height: 18px;
-            }
-        """
+        self._auto_cards = []
+        self._auto_tpl_boxes = []
+        self._auto_tag_labels = []
+        self._auto_tpl_labels = []
 
         # Card 1: Welcome New Member
         card_welcome = QFrame()
         card_welcome.setObjectName("cardWelcome")
-        card_welcome.setStyleSheet(card_style)
+        self._auto_cards.append(card_welcome)
         l_wel = QVBoxLayout(card_welcome)
         l_wel.setContentsMargins(18, 16, 18, 16)
         l_wel.setSpacing(12)
 
-        lbl_wel_title = QLabel("🤝 پیامک خودکار خوش‌آمدگویی و تایید ثبت‌نام")
-        lbl_wel_title.setStyleSheet("font-size: 14px; font-weight: bold; color: #60A5FA; background: transparent; border: none;")
-        l_wel.addWidget(lbl_wel_title)
+        self.lbl_wel_title = QLabel("🤝 پیامک خودکار خوش‌آمدگویی و تایید ثبت‌نام")
+        l_wel.addWidget(self.lbl_wel_title)
 
         self.chk_auto_welcome = QCheckBox("فعال‌سازی ارسال خودکار پیامک خوش‌آمدگویی بلافاصله پس از ثبت‌نام ورزشکار جدید")
         self.chk_auto_welcome.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.chk_auto_welcome.setStyleSheet(chk_style)
         l_wel.addWidget(self.chk_auto_welcome)
 
         tpl_box_wel = QFrame()
-        tpl_box_wel.setStyleSheet(tpl_box_style)
+        self._auto_tpl_boxes.append(tpl_box_wel)
         l_tpl_w = QVBoxLayout(tpl_box_wel)
         l_tpl_w.setContentsMargins(12, 10, 12, 10)
         l_tpl_w.setSpacing(4)
         lbl_tag_w = QLabel("📋 متن الگوی خدماتی ثبت‌شده در سامانه (شناسه ۶۷۶۷۰۰):")
-        lbl_tag_w.setStyleSheet("font-size: 11px; font-weight: bold; color: #9CA3AF; background: transparent; border: none;")
+        self._auto_tag_labels.append(lbl_tag_w)
         l_tpl_w.addWidget(lbl_tag_w)
         lbl_wel_tpl = QLabel(f"ورزشکار گرامی #NAME#، ثبت‌نام شما در باشگاه {config.APP_NAME} با موفقیت انجام شد. از همراهی شما سپاسگزاریم")
         lbl_wel_tpl.setWordWrap(True)
-        lbl_wel_tpl.setStyleSheet("font-size: 12px; color: #E4E4E7; line-height: 1.5; background: transparent; border: none;")
+        self._auto_tpl_labels.append(lbl_wel_tpl)
         l_tpl_w.addWidget(lbl_wel_tpl)
         l_wel.addWidget(tpl_box_wel)
         layout.addWidget(card_welcome)
@@ -987,31 +1151,29 @@ class SmsView(QWidget):
         # Card 2: Birthday
         card_bday = QFrame()
         card_bday.setObjectName("cardBday")
-        card_bday.setStyleSheet(card_style)
+        self._auto_cards.append(card_bday)
         l_bday = QVBoxLayout(card_bday)
         l_bday.setContentsMargins(18, 16, 18, 16)
         l_bday.setSpacing(12)
 
-        lbl_bday_title = QLabel("🎂 پیامک تبریک سالروز تولد")
-        lbl_bday_title.setStyleSheet("font-size: 14px; font-weight: bold; color: #C084FC; background: transparent; border: none;")
-        l_bday.addWidget(lbl_bday_title)
+        self.lbl_bday_title = QLabel("🎂 پیامک تبریک سالروز تولد")
+        l_bday.addWidget(self.lbl_bday_title)
 
         self.chk_auto_birthday = QCheckBox("فعال‌سازی ارسال خودکار تبریک تولد به ورزشکاران در روز تولدشان")
         self.chk_auto_birthday.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.chk_auto_birthday.setStyleSheet(chk_style)
         l_bday.addWidget(self.chk_auto_birthday)
 
         tpl_box_bday = QFrame()
-        tpl_box_bday.setStyleSheet(tpl_box_style)
+        self._auto_tpl_boxes.append(tpl_box_bday)
         l_tpl_b = QVBoxLayout(tpl_box_bday)
         l_tpl_b.setContentsMargins(12, 10, 12, 10)
         l_tpl_b.setSpacing(4)
         lbl_tag_b = QLabel("📋 متن الگوی خدماتی ثبت‌شده در سامانه (شناسه ۸۷۵۱۷۲):")
-        lbl_tag_b.setStyleSheet("font-size: 11px; font-weight: bold; color: #9CA3AF; background: transparent; border: none;")
+        self._auto_tag_labels.append(lbl_tag_b)
         l_tpl_b.addWidget(lbl_tag_b)
         lbl_bday_tpl = QLabel(f"ورزشکار گرامی #NAME#، زادروزتان خجسته باد! با آرزوی تندرستی، باشگاه ورزشی {config.APP_NAME}")
         lbl_bday_tpl.setWordWrap(True)
-        lbl_bday_tpl.setStyleSheet("font-size: 12px; color: #E4E4E7; line-height: 1.5; background: transparent; border: none;")
+        self._auto_tpl_labels.append(lbl_bday_tpl)
         l_tpl_b.addWidget(lbl_bday_tpl)
         l_bday.addWidget(tpl_box_bday)
         layout.addWidget(card_bday)
@@ -1019,46 +1181,27 @@ class SmsView(QWidget):
         # Card 3: Tuition (Clear, spacious, zero-overlap layout)
         card_tuition = QFrame()
         card_tuition.setObjectName("cardTuition")
-        card_tuition.setStyleSheet(card_style)
+        self._auto_cards.append(card_tuition)
         l_tuition = QVBoxLayout(card_tuition)
         l_tuition.setContentsMargins(18, 16, 18, 16)
         l_tuition.setSpacing(12)
 
-        lbl_tui_title = QLabel("🚨 یادآوری سررسید دوره عضویت (شهریه)")
-        lbl_tui_title.setStyleSheet("font-size: 14px; font-weight: bold; color: #FBBF24; background: transparent; border: none;")
-        l_tuition.addWidget(lbl_tui_title)
+        self.lbl_tui_title = QLabel("🚨 یادآوری سررسید دوره عضویت (شهریه)")
+        l_tuition.addWidget(self.lbl_tui_title)
 
         ctrl_row = QHBoxLayout()
         ctrl_row.setSpacing(16)
 
         self.chk_auto_tuition = QCheckBox("فعال‌سازی ارسال خودکار یادآوری سررسید دوره عضویت")
         self.chk_auto_tuition.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.chk_auto_tuition.setStyleSheet(chk_style)
         ctrl_row.addWidget(self.chk_auto_tuition)
         ctrl_row.addStretch()
 
         self.lbl_tuition_days = QLabel("زمان ارسال پیامک یادآوری:")
-        self.lbl_tuition_days.setStyleSheet("font-size: 12px; color: #D1D5DB; font-weight: bold; background: transparent; border: none;")
         ctrl_row.addWidget(self.lbl_tuition_days)
 
         self.combo_tuition_days = QComboBox()
         self.combo_tuition_days.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.combo_tuition_days.setStyleSheet("""
-            QComboBox {
-                background-color: #27272A;
-                color: #FFFFFF;
-                border: 1px solid #4B5563;
-                border-radius: 6px;
-                padding: 5px 30px 5px 12px;
-                font-size: 12px;
-                font-weight: bold;
-                min-height: 32px;
-                min-width: 170px;
-            }
-            QComboBox:hover {
-                border-color: #EF4444;
-            }
-        """)
         self.combo_tuition_days.addItem("دقیقاً در روز پایان دوره", "0")
         self.combo_tuition_days.addItem("۱ روز قبل از انقضا", "1")
         self.combo_tuition_days.addItem("۲ روز قبل از انقضا", "2")
@@ -1068,16 +1211,16 @@ class SmsView(QWidget):
         self.chk_auto_tuition.toggled.connect(self._on_tuition_chk_toggled)
 
         tpl_box_tuition = QFrame()
-        tpl_box_tuition.setStyleSheet(tpl_box_style)
+        self._auto_tpl_boxes.append(tpl_box_tuition)
         l_tpl_t = QVBoxLayout(tpl_box_tuition)
         l_tpl_t.setContentsMargins(12, 10, 12, 10)
         l_tpl_t.setSpacing(4)
         lbl_tag_t = QLabel("📋 متن الگوی خدماتی ثبت‌شده در سامانه (شناسه ۱۸۳۳۴۴):")
-        lbl_tag_t.setStyleSheet("font-size: 11px; font-weight: bold; color: #9CA3AF; background: transparent; border: none;")
+        self._auto_tag_labels.append(lbl_tag_t)
         l_tpl_t.addWidget(lbl_tag_t)
         lbl_tui_tpl = QLabel(f"ورزشکار گرامی #NAME#، اعتبار دوره عضویت شما در تاریخ #DATE# به پایان می‌رسد. جهت تمدید دوره، به مدیریت باشگاه مراجعه فرمایید. باشگاه {config.APP_NAME}")
         lbl_tui_tpl.setWordWrap(True)
-        lbl_tui_tpl.setStyleSheet("font-size: 12px; color: #E4E4E7; line-height: 1.5; background: transparent; border: none;")
+        self._auto_tpl_labels.append(lbl_tui_tpl)
         l_tpl_t.addWidget(lbl_tui_tpl)
         l_tuition.addWidget(tpl_box_tuition)
         layout.addWidget(card_tuition)
@@ -1107,19 +1250,6 @@ class SmsView(QWidget):
 
         self.btn_run_check_now = QPushButton("⚡  بررسی و ارسال پیام‌های امروز هم‌اکنون")
         self.btn_run_check_now.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_run_check_now.setStyleSheet("""
-            QPushButton {
-                background-color: #3F3F46;
-                color: #FFFFFF;
-                border: none;
-                border-radius: 6px;
-                padding: 10px 18px;
-                font-size: 12px;
-            }
-            QPushButton:hover {
-                background-color: #52525B;
-            }
-        """)
         self.btn_run_check_now.clicked.connect(self.run_automated_check_now)
         btn_row.addWidget(self.btn_run_check_now)
         btn_row.addStretch()
@@ -1144,13 +1274,12 @@ class SmsView(QWidget):
         layout.setSpacing(12)
 
         h_row = QHBoxLayout()
-        lbl_h_title = QLabel("📜 گزارش آخرین پیامک‌های تحویل‌داده‌شده")
-        lbl_h_title.setStyleSheet("font-size: 15px; font-weight: bold; color: #FFFFFF;")
-        h_row.addWidget(lbl_h_title)
+        self.lbl_h_title = QLabel("📜 گزارش آخرین پیامک‌های تحویل‌داده‌شده")
+        h_row.addWidget(self.lbl_h_title)
         h_row.addStretch()
 
         self.btn_refresh_history = QPushButton("🔄 بازخوانی گزارش‌ها")
-        self.btn_refresh_history.setStyleSheet("background-color: #27272A; color: #FFF; border: 1px solid #3F3F46; border-radius: 6px; padding: 6px 14px; font-size: 12px;")
+        self.btn_refresh_history.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_refresh_history.clicked.connect(self.load_history)
         h_row.addWidget(self.btn_refresh_history)
         layout.addLayout(h_row)
@@ -1173,9 +1302,8 @@ class SmsView(QWidget):
 
     def refresh_balance(self):
         self.lbl_balance_val.setText("در حال استعلام...")
-        from nemov.utils.theme_manager import ThemeManager
-        palette = ThemeManager.get_current_palette()
-        self.card_balance.setStyleSheet(f"QFrame#cardBalance {{ background-color: {palette.bg_surface}; border: 1px solid {palette.border_light}; border-radius: 8px; }}")
+        self._balance_state = "loading"
+        self._apply_balance_card_style()
         self.btn_refresh_bal.setEnabled(False)
 
         self.bal_thread = SmsBalanceThread()
@@ -1191,22 +1319,17 @@ class SmsView(QWidget):
         if res.get("success"):
             if rem > 0:
                 self.lbl_balance_val.setText(f"{rem:,} عدد")
-                self.card_balance.setStyleSheet("QFrame#cardBalance { background-color: #064E3B; border: 1px solid #059669; border-radius: 8px; }")
-                self.lbl_balance_val.setStyleSheet("font-size: 17px; font-weight: bold; color: #6EE7B7; background: transparent; border: none;")
+                self._balance_state = "positive"
             elif total_cred == 0:
                 self.lbl_balance_val.setText("۰ عدد (در انتظار شارژ)")
-                self.card_balance.setStyleSheet("QFrame#cardBalance { background-color: #2E1A05; border: 1px solid #D97706; border-radius: 8px; }")
-                self.lbl_balance_val.setStyleSheet("font-size: 14px; font-weight: bold; color: #FBBF24; background: transparent; border: none;")
+                self._balance_state = "zero_wait"
             else:
                 self.lbl_balance_val.setText("۰ عدد (پایان اعتبار)")
-                self.card_balance.setStyleSheet("QFrame#cardBalance { background-color: #450A0A; border: 1px solid #DC2626; border-radius: 8px; }")
-                self.lbl_balance_val.setStyleSheet("font-size: 14px; font-weight: bold; color: #FCA5A5; background: transparent; border: none;")
+                self._balance_state = "zero_expired"
         else:
-            from nemov.utils.theme_manager import ThemeManager
-            palette = ThemeManager.get_current_palette()
             self.lbl_balance_val.setText("عدم اتصال به اینترنت")
-            self.card_balance.setStyleSheet(f"QFrame#cardBalance {{ background-color: {palette.bg_surface}; border: 1px solid {palette.border_light}; border-radius: 8px; }}")
-            self.lbl_balance_val.setStyleSheet(f"font-size: 13px; color: {palette.text_muted}; background: transparent; border: none;")
+            self._balance_state = "offline"
+        self._apply_balance_card_style()
 
     def show_recharge_dialog(self):
         dlg = RechargeInfoDialog(self)
@@ -1628,5 +1751,8 @@ class SmsView(QWidget):
             status_text = "آزمایشی (شبیه‌ساز) 🧪" if is_sim else "ارسال موفق ✅"
             st_item = QTableWidgetItem(status_text)
             st_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-            st_item.setForeground(QBrush(QColor("#60A5FA" if is_sim else "#10B981")))
+            pal = ThemeManager.get_current_palette()
+            sim_col = "#60A5FA" if pal.is_dark else "#2563EB"
+            ok_col = "#10B981" if pal.is_dark else "#059669"
+            st_item.setForeground(QBrush(QColor(sim_col if is_sim else ok_col)))
             self.table_history.setItem(row, 5, st_item)
